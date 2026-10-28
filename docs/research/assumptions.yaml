@@ -1,0 +1,689 @@
+# Assumption ledger. Every simulator parameter that is not pure code carries an A### id.
+# grade: S = bioprocess primary source; P = proxy borrowed from another domain (clinical lab, blood gas, cell-free medium);
+#        D = derived by arithmetic from sourced numbers (the arithmetic is in notes); A = assumption without a source.
+# A profile bundle is graded S when all its components are S or D, P when any component is P, and A when any component is A (see component_grades).
+# Source verification levels live in sources.yaml; nothing in the sources is main-reread yet, so no value here is cleared for public numbers.
+assumptions:
+  # ---------------- process: scale and layout ----------------
+  - id: A001
+    name: reactor_count_and_bays
+    default: "24 reactors in 2 bays of 12"
+    range: [5, 100]
+    unit: reactors
+    grade: A
+    sources: []
+    notes: "Scenario setting, not a measurement. Plausibility anchor only: Ambr 250 HT is sold in 12- and 24-vessel configurations (S009)."
+  - id: A002
+    name: bioreactor_default_working_volume_l
+    default: 2
+    range: [2, 5]
+    unit: L
+    grade: S
+    sources: [S013, S011]
+    notes: "Bench-scale default. Roche bench vessels were 3 L total with typical working volume about 2 L (S013). The 5 L end rests on a 5 L perfusion example mentioned in S011, not on a specification."
+  - id: A003
+    name: process_mode_default
+    default: fed-batch
+    range: [fed-batch, perfusion]
+    unit: category
+    grade: S
+    sources: [S019, S017]
+    notes: "Both modes exist in the cited work (about 12 d fed-batch and about 40 d perfusion in S019; fed-batch case study in S017). Which mode a given scenario uses is a design choice."
+  - id: A004
+    name: fedbatch_duration_days
+    default: 14
+    range: [12, 17]
+    unit: d
+    grade: S
+    sources: [S017, S019]
+    notes: "A-Mab production culture 13-17 d (DOE range 13/15/17; processes 13-15 d and 16-17 d) (S017). The 12 d low end is the about-12-day fed-batch of the Amgen bispecific study (S019, abstract). Default 14 is inside both."
+  - id: A005
+    name: n1_seed_duration_days
+    default: 3
+    range: [2, 5]
+    unit: d
+    grade: S
+    sources: [S017]
+    notes: "A-Mab N-1 seed culture 2-4 d at 200 L and 3-5 d at 1000-3000 L (S017, Table 3.6)."
+  - id: A006
+    name: perfusion_duration_days
+    default: 40
+    range: [30, 90]
+    unit: d
+    grade: S
+    sources: [S019]
+    notes: "Only 40 d is sourced (about 40-day perfusion in S019). The range ends 30 d and 90 d were not seen in any page read in this task; treat them as leads until a source is added."
+  - id: A007
+    name: inoculation_density_e6_per_ml
+    default: 1.0
+    range: [0.5, 1.5]
+    unit: 1e6 cells/mL
+    grade: S
+    sources: [S017]
+    notes: "A-Mab production DOE 0.5/1.0/1.5; process 1 used 0.7 and process 2 used 1.0 (S017)."
+  - id: A008
+    name: peak_vcd_fedbatch_e6_per_ml
+    default: 20
+    range: [10, 30]
+    unit: 1e6 cells/mL
+    grade: A
+    sources: []
+    notes: "No page read gives a peak viable cell density (A-Mab does not, S017). A model scenario in S020 (abstract only, numbers not seen) is a lead, not a source."
+  - id: A009
+    name: peak_vcd_perfusion_e6_per_ml
+    default: 60
+    range: [30, 100]
+    unit: 1e6 cells/mL
+    grade: A
+    sources: []
+    notes: "Same status as A008. The range is a placeholder around the default."
+  - id: A010
+    name: glucose_floor_g_per_l
+    default: 1.0
+    range: "fixed"
+    unit: g/L
+    grade: S
+    sources: [S017]
+    notes: "A-Mab keeps glucose above 1.0 g/L with discrete feeds and monitors VCC, viability and glucose 'periodically' from the day of inoculation (S017)."
+  - id: A011
+    name: growth_kinetics_model
+    default: "logistic growth with specific consumption and production rates"
+    range: "n/a"
+    unit: model
+    grade: A
+    sources: []
+    notes: "Simulator choice; the aim is plausible shapes for the truth world, not kinetic fidelity."
+  - id: A012
+    name: harvest_viability_observed_range_pct
+    default: "50-80 (process 1), 40-70 (process 2)"
+    range: [40, 80]
+    unit: "% viability"
+    grade: S
+    sources: [S017]
+    notes: "Observed A-Mab viability at harvest (S017, Table 3.11)."
+  - id: A013
+    name: harvest_rule_applied
+    default: "harvest when viability < 80% or at day 14, whichever comes first"
+    range: "n/a"
+    unit: rule
+    grade: A
+    sources: []
+    notes: "Simulator rule; the threshold lies at the top of the observed range in A012."
+  # ---------------- sampling and logistics ----------------
+  - id: A014
+    name: samples_per_reactor_per_day
+    default: 1
+    range: [1, 8]
+    unit: samples/reactor/day
+    grade: S
+    sources: [S002, S021, S037]
+    notes: "Hardware ceiling: the on-line autosampler handles up to 24 samples/day per bioreactor (S002, read). Routine manual practice of one sample per day (S037) and the 8 samples/day automated demonstration (S021) are second-hand (snippet) and unverified."
+  - id: A015
+    name: second_sample_fraction_in_feed_window
+    default: 0.6
+    range: [0, 1]
+    unit: fraction of reactor-days
+    grade: A
+    sources: []
+    notes: "Share of reactor-days that get a second sample around the feed window. No source."
+  - id: A016
+    name: shift_start_burst
+    default: "65% of samples drawn around 08:30, sd 18 min"
+    range: "n/a"
+    unit: schedule
+    grade: A
+    sources: []
+    notes: "Chosen to produce a start-of-shift burst; no source."
+  - id: A017
+    name: shift_pattern
+    default: "two shifts on weekdays, reduced staffing at weekends"
+    range: "n/a"
+    unit: schedule
+    grade: A
+    sources: []
+    notes: "No source."
+  - id: A018
+    name: transport_and_prep_minutes
+    default: "10-25 (uniform)"
+    range: [5, 60]
+    unit: min
+    grade: A
+    sources: []
+    notes: "Time from draw to the analyzer queue (walking, labeling, dilution, centrifuging). Searched, no published figure found."
+  - id: A019
+    name: sample_volume_flex2_standalone_ul
+    default: 275
+    range: [135, 275]
+    unit: uL
+    grade: S
+    sources: [S001]
+    notes: "Full 16-analyte menu needs 275 uL; modules alone need 135-275 uL (S001). Stand-alone use; see A020 for integrated use."
+  - id: A020
+    name: sample_volume_integrated_analyzers_ul
+    default: "FLEX2 400-700; Vi-CELL BLU 220; pH module 60 (Ambr 15) or 200 (Ambr 250)"
+    range: [60, 700]
+    unit: uL
+    grade: S
+    sources: [S007]
+    notes: "Sartorius brochure table of sample volume when the analyzer is coupled to Ambr (S007). The larger volume than stand-alone (A019) includes transfer lines."
+  - id: A021
+    name: aliquot_storage_policy
+    default: "cells and metabolites at room temperature, immediate; titer retains frozen"
+    range: ["ice", "room temperature", "frozen"]
+    unit: category
+    grade: A
+    sources: []
+    notes: "Simulator policy per analyte class."
+  # ---------------- analyzers ----------------
+  - id: A022
+    name: analyzer_count
+    default: 2
+    range: [1, 6]
+    unit: analyzers
+    grade: A
+    sources: []
+    notes: "Scenario setting (shared at-line analyzers)."
+  - id: A023
+    name: flex2_full_panel_cycle_min
+    default: 4.5
+    range: [4.5, 8]
+    unit: min
+    grade: S
+    sources: [S001, S007]
+    notes: "4.5 min (270 s) stand-alone (S001); 6-8 min when coupled to Ambr, including transfer (S007). An upper bound of 12 min for a bundle of several instruments is an assumption, not a measurement."
+  - id: A024
+    name: flex2_ols_sequence_min
+    default: 6
+    range: [6, 9]
+    unit: min
+    grade: S
+    sources: [S002]
+    notes: "On-line autosampler: sequence 'as fast as 6 min' for one bioreactor; 10 bioreactors in under 1.5 h, i.e. 9 min per vessel on average (D: 90 min / 10), so 9 is the upper end of the range (S002)."
+  - id: A025
+    name: vicell_blu_cycle_s
+    default: 130
+    range: [80, 130]
+    unit: s
+    grade: S
+    sources: [S005]
+    notes: "Vendor limits: under 130 s normal mode, under 80 s fast mode; the default is the normal-mode bound, not a typical value. Coupled to Ambr the Sartorius table gives 4-5 min per sample including transfer (S007). Minimum sample 200 uL normal, 170 uL fast (S005)."
+  - id: A026
+    name: cedex_bio_ht_throughput_tests_per_h
+    default: 150
+    range: [150, 300]
+    unit: tests/h
+    grade: S
+    sources: [S006]
+    notes: "Vendor range 150-300 tests/h; glucose on 90 samples in 35 min is 154 tests/h (D). Cedex Bio (not HT): 50-100 tests/h, 90 samples in 105 min. Per-test sample volume is not on the page (S006)."
+  - id: A027
+    name: ambr_full_vessel_set_analysis_h
+    default: 3
+    range: [1, 3]
+    unit: h
+    grade: S
+    sources: [S011]
+    notes: "Up to 3 h to analyze all 48 ambr15 vessels (S011), i.e. up to 3.75 min per vessel (D: 180 min / 48). This is an upper bound; lower end of the range is a placeholder."
+  - id: A028
+    name: hplc_titer_run_min
+    default: 1.0
+    range: [1.0, 4.0]
+    unit: min
+    grade: S
+    sources: [S026]
+    notes: "Best-case vendor method for Protein A titer of CHO supernatant: 1 min run, about 60 samples/h (S026). The 4 min upper end is an unverified lead from search summaries of other methods; only 1 min was read."
+  - id: A029
+    name: hplc_titer_injection_ul
+    default: 20
+    range: [5, 50]
+    unit: uL
+    grade: S
+    sources: [S026]
+    notes: "Method range 5-50 uL; the default is a pick inside that range (S026)."
+  - id: A030
+    name: hplc_column_switch_and_sst_min
+    default: 60
+    range: [30, 120]
+    unit: min
+    grade: A
+    sources: []
+    notes: "Time lost when one HPLC alternates between a titer column and a purity column (equilibration, system suitability). No source found; placeholder. Do not cite."
+  - id: A031
+    name: qc_window_maintenance_failures
+    default: "30 min QC per analyzer per day; maintenance and failures set per scenario"
+    range: "n/a"
+    unit: schedule
+    grade: A
+    sources: []
+    notes: "No source."
+  - id: A032
+    name: inter_analyzer_bias_pct
+    default: 0
+    range: [0, 5]
+    unit: "%"
+    grade: A
+    sources: []
+    notes: "Switched on per scenario. No instrument-to-instrument data for FLEX2 or Vi-CELL was found. Upper references only, neither is instrument-to-instrument: a 4.5% sampling-path slope error (S021, snippet) and a 12.5% HPLC-vs-enzymatic difference on one medium (S046, snippet)."
+  - id: A033
+    name: analyzer_drift_and_lot_change
+    default: "random walk, reset at re-calibration; lot change adds a step"
+    range: "n/a"
+    unit: model
+    grade: A
+    sources: []
+    notes: "No source."
+  - id: A034
+    name: analyzer_assignment_habit
+    default: "85% of samples go to the habitual analyzer; operator waits up to 10 min"
+    range: [0, 100]
+    unit: "%"
+    grade: A
+    sources: []
+    notes: "No source."
+  - id: A035
+    name: queue_policy_default
+    default: FIFO
+    range: [FIFO, priority, EDF, SLA]
+    unit: category
+    grade: A
+    sources: []
+    notes: "Design choice."
+  - id: A036
+    name: analyzer_interface_default
+    default: "shared-folder CSV drop"
+    range: ["shared-folder CSV drop", "vendor OPC server (licensed)", "SiLA 2 or OPC UA LADS (future)"]
+    unit: category
+    grade: S
+    sources: [S003, S004, S038, S039, S040]
+    notes: "FLEX2 exports CSV to a shared folder on its bridge computer (S003, snippet); its OPC server is a licensed add-on (S004, snippet); connector guides treat FLEX2, Vi-CELL BLU and Cedex HiRes as file-based (S038, S039, snippet). SiLA 2 and LADS as a future step rests on a vendor map (S040). All second-hand."
+  # ---------------- sample stability ----------------
+  - id: A037
+    name: sample_container_model
+    default: "closed syringe for pH and gases; open cup for cell count and metabolites"
+    range: ["closed", "open"]
+    unit: category
+    grade: P
+    sources: [S016, S015, S014]
+    notes: "Direction of change differs by container: a closed sample with respiring cells acidifies (S016, S015); an open thin-layer sample loses CO2 and alkalinizes (S014). Magnitudes are in A041-A043; the container split itself is a modelling choice."
+  - id: A038
+    name: viability_hold_slope_observed_pct_per_min
+    default: -0.03
+    range: [-0.12, -0.03]
+    unit: "% points per min"
+    grade: S
+    sources: [S012]
+    notes: "OBSERVED value. CHO samples from shake flasks (several VCD levels) held neat up to 55 min before Vi-Cell XR counting: slope -0.03 %p/min (about -1.8 %p/h). Other conditions in the same paper: fresh medium -0.05, PBS -0.12, PBS plus shear protectant -0.04. The paper itself says neat samples showed no clear decrease; its finding is a PBS artifact. Hold temperature not stated in the text read."
+  - id: A039
+    name: viability_hold_validity_limit_min
+    default: 55
+    range: "fixed"
+    unit: min
+    grade: S
+    sources: [S012]
+    notes: "Longest hold in the experiment (S012). Any hold beyond it is extrapolation."
+  - id: A040
+    name: viability_hold_slope_applied_pct_per_h
+    default: 0.0
+    range: [-7.2, 0.0]
+    unit: "% points per h"
+    grade: A
+    sources: []
+    notes: "APPLIED value used by the simulator. Default 0 for neat samples within A039, because the source's authors state neat samples showed no clear decrease (S012, re-read 2026-10-28); the decline they report is diluent-driven. Non-zero values are a diluent/handling scenario knob: fresh medium -3.0 %p/h and PBS -7.2 %p/h are D-derived from A038's sibling slopes. Applying any slope to other cell lines, temperatures or holds beyond A039 is an assumption, and the UI must say so. Viability hold loss is NOT the central effect of this project."
+  - id: A041
+    name: open_sample_ph_offset_mean
+    default: 0.05
+    range: [0.02, 0.1]
+    unit: pH units
+    grade: S
+    sources: [S013]
+    notes: "Offline minus bioreactor pH, mostly positive, mean about 0.05 for Ambr 250 liquid-handler samples; 0.02-0.06 for manual pH-meter samples; mean 0.021 for 250 L syringe samples; single points above 0.1 'not unusual' (S013). Measured on cell-free medium before inoculation, so it contains no respiration effect. The earlier idea of +0.1 to +0.3 within 15-30 min has no source and is not used."
+  - id: A042
+    name: open_container_ph_relaxation_tau_h
+    default: 2.5
+    range: [0.75, 3]
+    unit: h
+    grade: P
+    sources: [S014]
+    notes: "Time constant 2-3 h for 200 uL of bicarbonate medium in a 96-well plate moved to a CO2-free atmosphere; reverse reaction 45 min (S014). Geometry-dependent thin-layer case; a mL-scale sample cup would be slower. Cell-free-medium proxy."
+  - id: A043
+    name: closed_sample_ph_drift_per_h
+    default: -0.025
+    range: [-0.03, -0.01]
+    unit: pH units/h
+    grade: P
+    sources: [S015]
+    notes: "Blood proxy: pH falls 0.02-0.03 per h at 22 C and less than 0.01 per h at 4 C (S015). Cell-culture samples are not blood; sign (acidification by respiration) is supported by S016."
+  - id: A044
+    name: cell_settling_vcd_bias
+    default: "VCD bias grows with waiting time in an unmixed cup"
+    range: "n/a"
+    unit: model
+    grade: A
+    sources: []
+    notes: "No quantified source."
+  - id: A045
+    name: in_tube_glucose_lactate_change
+    default: "glucose falls and lactate rises by VCD times an assumed specific rate"
+    range: "n/a"
+    unit: model
+    grade: A
+    sources: []
+    notes: "Direction is supported qualitatively by blood-gas practice (S015). No cell-culture figure found; the earlier -0.12 g/L/h value has no source and is not used."
+  - id: A046
+    name: max_allowed_hold_min
+    default: 30
+    range: [5, 60]
+    unit: min
+    grade: P
+    sources: [S015]
+    notes: "Blood-gas rule: plastic-syringe samples within 30 min, within 5 min if cell counts are high (S015). No bioprocess vendor maximum was found."
+  # ---------------- records and people ----------------
+  - id: A047
+    name: label_error_rate_per_1000
+    default: 6.1
+    range: [0.5, 17]
+    unit: errors per 1000 samples
+    grade: P
+    sources: [S022, S023]
+    notes: "Clinical proxy. Median mislabelling 6.1 per 1000 over 62 hospitals and over 690,000 samples (S022); a 4.29 million-specimen study reports 1.0% mislabeled and 4.6% unlabeled (S023). The 1.2-17 interquartile range and 0.5 per 1000 (a different error, wrong blood in tube) were seen only in a search summary of S022. Not a bioprocess rate."
+  - id: A048
+    name: dilution_transcription_error
+    default: "manual path only: factor missing or unit mismatch"
+    range: "n/a"
+    unit: model
+    grade: A
+    sources: []
+    notes: "No rate found."
+  - id: A049
+    name: clock_misconfiguration
+    default: "one analyzer set +9 h"
+    range: [0, 1]
+    unit: analyzers
+    grade: A
+    sources: []
+    notes: "Frequency has no source; no incidence data found. That clocks and time zones must be controlled and recorded is stated in MHRA 2018 sections 5.1 and 6.13 (S029), WHO TRS 996 4.12 (S030) and, second-hand, WHO TRS 1033 4.15 (S052)."
+  - id: A050
+    name: feed_rule
+    default: "bolus feed when glucose < 1.0 g/L; decision due 10:00"
+    range: "n/a"
+    unit: rule
+    grade: A
+    sources: []
+    notes: "Rule is a simulator choice; the 1.0 g/L floor is A010."
+  - id: A051
+    name: ph_probe_recalibration_from_offline
+    default: "on, daily"
+    range: ["on", "off"]
+    unit: category
+    grade: S
+    sources: [S013, S007, S045]
+    notes: "The practice exists: probes are readjusted onto the offline value, 'considering the offline value the source of truth' (S013); the Ambr analysis module is sold for in-process pH sensor re-calibration (S007); a second source is snippet-only (S045). The daily frequency is not sourced."
+  # ---------------- downstream ----------------
+  - id: A052
+    name: protein_a_loading
+    default: "input <= 5 g/L; column load 10-50 g/L; several cycles, eluates pooled"
+    range: "n/a"
+    unit: g/L
+    grade: S
+    sources: [S017]
+    notes: "A-Mab (hypothetical mAb) clarified harvest input and Protein A step description (S017). Splitting one harvest over cycles and re-pooling keeps one origin batch."
+  - id: A053
+    name: protein_a_pool_hcp_ppm
+    default: 7200
+    range: [3000, 12000]
+    unit: ppm
+    grade: S
+    sources: [S017]
+    notes: "Pool about 20 g/L with HCP about 7,200 ppm (3,000-12,000), from an input of 0.9-1.3 million ppm (S017, Table 4.2)."
+  - id: A054
+    name: pool_hold_h
+    default: 36
+    range: "product-specific"
+    unit: h
+    grade: S
+    sources: [S018]
+    notes: "A 36 h intermediate hold point is discussed as an example of a study design (S018); limits are product-specific. A-Mab pool hold data are 'not shown' (S017). Use as an example, not as a limit."
+  - id: A055
+    name: dsp_assay_turnaround
+    default: "unset"
+    range: "n/a"
+    unit: h
+    grade: A
+    sources: []
+    notes: "Turnaround of SEC, HCP, ELISA, endotoxin and bioburden tests: no sourced figure found. Do not cite any."
+  - id: A056
+    name: ipc_system_of_record
+    default: "configurable: MES/EBR or LIMS"
+    range: ["MES/EBR", "LIMS"]
+    unit: category
+    grade: A
+    sources: []
+    notes: "Vendor material disagrees (S042 places floor in-process checks in MES; S043 says LIMS usually owns in-process controls); S044 is a lead. Treat it as site-dependent, not an industry norm."
+  # ---------------- derived quantities ----------------
+  - id: A057
+    name: sample_volume_budget_fraction_pct
+    default: "micro-parallel 4.8; mini-parallel 0.31; bench 0.014; pilot 0.00055"
+    range: [0.00055, 6.0]
+    unit: "% of working volume per sample"
+    grade: D
+    sources: [S011, S007, S001, S010, S013, S036]
+    notes: "Per-sample volume divided by working volume. Micro: 600 uL typical (S011) / 12.5 mL (S010, S011 midpoint) = 4.8%; with FLEX2 400-500 uL on 10-15 mL it is 2.7-5.0% (S007, S010). Mini: 550 uL (midpoint of 400-700, S007) / 175 mL (midpoint of 100-250, S011) = 0.31%, full span 0.16-0.7%. Bench: 275 uL (S001) / 2 L (S013) = 0.014%. Pilot: 275 uL / 50 L = 0.00055% for the analyzer volume only; line purge and discard volumes are unsourced (A). At one sample per day for 14 d the micro class would draw 14 x 4.8% = 67% of its working volume (D), which is why S011 calls sampling a burden there."
+  - id: A058
+    name: manual_count_operator_cv_pct
+    default: 2.81
+    range: [2.81, 7.1]
+    unit: "% CV between operators"
+    grade: S
+    sources: [S025]
+    notes: "Two operators counting 1e6/mL control beads by hemacytometer; the article prints 'operator-to-operator variability ... six times less ... (2.81 vs. 0.46)', and 2.81/0.46 = 6.1 (D), so 2.81 is the manual figure. Beads, not cells; vendor-affiliated tutorial; both methods stayed under 5% CV. Real cell counts add the Poisson floor in A060."
+  - id: A059
+    name: automated_count_operator_cv_pct
+    default: 0.46
+    range: [0.46, 5]
+    unit: "% CV between operators"
+    grade: S
+    sources: [S025]
+    notes: "Same study, Vi-CELL XR automated method (S025). Upper end 5% is the study's stated ceiling for both methods."
+  - id: A060
+    name: hemocytometer_poisson_cv_pct
+    default: 7.1
+    range: [5, 10]
+    unit: "% CV"
+    grade: D
+    sources: [S025]
+    notes: "S025 says only 'several hundred' cells are generally counted manually. Counting error alone is 100 / sqrt(N) percent: N=200 gives 7.1, N=400 gives 5, N=100 gives 10 (D). This is a floor from counting statistics, not a measured operator CV."
+  - id: A061
+    name: label_error_reduction_standard_protocol_pct
+    default: -72.45
+    range: [-83.25, -46.50]
+    unit: "% median relative change"
+    grade: P
+    sources: [S024]
+    notes: "Clinical proxy: after standardized specimen labeling protocols, labeling errors fell by a median relative 72.45% (interquartile interval -83.25 to -46.50) in four studies (S024). Supports a 'system-issued ID' lever, not a staff-training lever."
+  - id: A062
+    name: trainee_label_error_multiplier
+    default: 2.0
+    range: [1, 5]
+    unit: factor
+    grade: A
+    sources: []
+    notes: "How much more often a trainee mislabels than an experienced operator. No quantitative source: the clinical review judged evidence on staff training and education insufficient to conclude (S024). A sensitivity knob, labeled A in the UI."
+  - id: A063
+    name: sampling_delay_sd_min
+    default: "expert 5; trainee 12"
+    range: [0, 30]
+    unit: min
+    grade: A
+    sources: []
+    notes: "Spread of the draw-to-queue delay around the plan. No source."
+  - id: A064
+    name: sampling_technique_error_probability
+    default: "expert 0.02; trainee 0.10"
+    range: [0, 0.3]
+    unit: probability per sample
+    grade: A
+    sources: []
+    notes: "Chance that a pH or gas sample is taken or held in a way that adds extra degassing (open cup, bag, long hold). Container effects are real (S016, A037) but no error rate was found."
+  - id: A074
+    name: analyzer_utilization_baseline_pct
+    default: 14
+    range: [12.6, 16.0]
+    unit: "% of analyzer time"
+    grade: A
+    sources: [S001]
+    notes: "24 reactors x 1.4-1.6 samples/day = 33.6-38.4 samples/day (from A001, A014, A015, all assumptions) x 4.5 min (A023, S001) = 151-173 min, over 2 analyzers x 9-10 h working window (A022; the window is an assumption) = 12.6-16%. Over a 24 h clock the same load is 5-6%. The 4.5 min is sourced; the counts and the window are not, so the result is A."
+  - id: A075
+    name: flex2_standalone_capacity_samples_per_h
+    default: 13.3
+    range: [7.5, 13.3]
+    unit: samples/h
+    grade: D
+    sources: [S001, S007]
+    notes: "60 / 4.5 min = 13.3 samples/h stand-alone (S001); 60 / 8 min = 7.5 samples/h in the slowest Ambr-coupled case (S007). Excludes loading, QC and maintenance."
+  - id: A076
+    name: trainee_count_cv_multiplier
+    default: 2.0
+    range: [1, 3]
+    unit: factor
+    grade: A
+    sources: []
+    notes: "Multiplier on manual count CV for a trainee. No source; only the expert-level operator CVs are sourced (A058, A059)."
+  # ---------------- profile bundles ----------------
+  - id: A065
+    name: profile_bioreactor_micro_parallel
+    default: "micro-scale parallel system (Ambr 15 class)"
+    range: "bundle"
+    unit: bundle
+    grade: S
+    sources: [S010, S011, S007]
+    notes: "10-15 mL, 24 or 48 vessels. A liquid handler samples into a cup; coupled analyzers can be integrated or loaded by hand. Per-sample volume is a large share of the culture (A057), so sample count itself changes the process; volume can fall during the run (S011)."
+    components:
+      working_volume_ml: {value: [10, 15], grade: S, sources: [S010, S011]}
+      vessels: {value: [24, 48], grade: S, sources: [S010]}
+      sampling: {value: "automated liquid handler into a sample cup", grade: S, sources: [S010]}
+      sample_volume_ul: {value: "600 typical; 220 (Vi-CELL BLU) to 500 (FLEX2) when integrated", grade: S, sources: [S011, S007]}
+      sample_volume_fraction_pct: {value: 4.8, grade: D, sources: [S011, S010], assumption: A057}
+      analysis_of_all_vessels_h: {value: "up to 3 for 48 vessels", grade: S, sources: [S011], assumption: A027}
+    component_grades: [S, D]
+  - id: A066
+    name: profile_bioreactor_mini_parallel
+    default: "mini-scale parallel system (Ambr 250 HT class)"
+    range: "bundle"
+    unit: bundle
+    grade: S
+    sources: [S009, S011, S007, S008]
+    notes: "100-250 mL, 12 or 24 vessels, automated liquid handler, analyzers integrated or hand-carried. Sample volume is a small share of the culture (A057)."
+    components:
+      working_volume_ml: {value: [100, 250], grade: S, sources: [S011]}
+      vessels: {value: [12, 24], grade: S, sources: [S009]}
+      sampling: {value: "automated liquid handler (200 uL pH sample in the cited study)", grade: S, sources: [S009, S013]}
+      sample_volume_ul: {value: "FLEX2 400-700; Vi-CELL BLU 220; pH module 200", grade: S, sources: [S007], assumption: A020}
+      sample_volume_fraction_pct: {value: 0.31, grade: D, sources: [S007, S011], assumption: A057}
+    component_grades: [S, D]
+  - id: A067
+    name: profile_bioreactor_bench_glass
+    default: "bench-scale stirred tank, 2-5 L working volume, manual sampling"
+    range: "bundle"
+    unit: bundle
+    grade: S
+    sources: [S013, S016, S001]
+    notes: "Default of the simulator. An operator draws each sample by hand, into a closed tempered container or a syringe, and carries it to the analyzer; one reactor at a time. Vessel count per bay is A001. Line purge or discard volume is not sourced and is not modelled unless set."
+    components:
+      working_volume_l: {value: [2, 5], grade: S, sources: [S013, S011], assumption: A002}
+      sampling: {value: "manual draw into a closed tempered container or syringe", grade: S, sources: [S013, S016]}
+      sample_volume_ul: {value: 275, grade: S, sources: [S001], assumption: A019}
+      sample_volume_fraction_pct: {value: 0.014, grade: D, sources: [S001, S013], assumption: A057}
+    component_grades: [S, D]
+  - id: A068
+    name: profile_bioreactor_pilot_single_use
+    default: "pilot-scale single-use stirred tank, 50-250 L, manual syringe sampling"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S013, S036]
+    notes: "Single-use stirred-tank families span 12.5-2,000 L with conserved geometry (S036); Roche took 250 L samples with a sterile syringe (S013). The class boundary 50-250 L is the author's choice, and line purge and discard volumes are unsourced, so the bundle grade is A. The analyzer volume is negligible against the vessel (A057)."
+    components:
+      working_volume_l: {value: [50, 250], grade: A, sources: [S036, S013]}
+      sampling: {value: "sterile syringe from a sampling line", grade: S, sources: [S013]}
+      sample_volume_fraction_pct: {value: 0.00055, grade: D, sources: [S001], assumption: A057}
+      purge_and_discard_volume: {value: "not set", grade: A, sources: []}
+    component_grades: [A, S, D]
+  - id: A069
+    name: profile_analyzer_all_in_one
+    default: "one all-in-one at-line analyzer (FLEX2 class)"
+    range: "bundle"
+    unit: bundle
+    grade: S
+    sources: [S001, S002, S003, S007]
+    notes: "One sample, one instrument, one result file with 16 analytes (cells, metabolites, gases, osmolality). Stand-alone figures from S001; coupled-to-Ambr figures from S007; optional autosampler from S002. Result export is a CSV file drop (A036)."
+    components:
+      analytes: {value: 16, grade: S, sources: [S001]}
+      cycle_min: {value: 4.5, grade: S, sources: [S001], assumption: A023}
+      sample_volume_ul: {value: 275, grade: S, sources: [S001], assumption: A019}
+      capacity_samples_per_h: {value: 13.3, grade: D, sources: [S001], assumption: A075}
+      coupled_to_ambr: {value: "400-700 uL, 6-8 min", grade: S, sources: [S007]}
+      autosampler: {value: "up to 10 vessels, 5.6 mL per sample, sequence 6 min", grade: S, sources: [S002], assumption: A024}
+      interface: {value: "shared-folder CSV", grade: S, sources: [S003], assumption: A036}
+    component_grades: [S, D]
+  - id: A070
+    name: profile_analyzer_split_two_instruments
+    default: "separate cell counter plus metabolite analyzer; one sample visits two instruments"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S005, S006, S001, S007]
+    notes: "Cells on a Vi-CELL BLU class counter, metabolites on a chemistry analyzer (Cedex Bio HT class, or the FLEX2 chemistry module alone as a stand-in with 135 uL and 120 s, S001). The sample enters two queues, so the second result can be measured later than the first and the two records carry different clocks. Hand-off time and the second queue are assumptions, so the bundle grade is A."
+    components:
+      counter_cycle_s: {value: [80, 130], grade: S, sources: [S005], assumption: A025}
+      counter_sample_volume_ul: {value: "200-220", grade: S, sources: [S005, S007]}
+      metabolite_throughput: {value: "Cedex Bio HT 150-300 tests/h", grade: S, sources: [S006], assumption: A026}
+      metabolite_sample_volume_ul: {value: "135 (FLEX2 chemistry module as stand-in)", grade: S, sources: [S001]}
+      instrument_time_per_sample_min: {value: 4.2, grade: D, sources: [S005, S001], note: "130 s counter + 120 s chemistry = 250 s, against 4.5 min all-in-one"}
+      total_sample_volume_ul: {value: 355, grade: D, sources: [S007, S001], note: "220 + 135 uL, 29% more than the 275 uL all-in-one"}
+      handoff_between_instruments: {value: "not set", grade: A, sources: []}
+    component_grades: [S, D, A]
+  - id: A071
+    name: profile_analyzer_hplc_titer
+    default: "HPLC Protein A titer on clarified supernatant"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S026, S037]
+    notes: "Titer is not measured by the at-line analyzers; it runs on a shared HPLC after the supernatant is spun down (500-1000 g, 5-10 min, second-hand, S037). Chromatography is quick but the column and its system-suitability routine are the shared resource (A030)."
+    components:
+      run_min: {value: 1.0, grade: S, sources: [S026], assumption: A028}
+      throughput_samples_per_h: {value: 60, grade: S, sources: [S026]}
+      injection_ul: {value: [5, 50], grade: S, sources: [S026], assumption: A029}
+      sample_prep: {value: "centrifuge 500-1000 g, 5-10 min", grade: S, sources: [S037]}
+      column_switch_and_sst_min: {value: 60, grade: A, sources: [], assumption: A030}
+    component_grades: [S, A]
+  - id: A072
+    name: profile_staff_expert
+    default: "experienced operator"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S025, S022]
+    notes: "Reference operator: sourced count variability (A058, A059), the clinical label error rate (A047), and assumed delay and technique spread (A063, A064). No bioprocess study of staff proficiency was found."
+    components:
+      manual_count_operator_cv_pct: {value: 2.81, grade: S, sources: [S025], assumption: A058}
+      automated_count_operator_cv_pct: {value: 0.46, grade: S, sources: [S025], assumption: A059}
+      manual_count_poisson_floor_cv_pct: {value: 7.1, grade: D, sources: [S025], assumption: A060}
+      label_error_per_1000: {value: 6.1, grade: P, sources: [S022], assumption: A047}
+      sampling_delay_sd_min: {value: 5, grade: A, sources: [], assumption: A063}
+      technique_error_probability: {value: 0.02, grade: A, sources: [], assumption: A064}
+    component_grades: [S, D, P, A]
+  - id: A073
+    name: profile_staff_trainee
+    default: "trainee operator"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S024, S025, S022]
+    notes: "Same as the expert profile with multipliers that have no source (A062, A076) and wider delay and technique spread (A063, A064). The clinical review found standardized labeling protocols helpful (A061) but could not conclude on staff training (S024). Automated counting narrows the person-to-person gap (A059 against A058)."
+    components:
+      manual_count_operator_cv_pct: {value: "2.81 x 2.0", grade: A, sources: [S025], assumption: A076}
+      automated_count_operator_cv_pct: {value: 0.46, grade: S, sources: [S025], assumption: A059}
+      label_error_per_1000: {value: "6.1 x 2.0", grade: A, sources: [S022], assumption: A062}
+      sampling_delay_sd_min: {value: 12, grade: A, sources: [], assumption: A063}
+      technique_error_probability: {value: 0.10, grade: A, sources: [], assumption: A064}
+    component_grades: [S, A]

@@ -1,0 +1,482 @@
+# Source ledger. Every external claim used by the simulator or its docs points here by S###.
+# verification: snippet = seen only as a search/tool excerpt or second-hand, not opened;
+#               agent-read = opened and read by the research executor on the access date (part of a page may be all that was needed);
+#               main-reread = re-read by the orchestrator (public numbers may cite only these).
+# Nothing here is main-reread yet.
+sources:
+  # ---- analyzers: all-in-one, cell counters, metabolite analyzers, HPLC ----
+  - id: S001
+    title: "Nova BioProfile FLEX2 Analyzer (product page with module analysis-time table)"
+    publisher: "DKSH (distributor, reproduces Nova Biomedical specification text)"
+    url: "https://technology-products.dksh.com/product/nova-bioprofile-flex2-analyzer/"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "FLEX2 16-analyte menu; full menu needs 275 uL and 270 s (4.5 min); per-module times and volumes."
+    verification: main-reread
+    used_in: [A019, A023, A057, A067, A069, A070, A074, A075]
+  - id: S002
+    title: "BioProfile FLEX2 On-Line Autosampler (brochure)"
+    publisher: "Nova Biomedical (file hosted by chemie.de)"
+    url: "https://rs1.chemie.de/images/135080.pdf"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "OLS connects up to 10 bioreactors, 5.6 mL per reactor sample, sequence as fast as 6 min, up to 24 samples/day per bioreactor."
+    verification: main-reread
+    used_in: [A014, A024, A069]
+  - id: S003
+    title: "BioProfile FLEX2 Instructions for Use manual (section 2.3.3 export)"
+    publisher: "Nova Biomedical"
+    url: "https://novabiomedicaldocs.com/wp-content/uploads/filr/26707/LPN-57960-BioProfile-FLEX2-IFU-EN-Manual.pdf"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Results export as CSV to a shared folder C:\\Export on the Bridge computer (or to USB); file name pattern SampleResultsYYYY-MM-DD_HHMMSS.csv. Passage seen as a search excerpt; only the first part of the manual was opened."
+    verification: snippet
+    used_in: [A036, A069]
+  - id: S004
+    title: "BioProfile FLEX2 OPC Server Instruction for Use manual"
+    publisher: "Nova Biomedical"
+    url: "https://novabiomedicaldocs.com/wp-content/uploads/filr/26729/LPN%2060644%20-BioProfile-FLEX2-IFU-EN-Manual-OPC.pdf"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "The vendor OPC server (UA and DA) is a separately licensed add-on to the FLEX2; it is the vendor's own server, not the LADS companion specification."
+    verification: snippet
+    used_in: [A036]
+  - id: S005
+    title: "Specification Comparison of Vi-CELL XR and Vi-CELL BLU"
+    publisher: "Beckman Coulter"
+    url: "https://www.beckman.com/resources/reading-material/application-notes/specification-comparison-vi-cell-xr-blu"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Vi-CELL BLU single-sample analysis <130 s normal mode and <80 s fast mode; minimum sample 200 uL (170 uL fast); 24-position carousel; TXT and Excel export."
+    verification: agent-read
+    used_in: [A025, A070]
+  - id: S006
+    title: "Cedex Bio and Cedex Bio HT Analyzer comparison table"
+    publisher: "Roche CustomBiotech"
+    url: "https://custombiotech.roche.com/cedex"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Cedex Bio 50-100 tests/h (90 glucose samples in 105 min); Cedex Bio HT 150-300 tests/h (90 samples in 35 min), up to 126 samples loaded. Per-test sample volume is not on this page."
+    verification: agent-read
+    used_in: [A026, A070]
+  - id: S007
+    title: "Integrated Cell Culture Analyzers: Ambr 15 Cell Culture and Ambr 250 High Throughput (brochure, 2019)"
+    publisher: "Sartorius"
+    url: "https://www.sartorius.com/download/501966/broch-ambr-15-250-integrated-analyzers-sbi1567-e-2019-data.pdf"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Table of sample volume and cycle time when integrated with Ambr: Vi-CELL BLU 220 uL and 4-5 min; FLEX2 400-500 uL and 6-7 min (Ambr 15) or 400-700 uL and 7-8 min (Ambr 250); pH module 60 uL (Ambr 15) or 200 uL (Ambr 250), 160 s. Analysis module is used for in-process pH sensor re-calibration. FLEX2 field integration happens in the user lab."
+    verification: agent-read
+    used_in: [A020, A023, A051, A057, A065, A066, A069, A070, A075]
+  - id: S008
+    title: "Ambr analyzers: integrated and stand-alone analyzers (product page)"
+    publisher: "Sartorius"
+    url: "https://www.sartorius.com/en/products/fermentation-bioreactors/ambr-multi-parallel-bioreactors/ambr-analyzer"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "FLEX2, Cedex HiRes and Vi-CELL BLU are each described as fully integrated into the Ambr system, results returned to Ambr software beside process data; Octet and BioAccord exchange data but samples are carried by hand."
+    verification: agent-read
+    used_in: [A065, A066, A069, A070]
+  - id: S009
+    title: "Ambr 250 High Throughput (product page)"
+    publisher: "Sartorius"
+    url: "https://www.sartorius.com/en/products/fermentation-bioreactors/ambr-multi-parallel-bioreactors/ambr-250-high-throughput"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Ambr 250 HT is available in 12-vessel and 24-vessel configurations; liquid handler serves up to 24 single-use 250 mL vessels. The page gives no working volume."
+    verification: main-reread
+    used_in: [A001, A066]
+  - id: S010
+    title: "Ambr 15 Cell Culture (product page)"
+    publisher: "Sartorius"
+    url: "https://www.sartorius.com/en/products/fermentation-bioreactors/ambr-multi-parallel-bioreactors/ambr-15-cell-culture"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Ambr 15: 24 or 48 parallel cultivations, recommended working volume 10-15 mL, connects to Vi-CELL XR, Cedex HiRes or FLEX2."
+    verification: agent-read
+    used_in: [A057, A065]
+  - id: S011
+    title: "Scale-Down Model Development in ambr systems: An Industrial Perspective (Sandner et al.)"
+    publisher: "Biotechnology Journal 2019;14:1700766 (Wiley-VCH); PDF hosted by Fujifilm"
+    url: "https://fujifilmbiotechnologies.fujifilm.com/assets/Scale-Down-Model-Development-in-ambr-systems-An-industrial-Perspective.pdf"
+    accessed: 2026-10-28
+    type: paper
+    supports: "ambr15 working volume 10-15 mL and ambr250 100-250 mL; sample volume typically 600 uL, a burden for daily sampling of ambr15; analyzing all 48 ambr15 vessels can take up to 3 h; volume in ambr15 can fall because of sampling."
+    verification: main-reread
+    used_in: [A002, A027, A057, A065, A066]
+  # ---- sample stability ----
+  - id: S012
+    title: "Effects of diluents on cell culture viability measured by automated cell counter (Chen et al.)"
+    publisher: "PLoS ONE 12(3): e0173375"
+    url: "https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0173375"
+    accessed: 2026-10-28
+    type: paper
+    supports: "CHO samples from shake flasks incubated neat for up to 55 min before Vi-Cell XR counting: viability-difference slope -0.03 per min (neat), -0.05 (fresh medium), -0.12 (PBS), -0.04 (PBS plus shear protectant). The paper's finding is a PBS-dilution artifact; hold temperature is not stated in the text read."
+    verification: main-reread
+    used_in: [A038, A039, A040]
+  - id: S013
+    title: "Novel Carbon Dioxide-Based Method for Accurate Determination of pH and pCO2 in Mammalian Cell Culture Processes (Klinger et al.)"
+    publisher: "Processes 2020, 8(5), 520 (MDPI)"
+    url: "https://www.mdpi.com/2227-9717/8/5/520"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Offline pH is used to readjust bioreactor probes, treating the offline value as the source of truth; hold time, temperature shift and CO2 degassing add offsets; pH not stable after sampling at higher cell density; Ambr250 liquid-handler samples before inoculation showed mostly positive offsets with mean about 0.05; single-point offsets above 0.1 are not unusual; 2 L working volume in 3 L bench vessels; 250 L SUB samples drawn by syringe. The 0.05 sentence was seen as a search excerpt of the same page."
+    verification: main-reread
+    used_in: [A002, A041, A051, A057, A067, A068]
+  - id: S014
+    title: "Evidence-based guidelines for controlling pH in mammalian live-cell culture systems (Michl et al.)"
+    publisher: "Communications Biology 2019 (PMC6486606)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6486606/"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Bicarbonate medium in 200 uL 96-well plates moved to a CO2-free atmosphere alkalinizes immediately with a time constant of 2-3 h; the reverse reaction has a time constant of 45 min."
+    verification: agent-read
+    used_in: [A037, A042]
+  - id: S015
+    title: "Blood gas testing and related measurements: National recommendations (Croatian Society of Medical Biochemistry and Laboratory Medicine)"
+    publisher: "Biochemia Medica (PMC5082214)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5082214/"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Clinical proxy: blood pH falls 0.02-0.03 per h at 22 C (<0.01 per h at 4 C) with glucose falling and lactate and pCO2 rising; plastic-syringe samples analysed within 30 min, within 5 min if cell counts are high."
+    verification: agent-read
+    used_in: [A037, A043, A045, A046]
+  - id: S016
+    title: "Aseptic Sampling Best Practices: Sample Collection for pH and Gas Analysis (application note SP-1022)"
+    publisher: "Sartorius"
+    url: "https://api.sartorius.com/document-hub/dam/download/5424/Aseptic-Sampling-Best-Practice-Application-Note-en-B-SP-1022-Sartorius.pdf"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Sample pH shifts as cells consume O2 and produce CO2; syringes limit gas exchange better than bags because of a stable surface-to-volume ratio; the longer the delay the less accurate the analysis."
+    verification: agent-read
+    used_in: [A037, A067]
+  # ---- process: USP / DSP ----
+  - id: S017
+    title: "Product Development and Realisation Case Study A-Mab"
+    publisher: "CMC Biotech Working Group (hosted by ISPE)"
+    url: "https://ems.ispe.org/sites/default/files/attachments/public/a-mab-case-study-version.pdf"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Production culture 13-17 d (processes 13-15 d and 16-17 d), initial density 0.5-1.5e6/mL, glucose kept above 1.0 g/L by discrete feeds, harvest viability 40-80%; N-1 seed 2-4 d (200 L) and 3-5 d (1000-3000 L); Protein A input <=5 g/L, load 10-50 g/L over several cycles with pooled eluates, pool about 20 g/L with HCP about 7,200 ppm (3,000-12,000). Pool hold data are 'not shown'. No peak viable cell density is given."
+    verification: main-reread
+    used_in: [A003, A004, A005, A007, A010, A012, A052, A053]
+  - id: S018
+    title: "Validation of Intermediate Hold Times"
+    publisher: "BioProcess International"
+    url: "https://bioprocessintl.com/bioanalytical-methods/validation-of-intermediate-hold-times"
+    accessed: 2026-10-28
+    type: blog
+    supports: "Hold limits are studied per product; T0 is agreed per hold point; a 36 h intermediate hold point is discussed as an example, with the practical problem of out-of-hours aliquoting."
+    verification: agent-read
+    used_in: [A054]
+  - id: S019
+    title: "Improving product quality and productivity of bispecific molecules through the application of continuous perfusion principles"
+    publisher: "Biotechnology Progress 2020, doi 10.1002/btpr.2973 (abstract record via Europe PMC)"
+    url: "https://doi.org/10.1002/btpr.2973"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Six CHO lines cultured in an approximately 12-day fed-batch process and an approximately 40-day high-density perfusion process."
+    verification: agent-read
+    used_in: [A003, A004, A006]
+  - id: S020
+    title: "Recommendations for Comparison of Productivity Between Fed-Batch and Perfusion Processes"
+    publisher: "Biotechnology Journal, doi 10.1002/biot.201700721 (abstract only)"
+    url: "https://doi.org/10.1002/biot.201700721"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Lead only. The abstract applies standard productivity definitions to an 'exemplary model scenario'. Earlier-reported figures (fed-batch 14 d, peak 20e6/mL; perfusion 30 d, 60e6/mL) were not seen and come from a model scenario, not a measured run."
+    verification: snippet
+    used_in: [A008, A009]
+  - id: S021
+    title: "Processes 2020, 8(6), 637 - automated bioreactor sampling and at-line analysis study (title not re-read; publisher page returned 403)"
+    publisher: "Processes (MDPI)"
+    url: "https://www.mdpi.com/2227-9717/8/6/637"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Second-hand: 8 automated samples per day demonstrated versus once daily manually; a Cedex Bio HT coupled to an autosampler needed at least 30 min between samples; automated transfer and filtration gave a 4.5% slope error against direct injection. Not verified."
+    verification: snippet
+    used_in: [A014, A032]
+  - id: S037
+    title: "Bioresources and Bioprocessing 2020, doi 10.1186/s40643-020-00304-y (fed-batch sampling and analytics)"
+    publisher: "Bioresources and Bioprocessing (SpringerOpen)"
+    url: "https://doi.org/10.1186/s40643-020-00304-y"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Second-hand: daily sampling of each fed-batch bioreactor; gases on a blood-gas analyzer, cell density and viability on Vi-CELL XR, metabolites on Cedex Bio HT, titer by Protein A UPLC on supernatant spun at 500-1000 g for 5-10 min. The page could not be read (fetch returned a stub)."
+    verification: snippet
+    used_in: [A014, A071]
+  # ---- data quality / people ----
+  - id: S022
+    title: "An international study of the performance of sample collection from patients (Dzik et al.)"
+    publisher: "Vox Sanguinis 85(1):40-47 (2003)"
+    url: "https://experts.mcmaster.ca/scholarly-works/1748245"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Clinical proxy: 62 hospitals, over 690,000 samples; median mislabelling 6.1 per 1000 (1 in 165). Interquartile range 1.2-17 per 1000 and wrong-blood-in-tube median 0.5 per 1000 were seen only in a search summary of this record. Abstract record, not full text."
+    verification: main-reread
+    used_in: [A047, A072, A073]
+  - id: S023
+    title: "Labeling tubes before collection threatens patient safety (Ernst)"
+    publisher: "Annals of Blood 2018 (doi 10.21037/aob.2018.02.06)"
+    url: "https://aob.amegroups.org/article/view/4318/html"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Clinical proxy: a study of 4.29 million specimens over 24 months found mislabeled 1.0%, unlabeled 4.6% and specimen-requisition mismatches 6.3%."
+    verification: agent-read
+    used_in: [A047]
+  - id: S024
+    title: "Effectiveness of Laboratory Practices to Reducing Patient Misidentification Due to Specimen Labeling Errors at the Time of Specimen Collection in Healthcare Settings: LMBP Systematic Review"
+    publisher: "LMBP systematic review (PubMed Central PMC5701285; journal not recorded)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5701285"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Clinical proxy: standardized specimen labeling protocols cut labeling errors by a median relative 72.45% (interquartile interval -83.25 to -46.50); evidence on training and education of collection staff judged insufficient for a conclusion."
+    verification: agent-read
+    used_in: [A061, A062, A073]
+  - id: S025
+    title: "Automating the Cell Counting Process"
+    publisher: "Genetic Engineering & Biotechnology News, 2014-09-01 (Vol. 34, No. 15)"
+    url: "https://genengnews.com/insights/automating-the-cell-counting-process"
+    accessed: 2026-10-28
+    type: blog
+    supports: "Validation tutorial by a biopharma changing from hemacytometer to Vi-CELL XR, using 1e6/mL control beads and two operators: CV between counts and operators under 5% for both; operator-to-operator variability 2.81 versus 0.46 (six times lower for the automated method); manual counts only several hundred cells. Vendor-affiliated, bead standard, not cells in culture."
+    verification: agent-read
+    used_in: [A058, A059, A060, A072, A073]
+  - id: S026
+    title: "mAb Titer Determination in Cell Culture Supernatant with an Agilent Bio-Monolith Protein A column (application note 5994-3969EN)"
+    publisher: "Agilent"
+    url: "https://gcms.cz/labrulez-bucket-strapi-h3hsga3/an_antibody_protein_a_biomonolith_mab_5994_3969en_agilent_5d52796ba9/an-antibody-protein-a-biomonolith-mab-5994-3969en-agilent.pdf"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Protein A titer of CHO supernatant with a 1 min run time, about 60 samples/h, injection 5-50 uL at 1.5 mL/min (best-case vendor method)."
+    verification: agent-read
+    used_in: [A028, A029, A071]
+  # ---- regulation and standards ----
+  - id: S027
+    title: "EudraLex Volume 4 - Good Manufacturing Practice guidelines (Annex list)"
+    publisher: "European Commission, DG SANTE"
+    url: "https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en"
+    accessed: 2026-10-28
+    type: regulation
+    supports: "Annex 11 Computerised Systems is listed as 'revision January 2011'; the Annex list has no Annex 22; latest-updates block carries 28 October 2026."
+    verification: main-reread
+    used_in: [README]
+  - id: S028
+    title: "Joint stakeholders consultation on the revision of Chapter 4, Annex 11 and the new Annex 22 of the PIC/S and EU GMP Guides"
+    publisher: "PIC/S (7 July 2025)"
+    url: "https://picscheme.org/en/news/joint-stakeholders-consultation-on-the-revision-of-chapter-4"
+    accessed: 2026-10-28
+    type: regulation
+    supports: "Drafts of revised Annex 11 and new Annex 22 (AI) were put to consultation from 7 July 2025 to 7 October 2025; this is a draft, not a final text."
+    verification: agent-read
+    used_in: [README]
+  - id: S029
+    title: "MHRA GxP Data Integrity Guidance and Definitions, Revision 1, March 2018"
+    publisher: "UK MHRA"
+    url: "https://assets.publishing.service.gov.uk/media/5aa2b9ede5274a3e391e37f3/MHRA_GxP_data_integrity_guide_March_edited_Final.pdf"
+    accessed: 2026-10-28
+    type: regulation
+    supports: "Section 5.1: access to appropriately controlled/synchronised clocks for recording timed events and specifying the time zone across sites; section 6.13: audit-trail changes dated and time stamped (time and time zone where applicable)."
+    verification: main-reread
+    used_in: [A049, README]
+  - id: S030
+    title: "WHO TRS 996 Annex 5: Guidance on good data and record management practices"
+    publisher: "World Health Organization"
+    url: "https://www.gmp-compliance.org/files/guidemgr/WHO_TRS_996_annex05.pdf"
+    accessed: 2026-10-28
+    type: regulation
+    supports: "Section 4.12 example: restricting the ability to change any clock used for recording timed events, including system clocks in electronic systems and process instrumentation."
+    verification: main-reread
+    used_in: [A049, README]
+  - id: S052
+    title: "WHO TRS 1033 Annex 4: Guideline on data integrity"
+    publisher: "World Health Organization"
+    url: "https://www.who.int/docs/default-source/medicines/norms-and-standards/guidelines/inspections/trs1033-annex4-guideline-on-data-integrity.pdf"
+    accessed: 2026-10-28
+    type: regulation
+    supports: "Second-hand: 4.15 asks for accurately configuring and verifying time zone and time synchronisation. Not opened."
+    verification: snippet
+    used_in: [A049]
+  - id: S031
+    title: "Breakthrough in Smarter Labs: Spectaris LADS Showcases Integration of OPC UA with Allotrope Standards"
+    publisher: "OPC Foundation (press release, 2025-05-13)"
+    url: "https://opcfoundation.org/news/press-releases/breakthrough-in-smarter-labs-spectaris-lads-showcases-integration-of-opc-ua-with-allotrope-standards/"
+    accessed: 2026-10-28
+    type: docs
+    supports: "OPC UA LADS (Spectaris joint working group) was shown with Allotrope models mapped into OPC UA in a May 2025 hackathon showcase; Allotrope Simple Model represented analytical results. A demonstration, not an installed-base statement."
+    verification: agent-read
+    used_in: [README]
+  - id: S032
+    title: "ANSI/ISA-95.00.03-2013 Enterprise-Control System Integration, Part 3 (preview pages)"
+    publisher: "ANSI / ISA"
+    url: "https://webstore.ansi.org/preview-pages/ISA/preview_ANSI%2BISA%2B95.00.03-2013.pdf"
+    accessed: 2026-10-28
+    type: standard
+    supports: "Second-hand from the table-of-contents preview: Part 3 has a clause on quality operations management including quality test operations management and an activity model. The preview returned 403 in this task."
+    verification: snippet
+    used_in: [README]
+  - id: S051
+    title: "B2MML-BatchML schema repository"
+    publisher: "MESA International (GitHub)"
+    url: "https://github.com/MESAInternational/B2MML-BatchML/tree/master/Schema"
+    accessed: 2026-10-28
+    type: docs
+    supports: "Second-hand: the schema folder lists OperationsDefinition, Schedule, Performance, Capability and OperationsTest schemas and no quality-named schema; the README does not map files to ISA-95 parts."
+    verification: snippet
+    used_in: [README]
+  # ---- integration practice ----
+  - id: S038
+    title: "Nova Biomedical BioProfile FLEX2 Configuration Guide"
+    publisher: "Benchling Help Center"
+    url: "https://help.benchling.com/hc/en-us/articles/21342279921165-Nova-Biomedical-BioProfile-Flex2-Configuration-Guide"
+    accessed: 2026-10-28
+    type: docs
+    supports: "Connector workflow starts from a SampleResults .csv export produced by the user (file-based)."
+    verification: snippet
+    used_in: [A036]
+  - id: S039
+    title: "Out-of-the-box Connectors"
+    publisher: "Benchling Help Center"
+    url: "https://help.benchling.com/hc/en-us/articles/22558210727565-Out-of-the-box-Connectors"
+    accessed: 2026-10-28
+    type: docs
+    supports: "Second-hand: connector list shows Vi-CELL BLU, FLEX2 and Cedex HiRes as file-based."
+    verification: snippet
+    used_in: [A036]
+  - id: S040
+    title: "Digital lab integration map"
+    publisher: "A4BEE (vendor)"
+    url: "https://portal.a4bee.com/resources/digital-lab-integration"
+    accessed: 2026-10-28
+    type: blog
+    supports: "Vendor integration map, not a survey: file export first, SiLA 2 adoption 'still slow', LADS 'still early on installed fleets'."
+    verification: snippet
+    used_in: [A036, README]
+  - id: S041
+    title: "Lab instrument integration: SiLA 2, Allotrope and LIMS"
+    publisher: "IntuitionLabs (secondary article)"
+    url: "https://intuitionlabs.ai/articles/lab-instrument-integration-sila-2-allotrope-lims"
+    accessed: 2026-10-28
+    type: blog
+    supports: "Secondary: public SiLA 2 documentation is version 1.1 (March 2022); a repository tag 1.2 exists."
+    verification: snippet
+    used_in: [README]
+  - id: S042
+    title: "LIMS-MES integration patterns: two versions of truth"
+    publisher: "Sakara Digital (vendor blog)"
+    url: "https://sakaradigital.com/blog/lims-mes-integration-patterns-two-versions-of-truth/"
+    accessed: 2026-10-28
+    type: blog
+    supports: "Vendor view: in-process checks performed by operators on the floor belong to MES; LIMS owns analytical results and specification limits."
+    verification: snippet
+    used_in: [A056]
+  - id: S043
+    title: "Laboratory testing and LIMS release in regulated manufacturing"
+    publisher: "SG Systems Global (vendor guide)"
+    url: "https://sgsystemsglobal.com/guides/laboratory-testing-lims-release-in-regulated-manufacturing-hub/"
+    accessed: 2026-10-28
+    type: blog
+    supports: "Opposite vendor view: LIMS is usually the primary system for release testing and in-process controls. Together with S042 this shows the split is site-dependent."
+    verification: snippet
+    used_in: [A056]
+  - id: S044
+    title: "Unlocking efficiency: a deep dive into MES integration for enhanced biopharmaceutical manufacturing"
+    publisher: "BioPhorum"
+    url: "https://www.biophorum.com/download/unlocking-efficiency-a-deep-dive-into-mes-integration-for-enhanced-biopharmaceutical-manufacturing/"
+    accessed: 2026-10-28
+    type: paper
+    supports: "Lead for MES-to-LIMS integration practice; only the abstract was seen."
+    verification: snippet
+    used_in: [A056]
+  - id: S045
+    title: "Application Note 363: pH sensor recalibration based on exhaust CO2 concentration"
+    publisher: "Eppendorf (with Roche authors)"
+    url: "https://www.eppendorf.com/product-media/doc/en/357425/Fermentors-Bioreactors_Application-Note_363_GA-gas-analyzer_pH-Sensor-Recalibration-Based-Exhaust-CO2-Concentration-Bioprocess-Transfer-Scaling.pdf"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Second-hand: engineers routinely recalibrate the sensor from the offline reading; offsets of up to 0.3 pH between sites."
+    verification: snippet
+    used_in: [A051]
+  - id: S046
+    title: "Online monitoring of glucose, pH and DO in shake flask culture (application note 607)"
+    publisher: "PreSens"
+    url: "https://www.presens.de/knowledge/publications/application-note/online-monitoring-of-glucose-ph-and-do-in-shake-flask-culture-607"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Second-hand: HPLC and an enzymatic analyzer differed by 12.5% on the same medium (4.05 versus 3.59 g/L)."
+    verification: snippet
+    used_in: [A032]
+  - id: S047
+    title: "Tracing Product Genealogy through Event Frames (UC 2017 EMEA)"
+    publisher: "OSIsoft"
+    url: "https://cdn.osisoft.com/osi/presentations/2017-uc-emea-london/UC17EU-D1IT03-OSIsoft-Murdock-Tracing-Product-Genealogy-through-Event-Frames.pdf"
+    accessed: 2026-10-28
+    type: docs
+    supports: "Second-hand: a 2017 talk says native product-genealogy tracing was not possible in PI and used custom code to create linking event frames."
+    verification: snippet
+    used_in: [README]
+  - id: S048
+    title: "How batch interfaces work (PI Interface for AVEVA Batch Management)"
+    publisher: "AVEVA"
+    url: "https://docs.aveva.com/bundle/pi-interface-aveva-batch-management/page/how-batch-interfaces-work/how-batch-interfaces-work.html"
+    accessed: 2026-10-28
+    type: docs
+    supports: "Second-hand: batches are stored as AF event frames with equipment as AF assets."
+    verification: snippet
+    used_in: [README]
+  - id: S049
+    title: "IOF Biopharma ontology: SeedTrain"
+    publisher: "Industrial Ontologies Foundry"
+    url: "https://spec.industrialontologies.org/portal/release/202603/biopharma/SeedTrain.html"
+    accessed: 2026-10-28
+    type: standard
+    supports: "Second-hand: defines 'seed train' in the biopharma ontology release 2026-03."
+    verification: snippet
+    used_in: [README]
+  - id: S050
+    title: "OpenLineage object model"
+    publisher: "OpenLineage project"
+    url: "https://openlineage.io/docs/spec/object-model/"
+    accessed: 2026-10-28
+    type: docs
+    supports: "Second-hand: job, run and dataset vocabulary for lineage events."
+    verification: snippet
+    used_in: [README]
+  # ---- profile sources: bioreactor classes ----
+  - id: S036
+    title: "Biostat STR Generation 3 Single-Use Bioreactor (product page)"
+    publisher: "Sartorius"
+    url: "https://www.sartorius.com/en/products/fermentation-bioreactors/single-use-bioreactors/biostat-str"
+    accessed: 2026-10-28
+    type: vendor-doc
+    supports: "Single-use stirred-tank family with conserved geometry from 250 mL (Ambr 250) to 2,000 L; Generation 3 working volume range 12.5 L to 2,000 L."
+    verification: agent-read
+    used_in: [A057, A068]
+  # ---- prior art ----
+  - id: S033
+    title: "CAOS_SIMLAB (README)"
+    publisher: "GitHub, fsantibanezleal"
+    url: "https://github.com/fsantibanezleal/CAOS_SIMLAB"
+    accessed: 2026-10-28
+    type: docs
+    supports: "Generic discrete-event scenarios (queue, clinic and others) running in the browser through Pyodide with a seeded trace-replay mode; no bioprocess data model."
+    verification: agent-read
+    used_in: [README]
+  - id: S034
+    title: "STARS stlite example for SimPy models (README)"
+    publisher: "GitHub, pythonhealthdatascience"
+    url: "https://github.com/pythonhealthdatascience/stars-stlite-example"
+    accessed: 2026-10-28
+    type: docs
+    supports: "Healthcare SimPy model running in the browser via stlite; README notes stlite does not currently work in Firefox."
+    verification: agent-read
+    used_in: [README]
+  - id: S035
+    title: "IndPenSim: industrial-scale penicillin fermentation simulation and dataset"
+    publisher: "Mendeley Data"
+    url: "https://data.mendeley.com/datasets/pdnjz7zz5x"
+    accessed: 2026-10-28
+    type: dataset
+    supports: "Second-hand: 100 batches of a 100,000 L penicillin fed-batch with simulated Raman, CC BY 4.0; no at-line analyzer or sample-context layer; not CHO."
+    verification: snippet
+    used_in: [README]
