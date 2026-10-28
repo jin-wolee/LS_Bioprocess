@@ -1,0 +1,21 @@
+# private material — never published (origin notes, raw AI reports, review transcripts, plan copies)
+docs/private/
+.guardrails.local.txt
+
+# local state written by hooks
+.claude/settings.local.json
+.claude/.dirty
+.claude/.bootstrap-done
+
+# toolchains / build output
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+test-results/
+playwright-report/
+qa_out/
+
+# OS
+.DS_Store

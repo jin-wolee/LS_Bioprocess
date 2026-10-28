@@ -1,0 +1,5 @@
+# Author-owned implementation track (Claude must not write these). Patterns are relative to the repo root.
+# Filled in S1 when the tasks start:
+# sql/schema.sql
+# sql/queries/*.sql
+# reference/sim_core.py

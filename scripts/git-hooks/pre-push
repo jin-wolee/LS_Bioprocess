@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# git pre-push: pushing is the author's act. Refuse unless ALLOW_PUSH=1, then scan the whole history.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+if [ "${ALLOW_PUSH:-}" != "1" ]; then
+  echo "Pushing is done by the author: ALLOW_PUSH=1 git push ..." >&2
+  exit 1
+fi
+if ! command -v uv >/dev/null 2>&1; then
+  echo "pre-push: 'uv' is not on PATH, so the history check cannot run. Refusing to push." >&2
+  exit 1
+fi
+if ! uv run --frozen --quiet python scripts/check_docs.py --history; then
+  echo "pre-push: history check failed. Refusing to push." >&2
+  exit 1
+fi
