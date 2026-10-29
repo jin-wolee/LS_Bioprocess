@@ -95,3 +95,14 @@ Newest entry last. Each entry: what was done, what is open for the author, what 
 - ADR-0013 leaves open whether break-out events need a ninth flag in ADR-0005; decide in S3.
 
 **Next**: new session inside the repo → S1a Step 0.
+
+## 2026-10-29 — S1a Step 0: live hooks (orchestrator)
+
+**Done**
+- SessionStart brief printed at session start (last progress entry; no `Proposed` ADR).
+- Baseline before any change: `check_all --manual: PASS`; `uv run pytest -q` → `186 passed`; `check_docs --all: 78 files, 0 failure(s), 0 warning(s)`.
+- `.claude/user_owned.txt` lists the five author paths. First Edit of the session → `.claude/.dirty` created by the PostToolUse hook.
+- Live guard: `Write` on `reference/sim_core.py` → `BLOCKED by guard_tools: reference/sim_core.py is on the author's own implementation track (.claude/user_owned.txt)`. `git status --short -uall -- sql reference` empty.
+- PDD: the Step 0 probe in `prompts/10_S1a_contracts_analyzer.md` now uses `Write`. The `Edit` probe as first written fails with `File does not exist` before any PreToolUse hook runs, so it could never show a denial. The author chose the `Write` probe.
+
+**Next**: S1a Steps 1-8 by a Sonnet executor.
