@@ -40,7 +40,7 @@ Three rules keep the ledger honest:
 
 - The truth world uses a simple model: nutrient-limited growth, first-order death, nutrient use proportional to viable cells, product proportional to integrated viable cells (A011). The constants come from a few CHO studies and are provisional: maximum growth rate 0.027 per h (range 0.022-0.033) (A080, S053, S054), death rate 0.0042 per h (A081, S053), glucose half-saturation 0.93 g/L (A109, S056).
 - Per-cell rates in a 2 L bioreactor with a mAb-producing research line: glucose 2.5 pmol/cell/d in the exponential phase and 2.1 in the stationary phase (A082, S054), glutamine 1.2 and 0.56 (A083, S054), lactate production 2.3 in the exponential phase (A084, S054). Specific productivity is about 35 pg/cell/d in two industrial fed-batch cultures (A086, S053, S017). All of these are provisional.
-- Whether lactate switches to net consumption depends on the cell line; the default is off and the switch is a scenario knob graded A (A085, provisional). The cited cultures reached about 10-22e6 cells/mL at most, so applying their per-cell rates at higher density is an assumption (A011, provisional).
+- Whether lactate switches to net consumption depends on the cell line; the default is on, with net consumption of -0.15 pmol/cell/d from culture day 7 (the values of one engineered clone applied to the platform default), and the switch is a scenario knob graded A (A085, provisional). The cited cultures reached about 10-22e6 cells/mL at most, so applying their per-cell rates at higher density is an assumption (A011, provisional).
 
 ### At-line analyzers and how results leave them
 
@@ -115,7 +115,7 @@ These parameters were missing when the engine and metrics briefs were written. T
 |---|---|---|---|
 | Measurement noise: analyzer chemistry, pH, cell counter | CV 5.0% within-run and 7.0% day-to-day; pH SD 0.007; counter +/-5% | A077, A078, A079, S003, S005 | provisional |
 | Growth, death, uptake, productivity | see Culture kinetics | A080, A081, A082, A083, A084, A086, A109 | provisional |
-| Lactate switch to consumption | off | A085 | assumed, provisional |
+| Lactate switch to consumption | on: net -0.15 pmol/cell/d from culture day 7 | A085 | assumed, provisional |
 | QC failure and rerun probability | 0.02 per QC run, 0.02 per measurement | A087, A088 | assumed |
 | Over-range limits and dilution factors | glucose 15 g/L, lactate 6 g/L; factors 1, 2, 4 | A089, A090, S003 | provisional |
 | Recalibration interval | 2 h | A091, S003 | provisional |

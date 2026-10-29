@@ -1005,7 +1005,7 @@ sources:
     type: paper
     supports: "Read through a page-extraction summary, not word for word. Four recombinant CHO lines in 2 L bench bioreactors, 14 mL microscale vessels and shake flasks, 14-day fed-batch. Temperature 37 C on days 0-3, shifted on day 3 to 35 C (lines 1 and 2) or 33 C (lines 3 and 4). One nutrient feed on day 3 that raised the culture volume by 20 %. Glucose feed when glucose fell below 4 g/L, to raise it by 12 g/L from a 500 g/L stock (2.4 % of volume, derived). Microscale vessel settings from the methods text: 37 C, dissolved oxygen 30 % of air saturation, base added below pH 6.97 towards a target of 7.0, CO2 sparged above pH 7.05. Samples from the 14 mL vessels: 200-350 uL for the cell count and 900 uL for pH, pCO2 and metabolites; sampling frequency not stated. Initial glucose and glutamine are not stated."
     verification: agent-read
-    used_in: [A192, A193, A195, A198, A207]
+    used_in: [A085, A192, A193, A195, A198, A207]
   - id: S111
     title: "Combination of temperature shift and hydrolysate addition regulates anti-IgE monoclonal antibody charge heterogeneity in Chinese hamster ovary cell fed-batch culture (Zheng et al.)"
     publisher: "Cytotechnology 2018 (PMC6081921)"
@@ -1041,7 +1041,7 @@ sources:
     type: paper
     supports: "Read through a page-extraction summary, not word for word. All basal media supplemented with 4 mM L-glutamine; 250 mL shake flasks with 25 mL, 2e5 cells/mL, 37 C, no temperature shift; daily bolus feed from day 3, volume from a glucose-based equation; glucose kept at 10 mM as a safety threshold until the next sampling point; daily samples from day 2, 1 mL for the cell count; harvest on day 14 or at viability below 60 %. Initial glucose not stated in the text."
     verification: agent-read
-    used_in: [A013, A050, A191]
+    used_in: [A013, A050, A085, A191]
   - id: S115
     title: "Reduced Culture Temperature Differentially Affects Expression and Biophysical Properties of Monoclonal Antibody Variants (Mason et al.)"
     publisher: "Antibodies 2014 (author manuscript PMC7583600)"
@@ -1087,3 +1087,33 @@ sources:
     supports: "ambr15 microscale CHO fed-batch cultures of 14 days; glucose was added based on the daily glucose measurement, to 6 g/L when a trigger of 4 g/L was reached. Viability on day 14 of the standard fed-batch: 90.3 +/- 3.8 %. Read once by the research agent and not re-checked: day-14 viability 82.2 +/- 3.8 % for the high seeding density fed-batch and 86.3 +/- 1.5 % and 80.5 +/- 5.7 % at the end of the fed-batches with standard and medium seeding density (results on increasing the specific productivity); peak viable density of the standard fed-batch 29.6 +/- 3.8e6 cells/mL on day 8 or 9 and 18.9 +/- 2.4e6 cells/mL on day 14. Main text only, figures not seen."
     verification: agent-read
     used_in: [A013]
+
+  - id: S120
+    title: "The effects of microcarrier culture on recombinant CHO cells under biphasic hypothermic culture conditions (Nam et al.)"
+    publisher: "Cytotechnology 2009;59(2):81-91 (doi 10.1007/s10616-009-9196-x; PMC2698439)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC2698439"
+    accessed: 2026-10-29
+    type: paper
+    supports: "CHO-K1-derived SEAP-producing line in protein-free medium, fed-batch in a 2 L Biostat B bioreactor with 1 L working volume, suspension and microcarrier cultures; glucose and glutamine added intermittently to hold glucose at 2.0-2.5 g/L and glutamine at 0.2-0.25 g/L. Temperature 37 C until the end of the exponential growth phase, then 33 C during the stationary phase. After the temperature reduction the lactate and ammonia production rates were significantly lower than before it (Table 2, suspension row: lactate 0.51 to 0.17 and glucose 0.28 to 0.12 umol/1e6 cells/h), but the shift coincided with entry into the stationary phase and single-temperature cultures showed a similar decrease when they entered the stationary phase (data not shown), so the effect of the temperature cannot be separated from that of the phase. Main text read; the microcarrier rows of Table 2 were not extractable; figures not seen."
+    verification: agent-read
+    used_in: [A196]
+
+  - id: S121
+    title: "Elevated pCO2 affects the lactate metabolic shift in CHO cell culture processes (Brunner et al.)"
+    publisher: "Engineering in Life Sciences 2018;18(3):204-214 (online 2017-12-19; doi 10.1002/elsc.201700131; PMC6999464)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6999464"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Industrial mAb-producing CHO line in 3 L glass bioreactors. Fed-batch at 36.5 C and pH 7.0 with the temperature shifted to 33.0 C after 60 h; glucose added as a bolus to 2 g/L whenever it dropped below 2 g/L. Both control cultures started to consume lactate around day 5 of the process (Fig. 2D); no depletion of glutamine or glucose occurred; the maximum viable cell density came between day 7.5 and day 8.5. Cultures at high pCO2 produced lactate throughout the entire process. In batch cultures at elevated pCO2 the lactate shift did not follow until both glutamine and glucose were depleted, whereas at lower pCO2 it followed right after glutamine depletion. The rates are in Fig. 3 (not seen); the lactate concentration at the start of consumption is not stated in the main text. Main text read, figures not seen."
+    verification: agent-read
+    used_in: [A085, A123]
+
+  - id: S122
+    title: "Improvement of production rate on recombinant CHO cells in two-stage culture (Matsuoka et al.)"
+    publisher: "BMC Proceedings 2013;7(Suppl 6):P50 (doi 10.1186/1753-6561-7-S6-P50; PMC3981518)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3981518"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Short conference paper. Recombinant CHO line (CRL-10052), batch cultures of 400 mL inoculated at 3e5 cells/mL, each at a constant temperature: specific growth rate 0.0136 per h at 37 C, 0.0107 at 35 C, 0.0072 at 33 C and above 0.0002 at 30 C (33 C to 37 C ratio 0.53); stationary-phase density 1.15, 1.09, 0.788 and 0.223e6 cells/mL. One cell line, and a ratio between constant temperatures, not the effect of a shift. A two-stage culture (37 C, then 33 C after 120 h) is also described; its growth rate after the shift is not in the text. Main text read."
+    verification: agent-read
+    used_in: [A196]
