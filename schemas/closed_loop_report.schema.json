@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "closed_loop_report.schema.json",
+  "title": "ClosedLoopReport",
+  "description": "The report of experiment 2, closed loop (docs/design/simulation_spec.md sections 6.2 and 8): per arm the probe offset and the control excursion over the run, and for every arm but the oracle the paired difference against the oracle with a bootstrap interval across seeds. Reported, never gated: no test requires a sign, a size or an ordering of the arms. The wording of the result is the template of spec section 6.2, a model-internal effect under named assumptions, never a prediction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "engine_version", "experiment_id", "scenario_id", "seeds", "n_seeds", "min_seeds", "meets_min_seeds", "n_reactor_pairs",
+    "interval", "bootstrap", "assumptions", "result_text", "notes", "arms"
+  ],
+  "$defs": {
+    "metric_name": { "type": "string", "enum": ["offset_mean_abs", "excursion_mean_abs", "excursion_max_abs"] },
+    "paired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mean", "lo", "hi"],
+      "properties": {
+        "mean": { "type": "number", "description": "Mean over seeds of the per-seed mean over reactors of (arm minus oracle)." },
+        "lo": { "type": "number", "description": "Lower end of the percentile bootstrap interval across seeds." },
+        "hi": { "type": "number", "description": "Upper end of the percentile bootstrap interval across seeds." }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "unit", "median", "p05", "p95", "per_seed", "paired"],
+      "properties": {
+        "metric": { "$ref": "#/$defs/metric_name" },
+        "unit": { "type": "string", "const": "pH" },
+        "median": { "type": "number", "description": "Median across seeds of the per-seed mean over reactors." },
+        "p05": { "type": "number", "description": "5th percentile across seeds, nearest rank." },
+        "p95": { "type": "number", "description": "95th percentile across seeds, nearest rank." },
+        "per_seed": { "type": "array", "items": { "type": "number" }, "description": "The per-seed mean over reactors, in the order of `seeds`: the output per arm and seed." },
+        "paired": { "anyOf": [{ "$ref": "#/$defs/paired" }, { "type": "null" }], "description": "Null for the oracle, the reference of the pairing." }
+      }
+    },
+    "arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "counts", "metrics"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["oracle", "architecture", "sensitivity"], "description": "A sensitivity arm is reported beside the architectures and is not a result of one." },
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["slots", "readjusted", "skipped_known_bias", "no_new_result", "values", "extrapolated"],
+          "description": "Readjustment slots summed over reactors and seeds: every slot is in exactly one of the next three counts. values: the offline pH values the arm held (0 for the oracle); extrapolated: those whose hold lay beyond the range their stability effect covers (A046), which carries a warning (spec section 8, rule 7).",
+          "properties": {
+            "slots": { "type": "integer", "minimum": 0 },
+            "readjusted": { "type": "integer", "minimum": 0 },
+            "skipped_known_bias": { "type": "integer", "minimum": 0 },
+            "no_new_result": { "type": "integer", "minimum": 0 },
+            "values": { "type": "integer", "minimum": 0 },
+            "extrapolated": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "metrics": { "type": "array", "items": { "$ref": "#/$defs/metric" } }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "engine_version": { "type": "string", "minLength": 1 },
+    "experiment_id": { "type": "string", "minLength": 1 },
+    "scenario_id": { "type": "string", "minLength": 1 },
+    "seeds": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+    "n_seeds": { "type": "integer", "minimum": 1 },
+    "min_seeds": { "type": "integer", "minimum": 1, "description": "The seed minimum of an experiment (A103)." },
+    "meets_min_seeds": { "type": "boolean" },
+    "n_reactor_pairs": { "type": "integer", "minimum": 1, "description": "The denominator of the pairing: reactors over the seeds, the same for every arm." },
+    "interval": { "type": "string", "description": "What the median, the spread and the interval are, in words." },
+    "bootstrap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "resamples", "level", "unit"],
+      "properties": {
+        "seed": { "type": "integer", "minimum": 0, "description": "The run_seed slot of the keyed stream of the bootstrap." },
+        "resamples": { "type": "integer", "minimum": 1 },
+        "level": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+        "unit": { "type": "string", "const": "seeds", "description": "What is resampled." }
+      }
+    },
+    "assumptions": { "type": "array", "items": { "type": "string", "pattern": "^A\\d{3}$" } },
+    "result_text": { "type": "string", "pattern": "^model-internal effect under assumptions A\\d{3}.*, not a prediction$" },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "arms": { "type": "array", "items": { "$ref": "#/$defs/arm" } }
+  }
+}

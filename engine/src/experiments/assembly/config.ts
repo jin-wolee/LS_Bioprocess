@@ -22,6 +22,18 @@ const fail = (why: string): never => {
 
 const text = (v: unknown, what: string): string => (typeof v === "string" && v !== "" ? v : fail(`${what} must be a non-empty string`));
 
+/** The rules of every seed list (a neutral integer, no repeat, none date-shaped, at least the A103 minimum); a copy of the list. Shared by the configs of experiments 1 and 2. */
+export const checkSeeds = (raw: unknown, minSeeds: number): number[] => {
+  if (!Array.isArray(raw)) return fail("seeds must be a list");
+  for (const s of raw) {
+    if (!Number.isInteger(s) || (s as number) < 0) fail(`seed ${String(s)} must be a non-negative integer`);
+    if (DATE_SHAPED.test(String(s))) fail(`seed ${String(s)} is date-shaped (seeds are neutral values)`);
+  }
+  if (new Set(raw).size !== raw.length) fail("a seed is repeated");
+  if (raw.length < minSeeds) fail(`at least ${minSeeds} seeds are needed (A103), the list has ${raw.length}`);
+  return [...(raw as number[])];
+};
+
 export const parseExperimentConfig = (raw: unknown, minSeeds: number): ExperimentConfig => {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return fail("the document must be an object");
   const doc = raw as Record<string, unknown>;
@@ -29,19 +41,12 @@ export const parseExperimentConfig = (raw: unknown, minSeeds: number): Experimen
   if (doc.schema_version !== "1") fail('schema_version must be "1"');
   const presets = doc.presets;
   if (!Array.isArray(presets) || presets.length === 0) return fail("presets must be a non-empty list");
-  const seeds = doc.seeds;
-  if (!Array.isArray(seeds)) return fail("seeds must be a list");
-  for (const s of seeds) {
-    if (!Number.isInteger(s) || (s as number) < 0) fail(`seed ${String(s)} must be a non-negative integer`);
-    if (DATE_SHAPED.test(String(s))) fail(`seed ${String(s)} is date-shaped (seeds are neutral values)`);
-  }
-  if (new Set(seeds).size !== seeds.length) fail("a seed is repeated");
-  if (seeds.length < minSeeds) fail(`at least ${minSeeds} seeds are needed (A103), the list has ${seeds.length}`);
+  const seeds = checkSeeds(doc.seeds, minSeeds);
   return {
     experiment_id: text(doc.experiment_id, "experiment_id"),
     scenario: text(doc.scenario, "scenario"),
     presets: presets.map((p) => text(p, "a preset")),
     ablations_of: text(doc.ablations_of, "ablations_of"),
-    seeds: [...(seeds as number[])],
+    seeds,
   };
 };

@@ -3,8 +3,8 @@ import type { Event } from "./generated/event.schema";
 import { readAll } from "./profiles.ts";
 import type { Params } from "./profiles.ts";
 import type { Rng } from "./rng.ts";
-import { buildSensors } from "./sensors.ts";
-import type { SensorConfig, SensorSeries } from "./sensors.ts";
+import { buildSensors, phLoopConfig } from "./sensors.ts";
+import type { PhLoopConfig, SensorConfig, SensorSeries } from "./sensors.ts";
 
 // L1 process model (spec 2.1, A011): nutrient-limited growth (Monod on glucose) under a logistic ceiling, death between an early and a late rate by
 // the limitation of growth, nutrient use proportional to viable cells and capped by what is present, lactate from the growth rate in effect and a net consumption from the switch day (A085), product from integrated
@@ -69,6 +69,8 @@ export interface ProcessConfig {
   ph: number;
   sensors: SensorConfig;
   scripted: ScriptedEvent[];
+  /** The feedback settings of experiment 2 (spec 6.2); absent in every scenario that stays open loop. Nothing in this file reads it. */
+  phLoop?: PhLoopConfig;
 }
 
 export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedEvent[]): ProcessConfig => {
@@ -97,6 +99,7 @@ export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedE
   if (!(v.lacDay >= 0)) throw new Error("the culture day of the lactate switch must not be negative (A085)");
   // every instant and duration derived from a parameter becomes whole seconds here, once (contract: Time)
   const whole = wholeSeconds;
+  const phLoop = phLoopConfig(s, v.cadence);
   return {
     reactors: v.reactors, baySize: v.baySize, horizon_s: whole(v.horizonDays * DAY), step_s: v.step,
     cohortSize: v.cohortSize, cohortInterval_s: whole(v.cohortIntervalD * DAY), inocStart_s: whole(v.inocStartMin * 60), inocStep_s: whole(v.inocStepMin * 60),
@@ -106,6 +109,7 @@ export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedE
     shiftOffset_s: whole(v.shiftDay * DAY), shiftMu: v.shiftMu, shiftKd: v.shiftKd, shiftProd: v.shiftProd, volume_l: volume, ph: v.ph,
     sensors: { step_s: v.step, cadence_s: v.cadence, phSp: v.ph, phSd: v.phSd, doSp: v.doSp, doSd: v.doSd, tempSp: v.tempSp, tempSd: v.tempSd, tempShiftSp: v.shiftSp, tempLag_s: whole(v.lagMin * 60) },
     scripted,
+    ...(phLoop && { phLoop }),
   };
 };
 

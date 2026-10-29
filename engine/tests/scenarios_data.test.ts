@@ -12,12 +12,12 @@ import { makeAjv, ledgerIds, refsOf, rejected } from "./support/schemas.ts";
 
 const KINDS = ["bioreactor", "analyzer", "staff"] as const;
 const profileFiles = KINDS.flatMap((k) => listFiles("scenarios", "profiles", k).map((f) => [k, f.replace(/\.json$/, "")] as const));
-const scenarioFiles = ["default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down"]; // sc03 joined in S2c1
+const scenarioFiles = ["default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down", "sc08_ph_restandardisation"]; // sc03 joined in S2c1, sc08 in S2c3
 
 describe("Data: scenarios and profiles", () => {
   const ajv = makeAjv();
 
-  it("lists the eight profiles of the spec (4.1 to 4.3) and the scenarios of S1b and S2c1 (default, SC2, SC3, SC5)", () => {
+  it("lists the eight profiles of the spec (4.1 to 4.3) and the scenarios of S1b, S2c1 and S2c3 (default, SC2, SC3, SC5, SC8)", () => {
     expect(profileFiles.map(([, id]) => id).sort()).toEqual(["allinone_atline", "bench_manual", "experienced", "hplc", "micro_mini_parallel", "pilot", "split_cellcounter_metabolite", "trainee"]);
     expect(listFiles("scenarios").filter((f) => f.endsWith(".json")).map((f) => f.replace(".json", ""))).toEqual([...scenarioFiles].sort());
   });
@@ -70,6 +70,12 @@ describe("Data: scenarios and profiles", () => {
     };
     expect(diff("sc02_shift_burst")).toEqual(["description", "sampling_plan", "scenario_id"]);
     expect(diff("sc05_one_analyzer_down")).toEqual(["description", "maintenance", "scenario_id"]);
+    // SC8 (S2c3) turns feedback on and adds the five settings of the pH probe model (A094, A095, A051, A108, A064); no setting of the default is changed
+    expect(diff("sc08_ph_restandardisation")).toEqual(["description", "feedback", "scenario_id", "settings"]);
+    const sc8 = rawScenario("sc08_ph_restandardisation").settings as Record<string, unknown>;
+    const added = Object.keys(sc8).filter((k) => !(k in (base.settings as object))).sort();
+    expect(added).toEqual(["ph_controller_deadband", "ph_probe_drift_per_d", "ph_probe_readjust_interval_h", "ph_probe_readjust_on", "technique_error_probability"]);
+    for (const [k, v] of Object.entries(base.settings as Record<string, unknown>)) expect(sc8[k], k).toEqual(v);
     expect(base.seed).toBe(1);
   });
 });
