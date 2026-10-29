@@ -9,12 +9,17 @@ import type { AuditEventRow, IngestConflictRow, ResultRow, SourceEventRow, Valid
 //   append_only_versions a rerun (an attempt not seen for this request and analyte) adds a version that supersedes the last; without it
 //                        the rerun overwrites the rows in place and the earlier value is gone. A replay is an insert on every architecture.
 //   available_at         the row carries the stamp of its event as the instant it became knowable (S2a models no ingestion or review delay).
+//   ingested_at          a row-creation stamp is stored whenever a system writes the rows, i.e. at least one flag is on (storesIngestedAt); the all-off
+//                        configuration, the spreadsheet, stores none (S2b, data_model section 7). It does not hang on one flag.
 //   audit_trail          a rerun that replaces an earlier attempt is an audit event with the old and the new value, kept even when the earlier
 //                        row is overwritten.
 // Hidden fields are not read: the event type has none (observe.ts).
 
 type Measured = Extract<ObservableEvent, { type: "result_measured" }>;
 type Flags = Record<FlagName, boolean>;
+
+/** A row-creation stamp exists where a system writes the rows: any of the eight flags on. Architecture A (all off) stores none. */
+export const storesIngestedAt = (flags: Flags): boolean => Object.values(flags).some(Boolean);
 
 /** The version of the content of a source event. The observable stream carries one, so the key is the same for a replay and for a changed value. */
 const CONTENT_VERSION = 1;
@@ -34,15 +39,17 @@ export interface ResultTables {
   ingest_conflict: IngestConflictRow[];
 }
 
-export const recordResults = (events: readonly ObservableEvent[], flags: Flags): ResultTables => {
+export const recordResults = (events: readonly ObservableEvent[], flags: Flags, receivedAt: Readonly<Record<string, number>> = {}): ResultTables => {
   const out: ResultTables = { result: [], audit_event: [], source_event: [], validation_finding: [], ingest_conflict: [] };
   const keys = new Map<string, Key>();
   const seen = new Map<string, { value: number; t: number }>();
   let counter = 0;
 
+  // ingested_at (S2b): stored where a system writes the rows; the stamp of the event unless the host receipt time was handed over
   const row = (e: Measured, version: number, supersedes: string | null, id?: string): ResultRow => ({
     result_id: id ?? `R${++counter}`, request_id: e.request_id, analyte: e.analyte, version, run_id: `${e.request_id}/${e.attempt}/${e.visit}`,
     value: e.value, measured_at: e.t, available_at: flags.available_at ? e.t : null, supersedes,
+    ingested_at: storesIngestedAt(flags) ? (receivedAt[`${e.analyzer}/${e.request_id}/${e.attempt}/${e.visit}/${e.analyte}`] ?? e.t) : null, state: null,
   });
 
   for (const e of events) {
@@ -52,7 +59,7 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags):
       const idempotency_key = `${e.analyzer}|${source_event_id}|v${CONTENT_VERSION}`;
       const first = seen.get(idempotency_key);
       if (first) {
-        if (first.value === e.value && first.t === e.t) out.validation_finding.push({ rule: "VR-008", target: source_event_id, severity: "info", action: "no-op" });
+        if (first.value === e.value && first.t === e.t) out.validation_finding.push({ rule: "VR-008", target: `source_event:${source_event_id}`, severity: "info", action: "no-op", status: "resolved" });
         else {
           out.ingest_conflict.push({
             source_system: e.analyzer, source_event_id, idempotency_key, received_at: e.t, request_id: e.request_id, analyte: e.analyte, run_id: `${e.request_id}/${e.attempt}/${e.visit}`, value: e.value, measured_at: e.t,

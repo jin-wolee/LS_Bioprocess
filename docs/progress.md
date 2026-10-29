@@ -520,3 +520,80 @@ The peak lactate is 2.6 to 2.9 times the S056 and Ruhl maxima and 1.4 to 1.9 tim
 - Hand check of the R1 case: U1 harvested at 1500 s, S1 drawn at 1100 s and measured at 2000 s gives B-U1 with keys fixed at write, no batch by the measured-time join, and B-U1 by the `sampled_at` join, as the tests expect.
 
 **For S2b**: decide `ingested_at` (data_model section 14, question 7) where VR-003 and VR-004 need it; findings carry the `status` column; the generated `Event` type with hidden fields is still importable from `record/` (Parked by the executor; a type-level zone would close it).
+
+## 2026-10-29 — S2b: error injector and metrics evaluator (executor, uncommitted)
+
+**Result**: Steps 2 and 3 of S2 are in, every test red first (module or column missing) and then green; base commit db02f71, nothing committed, no ADR touched; `tests/golden`, `sql`, `reference` and `docs/adr` are unchanged (only the author's untracked ADR-0015 review file is in `docs/adr`). Cells and denominators the design does not decide are listed as questions and were not guessed past; the choices made so that the work could go on are named as choices. No value of any metric is reported here: nothing was run on the default scenario except a timing check (one seed through eleven architectures, about 0.4 s).
+
+**Parked item of S2a closed (decision 3)**: `eslint.config.js` has a fourth zone: `engine/src/{record,inject,ingest,raw,export}/**` and `experiments/arms/**` may not import `generated/event.schema` (the Event type with the hidden fields); they use `ObservableEvent`. Planted in a scratch copy in `record/`, `inject/` and `experiments/arms/` (and the answer key in `record/`): `npx eslint engine` exit 1 with four errors; plants removed: exit 0. `git diff HEAD -- eslint.config.js` adds a constant and one argument in two rules, nothing is loosened.
+
+**Decision 1 (`ingested_at`)**: result rows carry `ingested_at` (null for A) and `state`; the recorder takes optional plain data `received_at` (host receipt time by source event id) and `qualifications`. Decision text is in `docs/design/data_model.md` section 7 (the interim row replaced) and question 7 of section 14 points to it.
+
+**Step 2, injector** (`engine/src/inject/`): `drawOpportunities` (key `(seed, sample, "-", 0, "error:<type>")`, no architecture input), `catalogue.ts` (mechanism per type from the matrix, "Prevented by"), `rates.ts` (label rate from the staff profile: A047 per 1000, times A062 for the trainee), `structural.ts` (feed in the gap, lost rerun, unattributable record, planned-versus-actual), `edits.ts` (relabel, rekey, replay, per-analyzer clock skew with the host receipt time), `inject.ts` (production and forced mode), `types.ts`. Output is plain data; `experiments/assembly/key_file.ts` writes the key (`schemas/answer_key.schema.json`), `evaluate/answer_key.ts` is its only reader.
+
+**Detection** (`engine/src/record/{validate,rule_types,rules_time,rules_keys}.ts`): VR-002, 003, 004, 008b, 009, 010, 011, 014, 015, 019, 020. A rule sets the `state` of rows and writes a finding (`rule`, `target`, `severity`, `action`, `status`); a rule that lacks a field or a limit is listed as not evaluable with its reason. A held, quarantined or rejected row is not available to `resultsAsOf`.
+
+**Step 3, evaluator** (`engine/src/evaluate/`, `schemas/metrics.schema.json`): holding time, turnaround, utilisation (twice, with and without setup), availability (with the leakage count), misattribution (unattributed and no-result apart), detection recall, precision and false-alarm rate per type, exact reconstruction, alignment error, phantom effect, rerun traceability, attributable rate; `aggregate.ts` is the seed table (median, 5th and 95th percentile, seed count, A103 minimum). `experiments/assembly/{run_seed,from_run}.ts` run one truth run through every architecture and write the key once.
+
+**Evidence, red then green**
+- Baseline before any change: `npm run check` -> `Test Files 35 passed (35)`, `Tests 2671 passed (2671)`.
+- Zone 4: `Tests 6 failed | 121 passed (127)` (expected one restricted-import message, received none) with the old config; `127 passed` with the new one.
+- Recorder columns and rules: `Test Files 2 failed` (module `validate.ts` and the columns missing); the first green run showed two wrong expectations of mine (VR-010 also fires on the S2 rerun; without versions the rerun overwrites, so three rows), corrected in the tests, not in the code. `160 passed (160)` in `engine/tests/record`.
+- Injector: `Cannot find module '../../src/inject/inject.ts'` in 4 of 4 files; green `42 passed (42)` after the tests that asserted only the forced type were made to filter by type (the structural types appear as well).
+- Evaluator and assembly: `Cannot find module '../../src/evaluate/answer_key.ts'` in 4 of 4 files; first green run `57 passed | 2 failed`, both from the strict-mode union types in the new schemas (rewritten as `anyOf`); `by_type` made explicit in the schema; then `261 passed (261)` over record, inject, evaluate and assembly. No hand-derived expectation had to be changed.
+- Rubric grep (`scenarios_data`): failed once because the qualification level used the profile ids as strings; the level is now the boolean `qualified`.
+- Final: `npm run check` -> `Test Files 45 passed (45)`, `Tests 2835 passed (2835)` (lint and typecheck clean); `uv run pytest -q` -> `186 passed`; `check_docs --all` -> `308 files, 0 failure(s)`.
+- Mutations in a scratch copy only (each reverted, tests green after): recall denominator = flagged samples -> 8 fail (Guard 1, Guard 4, the 10-request fixture); no monotone coupling (fresh draw per rate) -> 2 fail; opportunities keyed by architecture -> 1 fails (identity); a rule that edits a value -> 5 fail; label-error mechanism ignoring `system_issued_id` -> 2 fail; a feed at the draw instant counted as in the gap -> 1 fails; `ingested_at` stored for A -> 1 fails; answer key and hidden event type imported from `record/`, `inject/`, `experiments/arms/` -> lint exit 1, then 0.
+
+**Choices and deviations** (for review)
+- `ingested_at` follows the flag `ingest_idempotency` (the envelope `received_at`): A null, B and C stored as decided, but C minus `ingest_idempotency` also stores none. The alternative is "any flag on".
+- Prevented means a structural zero (the matrix column "Prevented by"). Production rate of a label error is A047 times the staff multiplier where the mechanism exists; A061 (the 72 percent reduction by a standard protocol) is not used.
+- Production label-error content is the neighbouring tube; a forced one names the id (`as_id`), so a typo that matches no request and one that matches another request are both expressible.
+- Reconstruction and alignment queries run after the end of the run; only availability uses the decision time. The truth release is the last passing QC result. Hold time is measured to the first run.
+- The spread of the seed table is the 5th to 95th percentile, stated as not a confidence interval.
+- The qualification level of A072 and A073 is carried as the boolean `qualified`.
+- S2a tests changed: `flags.test.ts` (the finding row has `status`, its target is typed; the skipped sample row has `qualification_id`) and `import_zones.test.ts` (the event type is now blocked on the recorded side).
+
+**Open questions for the orchestrator**
+1. `ingested_at` by flag (above): confirm, or give the "any flag on" reading.
+2. VR-014 needs `system_issued_id` (the registry), and a label error is prevented by that flag, so no architecture can detect an injected label error with VR-014; only VR-009 (needs `two_clocks`) can, and the injector's mix-ups never share a draw time. Should a residual label-error rate under `system_issued_id` (A061) exist, and what is its content (a barcode on the wrong tube)?
+3. Types whose detector is a mechanism, not a rule (lost rerun, planned-versus-actual time, instrument effect, late correction, technique error): detection reads "not evaluable". In the forced cells of S2c, does audit review, a bridging study or an as-of query count as `detected`, and what is its flag?
+4. A replayed file under `ingest_idempotency` is prevented, so the injector does not edit the stream and the VR-008 information no-op never appears for an injected replay. The alternative is to replay in every architecture and let the recorder's flag decide.
+5. Finding `status` (`open` or `resolved`), result `state`, and "not available to an as-of read" while held: confirm.
+6. Rerun traceability scores original and link; the reason of a rerun is recorded by no architecture. Add a `reason` to the audit event (outside the S2b recorder scope)?
+7. Spec section 8 "Experiment 2" row (probe offset, control excursion, paired difference) is not in S2b; it belongs to the arms and the oracle of S2c.
+
+**Blocked** (no ledger entry; built and tested with test-only values where the code does not need a number)
+- Tolerances of VR-003 and VR-004: the rules exist and are tested; production settings list both as not evaluable.
+- Rates of a unit or batch re-key and of a replayed file: forced mode only; production reports them as not modelled.
+- The probability that an anomaly is noticed, scaled by the staff profile (Step 2): no base value or multiplier exists; not built.
+- Result transcription and dilution entry errors: manual path, S2e (spec section 2.4.8: no entry; A048 has no rate).
+
+**Parked**
+- VR-001, 005, 006, 007, 012, 013, 016 to 018 (units, ranges, trajectory, QC outcome, dilution rule, lineage); the zone part of VR-004 (waits for the raw layer).
+- Technique error and instrument effect are truth-side; late correction has no source in the layer-off stream.
+- A `sample` row state for held or quarantined samples (the rules set the state of result rows only).
+
+**Next**: the orchestrator reviews, answers the questions and commits; then S2c (Step 4: forced-error cells, SC1/3/4/6/7, experiments 1 and 2).
+- Structure-only paths (no runtime behaviour): `eslint.config.js`, `engine/tests/contract/import_zones.test.ts`. Behaviour, recorder and rules: `engine/src/record/{types,results,recorder,asof}.ts`, `engine/src/record/{rule_types,rules_time,rules_keys,validate}.ts`, `engine/tests/record/{flags,ingested_at,validate}.test.ts`, `docs/design/data_model.md`. Behaviour, injector: `engine/src/inject/`, `engine/tests/inject/`, `engine/tests/support/inject_fixture.ts`. Behaviour, evaluator and assembly: `engine/src/evaluate/`, `engine/src/experiments/assembly/`, `schemas/{answer_key,metrics}.schema.json`, `engine/src/generated/{answer_key,metrics}.schema.d.ts`, `scenarios/evaluation/default.json`, `engine/tests/{evaluate,assembly}/`, `engine/tests/support/{eval_fixture,eval_schemas}.ts`, `docs/progress.md`.
+
+**Rework round 1** (orchestrator verdict REWORK; rulings: Q2 no residual label-error rate from A061 (a protocol effect, not a barcode residual), recorded as a design finding; Q3 stays "not evaluable" until S2c scores the non-rule detectors by named evidence; Q5 is S2c; the blocked ledger gaps are accepted as "not modelled" in production runs). This round supersedes the choice "`ingested_at` follows `ingest_idempotency`" and the choice "a prevented replay leaves the stream untouched" above.
+- R1, `ingested_at`: a row-creation stamp is stored whenever at least one of the eight flags is on (`storesIngestedAt` in `engine/src/record/results.ts`, read by VR-003 and VR-004); the all-off configuration stores none. Hand-typed tests: A none; B, C, each of the eight single-flag ablations of C and each single flag alone store the stamp; two_clocks only (no idempotency flag) still fires VR-003 and VR-004. Red: `14 failed | 68 passed` (for example `expected [ null, null, null, null ] to deeply equal [ 2000, 6500, 9000, 10000 ]`); green with R2: `Test Files 16 passed`, `Tests 283 passed` over record, inject, evaluate and assembly. Mutation in a scratch copy (stamp tied to `ingest_idempotency` again) -> 10 fail; reverted, 178 pass.
+- R2, replay: forced `duplicate_replay` is injected in every architecture (a source event); in the key only where `ingest_idempotency` is off. Hand-typed across A, B, C: the stream has S1's result twice in all three; A double counts (two S1 rows of 5.1, in the key); B and C hold one S1 row and one VR-008 information no-op (`status` resolved), not in the key. Production runs: not modelled. Mutation (replay only where it materialises) -> 4 fail; reverted, 46 pass.
+- R3, docs: `data_model.md` section 7 (the `ingested_at` row replaced by the R1 rule, the error-type and forced-mode rows say that a replay is a source event) and question 7 of section 14; `simulation_spec.md` section 5 has "Notes from S2b" under the matrix: VR-014 cannot detect an injected label error in any architecture, the label row's cells read prevented or invisible unless VR-009 applies, and the non-rule detectors are scored in S2c by named evidence.
+- Done: `npm run check`, `uv run pytest -q`, `check_docs --all` and `check_all --manual` green (final lines in the report).
+
+**Research tasks** (ledger gaps behind "not modelled" and "not evaluable"; none was filled with a number)
+1. A tolerance for VR-003 (measured later than ingested) and one for VR-004 (clock offset): scenario settings with a ledger entry each.
+2. The rate at which a sample is re-keyed to another unit or batch.
+3. The rate at which a result file is replayed.
+4. The probability that an anomaly is noticed, and the staff-profile multiplier on it.
+5. Manual-path entry errors: a typed result value, a unit slip, the delay between result and entry (spec section 2.4.8; A048 has no rate).
+
+## 2026-10-29 — S2b review (orchestrator)
+
+**Verdict**: PASS after one rework round.
+- Orchestrator runs: `npm run check` → 45 files, 2857 passed; `uv run pytest -q` → 186 passed; `check_all --manual: PASS`; protected paths clean; the `eslint.config.js` diff only adds the hidden-event zone to two existing rules (tighter, nothing removed). Hand values present in the tests: F5 utilisation 0.1 and 0.05 per staffed window and 3600/86400 per 24 h, recall 2/3, precision 2/3, false-alarm 1/7.
+- Rulings: Q1 rework, `ingested_at` is stored whenever at least one flag is on (so ablating `ingest_idempotency` no longer removes clock detection); Q2 no residual label-error rate from A061, recorded as a design finding under the spec section 5 matrix; Q3 the matrix entries that are not rules (idempotency log, audit trail, bridging study, as-of query, recorded container and hold context) are scored in S2c by named evidence in the record; Q4 rework, a replay is a source event injected in every architecture in forced mode; Q5 experiment 2 is S2c.
+- Ledger gaps (research tasks; production runs report them as not modelled): VR-003/VR-004 tolerance, unit re-keying rate, file replay rate, anomaly-notice probability; manual-path value and dilution transcription errors move to S2e.
+- The author committed ADR-0015 meanwhile (`61c30fa`, docs/adr only) and pushed.

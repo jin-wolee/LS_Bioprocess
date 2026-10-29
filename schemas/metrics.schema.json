@@ -1,0 +1,479 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "metrics.schema.json",
+  "title": "Metrics",
+  "description": "The metrics of one (scenario, seed, architecture) cell: every metric of docs/design/simulation_spec.md section 8 with its denominator written beside the count. No composite score exists. A share whose denominator is zero is null, never 0 or 1. Reported, never gated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine_version",
+    "scenario_id",
+    "seed",
+    "architecture",
+    "n_requests",
+    "metrics"
+  ],
+  "$defs": {
+    "ratio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "num",
+        "den",
+        "denominator",
+        "value"
+      ],
+      "properties": {
+        "num": {
+          "type": "number",
+          "minimum": 0
+        },
+        "den": {
+          "type": "number",
+          "minimum": 0
+        },
+        "denominator": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the denominator counts, in words."
+        },
+        "value": {
+          "description": "num / den; null when den is 0.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "seconds": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "with_setup",
+        "without_setup"
+      ],
+      "properties": {
+        "with_setup": {
+          "$ref": "#/$defs/ratio"
+        },
+        "without_setup": {
+          "$ref": "#/$defs/ratio"
+        }
+      }
+    },
+    "type_detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluable",
+        "reason",
+        "realised",
+        "recall",
+        "precision",
+        "false_alarm"
+      ],
+      "properties": {
+        "evaluable": {
+          "type": "boolean",
+          "description": "False when no rule of the catalogue that detects this type could run on the architecture, or none exists: a recall of 0 then does not mean 'looked and found nothing'."
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "realised": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recall": {
+          "$ref": "#/$defs/ratio"
+        },
+        "precision": {
+          "$ref": "#/$defs/ratio"
+        },
+        "false_alarm": {
+          "$ref": "#/$defs/ratio"
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "engine_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scenario_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "architecture": {
+      "type": "string",
+      "minLength": 1
+    },
+    "n_requests": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "All analysis requests: drawn samples and draws refused by the volume budget."
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "holding_time",
+        "turnaround",
+        "utilisation",
+        "availability",
+        "misattribution",
+        "detection",
+        "exact_reconstruction",
+        "alignment_error",
+        "rerun_traceability",
+        "attributable",
+        "phantom_effect"
+      ],
+      "properties": {
+        "holding_time": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "started",
+            "median_s",
+            "p90_s",
+            "sla_threshold_s",
+            "sla_exceedance"
+          ],
+          "properties": {
+            "started": {
+              "$ref": "#/$defs/ratio"
+            },
+            "median_s": {
+              "$ref": "#/$defs/seconds"
+            },
+            "p90_s": {
+              "$ref": "#/$defs/seconds"
+            },
+            "sla_threshold_s": {
+              "type": "number"
+            },
+            "sla_exceedance": {
+              "$ref": "#/$defs/ratio"
+            }
+          }
+        },
+        "turnaround": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "released",
+            "median_s",
+            "p90_s"
+          ],
+          "properties": {
+            "released": {
+              "$ref": "#/$defs/ratio"
+            },
+            "median_s": {
+              "$ref": "#/$defs/seconds"
+            },
+            "p90_s": {
+              "$ref": "#/$defs/seconds"
+            }
+          }
+        },
+        "utilisation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "analyzers",
+            "days",
+            "staffed_window_s",
+            "per_staffed_window",
+            "per_24h"
+          ],
+          "properties": {
+            "analyzers": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "days": {
+              "type": "number",
+              "minimum": 0
+            },
+            "staffed_window_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "per_staffed_window": {
+              "$ref": "#/$defs/pair"
+            },
+            "per_24h": {
+              "$ref": "#/$defs/pair"
+            }
+          }
+        },
+        "availability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "available",
+            "leaked"
+          ],
+          "properties": {
+            "available": {
+              "$ref": "#/$defs/ratio"
+            },
+            "leaked": {
+              "$ref": "#/$defs/ratio"
+            }
+          }
+        },
+        "misattribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "misattributed",
+            "unattributed",
+            "no_result"
+          ],
+          "properties": {
+            "misattributed": {
+              "$ref": "#/$defs/ratio"
+            },
+            "unattributed": {
+              "$ref": "#/$defs/ratio"
+            },
+            "no_result": {
+              "$ref": "#/$defs/ratio"
+            }
+          }
+        },
+        "detection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "by_type",
+            "not_evaluable",
+            "not_modelled"
+          ],
+          "properties": {
+            "by_type": {
+              "type": "object",
+              "description": "One entry per error type of the injector (docs/design/simulation_spec.md section 5 matrix and planned-versus-actual time).",
+              "additionalProperties": false,
+              "required": [
+                "label_error",
+                "feed_in_gap",
+                "unit_rekey",
+                "clock_offset",
+                "duplicate_replay",
+                "lost_rerun",
+                "unattributable_record",
+                "planned_vs_actual"
+              ],
+              "properties": {
+                "label_error": {
+                  "$ref": "#/$defs/type_detection"
+                },
+                "feed_in_gap": {
+                  "$ref": "#/$defs/type_detection"
+                },
+                "unit_rekey": {
+                  "$ref": "#/$defs/type_detection"
+                },
+                "clock_offset": {
+                  "$ref": "#/$defs/type_detection"
+                },
+                "duplicate_replay": {
+                  "$ref": "#/$defs/type_detection"
+                },
+                "lost_rerun": {
+                  "$ref": "#/$defs/type_detection"
+                },
+                "unattributable_record": {
+                  "$ref": "#/$defs/type_detection"
+                },
+                "planned_vs_actual": {
+                  "$ref": "#/$defs/type_detection"
+                }
+              }
+            },
+            "not_evaluable": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "rule",
+                  "reason"
+                ],
+                "properties": {
+                  "rule": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "not_modelled": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "exact_reconstruction": {
+          "$ref": "#/$defs/ratio"
+        },
+        "alignment_error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "joined",
+            "median_s",
+            "p90_s",
+            "context_mismatch"
+          ],
+          "properties": {
+            "joined": {
+              "$ref": "#/$defs/ratio"
+            },
+            "median_s": {
+              "$ref": "#/$defs/seconds"
+            },
+            "p90_s": {
+              "$ref": "#/$defs/seconds"
+            },
+            "context_mismatch": {
+              "$ref": "#/$defs/ratio"
+            }
+          }
+        },
+        "rerun_traceability": {
+          "$ref": "#/$defs/ratio"
+        },
+        "attributable": {
+          "$ref": "#/$defs/ratio"
+        },
+        "phantom_effect": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "analyte",
+                "group_a",
+                "group_b",
+                "n_a",
+                "n_b",
+                "true_effect",
+                "recorded_effect",
+                "pooled_truth_sd",
+                "value",
+                "denominator"
+              ],
+              "properties": {
+                "analyte": {
+                  "type": "string"
+                },
+                "group_a": {
+                  "type": "string"
+                },
+                "group_b": {
+                  "type": "string"
+                },
+                "n_a": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "n_b": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "true_effect": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "recorded_effect": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "pooled_truth_sd": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "value": {
+                  "description": "|recorded effect - true effect| over the pooled truth SD.",
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "denominator": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

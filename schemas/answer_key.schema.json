@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "answer_key.schema.json",
+  "title": "AnswerKey",
+  "description": "The error answer key of one scenario and seed: which errors the injector materialised where, per architecture (docs/design/simulation_spec.md sections 3 and 5). The experiment assembly writes it as plain data from the injector's output; the metrics evaluator is its only reader (spec section 3, rule 2). Truth-side: a recorder never sees it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine_version",
+    "scenario_id",
+    "seed",
+    "architectures"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "engine_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scenario_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "architectures": {
+      "type": "object",
+      "description": "By architecture id.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "errors",
+          "not_modelled"
+        ],
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "sample_id",
+                "detail"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "label_error",
+                    "feed_in_gap",
+                    "unit_rekey",
+                    "clock_offset",
+                    "duplicate_replay",
+                    "lost_rerun",
+                    "unattributable_record",
+                    "planned_vs_actual"
+                  ]
+                },
+                "sample_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The physical sample the error sits on, by its true id."
+                },
+                "detail": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "not_modelled": {
+            "type": "array",
+            "description": "Drawn types that have no ledger rate and were not materialised in a production run.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "label_error",
+                "unit_rekey",
+                "duplicate_replay"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

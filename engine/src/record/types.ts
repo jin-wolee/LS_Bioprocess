@@ -5,11 +5,29 @@ import type { Architecture } from "./architecture.ts";
 // know is null (data_model principle 7), never absent, so a test can state "stored" as "not null". Times are integer seconds of
 // the scenario, as stamped by the observable event the row comes from. Nothing here is a truth field.
 
+/** A qualification record of an operator (data_model section 2, supporting entities); plain data from the assembly (the truth side knows `operator.qualified`). */
+export interface QualificationInput {
+  qualification_id: string;
+  operator_id: string;
+  /** The training status the record attests (the level of A072 and A073, carried as a boolean so that the engine names no profile id). */
+  qualified: boolean;
+  valid_from: number;
+  /** Null while the qualification has no end. */
+  valid_to: number | null;
+}
+
 export interface RecorderInput {
   /** The observable events (hidden fields removed, in the type and in the value). */
   events: readonly ObservableEvent[];
   /** The online sensor series, process value only. */
   sensors: readonly ObservableSensorSeries[];
+  /**
+   * S2b: the instant the host received a result, by source event id (`analyzer/request/attempt/visit/analyte`), for events whose own stamp
+   * is wrong (an instrument clock error, A049). Default: the stamp of the event. It becomes `ingested_at` where that is stored.
+   */
+  received_at?: Readonly<Record<string, number>>;
+  /** S2b: qualification records; with `audit_trail` on the sample row gets the reference that was valid at the draw. */
+  qualifications?: readonly QualificationInput[];
 }
 
 export interface SampleRow {
@@ -28,6 +46,8 @@ export interface SampleRow {
   planned_at: number | null;
   /** audit_trail only: the sampler. Off: the operator is absent. */
   operator_id: string | null;
+  /** audit_trail only: the qualification record of the sampler that was valid at the draw; null when none was (VR-015). */
+  qualification_id: string | null;
   /** The method the label_bound event reports. */
   label_method: string | null;
 }
@@ -71,7 +91,16 @@ export interface ResultRow {
   available_at: number | null;
   /** append_only_versions only: the result_id this version replaces. */
   supersedes: string | null;
+  /**
+   * The instant the system wrote the row (the envelope received_at becomes ingested_at, data_model section 7); null where no system writes
+   * the rows, i.e. with every flag off (architecture A; S2b decision on data_model section 14, question 7).
+   */
+  ingested_at: number | null;
+  /** The state a validation rule put the row in (hold, quarantine, reject; data_model sections 6 and 8). Null from the recorder: only a rule sets it, and never changes a value. */
+  state: ResultState | null;
 }
+
+export type ResultState = "held" | "quarantined" | "rejected";
 
 /** audit_trail only: one row per change of a result (a rerun that replaces an earlier attempt). */
 export interface AuditEventRow {
@@ -93,12 +122,17 @@ export interface SourceEventRow {
   received_at: number;
 }
 
-/** ingest_idempotency only: a duplicate or replayed row that was a no-op (VR-008, information). The detection rules of S2b add their own rows to this table. */
+/**
+ * A finding of a validation rule (data_model sections 2 and 8). `target` is `result:<result_id>`, `sample:<sample_id>` or
+ * `source_event:<source_event_id>`. `status` is the state of the finding itself: open until a reviewer resolves it (a no-op is resolved at once).
+ * The recorder writes VR-008 only; the rules of record/validate.ts add the others.
+ */
 export interface ValidationFindingRow {
-  rule: "VR-008";
+  rule: string;
   target: string;
-  severity: "info";
-  action: "no-op";
+  severity: "info" | "warning" | "error";
+  action: "no-op" | "hold" | "quarantine" | "reject";
+  status: "open" | "resolved";
 }
 
 /** ingest_idempotency only: an incoming row with a known idempotency key and other content. It is not loaded and the original stays; S2b's VR-008b reads this list. */
@@ -144,6 +178,8 @@ export interface RecordedDataset {
   instrument_state: InstrumentStateRow[];
   result: ResultRow[];
   audit_event: AuditEventRow[];
+  /** audit_trail only: the qualification records given to the recorder. */
+  qualification: QualificationInput[];
   source_event: SourceEventRow[];
   validation_finding: ValidationFindingRow[];
   ingest_conflict: IngestConflictRow[];

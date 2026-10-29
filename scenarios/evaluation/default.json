@@ -1,0 +1,11 @@
+{
+  "schema_version": "1",
+  "evaluation_id": "default",
+  "description": "Settings of the metrics evaluator (spec section 8) as {value, unit, ref}. The tolerances of VR-003 and VR-004 are not here: no ledger entry exists for them, so those two rules are reported as not evaluable in production runs.",
+  "params": {
+    "sla_hold_threshold_min": {"value": 30, "unit": "min", "ref": "A097"},
+    "staffed_window_h": {"value": 10, "unit": "h", "ref": "A098"},
+    "hold_limit_min": {"value": 30, "unit": "min", "ref": "A046"},
+    "min_seeds": {"value": 20, "unit": "seeds", "ref": "A103"}
+  }
+}

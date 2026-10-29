@@ -14,12 +14,14 @@ export const resultsAsOf = (ds: RecordedDataset, asOf: number): ResultRow[] => {
   const strict = ds.architecture.flags.available_at;
   const best = new Map<string, ResultRow>();
   for (const r of ds.result) {
+    if (r.state !== null) continue; // a held, quarantined or rejected row is not available until a reviewer resolves it (data_model sections 6 and 8)
     if (strict && (r.available_at === null || r.available_at > asOf)) continue;
     const k = `${r.request_id}/${r.analyte}`;
     const cur = best.get(k);
     if (!cur || newer(r, cur) > 0) best.set(k, r);
   }
   return ds.result.filter((r) => {
+    if (r.state !== null) return false;
     const cur = best.get(`${r.request_id}/${r.analyte}`);
     return cur !== undefined && newer(r, cur) === 0;
   });

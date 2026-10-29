@@ -122,7 +122,7 @@ describe("ingest_idempotency: a replayed result row is a no-op, a conflicting on
       ["AN-1", "AN-1/S3/1/1/glucose", 10000],
     ]);
     expect(ds.source_event[0]?.idempotency_key).toBe("AN-1|AN-1/S1/1/1/glucose|v1"); // source, event id and content version; the value is not in it
-    expect(ds.validation_finding).toEqual([{ rule: "VR-008", target: "AN-1/S1/1/1/glucose", severity: "info", action: "no-op" }]);
+    expect(ds.validation_finding).toEqual([{ rule: "VR-008", target: "source_event:AN-1/S1/1/1/glucose", severity: "info", action: "no-op", status: "resolved" }]);
     expect(ds.ingest_conflict).toEqual([]);
   });
   it("Given the flag on When the S1 result comes again with the same event id and the value 5.9 Then the original 5.1 stays, nothing is loaded and the incoming row is kept in the conflict list", () => {
@@ -153,7 +153,7 @@ describe("a draw refused by the volume budget (spec section 2.2): planned, never
     const ds = record({ events: WITH_SKIP, sensors: SENSORS }, arch("system_issued_id", "two_clocks", "write_time_keys", "audit_trail"));
     expect(col(ds.sample, "sample_id")).toEqual(["S1", "S2", "S3", "S4"]);
     expect(ds.sample[3]).toEqual({
-      sample_id: "S4", unit_id: "U2", batch_id: "B-U2", keys_fixed_at_write: true, state: "skipped", sampled_at: null, planned_at: 11000, operator_id: null, label_method: null,
+      sample_id: "S4", unit_id: "U2", batch_id: "B-U2", keys_fixed_at_write: true, state: "skipped", sampled_at: null, planned_at: 11000, operator_id: null, qualification_id: null, label_method: null,
     });
     expect(col(ds.sample.slice(0, 3), "state")).toEqual([null, null, null]);
     expect(ds.result.some((r) => r.request_id === "S4")).toBe(false);
