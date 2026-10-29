@@ -1,0 +1,27 @@
+{
+  "engine_version": "0.1.0",
+  "event_count": 7211,
+  "event_counts": {
+    "aliquot_created": 394,
+    "calibration_recorded": 506,
+    "inoculation": 24,
+    "label_bound": 394,
+    "log_header": 1,
+    "process_event": 240,
+    "qc_result": 398,
+    "qc_window_ended": 44,
+    "qc_window_started": 44,
+    "request_queued": 398,
+    "rerun_requested": 4,
+    "result_measured": 2388,
+    "run_started": 398,
+    "sample_drawn": 394,
+    "sample_planned": 394,
+    "sample_received": 394,
+    "visit_finished": 398,
+    "visit_started": 398
+  },
+  "log_hash": "47afbe18e38bc4095b502a97059498e7211e5ac0b634caa3748212cbd45904fd",
+  "schema_version": "1",
+  "seed": 1
+}

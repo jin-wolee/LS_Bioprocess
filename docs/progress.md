@@ -403,3 +403,46 @@ The peak lactate is 2.6 to 2.9 times the S056 and Ruhl maxima and 1.4 to 1.9 tim
 - Remaining gaps, reported not tuned: lactate maximum above the source maxima (S056 at most 1.0 g/L, Ruhl 0.9, S074 1.35-1.80 g/L in CD CHO); peak viable density at about culture day 12 against days 7.5-9.6.
 
 **Next**: golden event logs (S1b Step 4) on the orchestrator go-ahead.
+
+## 2026-10-29 — S1b Step 4: golden event logs (executor, uncommitted)
+
+**Result**: the golden event logs of the default scenario exist for seeds 1, 2 and 3, with a checksum file and a test that verifies them and reproduces them; every gate is green. Base commit da5f366 (the lactate calibration included); nothing committed; no ADR touched. These files are read-only from now on: no script, flag or test rewrites them, and any change needs the author's approval recorded in this file (`00` section 2 item 9). `tests/golden/parity/` and its `CHECKSUMS.txt` are untouched.
+
+**Command** (run once from the repo root, not an npm script, not a test, saved in no file; engine 0.1.0, `scenarios/default.json`, seeds 1, 2, 3; the seed replaces the one in the scenario file, as in the I9 test):
+`node --input-type=module -e "import { writeFileSync } from 'node:fs'; import { createHash } from 'node:crypto'; import { runScenario } from './engine/src/run.ts'; import { canonicalJson, canonicalJsonl, logHash, ENGINE_VERSION } from './engine/src/trace.ts'; import { configOf } from './engine/tests/support/scenarios.ts'; const sums = []; const put = (name, text) => { writeFileSync('tests/golden/' + name, text); sums.push(createHash('sha256').update(text).digest('hex') + '  ' + name); }; for (const seed of [1, 2, 3]) { const events = runScenario({ ...configOf('default'), seed }).events; const counts = {}; for (const e of events) counts[e.type] = (counts[e.type] ?? 0) + 1; const summary = { schema_version: '1', engine_version: ENGINE_VERSION, seed, event_count: events.length, log_hash: await logHash(events), event_counts: counts }; put('default_seed' + seed + '.trace.jsonl', canonicalJsonl(events)); put('default_seed' + seed + '.summary.json', canonicalJson(summary, 2) + '\n'); } writeFileSync('tests/golden/CHECKSUMS.txt', sums.join('\n') + '\n');"`
+
+**Files** (`tests/golden/`; `*.trace.jsonl` is `canonicalJsonl(runScenario(...).events)`, keys sorted, one event per line; `*.summary.json` is canonical JSON, indent 2, with `schema_version`, `engine_version`, `seed`, `event_count`, `log_hash` and `event_counts` by event type, 18 types; `log_hash` is the sha256 of the trace file)
+
+| Seed | Trace (bytes) | Events | `log_hash` | Summary (bytes) |
+|---|---|---|---|---|
+| 1 | 1,091,015 | 7,211 | 47afbe18e38bc4095b502a97059498e7211e5ac0b634caa3748212cbd45904fd | 671 |
+| 2 | 1,104,630 | 7,295 | b81025c3b6b716a8e7ad657333eb543bafb97f1ea2cdbd3ea73d5a20a224c8a0 | 672 |
+| 3 | 1,104,141 | 7,287 | 20033a35a0f3dcaa0d9ae4f0b3d000b6d22990ef0e0d6813eef4df3c71192b60 | 671 |
+
+`CHECKSUMS.txt` (555 bytes) lists the sha256 of the six files, in the format of the parity file. No file is near 5 MB. Sensor ticks are not in `events` (they are in `ScenarioRun.sensors`), so they are not in the logs; S2 compares against the event logs only.
+
+**Test**: `engine/tests/golden_default.test.ts` (8 tests, 61 lines): the folder holds exactly `CHECKSUMS.txt`, the six files and `parity`; the checksum file lists exactly the six files and every sha256 matches; for each seed the engine reproduces the trace byte for byte and the summary file equals the summary computed from a fresh run. It only reads and compares. `repo_rules` (no write under `tests/golden`) still passes.
+
+**Evidence**
+- Red before the files existed: `Test Files 1 failed (1)`, `Error: ENOENT: no such file or directory, open '.../tests/golden/CHECKSUMS.txt'`. Green after: `Test Files 2 passed (2)`, `Tests 22 passed (22)` with `repo_rules`.
+- Mutations in a scratch copy of the repo only (the repo itself was not touched): one byte flipped in the middle of `default_seed2.trace.jsonl` -> the checksum test fails (`default_seed2.trace.jsonl: expected 'eea3db9b…' to be 'b81025c3…'`) and the seed 2 reproduction fails at line 3636, 2 failed and 6 passed; the A085 onset day of the copy's `scenarios/default.json` changed from 7 to 6 -> all 6 reproduction tests fail and the 2 checksum tests pass.
+- `git status --short -uall -- tests/golden` shows the seven new files only.
+
+**Parked**
+- The goldens are bound to engine 0.1.0 and to the A085 default as of da5f366; any later change of a default, a ledger value used by the scenario or the engine that moves the event log will fail this test and needs the author's approval to regenerate.
+
+## 2026-10-29 — S1b gate (orchestrator)
+
+**Verdict**: S1b complete. Golden event logs created once from base commit da5f366 (command and seeds in the Step 4 entry above); from now on they are read-only and a change needs the author approval recorded here.
+- Orchestrator checks: `shasum -a 256 -c tests/golden/CHECKSUMS.txt` → six files OK; the engine reproduced all three logs byte-identically in a separate Node process (7211, 7295 and 7287 lines); `git status --short -uall -- tests/golden` showed exactly the seven new files; `tests/golden/parity/` unchanged.
+- S1b gate items: `npm run check` green; S1a fixtures and the M/M/c test green; invariants I1-I12 green; SC2 and SC5 structural tests green; profile-id grep clean; I12 measured (median 79 ms); golden checksum test green; `uv run pytest -q`, `check_docs --all` and `check_all --manual` green; one `sim-adversary` pass with its majors closed (F1 by the L1 and lactate calibrations, F2 by the integer-time contract).
+
+**Known limitations (recorded, not tuned)**: peak viable density at about culture day 12 against days 7.5-9.6 in the sources; lactate maximum 2.62 g/L above the source maxima (at most 2.25 g/L); minors F3-F11 of the adversary pass are in the S1b executor entry.
+
+**Open for the author**
+- ADR-0015 (mixed fleets) is Proposed and waits for a decision.
+- `.nvmrc` 25 against the Vitest engines range.
+- S118-S122 are `agent-read`; a public number from them needs a `main-reread` first.
+- S4: the `lactate_consumer` clone of SC13 needs a new difference from the platform, which now turns to net consumption on culture day 7.
+
+**Next**: S2 (`prompts/20_S2_capture_metrics.md`) in a new session; before any recorder exists, a process-value-only sensor stream (adversary F11 note).
