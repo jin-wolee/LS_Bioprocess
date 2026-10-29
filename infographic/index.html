@@ -538,6 +538,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <tr><th scope="row">sample id</th><td>"U3 d4 am", <span data-i18n="a.rec.idA">handwritten</span></td><td>SMP-0412, <span data-i18n="a.rec.idB">pre-printed barcode</span></td><td>SMP-0412, <span data-i18n="a.rec.idC">issued at draw</span></td></tr>
 <tr><th scope="row">sampled_at</th><td>&mdash;</td><td>&mdash; (planned_at 08:30)</td><td>2026-03-12T08:40</td></tr>
 <tr><th scope="row">measured_at</th><td>09:25</td><td>2026-03-12T09:25</td><td>2026-03-12T09:25</td></tr>
+<tr><th scope="row" data-i18n="a.rec.path">capture path</th><td data-i18n="a.rec.pA">typed by hand from the instrument printout</td><td data-i18n="a.rec.pP">parsed by an adapter from the instrument file (a synthetic file here)</td><td data-i18n="a.rec.pP">parsed by an adapter from the instrument file (a synthetic file here)</td></tr>
 <tr><th scope="row">unit, batch</th><td>"U3", <span data-i18n="a.rec.uA">batch attached later by a time join</span></td><td data-i18n="a.rec.uB">attached later by a time join on 09:25</td><td data-i18n="a.rec.uC">U03, B-2603-03, fixed at write time</td></tr>
 <tr><th scope="row">hold_time</th><td>&mdash;</td><td>&mdash;</td><td data-i18n="a.rec.hC">40.5 min, flagged by the hold rule</td></tr>
 <tr><th scope="row" data-i18n="a.rec.inst">instrument</th><td data-i18n="a.rec.iA">"FLEX", free text</td><td data-i18n="a.rec.iB">"AN-1", free text; lot and calibration not linked</td><td data-i18n="a.rec.iC">IS-AN1-0117: calibration and reagent lot</td></tr>
@@ -545,6 +546,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <tr><th scope="row" data-i18n="a.rec.who">operator</th><td data-i18n="a.rec.wA">initials, free text</td><td data-i18n="a.rec.wB">OP-07, audit trail</td><td data-i18n="a.rec.wC">OP-07 with the qualification in force</td></tr>
 <tr><th scope="row" data-i18n="a.rec.join">context joined by</th><td class="cell-dev"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-dev"/></svg><code>measured_at</code>: <span data-i18n="a.rec.jp">post-feed state, mismatch</span></td><td class="cell-dev"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-dev"/></svg><code>measured_at</code>: <span data-i18n="a.rec.jp">post-feed state, mismatch</span></td><td class="cell-ok"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-ok"/></svg><code>sampled_at</code>: <span data-i18n="a.rec.jc">pre-feed state, correct</span></td></tr>
 </tbody></table></div>
+<p data-i18n="a.recpath">The capture path is a separate setting, not a ninth flag, and any preset can switch it, so automatic linkage can be tested on its own (for example preset A with parsed instrument files).</p>
 <h3 data-i18n="a.h3b">What the flags prevent, detect or leave invisible</h3>
 <div class="hyp"><svg class="ico" aria-hidden="true"><use href="#i-hyp"/></svg><p data-i18n="a.hyp"><b>Design hypothesis, to be tested by the simulator.</b> The matrix below is the expected outcome from the design documents, not a result. The simulator checks each cell with a hand-built forced-error fixture before any stochastic run.</p></div>
 <div class="legend" aria-label="Legend" data-i18n-aria="a.legend"><span class="ok-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><b data-i18n="a.lg1">prevented</b></span><span class="warn-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><b data-i18n="a.lg2">detected</b></span><span class="dev-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><b data-i18n="a.lg3">invisible</b></span></div>
@@ -973,6 +975,10 @@ window.I18N_KO = {
 "a.rec.join": "맥락 조인 기준",
 "a.rec.jp": "피드 이후 상태, 불일치",
 "a.rec.jc": "피드 이전 상태, 정확",
+"a.rec.path": "수집 경로",
+"a.rec.pA": "기기 출력물을 보고 손으로 입력",
+"a.rec.pP": "어댑터가 기기 파일을 파싱 (여기서는 합성 파일)",
+"a.recpath": "수집 경로는 기능 플래그가 아닌 별도 설정이며, 어떤 프리셋에서도 바꿀 수 있습니다. 그래서 자동 연계의 효과만 따로 시험할 수 있습니다 (예: 프리셋 A에 기기 파일 파싱만 더한 경우).",
 "a.h3b": "플래그가 막는 것, 발견하는 것, 보이지 않게 두는 것",
 "a.hyp": "<b>설계 가설이며, 시뮬레이터가 검증할 대상입니다.</b> 아래 행렬은 설계 문서가 기대하는 결과이지 실제 결과가 아닙니다. 시뮬레이터는 확률적 실행 전에 손으로 만든 강제 오류 픽스처로 각 칸을 먼저 확인합니다.",
 "a.legend": "범례",
