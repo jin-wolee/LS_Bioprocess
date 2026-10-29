@@ -18,7 +18,7 @@ Highest first: ADRs → `docs/design/*` → `schemas/*` → `prompts/*`. Prompts
 | `PRINCIPLES.md` | read with `00` in every session; its header opens every brief | orchestrator, every executor, reviewer | nothing (definitions, stage table, rails, brief header) |
 | `00_master_build.md` | loaded first in every session | orchestrator, every executor | nothing (invariants, terms, gates, budgets, ownership) |
 | `10_S1_engine.md` | session S1 | executor | contracts, schemas, hand fixtures, TS engine L1-L3 with profiles, scaffold, acceptance tests for the author's code |
-| `20_S2_capture_metrics.md` | session S2, after the S1 gate | executor | flags and presets, error injector, evaluator, experiments 1 and 2, CSV parser, data dictionary, single-sample trace, FAIR export, SQL acceptance tests |
+| `20_S2_capture_metrics.md` | session S2, after the S1 gate | executor | flags and presets, error injector, evaluator, experiments 1 and 2, device output adapters (synthetic raw files modeled on public documentation → canonical records), data dictionary, single-sample trace, FAIR export, SQL acceptance tests |
 | `60_user_track.md` | whenever the author works, and for any AI reviewing it | author, reviewer | the author's DDL, three SQL queries, SimPy loop; reviews in `docs/user_track/reviews/` |
 | `90_review_rubric.md` | after every executor delivery | orchestrator | PASS or an ordered REWORK list |
 | `91_external_review.md` | at a milestone, when asked | orchestrator | private raw reviews, public disposition table in `docs/reviews/` |

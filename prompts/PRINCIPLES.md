@@ -18,7 +18,7 @@ The one place where the working principles are defined. Every brief and rubric p
 - **TDD** (test) — failing test first, see it fail for the stated reason, then the smallest code that passes. The test is the contract.
   In this repo: expected values come from the brief or hand arithmetic, never from the code under test. Report red, then green.
 - **BDD** (behaviour) — behaviour is written as Given-When-Then acceptance tests.
-  In this repo: scenarios SC1-SC11 each get a Given-When-Then test named after the scenario id. Format: a Vitest `describe("SC2 shift-start burst", ...)` whose `it` blocks are titled `Given ...`, `When ...`, `Then ...` (one behaviour per `it`, shared setup in `beforeAll`). No Gherkin files and no Gherkin runner.
+  In this repo: scenarios SC1-SC14 each get a Given-When-Then test named after the scenario id. Format: a Vitest `describe("SC2 shift-start burst", ...)` whose `it` blocks are titled `Given ...`, `When ...`, `Then ...` (one behaviour per `it`, shared setup in `beforeAll`). No Gherkin files and no Gherkin runner.
 - **PDD** (prompt) — prompts are versioned assets.
   In this repo: `prompts/` and `CLAUDE.md` are changed like code and logged in `docs/progress.md`.
 - **EDD** (eval) — answers that exist before the code are the evals.

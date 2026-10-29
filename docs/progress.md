@@ -41,3 +41,21 @@ Newest entry last. Each entry: what was done, what is open for the author, what 
 - Before S0b puts numbers on a public page, the orchestrator must re-read the sources behind them (currently 11 are `main-reread`; new kinetics and precision sources S003, S053–S056 are `agent-read`).
 
 **Next**: S0b in a new session started inside the repo.
+
+## 2026-10-29 — Infographic, planned extensions, device output adapters
+
+**Done**
+- Infographic (`infographic/`, built from `infographic/src` by `build.py`): seven sections, English first with a Korean toggle, light/dark plus opt-in neon theme and story mode, two interactions (measurement-time slider, feature-flag outcome matrix). Headless QA (`scripts/qa_infographic.py`, 8 checks incl. SVG clipping) passes; private preview published.
+- Planned extensions (ADR-0013, Proposed): per-reactor cell-line profiles, operating-mode profiles, break-out events (contamination/sterility failure) with the investigation walk-back; SC12–SC14; entities for material lots, deviations, quality holds and retro-flagging. Scheduled after S2.
+- Device output adapters (ADR-0014, Proposed): a raw device layer between L3 and L4 — synthetic files and controller records modeled on public documentation (three analyzer dialects, two controller families), parsed into the canonical schema; no compatibility claims; no manual text or licensed schema files in the repository.
+- Ledgers: 103 sources, 177 assumptions.
+
+**Open for the author (HITL)**
+- Private backup repository and first push.
+- ADR-0001 to ADR-0014: decide, write the decider's note, commit yourself.
+- ADR-0014 open question: preset A has no adapter (results typed by hand) — confirm or change.
+
+**Open questions**
+- S2 Step 7 (controller emitters) needs ledger entries first: logging deadband and maximum interval for tags other than agitation, gas-flow/pump/off-gas CO2 signal parameters, alarm acknowledgement time, pH/DO alarm deadbands (`simulation_spec.md` §2.4.8). Without them Step 7 stops and reports.
+- Lot withdrawal schedule for SC12 is not in the ledgers yet (before S5).
+- Before any number from a non-re-read source goes on a public page, the orchestrator re-reads it.
