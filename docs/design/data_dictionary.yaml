@@ -9,8 +9,9 @@
 # Tests: tests/test_data_dictionary.py reads this file and the output of engine/tests/support/dictionary_cli.ts (the recorders run on hand-built streams under every architecture and on the
 # default scenario at the small size): every emitted column is here with its type and nullability, every state emitted belongs to its machine, every transition performed is listed with a
 # role that may cause it, the transition table equals the one in engine/src/record/transitions.ts, and no hidden column appears in any recorded or exported output.
-# The analyzer side of the raw device layer (data_model section 16: adapter, raw_file, raw_record, parse_error and the new columns of result) is described since S2e1; the controller side (alarm_event,
-# batch_phase_record and their state models) comes with S2e2, and `raw_layer` at the end is a marked placeholder for it, not an entry.
+# The raw device layer (data_model section 16) is described in two steps: the analyzer side since S2e1 (adapter, raw_file, raw_record, parse_error and the new columns of result) and the controller
+# side since S2e2 (historian_value with its layer-on columns, alarm_event, batch_phase_record and their state machines). `raw_layer` at the end lists the columns of section 16.2 that no run
+# emits yet; it is a marked placeholder for them, not an entry.
 
 dictionary_version: "1"
 data_model: docs/design/data_model.md
@@ -38,7 +39,7 @@ analytes:
 # ---- the recorded dataset (engine/src/record/types.ts) -----------------------------------------------------------------------------------------------------------------------------
 dataset:
   tables: [sample, analysis_request, run, instrument_state, result, audit_event, qualification, source_event, validation_finding, ingest_conflict, batch, process_event]
-  other: {architecture: "id, flags and labelling of the architecture that recorded the dataset", historian: "series (entity historian_series) and late rows (entity historian_value)", capture: "raw layer only: the capture path of the dataset ({path}); absent with the layer off", raw: "adapter_ingest only: the raw-side tables adapter, raw_file, raw_record and parse_error (data_model section 16.1)"}
+  other: {architecture: "id, flags and labelling of the architecture that recorded the dataset", historian: "series (entity historian_series) and late rows (entity historian_value)", capture: "raw layer only: the capture path of the dataset ({path}); absent with the layer off", raw: "adapter_ingest only: the raw-side tables adapter, raw_file, raw_record and parse_error (data_model section 16.1) and, with a controller on a bay, the controller records alarm_event and batch_phase_record (section 16.4)"}
 
 entities:
   sample:
@@ -167,14 +168,14 @@ entities:
     columns:
       - {name: adapter_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key with adapter_version: dialect and instrument"}
       - {name: adapter_version, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "immutable once a file was parsed with it (K21)"}
-      - {name: dialect_id, type: string, nullable: false, unit: null, values: [allinone_csv, counter_csv, cds_table], time: neither, visibility: observable, default: null, description: "the dialect (scenarios/profiles/dialect/); the engine never branches on it"}
-      - {name: device_class, type: string, nullable: false, unit: null, values: [analyzer], time: neither, visibility: observable, default: null, description: "analyzer here; the controller families come with S2e2"}
+      - {name: dialect_id, type: string, nullable: false, unit: null, values: [allinone_csv, counter_csv, cds_table, ctrl_neutral, ctrl_bench], time: neither, visibility: observable, default: null, description: "the dialect (scenarios/profiles/dialect/) or the controller family (scenarios/profiles/controller/); the engine never branches on it"}
+      - {name: device_class, type: string, nullable: false, unit: null, values: [analyzer, controller], time: neither, visibility: observable, default: null, description: "an analyzer dialect, or a controller family (S2e2: one adapter per controller, one controller per bay)"}
       - {name: instrument_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the instrument whose files the adapter reads (the source system of everything loaded)"}
       - {name: date_order, type: string, nullable: false, unit: null, values: [year_first, day_first, month_first, unknown], time: neither, visibility: observable, default: null, description: "what the parser believes about the order of the stamp (RQ2); unknown lets one row of a file pin it"}
       - {name: date_separator, type: string, nullable: false, unit: null, values: ["-", "/", "."], time: neither, visibility: observable, default: null, description: "the separator of the stamp date"}
       - {name: clock_style, type: string, nullable: false, unit: null, values: ["24h", "12h", unknown], time: neither, visibility: observable, default: null, description: "24 h, or 12 h whose day-part marker the file may lack (RQ2)"}
       - {name: source_zone_s, type: integer, nullable: true, unit: s, values: null, time: neither, visibility: observable, default: null, description: "the zone the adapter applies, seconds ahead of UTC; null leaves every stamp unresolved (VR-024, RQ1)"}
-      - {name: stamp_means, type: string, nullable: false, unit: null, values: [start, end], time: neither, visibility: observable, default: null, description: "whether the row stamp is the start or the end of the run (spec 2.4.8: the default, end, is an assumption)"}
+      - {name: stamp_means, type: string, nullable: false, unit: null, values: [start, end, instant], time: neither, visibility: observable, default: null, description: "whether the row stamp is the start or the end of the run (spec 2.4.8: the default, end, is an assumption); instant for a controller row, which is not a run"}
       - {name: time_resolution_s, type: integer, nullable: false, unit: s, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the resolution of the stamp (one minute for the counter dialect, A166)"}
       - {name: modeled_on, type: array, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the S### ledger ids the dialect is modeled on"}
       - {name: banner, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the first line of every file of the dialect: synthetic, modeled on public documentation; not a real instrument file (ADR-0014 R3)"}
@@ -200,7 +201,7 @@ entities:
       - {name: raw_record_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key: file and line"}
       - {name: raw_file_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the file"}
       - {name: line_no, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the physical line, banner included"}
-      - {name: record_kind, type: string, nullable: false, unit: null, values: [analysis, injection], time: neither, visibility: observable, default: null, description: "one analysis of a sample, or one injection of a data system (tag, alarm and phase lines come with S2e2)"}
+      - {name: record_kind, type: string, nullable: false, unit: null, values: [analysis, injection, tag_value, alarm_transition, phase_transition], time: neither, visibility: observable, default: null, description: "one analysis of a sample, one injection of a data system, or (S2e2) one tag value, alarm transition or phase transition of a controller log"}
       - {name: raw_text, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the line as received"}
       - {name: source_event_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the dialect's natural key of the line (instrument, row stamp text and sample id, or injection and result id), with the analyte; null for a rejected line"}
       - {name: state, type: string, nullable: false, unit: null, values: [loaded, no_op, held, quarantined, rejected], time: neither, visibility: observable, default: null, description: "the outcome per line; the worst state of the results of the line, no_op when every result was a repeat"}
@@ -214,7 +215,7 @@ entities:
       - {name: raw_file_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the file"}
       - {name: line_no, type: integer, nullable: true, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the line; null for a file-level error"}
       - {name: column_role, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the raw role the error concerns, where there is one"}
-      - {name: code, type: string, nullable: false, unit: null, values: [unknown_dialect_or_template, required_column_missing, bad_row_width, malformed_stamp, non_numeric_value, unknown_unit], time: neither, visibility: observable, default: null, description: "why the line or file could not be read (data_model section 16.1)"}
+      - {name: code, type: string, nullable: false, unit: null, values: [unknown_dialect_or_template, required_column_missing, bad_row_width, malformed_stamp, non_numeric_value, unknown_unit, unknown_name], time: neither, visibility: observable, default: null, description: "why the line or file could not be read (data_model section 16.1); unknown_name (S2e2): a tag, alarm or phase name, or a state, that the adapter maps do not know"}
       - {name: rule_id, type: string, nullable: false, unit: null, values: [VR-023], time: neither, visibility: observable, default: null, description: "the rule: VR-023 rejects"}
       - {name: reason, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the reason in words"}
       - {name: raised_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the file's received_at"}
@@ -249,14 +250,52 @@ entities:
       - {name: n, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "number of values"}
       - {name: pv, type: array, nullable: false, unit: null, unit_by: signal, unit_map: {pH: "[pH]", DO: "%", temperature: Cel}, values: null, time: neither, visibility: observable, default: null, description: "the process values at t0_s + j * cadence_s (process value only; no truth array)"}
   historian_value:
-    emitted: false
-    description: "a historian row that arrived later than its valid time (data_model section 5); empty from the recorder, the ingest layers of S2e add rows"
+    emitted: true
+    description: "a historian row that arrived later than its valid time (data_model section 5). Empty from a layer-off recorder. With the raw layer on and adapter_ingest, a controller on the bay (S2e2) makes the logged rows the historian of the dataset: one row per logged tag value, never interpolated (RQ9; the value of a tag at a time is the last row at or before it, data_model 16.4)"
     columns:
-      - {name: tag, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "`unit_tag.signal` (with the raw layer on the signal ends in a role, data_model section 16.4)"}
-      - {name: ts, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the value"}
+      - {name: tag, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "`unit_tag.signal` layer off; with the raw layer on the canonical `unit_tag.signal.role` with role PV, SP or OUT (A171, data_model 16.4); both families of controller land in this one form"}
+      - {name: ts, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the value: the stamp of the logged row"}
       - {name: value, type: number, nullable: false, unit: null, unit_by: tag, values: null, time: neither, visibility: observable, default: null, description: "the value; the unit follows the signal of the tag"}
-      - {name: quality, type: string, nullable: false, unit: null, values: [good], time: neither, visibility: observable, default: null, description: "quality flag"}
-      - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "when the system received the row"}
+      - {name: quality, type: string, nullable: false, unit: null, values: [good], time: neither, visibility: observable, default: null, description: "quality flag as the controller wrote it"}
+      - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "when the system received the row: the file received_at on adapter_ingest, which the controller log cut decides (A217: the end of the row day for daily, the row own stamp for per_row)"}
+      - {name: raw_ref, type: object, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "raw layer only: the raw file and line the value was parsed from ({raw_file_id, line_no}); null for a row that was not parsed from a file"}
+  alarm_event:
+    emitted: true
+    kind: raw_layer
+    description: "adapter_ingest only (data_model 16.4): one state transition of one alarm instance, as a controller log wrote it (RQ10). Append-only (K22); acknowledge and return-to-normal are separate rows. A transition the alarm model does not allow is stored and held (VR-025): a finding targets alarm_event:<alarm_event_id>. A production run writes none (no acknowledge or return-to-normal time has a ledger entry, spec 2.4.8)"
+    columns:
+      - {name: alarm_event_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key: raw file and line"}
+      - {name: alarm_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the alarm instance, with unit_id"}
+      - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit (vessel) the alarm belongs to"}
+      - {name: tag, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the process tag the alarm watches, canonical; null where the family alarm log does not carry it"}
+      - {name: severity, type: integer, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "OPC UA severity (A174); null where the family log does not carry it"}
+      - {name: from_state, type: string, nullable: false, unit: null, values: [normal, unacknowledged, acknowledged, rtn_unacknowledged, shelved, suppressed_by_design, out_of_service], time: neither, visibility: observable, default: null, description: "the state before the transition: written by the family that has a From column, else the previous state of the instance, normal for the first row"}
+      - {name: to_state, type: string, nullable: false, unit: null, values: [normal, unacknowledged, acknowledged, rtn_unacknowledged, shelved, suppressed_by_design, out_of_service], time: neither, visibility: observable, default: null, description: "the state after the transition (state_machines.alarm_event)"}
+      - {name: ts, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the transition"}
+      - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the file received_at"}
+      - {name: actor, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the acknowledging user, where the family records one (A174, S099); null otherwise"}
+      - {name: comment, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "free text; no family of S2 writes one, so it is always null"}
+      - {name: raw_ref, type: object, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the raw file and line ({raw_file_id, line_no}); every row loaded from a file has one (K20)"}
+  batch_phase_record:
+    emitted: true
+    kind: raw_layer
+    description: "adapter_ingest only (data_model 16.4): one state transition of one phase instance, as a controller log wrote it (RQ11), with the ISA-88 hierarchy as ids (A170). Append-only (K22). A transition the phase model does not allow is stored and held (VR-025): a finding targets batch_phase_record:<phase_record_id>. The phase log is checked against the batch times, never used to overwrite them"
+    columns:
+      - {name: phase_record_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key: raw file and line"}
+      - {name: batch_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch; null where the family phase log does not carry it"}
+      - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit (vessel)"}
+      - {name: recipe_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the recipe"}
+      - {name: procedure, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "ISA-88 procedure; null where the family log does not carry it"}
+      - {name: unit_procedure, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "ISA-88 unit procedure (at most one open per unit, S093); null where the family log does not carry it"}
+      - {name: operation, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "ISA-88 operation; null where the family log does not carry it"}
+      - {name: phase, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the phase; the production run writes before_shift and after_shift (data_model section 7, S2e2 table)"}
+      - {name: from_state, type: string, nullable: false, unit: null, values: [idle, running, complete, pausing, paused, holding, held, restarting, stopping, stopped, aborting, aborted, resetting], time: neither, visibility: observable, default: null, description: "the state before the transition: written by the family that has a From column, else the previous state of the instance, idle for the first row"}
+      - {name: to_state, type: string, nullable: false, unit: null, values: [idle, running, complete, pausing, paused, holding, held, restarting, stopping, stopped, aborting, aborted, resetting], time: neither, visibility: observable, default: null, description: "the state after the transition (state_machines.batch_phase_record): the 13 phase states of A170"}
+      - {name: ts, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the transition"}
+      - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the file received_at"}
+      - {name: actor, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "who caused the transition, where a family records it; no family of S2 does, so it is always null"}
+      - {name: command, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the command behind the transition (start, hold, restart, ...), where a family records it; no family of S2 does, so it is always null"}
+      - {name: raw_ref, type: object, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the raw file and line ({raw_file_id, line_no}); every row loaded from a file has one (K20)"}
   process_context:
     emitted: true
     kind: view
@@ -373,11 +412,60 @@ state_machines:
       - {from: under_review, to: rejected, by: [reviewer], basis: diagram}
       - {from: released, to: superseded, by: [approver], basis: default}
 
-# ---- placeholder: the controller side of the raw device layer (data_model section 16; ADR-0014) --------------------------------------------------------------------------------------
-# Not entries. S2e1 described the analyzer side (adapter, raw_file, raw_record, parse_error and the new columns of result, above). These entities, the new columns that no run emits yet and the
-# state models of alarm_event and batch_phase_record (section 16.5) are described here when S2e2 (Step 7) builds the controller side.
+  # S2e2, the controller records (data_model 16.5). The state of an instance is `to_state` of its latest record (`state_column`), a log is append-only (K22), and a logged transition the table does not
+  # list is stored and held by the adapter (VR-025). The diagrams label no role among the five of data_model section 6, so every step is basis `default`: a step the process causes (a condition
+  # becoming active or clearing, a state that follows from the previous one) takes `rule`, and a step an operator causes (acknowledge, shelve, start, hold, restart, stop, abort, reset) takes `analyst`,
+  # the person at the bench: a stand-in, because no operator role exists.
+  alarm_event:
+    state_column: to_state
+    initial: normal
+    terminal: []
+    emitted_states: [acknowledged, normal, unacknowledged]
+    null_means: "not applicable: every row names both states"
+    transitions:
+      - {from: normal, to: unacknowledged, by: [rule], basis: default}
+      - {from: unacknowledged, to: acknowledged, by: [analyst], basis: default}
+      - {from: unacknowledged, to: rtn_unacknowledged, by: [rule], basis: default}
+      - {from: acknowledged, to: normal, by: [rule], basis: default}
+      - {from: rtn_unacknowledged, to: normal, by: [analyst], basis: default}
+      - {from: normal, to: shelved, by: [analyst], basis: default}
+      - {from: normal, to: suppressed_by_design, by: [rule], basis: default}
+      - {from: normal, to: out_of_service, by: [analyst], basis: default}
+      - {from: shelved, to: normal, by: [analyst], basis: default}
+      - {from: suppressed_by_design, to: normal, by: [rule], basis: default}
+      - {from: out_of_service, to: normal, by: [analyst], basis: default}
+  batch_phase_record:
+    state_column: to_state
+    initial: idle
+    terminal: []
+    emitted_states: [complete, running]
+    null_means: "not applicable: every row names both states"
+    transitions:
+      - {from: idle, to: running, by: [analyst], basis: default}
+      - {from: running, to: complete, by: [rule], basis: default}
+      - {from: running, to: pausing, by: [analyst], basis: default}
+      - {from: pausing, to: paused, by: [rule], basis: default}
+      - {from: paused, to: running, by: [analyst], basis: default}
+      - {from: running, to: holding, by: [analyst], basis: default}
+      - {from: holding, to: held, by: [rule], basis: default}
+      - {from: held, to: restarting, by: [analyst], basis: default}
+      - {from: restarting, to: running, by: [rule], basis: default}
+      - {from: running, to: stopping, by: [analyst], basis: default}
+      - {from: paused, to: stopping, by: [analyst], basis: default}
+      - {from: held, to: stopping, by: [analyst], basis: default}
+      - {from: stopping, to: stopped, by: [rule], basis: default}
+      - {from: running, to: aborting, by: [analyst], basis: default}
+      - {from: held, to: aborting, by: [analyst], basis: default}
+      - {from: stopping, to: aborting, by: [analyst], basis: default}
+      - {from: aborting, to: aborted, by: [rule], basis: default}
+      - {from: complete, to: resetting, by: [analyst], basis: default}
+      - {from: stopped, to: resetting, by: [analyst], basis: default}
+      - {from: aborted, to: resetting, by: [analyst], basis: default}
+      - {from: resetting, to: idle, by: [rule], basis: default}
+
+# ---- placeholder: the columns of data_model 16.2 that no run emits yet (ADR-0014) ------------------------------------------------------------------------------------------------------
+# Not entries. S2e1 described the analyzer side and S2e2 the controller side (the entries and the two state machines above). These columns of section 16.2 are not emitted by any recorder yet:
+# a result carries no range_flag (Parked, data_model section 7), the file does not give run.started_at_derived (Parked), and the instrument and unit rows are master data that no recorder writes.
 raw_layer:
   status: placeholder
-  entities: [alarm_event, batch_phase_record]
-  state_machines: [alarm_event, batch_phase_record]
-  new_columns: [result.range_flag, run.started_at_derived, instrument.adapter_id, unit.controller_adapter_id, historian_value.raw_ref]
+  new_columns: [result.range_flag, run.started_at_derived, instrument.adapter_id, unit.controller_adapter_id]

@@ -1797,3 +1797,11 @@ assumptions:
     grade: A
     sources: []
     notes: "Range is a pair of design variants, as in A176 and A215, not a measured spread. No source gives when an analyzer export reaches the host. The staffed window itself is A098 (shift pattern A201). A159 says an export is an operator action that selects rows, so a file does not map one-to-one to a draw. Research task: find the export trigger and its usual timing in S003 and S038. The scenario setting export_schedule takes window_end (default) or per_run. The two variants change when a file arrives, so the capture-path contrast isolates linkage with per_run, whose arrival equals the manual path's entry time (no entry delay is modelled, spec 2.4.8), and reports window_end as a timing sensitivity (spec section 5, Automatic linkage alone)."
+  - id: A217
+    name: controller_log_file_cut
+    default: "one file per record type per day"
+    range: ["one file per record type per day", "each row as written"]
+    unit: schedule
+    grade: A
+    sources: []
+    notes: "Range is a pair of design variants, as in A176, A215 and A216, not a measured spread. No source gives how a controller cuts its log files; spec 2.4.2 names the daily cut. The scenario setting controller_log_cut takes daily (default) or per_row. The two variants change when a controller row reaches the host, so a capture-path contrast holds the controller timing equal on the two paths, as A216 does for the analyzer: the linkage-alone block runs per_row (each row reaches the host at its own stamp, as the manual path's historian value does) and the timing-sensitivity block runs daily."
