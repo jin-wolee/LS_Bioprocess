@@ -317,6 +317,8 @@ Hypothesis matrix (a design hypothesis to be tested in session S2 by forced-erro
 
 Rows marked (raw) exist only with `raw_layer` on and `capture_path` `adapter_ingest`, because they arise in a file. Rows marked (manual) exist only with the layer on and `manual_transcription`. On the other path such a row reads "not applicable", never zero. The origin of four earlier rows moves into the raw file with the layer on (section 2.4.6), and "duplicate or replayed file" then also needs a file to parse, so it arises only on `adapter_ingest`.
 
+**Notes from S2b.** With the current rule definitions VR-014 cannot detect an injected label error in any architecture: a system-issued id prevents the typo, and without it no list of open requests exists before the sample arrives. The label row's cells therefore read prevented or invisible, unless VR-009 applies. The non-rule entries of the "Detected by" column (the idempotency log, the audit trail, the bridging study, the as-of query, the recorded container and hold context) are scored in S2c by named evidence in the record, not by a rule id.
+
 ### Detection rules and the flags they need
 
 A rule can only fire on fields that are stored. For every detection mechanism named in the matrix above, the table lists the flags that must be on for the rule to have the fields it reads, the other data it reads, and when it cannot fire. It is derived from the rule definitions in `data_model.md` sections 5 and 8, and it is a design hypothesis for the forced-error fixtures of section 6, not a result. Flag names are exactly those of the flag table above. Rows marked (ext) belong to the extensions (section 11) and are checked from S5.
