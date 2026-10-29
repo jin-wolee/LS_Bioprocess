@@ -1,0 +1,15 @@
+{
+  "schema_version": "1",
+  "id": "c_context",
+  "flags": {
+    "system_issued_id": true,
+    "two_clocks": true,
+    "available_at": true,
+    "instrument_state_snapshot": true,
+    "append_only_versions": true,
+    "write_time_keys": true,
+    "ingest_idempotency": true,
+    "audit_trail": true
+  },
+  "labelling": "issued_at_draw"
+}

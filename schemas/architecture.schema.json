@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture.schema.json",
+  "title": "Architecture",
+  "description": "A data architecture: the eight independent feature flags of docs/design/simulation_spec.md section 5 (ADR-0005) and the labelling method. Presets A, B and C are data under scenarios/architectures/. There is no ninth flag: an unknown key under flags is rejected, and a new flag needs its own Proposed ADR.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "flags", "labelling"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "id": { "type": "string", "minLength": 1 },
+    "flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail"],
+      "properties": {
+        "system_issued_id": { "type": "boolean", "description": "On: the key is issued by the system at label creation. Off: typed or handwritten." },
+        "two_clocks": { "type": "boolean", "description": "On: sampled_at and measured_at are stored separately. Off: one time is stored, the measured time." },
+        "available_at": { "type": "boolean", "description": "On: each row carries when it became knowable. Off: queries see rows as of now." },
+        "instrument_state_snapshot": { "type": "boolean", "description": "On: the run links instrument, calibration and reagent lot. Off: a free-text analyzer name at most." },
+        "append_only_versions": { "type": "boolean", "description": "On: a correction, rerun or reprocess creates a version. Off: overwrite in place." },
+        "write_time_keys": { "type": "boolean", "description": "On: sample_id, unit_id and batch_id are fixed at write time and never re-keyed. Off: unit and batch are attached later by a time join." },
+        "ingest_idempotency": { "type": "boolean", "description": "On: source event id and key, duplicates and replays are no-ops. Off: duplicates double count." },
+        "audit_trail": { "type": "boolean", "description": "On: who, when and what changed, with operator id. Off: no history." }
+      }
+    },
+    "labelling": { "type": "string", "enum": ["handwritten", "preprinted_barcode", "issued_at_draw"], "description": "The L2 labelling method (spec section 2.2); set independently of the flags." },
+    "source_of_record": { "type": "string", "enum": ["lims", "mes_ebr"], "description": "The system of record for routine in-process results (spec section 5, A056). A setting, not a flag; nothing in S2a reads it." }
+  }
+}

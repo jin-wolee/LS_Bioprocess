@@ -1,0 +1,15 @@
+{
+  "schema_version": "1",
+  "id": "a_manual",
+  "flags": {
+    "system_issued_id": false,
+    "two_clocks": false,
+    "available_at": false,
+    "instrument_state_snapshot": false,
+    "append_only_versions": false,
+    "write_time_keys": false,
+    "ingest_idempotency": false,
+    "audit_trail": false
+  },
+  "labelling": "handwritten"
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1",
+  "id": "b_lims_lite",
+  "flags": {
+    "system_issued_id": true,
+    "two_clocks": false,
+    "available_at": false,
+    "instrument_state_snapshot": false,
+    "append_only_versions": false,
+    "write_time_keys": false,
+    "ingest_idempotency": true,
+    "audit_trail": true
+  },
+  "labelling": "preprinted_barcode"
+}

@@ -4,7 +4,8 @@ import type { Event } from "./generated/event.schema";
 import { buildInstruments } from "./instrument.ts";
 import type { Instruments } from "./instrument.ts";
 import { makeMeasure } from "./measure.ts";
-import { observe } from "./observe.ts";
+import { observe, observeSensors } from "./observe.ts";
+import type { ObservableSensorSeries } from "./observe.ts";
 import { runProcess } from "./process.ts";
 import type { ProcessRun } from "./process.ts";
 import { createRng } from "./rng.ts";
@@ -32,7 +33,10 @@ export interface ScenarioRun {
   events: Event[];
   /** What a recorder could see: the truth log with every hidden field removed (spec section 3). */
   observable: Record<string, unknown>[];
+  /** The online sensor series with the truth array beside the process value. Truth side: recorders never get this. */
   sensors: SensorSeries[];
+  /** The same series as a recorder sees them: the process value only (S2a, adversary note F11). */
+  observableSensors: ObservableSensorSeries[];
   samples: SampleRecord[];
   operators: Operator[];
   process: ProcessRun;
@@ -110,5 +114,5 @@ export const runScenario = (cfg: ScenarioConfig, opts: RunOptions = {}): Scenari
   // one log: the header, then L1, L2, the instrument calibrations and the L3 events in time order; at an equal instant the layers keep this order
   const [header, ...l3Events] = l3.events as [Event, ...Event[]];
   const events = [header, ...[...proc.events, ...sampling.events, ...instruments.events, ...l3Events].sort((a, b) => a.t - b.t)];
-  return { events, observable: observe(events), sensors: proc.sensors, samples: sampling.samples, operators: sampling.operators, process: proc, l3Input: input, runs: l3.runs, instruments };
+  return { events, observable: observe(events), sensors: proc.sensors, observableSensors: observeSensors(proc.sensors), samples: sampling.samples, operators: sampling.operators, process: proc, l3Input: input, runs: l3.runs, instruments };
 };

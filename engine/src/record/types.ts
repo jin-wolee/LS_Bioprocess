@@ -1,0 +1,158 @@
+import type { ObservableEvent, ObservableSensorSeries } from "../observe.ts";
+import type { Architecture } from "./architecture.ts";
+
+// The recorded dataset of one architecture (data_model section 2). Column names are data_model's. A column an architecture cannot
+// know is null (data_model principle 7), never absent, so a test can state "stored" as "not null". Times are integer seconds of
+// the scenario, as stamped by the observable event the row comes from. Nothing here is a truth field.
+
+export interface RecorderInput {
+  /** The observable events (hidden fields removed, in the type and in the value). */
+  events: readonly ObservableEvent[];
+  /** The online sensor series, process value only. */
+  sensors: readonly ObservableSensorSeries[];
+}
+
+export interface SampleRow {
+  sample_id: string;
+  /** The unit as carried by the label in the stream, stored at write in every architecture. */
+  unit_id: string;
+  /** write_time_keys only. Off: null at write; the batch is derived at read by a time join (`batchOf` in asof.ts). */
+  batch_id: string | null;
+  /** write_time_keys: the keys were fixed at write time. */
+  keys_fixed_at_write: boolean;
+  /** `skipped` for a planned draw that the volume budget refused (spec section 2.2); null otherwise (the state machine of the sample is S2d). */
+  state: "skipped" | null;
+  /** two_clocks only (K3). */
+  sampled_at: number | null;
+  /** system_issued_id only: the plan that issues the label gives the sample its planned time (data_model section 2). */
+  planned_at: number | null;
+  /** audit_trail only: the sampler. Off: the operator is absent. */
+  operator_id: string | null;
+  /** The method the label_bound event reports. */
+  label_method: string | null;
+}
+
+export interface RunRow {
+  run_id: string;
+  request_id: string;
+  attempt: number;
+  visit: number;
+  /** The analyzer as free text, as seen on the event (allowed with the snapshot off: "at most a free-text analyzer name"). */
+  analyzer_name: string;
+  /** instrument_state_snapshot only. */
+  instrument_id: string | null;
+  /** instrument_state_snapshot only. */
+  instrument_state_id: string | null;
+  started_at: number;
+  /** Null while no visit_finished has been seen for the run. */
+  ended_at: number | null;
+}
+
+export interface InstrumentStateRow {
+  instrument_state_id: string;
+  instrument_id: string;
+  calibration_ref: string;
+  reagent_lot: string;
+  valid_from: number;
+  /** Null while the state is the latest one. */
+  valid_to: number | null;
+}
+
+export interface ResultRow {
+  result_id: string;
+  request_id: string;
+  analyte: string;
+  /** Rank of the attempt among the attempts recorded for (request, analyte). Overwrite in place (append_only_versions off) keeps 1. */
+  version: number;
+  run_id: string;
+  value: number;
+  measured_at: number;
+  /** available_at only: the stamp of the observable result event (S2a models no ingestion or review delay). */
+  available_at: number | null;
+  /** append_only_versions only: the result_id this version replaces. */
+  supersedes: string | null;
+}
+
+/** audit_trail only: one row per change of a result (a rerun that replaces an earlier attempt). */
+export interface AuditEventRow {
+  audit_id: string;
+  request_id: string;
+  analyte: string;
+  at: number;
+  old_value: number;
+  new_value: number;
+  old_version: number;
+  new_version: number;
+}
+
+/** ingest_idempotency only: one row per distinct idempotency key (K9). */
+export interface SourceEventRow {
+  source_system: string;
+  source_event_id: string;
+  idempotency_key: string;
+  received_at: number;
+}
+
+/** ingest_idempotency only: a duplicate or replayed row that was a no-op (VR-008, information). The detection rules of S2b add their own rows to this table. */
+export interface ValidationFindingRow {
+  rule: "VR-008";
+  target: string;
+  severity: "info";
+  action: "no-op";
+}
+
+/** ingest_idempotency only: an incoming row with a known idempotency key and other content. It is not loaded and the original stays; S2b's VR-008b reads this list. */
+export interface IngestConflictRow extends SourceEventRow {
+  request_id: string;
+  analyte: string;
+  run_id: string;
+  value: number;
+  measured_at: number;
+}
+
+export interface BatchRow {
+  batch_id: string;
+  unit_id: string;
+  inoculated_at: number;
+  harvested_at: number | null;
+}
+
+export interface ProcessEventRow {
+  event_id: string;
+  batch_id: string;
+  unit_id: string;
+  kind: string;
+  occurred_at: number;
+  amount: number | null;
+  source: string;
+  ingested_at: number;
+}
+
+/** A historian row: a tag, its valid time `ts`, the value, and when the system received it (data_model section 2). */
+export interface HistorianRow {
+  tag: string;
+  ts: number;
+  value: number;
+  quality: "good";
+  ingested_at: number;
+}
+
+export interface RecordedDataset {
+  architecture: Pick<Architecture, "id" | "flags" | "labelling">;
+  sample: SampleRow[];
+  run: RunRow[];
+  instrument_state: InstrumentStateRow[];
+  result: ResultRow[];
+  audit_event: AuditEventRow[];
+  source_event: SourceEventRow[];
+  validation_finding: ValidationFindingRow[];
+  ingest_conflict: IngestConflictRow[];
+  batch: BatchRow[];
+  process_event: ProcessEventRow[];
+  historian: {
+    /** The online series, kept columnar like the engine's (about 1.4 million values for the default scenario). A tick is a row with tag `unit.signal`, `ts` = its stamp and `ingested_at` = `ts`. */
+    series: readonly ObservableSensorSeries[];
+    /** Rows that arrived later than their valid time: a corrected or late value (data_model section 5). Empty from the recorder; ingest layers add to it. */
+    late: HistorianRow[];
+  };
+}
