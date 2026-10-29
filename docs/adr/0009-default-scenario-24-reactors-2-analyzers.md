@@ -1,5 +1,5 @@
 # ADR-0009: Default scenario: 24 reactors in two bays, 2 analyzers, N by M adjustable
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-28
 
 ## Context
@@ -43,4 +43,4 @@ Any utilisation figure must state its window. With 33.6 to 38.4 samples a day at
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "수락 (Recommended)".

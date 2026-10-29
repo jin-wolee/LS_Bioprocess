@@ -1,5 +1,5 @@
 # ADR-0013: Scope extensions: cell-line profiles, operating modes and break-out events
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-29
 
 ## Context
@@ -67,4 +67,4 @@ Proposed: option 4, with the schedule the author chose in the guided review: bre
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "break-out을 앞당김(S3)". Break-out events move to session S3; cell-line and operating-mode profiles stay in S4.

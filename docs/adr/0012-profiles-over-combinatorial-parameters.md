@@ -1,5 +1,5 @@
 # ADR-0012: Profiles over combinatorial parameters
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-28
 
 ## Context
@@ -47,4 +47,4 @@ A bundle takes the grade of its weakest component, in the order S, P, D, A: a bu
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "수락 (Recommended)".

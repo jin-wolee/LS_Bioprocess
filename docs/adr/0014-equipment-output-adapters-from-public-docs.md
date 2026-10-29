@@ -1,5 +1,5 @@
 # ADR-0014: Equipment output adapters modeled on public documentation
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-29
 
 ## Context
@@ -70,4 +70,4 @@ The author's three cautions in the earlier message, summarised in English by Cla
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "수락 (Recommended)".

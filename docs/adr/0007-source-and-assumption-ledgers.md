@@ -1,5 +1,5 @@
 # ADR-0007: Source and assumption ledgers; grades and verification levels
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-28
 
 ## Context
@@ -46,4 +46,4 @@ _None recorded._
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "수락 (Recommended)".

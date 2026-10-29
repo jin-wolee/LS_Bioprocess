@@ -1,5 +1,5 @@
 # ADR-0002: Decision records mark the author's contribution boundary
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-28
 
 ## Context
@@ -42,4 +42,4 @@ Proposed: option 1. Claude writes status `Proposed` only and leaves the decider'
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "수락 — 반영은 내가 직접 커밋 (Recommended)".

@@ -1,5 +1,5 @@
 # ADR-0010: The author's implementation track and user-owned file protection
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-28
 
 ## Context
@@ -47,4 +47,4 @@ Proposed: option 1, with these rules.
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "수락 (Recommended)".

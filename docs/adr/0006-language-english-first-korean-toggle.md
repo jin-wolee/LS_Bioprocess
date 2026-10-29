@@ -1,5 +1,5 @@
 # ADR-0006: Language: English first with a Korean toggle
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-28
 
 ## Context
@@ -41,4 +41,4 @@ Proposed: option 3. The site and all public documents (README, design documents,
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "수락 (Recommended)".

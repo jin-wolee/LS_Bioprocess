@@ -1,5 +1,5 @@
 # ADR-0008: Licence: MIT for code, CC BY 4.0 for documents
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-28
 
 ## Context
@@ -42,4 +42,4 @@ _None recorded._
 
 ## Decider's note
 
-_(author only — Claude never writes here)_
+Decided by the author in a guided review on 2026-10-29: chose "코드 MIT + 문서 CC BY 4.0 (Recommended)".
