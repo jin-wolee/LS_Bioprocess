@@ -34,7 +34,7 @@ Proposed: option 1, with these rules.
 
 - Positive: a defensible boundary between the author's work and AI-built parts; learning is part of the plan, not an afterthought.
 - Negative: SimPy parity and SQL checks may lag the TypeScript engine; until they exist, parity is unproven, and documents must not say it is.
-- The README and any resume wording follow the boundary as recorded here; nothing claims more than the commit history shows.
+- The README and any authorship statement follow the boundary as recorded here; nothing claims more than the commit history shows.
 
 ## Evidence
 

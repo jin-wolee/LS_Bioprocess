@@ -25,7 +25,7 @@ Every scenario needs a default size. The default must be easy to explain, suppor
 
 Proposed: option 1. The default is a PD-laboratory background with the bench-scale manual profile (A067), one sample per reactor per day with a second sample in the feed window on a share of reactor-days (A014, A015), and the analyzer count at 2 (A022). N and M stay adjustable within the ledger ranges.
 
-Any utilisation figure must state its window. With 33.6 to 38.4 samples a day at 4.5 min each (A001, A014, A015, A023, S001), the load is 12.6 to 16 percent of two analyzers over a 9 to 10 h staffed window, and 5 to 6 percent over a 24 h clock (A074, grade A because counts and window are assumptions). One stand-alone all-in-one analyzer handles about 13.3 samples per hour (A075, derived). Queueing therefore comes from bursts, not from capacity: the default burst puts 65 percent of draws around 08:30 with a spread of 18 min (A016, assumed).
+Any utilisation figure must state its window. With 33.6 to 38.4 samples a day at 4.5 min each (A001, A014, A015, A023, S001), the load is 12.6 to 14.4 percent of two analyzers per 10 h staffed window (the default window, A098), and 5.2 to 6.0 percent per 24 h clock (A074, grade A because counts and window are assumptions). One stand-alone all-in-one analyzer handles about 13.3 samples per hour (A075, derived). Queueing therefore comes from bursts, not from capacity: the default burst puts 65 percent of draws around 08:30 with a spread of 18 min (A016, assumed).
 
 ## Consequences
 

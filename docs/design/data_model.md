@@ -2,12 +2,12 @@
 
 Status: design draft. This document is the specification and the basis for acceptance tests. **The DDL itself is the author's task** (`sql/schema.sql`, listed in `.claude/user_owned.txt`) and is deliberately not written here; neither are the three core SQL queries (an as-of window join of results to process context, a recursive lineage query, a bridging correction) under `sql/queries/` (ADR-0010). Synthetic data only; nothing here describes a real system.
 
-Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_spec.md`. A dagger (†) marks a design parameter with no ledger id yet.
+Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_spec.md`. A number without an id is a defect. This file is the canonical source for table, column and time-field names; prompts and schemas follow it.
 
 ## 1. Principles
 
 1. The event record is the source of truth; current state is derived. Corrections create new versions, they never overwrite (flag `append_only_versions`).
-2. Keys that give context (`unit_id`, `batch_id`, `sampled_at`) are captured at write time and immutable (flag `write_time_keys`). Process context is a versioned, as-of projection, not a copy.
+2. Keys that give context (`sample_id`, `unit_id`, `batch_id`) are captured at write time and never re-keyed (flag `write_time_keys`). The draw time `sampled_at` is a separate field that belongs to flag `two_clocks`. Process context is a versioned, as-of projection, not a copy.
 3. Time has several meanings, so several fields exist (section 5). A single "timestamp" column is the defect this model exists to expose.
 4. Validation changes the state of a row, never its value: hold, quarantine or reject. Fixing a value is a new version with an author and a reason.
 5. Who did it is recorded: operator id and a reference to the qualification in force (flag `audit_trail`).
@@ -18,21 +18,21 @@ Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_sp
 
 | Entity | Grain | Key | Main attributes | Notes |
 |---|---|---|---|---|
-| `unit` | one vessel (ISA-88 unit) | `unit_id` | area, bay, bioreactor profile reference, working volume with UCUM unit, historian tag map | master data; profile ids per A065 to A068 |
+| `unit` | one vessel (ISA-88 unit) | `unit_id` | area, bay, bioreactor profile reference, working volume with UCUM unit, `unit_tag` | master data; profile ids per A065 to A068; `unit_tag` is the historian tag prefix of the unit, and a historian tag is `unit_tag`, a dot and a signal name (for example `U03.pH`) |
 | `batch` | one culture run on a unit | `batch_id` | `unit_id`, process mode (A003), inoculated and harvested times, seed-train parent via a lineage edge | at most one open batch per unit at a time |
 | `process_event` | one event in a batch | `event_id` | `batch_id`, `unit_id`, type (feed, temperature shift, alarm, harvest), `occurred_at`, amount with unit, source | feeds are discrete (A010, S017) |
-| `sample` | one physical draw | `sample_id` | `unit_id`, `batch_id`, `sampled_at`, `planned_at`, sampler `operator_id`, container, label method, state | `sampled_at` lives here and only here |
+| `sample` | one physical draw | `sample_id` | `unit_id`, `batch_id`, `sampled_at`, `planned_at`, sampler `operator_id`, container, label method, state | `sampled_at` lives here and only here, and is stored only when `two_clocks` is on; `planned_at` is recorded only where a sampling plan issues the label (`system_issued_id`) |
 | `aliquot` | one portion of a sample | `aliquot_id` | `sample_id`, storage condition (A021), volume, state | portions sum to at most the sample volume |
-| `analysis_request` | one analyte panel asked of one aliquot | `request_id` | `aliquot_id`, analytes, `method_id`, priority or deadline, requested time, state | denominator unit for the metrics |
+| `analysis_request` | one analyte panel asked of one aliquot | `request_id` | `aliquot_id`, analytes, `method_id`, `control_id`, priority or deadline, requested time, state | denominator unit for the metrics; `control_id` identifies the bridging or control sample: requests that share it measure the same material on different instruments or instrument states, and it is null for ordinary requests |
 | `instrument` | one analyzer | `instrument_id` | class (A069 to A071), serial, interface (A036), configured time zone | |
-| `instrument_state` | one versioned state of an instrument | `instrument_state_id` | `instrument_id`, calibration reference, reagent lot, QC lot, software version, valid from and to | linked from `run` when `instrument_state_snapshot` is on |
-| `run` | one pass of a sample through an instrument | `run_id` | `instrument_id`, `instrument_state_id`, `method_id`, started and ended times, `operator_id`, position or sequence, QC outcome | multi-visit samples have one run per visit |
+| `instrument_state` | one versioned state of an instrument | `instrument_state_id` | `instrument_id`, `calibration_ref`, `reagent_lot`, `qc_lot`, `software_version`, `valid_from`, `valid_to` | linked from `run` when `instrument_state_snapshot` is on |
+| `run` | one pass of a sample through an instrument | `run_id` | `instrument_id`, `instrument_state_id`, `method_id`, `started_at` (the instant written `run_started_at`), `ended_at`, `operator_id`, position or sequence, QC outcome | multi-visit samples have one run per visit |
 | `method` | one versioned analytical method | `method_id` + version | analytes, expected units, dilution rule, effective dates | immutable once used |
 | `result` | one analyte value for a request, one version | `result_id`; unique on (`request_id`, analyte, version) | `run_id`, value, original and canonical unit (UCUM), `measured_at`, `ingested_at`, `reviewed_at`, `available_at`, state, supersedes link, raw reference | |
 | `process_context` (view) | one result or sample at one as-of time | derived | process state at `sampled_at` from the historian and events, as known at the as-of time | versioned projection, joined with an as-of join |
-| `lineage_edge` | one derivation step between two items | `edge_id` | from item, to item, relation, activity, `occurred_at`, `available_at` | items are samples, aliquots, results or process materials |
+| `lineage_edge` | one derivation step between two items | `edge_id` | `from_item_id`, `to_item_id`, `relation`, `activity`, `occurred_at`, `available_at` | items are samples, aliquots, results or process materials; `relation` is one of the eight values of section 12 |
 
-Supporting entities: `operator` (pseudonymous id, role, shift), `qualification` (operator, scope, level such as experienced or trainee per A072 and A073, valid from and to), `source_event` (ingestion envelope, section 7), `audit_event` (who, when, what changed, reason, old and new version), `validation_finding` (rule, target, severity, action, status), `historian_value` (tag, time, value, quality).
+Supporting entities: `operator` (pseudonymous id, role, shift), `qualification` (operator, scope, level such as experienced or trainee per A072 and A073, valid from and to), `source_event` (ingestion envelope, section 7), `audit_event` (who, when, what changed, reason, old and new version), `validation_finding` (rule, target, severity, action, status), `historian_value` (`tag`, `ts`, `value`, `quality`, `ingested_at`; rows are not versioned, a late or corrected value arrives as a new row with a later `ingested_at`).
 
 ## 3. Entity-relationship sketch
 
@@ -97,9 +97,9 @@ erDiagram
 |---|---|
 | K1 | `result` is unique on (`request_id`, analyte, version). |
 | K2 | `result.measured_at` and `result.run_id` are not null. A result cannot exist without a run. |
-| K3 | `sampled_at` is stored on `sample` only. Results reach it by join; holding time is derived as `measured_at` minus `sampled_at`. |
-| K4 | `sampled_at <= measured_at` is a truth-world invariant. In recorded data it is a validation rule (VR-002) because clocks and typing can violate it. |
-| K5 | `sample.unit_id`, `sample.batch_id` and `sample.sampled_at` are immutable after write (VR-018). |
+| K3 | `sampled_at` is stored on `sample` only, and only when `two_clocks` is on. Results reach it by join; `hold_time` and `turnaround` are derived (section 5). |
+| K4 | `sampled_at <= run_started_at <= measured_at` is a truth-world invariant. In recorded data it is a validation rule (VR-002) because clocks and typing can violate it. |
+| K5 | `sample.sample_id`, `sample.unit_id` and `sample.batch_id` are never re-keyed after write (flag `write_time_keys`, VR-018). `sampled_at` is never overwritten either; a correction is a new version (principle 4). |
 | K6 | A unit has at most one open batch at any time. |
 | K7 | An instrument does not process two runs at once. Checked by an acceptance query rather than a database constraint. |
 | K8 | A released result is immutable. A change creates a new version that supersedes it. |
@@ -114,32 +114,44 @@ erDiagram
 
 | Field | Meaning | On |
 |---|---|---|
-| `sampled_at` | instant the sample left the process | `sample` |
-| `measured_at` | instant the instrument measured | `result` |
-| `ingested_at` | instant the system received the record | `result`, `process_event`, `source_event` |
+| `sampled_at` | instant the sample left the process; stored only when `two_clocks` is on | `sample` |
+| `run_started_at` (column `run.started_at`) | instant the instrument began the run | `run` |
+| `measured_at` | instant the instrument completed the measurement, the end of the run (`run.ended_at`); a truth event. With `two_clocks` off, the one time stored is this instant | `result` |
+| `occurred_at`, `ts` | valid time of a process event, and of a historian value | `process_event`, `historian_value` |
+| `ingested_at` | instant the system received the record | `result`, `process_event`, `historian_value`, `source_event` |
 | `reviewed_at` | instant a reviewer or approver acted | `result` |
 | `available_at` | instant this version of the row became knowable to a downstream reader | every versioned row |
 
-Expected order for a released result: `sampled_at` <= `measured_at` <= `ingested_at` <= `reviewed_at` <= `available_at` (when release is gated by review; otherwise `available_at` follows `ingested_at`). Violations are findings, not exceptions.
+Two derived quantities are defined here and nowhere else.
 
-**Bitemporal and as-of rule.** `sampled_at`, `measured_at` and `occurred_at` are valid time: when something was true in the lab. `ingested_at` and `available_at` are transaction time: when the system knew it. A query "as of T" returns, for each logical key, the version with the greatest `available_at` that is at or before T, and process context for a result uses historian values and events with `available_at` at or before T, matched on valid time at `sampled_at`. With the flag `available_at` off, queries see everything as of now, which leaks late corrections into earlier decisions. With `two_clocks` off, `sampled_at` is not stored and cannot be reconstructed.
+| Quantity | Definition | Used for |
+|---|---|---|
+| `hold_time` | `run_started_at` minus `sampled_at` (truth) | sample stability (A046, A039), the holding-time metric and rule VR-010; it is not the queue wait alone |
+| `turnaround` | `available_at` minus `sampled_at` | whether a result could inform a decision; includes measurement, ingestion and review |
 
-**Clocks.** Timed records need controlled or synchronised clocks and a specified time zone (S029, sections 5.1 and 6.13); changing any clock used for recording timed events, including in process instrumentation, should be restricted (S030, 4.12); time-zone configuration is also covered second-hand (S052). How often a clock is wrong has no source (A049), so the wrong-clock scenario (SC6) is a stress case, not an estimate.
+In the truth world both quantities use truth stamps. In recorded data they exist only where both clocks are stored (`two_clocks` on), and a recorded clock may be skewed in L4 (an instrument clock offset, A049), so a recorded value can differ from the truth value. Metrics compare recorded values with the truth value.
+
+Expected order for a released result: `sampled_at` <= `run_started_at` <= `measured_at` <= `ingested_at` <= `reviewed_at` <= `available_at` (when release is gated by review; otherwise `available_at` follows `ingested_at`). Violations are findings, not exceptions.
+
+**Bitemporal and as-of rule.** `sampled_at`, `run_started_at`, `measured_at`, `occurred_at` and `ts` are valid time: when something was true in the lab. `ingested_at` and `available_at` are transaction time: when the system knew it. A decision or query "as of t" uses, per logical key, the latest result version (greatest `available_at`) among those with `available_at` at or before t, and the historian rows and process events with `ingested_at` at or before t (for a repeated `tag` and `ts`, the latest ingested row). Process context for a result is then matched on valid time at `sampled_at`. With the flag `available_at` off, queries see everything as of now, which leaks late corrections into earlier decisions. With `two_clocks` off, only the measured time is stored; `sampled_at` is not stored and cannot be reconstructed.
+
+**Clocks.** Timed records need controlled or synchronised clocks and a specified time zone (S029, sections 5.1 and 6.13); changing any clock used for recording timed events, including in process instrumentation, should be restricted (S030, 4.12); time-zone configuration is also covered second-hand (S052). How often a clock is wrong has no source (A049), so the wrong-clock scenario (SC6, example offset +5 h) is a stress case, not an estimate.
 
 ```mermaid
 gantt
-  title One sample, five clocks (illustrative times)
+  title One sample, the times that matter (illustrative, A102 and A050)
   dateFormat HH:mm
   axisFormat %H:%M
   section Sample
-  Draw to measurement (holding) :active, hold, 08:40, 09:25
+  Draw to measurement (upper bound of hold_time) :active, hold, 08:40, 09:25
   section Process
   Bolus feed :milestone, feed, 09:00, 0m
   section Record
   measured_at :milestone, meas, 09:25, 0m
-  ingested_at :milestone, ing, 09:30, 0m
-  reviewed_at and available_at :milestone, rev, 10:00, 0m
+  Decision due :milestone, due, 10:00, 0m
 ```
+
+The bar is the draw-to-measurement span (45 min, A102). `hold_time` ends when the run starts, so it is shorter than the bar by the run itself (A023).
 
 ## 6. State machines
 
@@ -226,21 +238,21 @@ Fixtures: duplicate file, rows in reversed order, replayed file with one changed
 
 ## 8. Validation rule catalogue (draft)
 
-Actions: **hold** (row stored, not available until reviewed), **quarantine** (row stored in a quarantine state, excluded from released views), **reject** (row not loaded; goes to a dead-letter list with reason and `raw_ref`). A rule never edits a value. Tolerances are scenario settings and have no ledger values yet†.
+Actions: **hold** (row stored, not available until reviewed), **quarantine** (row stored in a quarantine state, excluded from released views), **reject** (row not loaded; goes to a dead-letter list with reason and `raw_ref`). A rule never edits a value. The tolerances in VR-003 and VR-004 are scenario settings; this document fixes no value.
 
 | Id | Check | Severity | Action |
 |---|---|---|---|
 | VR-001 | required context present: request, run, `measured_at` | error | reject |
 | VR-002 | `sampled_at` <= `measured_at` | error | quarantine |
-| VR-003 | `measured_at` not later than `ingested_at` beyond a tolerance† | warning | hold |
-| VR-004 | instrument clock offset or time-zone mismatch against the host clock exceeds a tolerance† (S029, S030) | error | hold |
+| VR-003 | `measured_at` not later than `ingested_at` beyond a tolerance | warning | hold |
+| VR-004 | instrument clock offset or time-zone mismatch against the host clock exceeds a tolerance (S029, S030) | error | hold |
 | VR-005 | unit is a known UCUM code and has the expected dimension for the analyte | error | quarantine |
 | VR-006 | value is physically possible for the analyte (for example viability between 0 and 100 percent, pH on its scale) | error | quarantine |
 | VR-007 | value is plausible against the batch trajectory (jump relative to neighbouring results) | warning | hold |
 | VR-008 | same source event id and same content | info | no-op |
 | VR-008b | same source event id, different content | error | quarantine |
 | VR-009 | two samples on one unit with the same `sampled_at` and analyte but different ids (possible double label) | warning | hold |
-| VR-010 | holding time above the stability limit: 30 min as a blood-gas proxy (A046); a viability study covers holds only to 55 min (A039) | warning | hold |
+| VR-010 | `hold_time` above the stability limit: 30 min as a blood-gas proxy (A046); a viability study covers holds only to 55 min (A039) | warning | hold |
 | VR-011 | run has no instrument-state link while `instrument_state_snapshot` is on | warning | hold |
 | VR-012 | run QC out of range | error | hold results of the run; request reruns |
 | VR-013 | dilution factor missing or implausible where the method needs one (A048) | warning | hold |
@@ -270,11 +282,11 @@ Resolution is always a new version by a named reviewer with a reason; the findin
 
 **Staff attribution.** When `audit_trail` is on, sample draw, run start, review, release and correction records carry `operator_id` (pseudonymous) and a `qualification_id` that was valid at that instant. When it is off, the operator is free text or absent. Qualification levels follow the staff profiles (A072, A073).
 
-**Master data.** Reactor to historian tag map, analytes and their UCUM units, versioned methods, instruments with configured zones, operators and qualifications, areas and bays, shift calendar (A017, assumed). Role-permitted transitions are a table in the dictionary.
+**Master data.** `unit_tag` (unit to historian tag prefix), analytes and their UCUM units, versioned methods, instruments with configured zones, operators and qualifications, areas and bays, shift calendar (A017, assumed). Role-permitted transitions are a table in the dictionary.
 
 ## 10. AI-ready export and data package
 
-One row per (sample x analyte x released version). Columns: sample, unit, batch, analyte, value, canonical unit, `sampled_at`, `measured_at`, holding time, instrument state (calibration, lot), method version, operator and qualification references, process context as of the stated time, `available_at`, `context_as_of`. Because both clocks and `available_at` are present, a consumer can build features that use only what was knowable at a decision time, and avoid the leakage in section 5.
+One row per (sample x analyte x released version). Columns: sample, unit, batch, analyte, value, canonical unit, `sampled_at`, `measured_at`, `hold_time`, `turnaround`, instrument state (calibration, lot), method version, operator and qualification references, process context as of the stated time, `available_at`, `context_as_of`. Because both clocks and `available_at` are present, a consumer can build features that use only what was knowable at a decision time, and avoid the leakage in section 5.
 
 Each export ships as CSV plus a Frictionless-style `datapackage.json` carrying the table schema, units, the data dictionary, `schema_version`, `engine_version`, `seed`, the architecture preset and flags, and the ledger ids behind the defaults. The `licenses` field stays unset until the licence decision is accepted (ADR-0008).
 
@@ -311,6 +323,8 @@ Edge relations: `harvested_from`, `split_into`, `pooled_into`, `drawn_as`, `aliq
 
 ## 13. Acceptance hooks for the author's DDL
 
+Integrity rules are enforced by test queries, not by database triggers: DuckDB has no triggers. Declarative constraints (primary key, unique, not null, foreign key) cover K1, K2 and K9 where DuckDB supports them. The other rules (immutability K5, K8 and K13, one open batch K6, no double occupancy K7, acyclicity K10, volume conservation K12, and the validation rules of section 8) are queries over the tables that return no row on good data and at least one row on a bad-data fixture. State columns (the lists in section 6) and closed lists such as `lineage_edge.relation` (section 12) use `CHECK (column IN (...))` constraints, not ENUM types.
+
 Acceptance tests (`tests/user_track/`, run with `pytest -m user_track`) are specified against section 4 and section 8: uniqueness (K1, K9), not-null (K2), immutability (K5, K8, K13), acyclicity and volume conservation (K10, K12), and fixture-based answers for the three queries. The tests are written by the AI path; the schema and queries are not.
 
 ## 14. Open questions
@@ -320,3 +334,4 @@ Acceptance tests (`tests/user_track/`, run with `pytest -m user_track`) are spec
 3. Is `process_context` materialised per as-of time, or computed on demand?
 4. Surrogate keys or natural keys for the master data tables.
 5. Representation of the source zone: offset, zone name, or both.
+6. How `from_item_id` and `to_item_id` identify the kind of item they point to (a prefix in the id, or a kind column).
