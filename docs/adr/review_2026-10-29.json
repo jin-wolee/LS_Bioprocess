@@ -1,0 +1,72 @@
+{
+  "0001": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0002": {
+    "status": "Accepted",
+    "chosen_option": "수락 — 반영은 내가 직접 커밋 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 — 반영은 내가 직접 커밋 (Recommended)\"."
+  },
+  "0003": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0004": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0005": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0006": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0007": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0008": {
+    "status": "Accepted",
+    "chosen_option": "코드 MIT + 문서 CC BY 4.0 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"코드 MIT + 문서 CC BY 4.0 (Recommended)\"."
+  },
+  "0009": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0010": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0011": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0012": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  },
+  "0013": {
+    "status": "Accepted",
+    "chosen_option": "break-out을 앞당김(S3)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"break-out을 앞당김(S3)\". Break-out events move to session S3; cell-line and operating-mode profiles stay in S4."
+  },
+  "0014": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in a guided review on 2026-10-29: chose \"수락 (Recommended)\"."
+  }
+}
