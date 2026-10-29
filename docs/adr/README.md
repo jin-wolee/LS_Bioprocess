@@ -27,5 +27,6 @@ Each record states a context, at least two real options, a proposed decision, it
 | [0012](0012-profiles-over-combinatorial-parameters.md) | Profiles over combinatorial parameters | Accepted |
 | [0013](0013-scope-extensions-cell-lines-modes-breakout-events.md) | Scope extensions: cell-line profiles, operating modes and break-out events | Accepted |
 | [0014](0014-equipment-output-adapters-from-public-docs.md) | Equipment output adapters modeled on public documentation | Accepted |
+| [0015](0015-mixed-fleets-profiles-per-bay-and-analyzer.md) | Mixed fleets: profiles per bay and per analyzer | Proposed |
 
 Keep this table in step with the files. A status other than `Proposed` appears here only after the author's own commit.
