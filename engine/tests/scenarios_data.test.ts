@@ -12,12 +12,12 @@ import { makeAjv, ledgerIds, refsOf, rejected } from "./support/schemas.ts";
 
 const KINDS = ["bioreactor", "analyzer", "staff"] as const;
 const profileFiles = KINDS.flatMap((k) => listFiles("scenarios", "profiles", k).map((f) => [k, f.replace(/\.json$/, "")] as const));
-const scenarioFiles = ["default", "sc02_shift_burst", "sc05_one_analyzer_down"];
+const scenarioFiles = ["default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down"]; // sc03 joined in S2c1
 
 describe("Data: scenarios and profiles", () => {
   const ajv = makeAjv();
 
-  it("lists the eight profiles of the spec (4.1 to 4.3) and the three scenarios of S1b", () => {
+  it("lists the eight profiles of the spec (4.1 to 4.3) and the scenarios of S1b and S2c1 (default, SC2, SC3, SC5)", () => {
     expect(profileFiles.map(([, id]) => id).sort()).toEqual(["allinone_atline", "bench_manual", "experienced", "hplc", "micro_mini_parallel", "pilot", "split_cellcounter_metabolite", "trainee"]);
     expect(listFiles("scenarios").filter((f) => f.endsWith(".json")).map((f) => f.replace(".json", ""))).toEqual([...scenarioFiles].sort());
   });

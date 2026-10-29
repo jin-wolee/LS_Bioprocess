@@ -1,7 +1,7 @@
 import type { ObservableEvent } from "../observe.ts";
 import type { Architecture } from "./architecture.ts";
 import { recordResults } from "./results.ts";
-import type { BatchRow, InstrumentStateRow, ProcessEventRow, QualificationInput, RecordedDataset, RecorderInput, RunRow, SampleRow } from "./types.ts";
+import type { AnalysisRequestRow, BatchRow, InstrumentStateRow, ProcessEventRow, QualificationInput, RecordedDataset, RecorderInput, RunRow, SampleRow } from "./types.ts";
 
 // The recorder (spec section 3, rule 1; section 5): one generic function from the observable events, the observable sensor series and
 // an architecture to a recorded dataset. It reads nothing else: the event and series types carry no hidden field (observe.ts) and
@@ -42,9 +42,13 @@ export const record = (input: RecorderInput, config: Architecture): RecordedData
   const runs = new Map<string, RunRow>();
   const batch = new Map<string, BatchRow>();
   const process_event: ProcessEventRow[] = [];
+  const requests = new Map<string, AnalysisRequestRow>();
 
   for (const e of events) {
     switch (e.type) {
+      case "request_queued":
+        if (!requests.has(e.request_id)) requests.set(e.request_id, { request_id: e.request_id, control_id: input.plan?.controls?.[e.request_id] ?? null });
+        break;
       case "sample_drawn":
         sample.push({
           sample_id: e.sample_id, unit_id: e.unit_id,
@@ -56,6 +60,7 @@ export const record = (input: RecorderInput, config: Architecture): RecordedData
           operator_id: flags.audit_trail ? e.operator_id : null,
           qualification_id: flags.audit_trail ? qualificationAt(e.operator_id, e.t) : null,
           label_method: label.get(e.sample_id) ?? null,
+          container: input.plan?.containers?.[e.sample_id] ?? null,
         });
         break;
       case "draw_skipped_volume_budget":
@@ -63,7 +68,7 @@ export const record = (input: RecorderInput, config: Architecture): RecordedData
         if (flags.system_issued_id) {
           sample.push({
             sample_id: e.sample_id, unit_id: e.unit_id, batch_id: flags.write_time_keys ? e.batch_id : null, keys_fixed_at_write: flags.write_time_keys, state: "skipped",
-            sampled_at: null, planned_at: planned.get(e.sample_id) ?? null, operator_id: null, qualification_id: null, label_method: null,
+            sampled_at: null, planned_at: planned.get(e.sample_id) ?? null, operator_id: null, qualification_id: null, label_method: null, container: null,
           });
         }
         break;
@@ -99,6 +104,7 @@ export const record = (input: RecorderInput, config: Architecture): RecordedData
   return {
     architecture: { id: config.id, flags: config.flags, labelling: config.labelling },
     sample,
+    analysis_request: [...requests.values()],
     run: [...runs.values()],
     instrument_state: flags.instrument_state_snapshot ? states : [],
     qualification: qualifications.map((q) => ({ ...q })),

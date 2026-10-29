@@ -61,6 +61,6 @@ export const seedInput = (over: Partial<SeedInput> = {}): SeedInput => ({
 /** A recorded dataset with every table empty, for fixtures typed row by row. */
 export const emptyDataset = (flags: Partial<Record<keyof typeof NO_FLAGS, boolean>> = {}): RecordedDataset => ({
   architecture: { id: "hand", flags: { ...NO_FLAGS, ...flags }, labelling: "handwritten" },
-  sample: [], run: [], instrument_state: [], result: [], audit_event: [], qualification: [], source_event: [], validation_finding: [], ingest_conflict: [],
+  sample: [], analysis_request: [], run: [], instrument_state: [], result: [], audit_event: [], qualification: [], source_event: [], validation_finding: [], ingest_conflict: [],
   batch: [], process_event: [], historian: { series: [], late: [] },
 });

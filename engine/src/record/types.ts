@@ -28,6 +28,12 @@ export interface RecorderInput {
   received_at?: Readonly<Record<string, number>>;
   /** S2b: qualification records; with `audit_trail` on the sample row gets the reference that was valid at the draw. */
   qualifications?: readonly QualificationInput[];
+  /**
+   * S2c1: what the sampling plan and the SOP say, as plain data from the assembly (the observable stream carries neither): the `control_id` of the
+   * bridging requests (data_model section 2, `analysis_request`) and the container of each sample (an L2 setting). No flag owns either; absent means
+   * the plan names none, and the columns are null.
+   */
+  plan?: { controls?: Readonly<Record<string, string>>; containers?: Readonly<Record<string, string>> };
 }
 
 export interface SampleRow {
@@ -50,6 +56,14 @@ export interface SampleRow {
   qualification_id: string | null;
   /** The method the label_bound event reports. */
   label_method: string | null;
+  /** S2c1: the container the plan records for the sample (open or closed, an L2 setting); null when the plan names none. */
+  container: string | null;
+}
+
+/** S2c1: one analysis request as the plan records it; `control_id` is shared by the requests that measure one bridging material, null for the others (data_model section 2). */
+export interface AnalysisRequestRow {
+  request_id: string;
+  control_id: string | null;
 }
 
 export interface RunRow {
@@ -174,6 +188,7 @@ export interface HistorianRow {
 export interface RecordedDataset {
   architecture: Pick<Architecture, "id" | "flags" | "labelling">;
   sample: SampleRow[];
+  analysis_request: AnalysisRequestRow[];
   run: RunRow[];
   instrument_state: InstrumentStateRow[];
   result: ResultRow[];
