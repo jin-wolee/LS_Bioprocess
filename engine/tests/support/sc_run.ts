@@ -6,6 +6,7 @@ import { loadProfile } from "../../src/profiles.ts";
 import type { Architecture } from "../../src/record/architecture.ts";
 import type { ScenarioRun } from "../../src/run.ts";
 import { readJson } from "./paths.ts";
+import { REVIEW } from "./review_setup.ts";
 import { lookup } from "./scenarios.ts";
 
 // One scenario run through chosen architectures with the assembly of S2b (production settings: no forced errors). Test-side only.
@@ -14,7 +15,7 @@ const staff = loadProfile(lookup("staff", "experienced"), "staff").params;
 const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
 
 export const inputOf = (run: ScenarioRun, scenario_id: string, architectures: readonly Architecture[], days: number): SeedInput =>
-  seedInputFromRun(run, { scenario_id, staff, evaluation, architectures, days });
+  seedInputFromRun(run, { scenario_id, staff, evaluation, architectures, days, review: REVIEW });
 
 export const assemble = (run: ScenarioRun, scenario_id: string, architectures: readonly Architecture[], days: number): ReturnType<typeof runSeed> =>
   runSeed(inputOf(run, scenario_id, architectures, days));

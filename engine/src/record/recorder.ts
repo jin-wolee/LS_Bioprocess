@@ -76,8 +76,14 @@ export const record = (input: RecorderInput, config: Architecture): RecordedData
         const link = flags.instrument_state_snapshot ? stateAt(e.analyzer, e.t) : undefined;
         runs.set(`${e.request_id}/${e.attempt}/${e.visit}`, {
           run_id: `${e.request_id}/${e.attempt}/${e.visit}`, request_id: e.request_id, attempt: e.attempt, visit: e.visit, analyzer_name: e.analyzer,
-          instrument_id: link ? link.instrument_id : null, instrument_state_id: link ? link.instrument_state_id : null, started_at: e.t, ended_at: null,
+          instrument_id: link ? link.instrument_id : null, instrument_state_id: link ? link.instrument_state_id : null, started_at: e.t, ended_at: null, qc_outcome: null,
         });
+        break;
+      }
+      case "qc_result": {
+        // the QC outcome of a run is a run attribute no flag owns (data_model section 2, "QC outcome"; section 7, review step): every architecture holds it
+        const run = runs.get(`${e.request_id}/${e.attempt}/${e.visit}`);
+        if (run) run.qc_outcome = e.outcome;
         break;
       }
       case "visit_finished": {

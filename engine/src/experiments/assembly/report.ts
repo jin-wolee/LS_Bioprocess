@@ -120,6 +120,7 @@ export const buildReport = (result: OpenLoopResult, head: ReportHead): Experimen
     seeds: [...result.seeds], n_seeds: result.seeds.length, min_seeds: head.min_seeds, meets_min_seeds: result.seeds.length >= head.min_seeds,
     interval: INTERVAL_TEXT,
     truth_log_hashes: result.outcomes.map((o) => ({ seed: o.seed, truth_log_hash: o.truth_log_hash })),
+    review: { timing: result.review.timing, reject_also: [...result.review.reject_also] },
     notes: NOTES, architectures, ranks: ranksOf(architectures),
   };
 };

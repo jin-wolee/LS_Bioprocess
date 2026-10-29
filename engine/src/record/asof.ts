@@ -5,23 +5,30 @@ import type { HistorianRow, ProcessEventRow, RecordedDataset, ResultRow, SampleR
 // (`available_at`, `ingested_at`) says when the system knew it. With the flag `available_at` on, a read at t uses per logical key the
 // latest result version with `available_at` at or before t, and only historian rows and process events with `ingested_at` at or
 // before t. With it off the read sees everything as of now: a late correction leaks into an earlier decision.
+// A row the review step has released is read like an unheld one (from its `available_at`, the review point); a held, quarantined or rejected row is not read.
 
-/** The version that became knowable last: greatest `available_at`, then greatest version (with the flag off every `available_at` is null, so version alone decides). */
-const newer = (a: ResultRow, b: ResultRow): number => (a.available_at ?? 0) - (b.available_at ?? 0) || a.version - b.version;
+/**
+ * The later version: greatest version, then greatest `available_at`. The version decides first (S2 review step): a version released at review after its successor
+ * became available must not rise above it. Until then the two orders were equal, because a later attempt always carried a later stamp.
+ */
+const newer = (a: ResultRow, b: ResultRow): number => a.version - b.version || (a.available_at ?? 0) - (b.available_at ?? 0);
+
+/** A held, quarantined or rejected row is not available until a reviewer resolves it (data_model sections 6 and 8); `released` and null rows are. */
+const unavailable = (r: ResultRow): boolean => r.state === "held" || r.state === "quarantined" || r.state === "rejected";
 
 /** The latest version per (request, analyte) that was knowable at `asOf`. Rows tied on both (a double count) are all returned. */
 export const resultsAsOf = (ds: RecordedDataset, asOf: number): ResultRow[] => {
   const strict = ds.architecture.flags.available_at;
   const best = new Map<string, ResultRow>();
   for (const r of ds.result) {
-    if (r.state !== null) continue; // a held, quarantined or rejected row is not available until a reviewer resolves it (data_model sections 6 and 8)
+    if (unavailable(r)) continue;
     if (strict && (r.available_at === null || r.available_at > asOf)) continue;
     const k = `${r.request_id}/${r.analyte}`;
     const cur = best.get(k);
     if (!cur || newer(r, cur) > 0) best.set(k, r);
   }
   return ds.result.filter((r) => {
-    if (r.state !== null) return false;
+    if (unavailable(r)) return false;
     const cur = best.get(`${r.request_id}/${r.analyte}`);
     return cur !== undefined && newer(r, cur) === 0;
   });

@@ -31,18 +31,18 @@ const stateOf = (ds: RecordedDataset, request: string): (string | null)[] => val
 const notEvaluable = (ds: RecordedDataset, cfg = CFG): string[] => validate(ds, cfg).not_evaluable.map((n) => n.rule);
 
 describe("The rule catalogue", () => {
-  it("Given architecture A (no flag) Then no rule is evaluable, nothing is flagged, and 'not evaluable' is reported for each rule rather than 'passed'", () => {
+  it("Given architecture A (no flag) Then only VR-012 is evaluable (the run QC outcome belongs to no flag), nothing is flagged on the stream (the rerun overwrote the failed attempt), and 'not evaluable' is reported for the others rather than 'passed'", () => {
     const v = validate(rec([]), CFG);
-    expect(v.not_evaluable.map((n) => n.rule)).toEqual([...RULE_IDS]);
-    expect(RULE_IDS).toEqual(["VR-002", "VR-003", "VR-004", "VR-008b", "VR-009", "VR-010", "VR-011", "VR-014", "VR-015", "VR-019", "VR-020"]);
+    expect(v.not_evaluable.map((n) => n.rule)).toEqual(["VR-002", "VR-003", "VR-004", "VR-008b", "VR-009", "VR-010", "VR-011", "VR-014", "VR-015", "VR-019", "VR-020"]);
+    expect(RULE_IDS).toEqual(["VR-002", "VR-003", "VR-004", "VR-008b", "VR-009", "VR-010", "VR-011", "VR-012", "VR-014", "VR-015", "VR-019", "VR-020"]);
     expect(v.dataset.validation_finding).toEqual([]);
   });
 
-  it("Given all eight flags, full qualifications and the clean fixture Then every rule is evaluable and only VR-010 fires, on the rerun of S2 (3500 s against 1800 s)", () => {
+  it("Given all eight flags, full qualifications and the clean fixture Then every rule is evaluable and only two fire: VR-010 on the rerun of S2 (3500 s against 1800 s) and VR-012 on its failed first attempt", () => {
     const ds = rec(["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail"], STREAM, { qualifications: ALL_QUALS });
     const v = validate(ds, CFG);
     expect(v.not_evaluable).toEqual([]);
-    expect(hits(ds)).toEqual([["VR-010", `result:${idOf(ds, "S2", 2)}`, "warning", "hold"]]);
+    expect(hits(ds)).toEqual([["VR-010", `result:${idOf(ds, "S2", 2)}`, "warning", "hold"], ["VR-012", `result:${idOf(ds, "S2", 1)}`, "error", "hold"]]);
     expect(idOf(ds, "S2", 2)).toBe("R3");
   });
 });
@@ -123,12 +123,13 @@ describe("VR-009 two samples of one unit with the same sampled_at and analyte bu
 describe("VR-010 hold time above the limit (hold; needs two_clocks)", () => {
   it("Given the limit 1800 s Then only the rerun of S2 (3500 s) is held; the first run of S2 (1000 s) and S1, S3 (400 s) are not", () => {
     const ds = rec(["two_clocks", "append_only_versions"]);
-    expect(hits(ds)).toEqual([["VR-010", "result:R3", "warning", "hold"]]);
-    expect(stateOf(ds, "S2")).toEqual([null, "held"]);
+    expect(hits(ds)).toEqual([["VR-010", "result:R3", "warning", "hold"], ["VR-012", "result:R2", "error", "hold"]]); // VR-012: the first run of S2 failed QC
+    expect(stateOf(ds, "S2")).toEqual(["held", "held"]); // the first run is held by VR-012, not by VR-010
   });
   it("Given a hold time of exactly the limit Then it is not flagged: the rule is 'above'", () => {
-    expect(hits(rec(["two_clocks", "append_only_versions"]), { ...CFG, hold_limit_s: 3500 })).toEqual([]);
-    expect(hits(rec(["two_clocks", "append_only_versions"]), { ...CFG, hold_limit_s: 3499 })).toEqual([["VR-010", "result:R3", "warning", "hold"]]);
+    const only012 = [["VR-012", "result:R2", "error", "hold"]]; // the failed first attempt of S2 is held whatever the limit
+    expect(hits(rec(["two_clocks", "append_only_versions"]), { ...CFG, hold_limit_s: 3500 })).toEqual(only012);
+    expect(hits(rec(["two_clocks", "append_only_versions"]), { ...CFG, hold_limit_s: 3499 })).toEqual([["VR-010", "result:R3", "warning", "hold"], ...only012]);
   });
   it("Given one stored time (feed in the gap) Then VR-010 is not evaluable: the hold cannot be computed", () => {
     expect(notEvaluable(rec([]))).toContain("VR-010");
@@ -143,7 +144,7 @@ describe("VR-011 run has no instrument-state link while instrument_state_snapsho
   const uncalibrated = STREAM.filter((e) => !(e.type === "calibration_recorded" && e.t === 0)); // the first calibration is at 7200: S1 and the first run of S2 have no state
   it("Given runs before the first calibration Then their results are held", () => {
     const ds = rec(["instrument_state_snapshot", "append_only_versions"], uncalibrated);
-    expect(hits(ds)).toEqual([["VR-011", "result:R1", "warning", "hold"], ["VR-011", "result:R2", "warning", "hold"]]);
+    expect(hits(ds)).toEqual([["VR-011", "result:R1", "warning", "hold"], ["VR-011", "result:R2", "warning", "hold"], ["VR-012", "result:R2", "error", "hold"]]);
   });
   it("Given the snapshot off Then there is no link to miss and the rule is not evaluable", () => {
     expect(notEvaluable(rec([], uncalibrated))).toContain("VR-011");
@@ -185,15 +186,15 @@ describe("VR-019 result version n+1 arrives without version n (quarantine; needs
   it("Given version 2 with no link to version 1 Then it is quarantined", () => {
     const ds = rec(["append_only_versions"]);
     ds.result[2] = { ...(ds.result[2] as RecordedDataset["result"][number]), supersedes: null };
-    expect(hits(ds)).toEqual([["VR-019", "result:R3", "error", "quarantine"]]);
+    expect(hits(ds)).toEqual([["VR-012", "result:R2", "error", "hold"], ["VR-019", "result:R3", "error", "quarantine"]]); // VR-012: the failed first attempt of S2
   });
   it("Given version 2 linked to a row that does not exist Then it is quarantined too", () => {
     const ds = rec(["append_only_versions"]);
     ds.result[2] = { ...(ds.result[2] as RecordedDataset["result"][number]), supersedes: "R99" };
-    expect(hits(ds)).toEqual([["VR-019", "result:R3", "error", "quarantine"]]);
+    expect(hits(ds)).toEqual([["VR-012", "result:R2", "error", "hold"], ["VR-019", "result:R3", "error", "quarantine"]]); // VR-012: the failed first attempt of S2
   });
   it("Given the intact chain Then nothing fires; given overwrite in place (no versions) Then the rule is not evaluable", () => {
-    expect(hits(rec(["append_only_versions"]))).toEqual([]);
+    expect(hits(rec(["append_only_versions"]))).toEqual([["VR-012", "result:R2", "error", "hold"]]); // only the failed first attempt of S2, no VR-019
     expect(notEvaluable(rec([]))).toContain("VR-019");
   });
 });
@@ -258,9 +259,9 @@ describe("Rules change a status and never a value", () => {
 });
 
 describe("A held, quarantined or rejected result is not available to an as-of read", () => {
-  it("Given the rerun of S2 held by VR-010 Then the as-of read at the end of the run returns the first S2 result, not the held rerun", () => {
+  it("Given the rerun of S2 held by VR-010 and its failed first attempt held by VR-012 Then the as-of read at the end of the run returns neither (before VR-012 it fell back to the failed first attempt)", () => {
     const ds = rec(["two_clocks", "append_only_versions", "available_at"]);
     expect(resultsAsOf(ds, 20000).map((r) => r.result_id)).toEqual(["R1", "R3", "R4"]);
-    expect(resultsAsOf(validate(ds, CFG).dataset, 20000).map((r) => r.result_id)).toEqual(["R1", "R2", "R4"]);
+    expect(resultsAsOf(validate(ds, CFG).dataset, 20000).map((r) => r.result_id)).toEqual(["R1", "R4"]);
   });
 });

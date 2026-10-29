@@ -66,8 +66,8 @@ describe("Guard 2: skipped and rejected requests stay in the denominator", () =>
     for (const x of ds.result) if (x.request_id === "S3") x.state = "rejected";
     const m = evaluate({ truth: WORLD, dataset: ds, not_evaluable: [], key_text: out.key_text, architecture: "C", config: CONFIG }).metrics;
     expect(m.availability.available).toMatchObject({ num: 0, den: N }); // C had 1 of 4 (S3)
-    expect(m.exact_reconstruction).toMatchObject({ num: 2, den: N }); // C had 3 of 4
-    expect(m.misattribution.no_result).toMatchObject({ num: 2, den: N }); // S3 and S4
+    expect(m.exact_reconstruction).toMatchObject({ num: 1, den: N }); // C had 2 of 4 (S1, S3): S2 has no result since the review step rejects both attempts
+    expect(m.misattribution.no_result).toMatchObject({ num: 3, den: N }); // S2, S3 and S4
   });
 });
 

@@ -754,3 +754,62 @@ Detection, medians over the same seeds. Lost rerun: realised in A and B (8 per s
 - Finding: when a rerun is held, the reads fall back to the first attempt whose run QC failed (22 cases), because VR-012 (hold the results of a failed QC run) is still Parked from S2b although data_model section 6 requires it.
 
 **Decision (author, 2026-10-29)**: model the review step (held → under_review → released or rejected, data_model section 6) instead of a permanent hold. Next increment: sources for the review outcome and timing, a proposal for the author, then implementation together with VR-012.
+
+## 2026-10-29 — S2 review step and VR-012 (executor, uncommitted)
+
+**Result**: a held or quarantined result is now reviewed instead of staying held for ever, and VR-012 (run QC failed) exists; design and ledger first, then tests red, then code. Base commit d8f92d4, nothing committed, no ADR touched; `tests/golden`, `sql`, `reference` and `docs/adr` unchanged (the truth is untouched, S1 goldens byte-identical).
+
+**What exists**
+- Design: `data_model.md` section 7, "Review step and VR-012 decided in the S2 review step" (outcomes, policy per rule, several rules on one row, review time, capacity, findings, as-of read, sensitivity variants, run QC outcome, VR-012), pointers in sections 5, 6 and 8; `simulation_spec.md` "Notes from the S2 review step" and a VR-012 row in "Detection rules and the flags they need".
+- Ledger: A213 (rejecting rules VR-010, VR-012, VR-009, grade P), A214 (releasing rules, grade A), A215 (review timing, grade A); sources S123 to S132 (Northern Health F SAP 0007 G1, 42 CFR 493.1256 and 493.1282, Westgard "QC - the Practice", WHO TRS 996 4.8 and 11.12, MHRA 6.10 and 6.15, 21 CFR 211.110, FDA data integrity Q&A 2018, ICH Q7, and the Nisga'a point-of-care acceptance and rejection guideline B SAP 0007 G1), all `agent-read` and worded under the fact-check constraints (S015 never "rejected"; Northern Health cited for two rows only; CLIA 493.1282 "evaluated"; 211.110(c) an example, not a schedule).
+- Code: `engine/src/record/review.ts` (policy `REVIEW_OUTCOME`, `reviewPoint`, `review`), `rules_qc.ts` (VR-012), `RunRow.qc_outcome` from the `qc_result` event (no flag owns it), `ResultRow.reviewed_at`, state `released`; `asof.ts` reads a released row like an unheld one and orders versions by version first; assembly: `SeedInput.review`, `rosterOf(scenario.sampling)` (the roster comes from the scenario, no new JSON), `OpenLoopInput.review` (variants), report field `review` (schema additive, types regenerated); runner options `--timing=` and `--reject-also=`.
+
+**Evidence, red then green**
+- Red: `review.test.ts` and `vr012.test.ts` failed to load (`Cannot find module '../../src/record/review.ts'`); `review_pipeline.test.ts` `6 failed | 1 passed` (`TypeError: rosterOf is not a function`, `expected [ [ 1, null, 3.2, undefined ], … ] to deeply equal [ [ 1, 'rejected', 3.2, 28800 ], … ]`). Green after the code: those three files pass; first full run showed the expected consequences in four existing files (below), updated with the reason each.
+- Final: `npm run check` -> `Test Files 59 passed (59)`, `Tests 3350 passed | 1 todo (3351)` (lint and typecheck clean); `uv run pytest -q` -> `186 passed`; `check_docs --all` -> `344 files, 0 failure(s)`.
+- Mutations in a scratch copy (restored, `diff -r` of `engine` identical): outcome judged from the value instead of the rule id -> 7 fail; a VR-010 hold released -> 15 fail; VR-012 skipped -> 28 fail; run QC outcome not recorded -> 30 fail; the older version order (greatest `available_at` first) -> 1 fails.
+
+**Existing tests changed, each because the review step or VR-012 changes the result**
+- `validate.test.ts` (9 lines): VR-012 joins the catalogue and is evaluable in A (no flag owns the QC outcome); in the versioned fixtures the failed first attempt of S2 (R2) is now also held by VR-012; the read at the end shows neither attempt of S2 (before it fell back to the failed 3.2).
+- `metrics.test.ts` (7), `gaming_guards.test.ts` (1): in the hand world C has no result for S2 (first attempt rejected by VR-012, rerun by VR-010): C availability leaked 1 -> 0, exact 3 -> 2 of 4, no_result 1 -> 2, alignment joined 3 -> 2; the unit-swap case moved from S2 to S1; Guard 2 numbers follow.
+- `report.test.ts` (the hand result gains `review`, one new test); `eval_fixture.ts`, `sc_run.ts`, `run_seed.test.ts`, `open_loop.test.ts` pass the review setting. Forced cells, SC1, SC3, SC4, SC6 and SC7: no change.
+
+**Experiment 1, 30 seeds, 11 architectures, default review (next shift start)** (median [5th, 95th percentile across seeds]; reported, never gated; 14.5 s; seed list unchanged; report validates and states its review settings)
+
+| architecture | exact reconstruction, S2c2 -> now | available at the decision, S2c2 -> now |
+|---|---|---|
+| c_context | 0.977 [0.960, 0.990] -> 0.973 [0.960, 0.988] | 0.907 [0.871, 0.932] -> 0.905 [0.871, 0.927] |
+| C minus system_issued_id | 0.967 [0.950, 0.985] -> 0.967 [0.950, 0.983] | 0.905 [0.870, 0.932] -> 0.904 [0.871, 0.927] |
+| C minus available_at, write_time_keys, ingest_idempotency, audit_trail | 0.977 [0.960, 0.990] -> 0.973 [0.960, 0.988] | 0.907 [0.871, 0.932] -> 0.905 [0.871, 0.927] |
+| C minus instrument_state_snapshot | 0 -> 0 | 0.907 [0.871, 0.932] -> 0.905 [0.871, 0.927] |
+| a_manual, b_lims_lite, C minus two_clocks, C minus append_only_versions | unchanged | unchanged |
+
+Pooled over the seeds, C answers 11637 of 11957 requests exactly (S2c2: 11659), 22 fewer: the 22 requests of the S2c2 finding, now unanswerable instead of reading the failed first attempt; available 10811 (S2c2: 10832). The 298 requests whose first run started more than 30 min after the draw stay unanswerable: the policy rejects VR-010 rows (a decision, not an omission). Held findings in C over the 30 seeds: VR-010 1950 rows, VR-012 1578 rows, all rejected at review (median wait 4.35 h); no row of C is released. Released rows exist only in C minus system_issued_id (84, VR-002; VR-008b's 234 findings change no row).
+
+Sensitivity variants (shift end; 08:00 of the next day; VR-015 and VR-020 rejected): every row of the table above is identical to the default to the printed precision, and the pooled shares are identical (C minus system_issued_id available 10802 of 11957 in all four). The median wait of a reviewed row is 4.35 h, 4.35 h and 23.1 h for the three timings. Reason: in production runs a held row is rejected (never available whatever the review time), and VR-015, VR-020 and VR-011 do not fire (qualifications valid from 0, no re-key, a calibration at 0); VR-003 and VR-004 are not evaluable. The variants matter only where a releasing rule fires: forced errors, or once the tolerances of the research tasks of S2b exist.
+
+**Deviations and choices** (for review)
+- Ledger: three assumptions (A213 grade P, A214 and A215 grade A) because the policy has two grades. S127 (WHO TRS 996 4.8, 11.12) and S128 (MHRA 6.10, 6.15) are new rows for the documents of S030 and S029, other sections, as the brief listed them; the orchestrator may prefer one row per document. The CFR text was read on the Cornell LII copy (the eCFR page redirects to a bot check). The Nisga'a URL and the Westgard page "QC - the Practice" came from the research role after the first version of this entry; the executor opened both and confirmed the row "Sample received greater than accepted stability" -> "Reject." and the Westgard sentences. The stability chart of the Nisga'a PDF is interleaved in text extraction, so S132 cites no stability value.
+- VR-012 reading: the design lists "QC outcome" among the attributes of `run` without a flag, and S2c1 ruled that no flag owns an attribute of the run (the eight flags are the only differences between architectures), so every architecture, A included, holds it. `over_range` is not a QC failure.
+- Changed design text: section 8 said a resolution is a new version by a named reviewer; the review sets `state`, `reviewed_at` and `available_at` on the held row and models neither the reviewer nor a new version. The as-of order is the version first, then `available_at` (equal until a release could come after the next version). `reviewed_at` is stored by every architecture; a rejected row has `available_at` null; a finding on a reviewed row becomes `resolved`.
+- `SeedInput.review` is required (one pipeline, no permanent-hold path); the runner gained two options in `engine/tests/support/experiment1_cli.ts`.
+
+**Open questions for the orchestrator**
+1. VR-012 and architecture A: confirm that A records the run QC outcome (above), or name the flag or setting that owns it.
+2. VR-010 stays a rejection at 30 min for every sample (A213 grade P); the cost shown above is 298 unanswerable requests per 30 seeds in C. Is that the intended experiment-1 reading, with the two-stage variant (comment, then reject beyond a longer limit) Parked?
+
+**Parked**: reviewer capacity and a review queue; the two-stage VR-010 rule; timestamp correction at review; a duration for `under_review`; forced-error cells for VR-012 and for a releasing rule in production; the analyzer hold after a failed scheduled QC run (A087); `S015.used_in` does not yet list A213.
+
+**Blocked**: none. The outcome "rejected" of VR-010 rests on S132 (Reject) and S123 (not an independent policy: its revision log names Northern Health), with the clinical proxy of S015 (recollection requested, no outcome word) alongside; no bioprocess source was found.
+
+- Structure-only paths: none. Behaviour paths: `engine/src/record/{review,rules_qc,types,recorder,results,asof,validate}.ts`, `engine/src/experiments/assembly/{run_seed,from_run,open_loop,report}.ts`, `schemas/experiment_report.schema.json`, `engine/src/generated/experiment_report.schema.d.ts`, `engine/tests/record/{review,vr012,validate}.test.ts`, `engine/tests/assembly/{review_pipeline,report,run_seed,open_loop}.test.ts`, `engine/tests/evaluate/{metrics,gaming_guards}.test.ts`, `engine/tests/support/{review_setup,eval_fixture,sc_run,experiment1_cli}.ts`, `docs/design/{data_model,simulation_spec}.md`, `docs/research/{assumptions,sources}.yaml`, `docs/progress.md`.
+
+## 2026-10-30 — S2 review step review (orchestrator)
+
+**Verdict**: PASS, no rework. The review step (held or quarantined rows reviewed at the first roster shift start at or after `ingested_at`; a fixed outcome per rule id: VR-010, VR-012 and VR-009 rejected, the others released; any reject wins; values kept) and VR-012 are in, approved by the author on 2026-10-29.
+- Orchestrator runs: `npm run check` → 59 files, 3350 passed, 1 todo; `check_all --manual: PASS`; protected paths clean. Ledger: A213 (P), A214 (A), A215 (A); sources S123 to S132, all `agent-read` (or `snippet` where only an excerpt was seen). S132 (Nisga'a guideline) and S126 (Westgard "QC - the Practice") carry the URLs and quotes the fact-check confirmed.
+- Fact-check before the executor started: every claim confirmed with caveats that the brief carried (S015 asks for recollection and never says "rejected"; Northern Health backs VR-009 through its label-discrepancy row only and is not independent of the Nisga'a guideline; CLIA 493.1282(b)(2) asks for evaluation, not re-analysis; 21 CFR 211.110(c) gives an example, not a schedule).
+- Rulings: every architecture records the run QC outcome (no flag owns it, as for containers in S2c1); C's 298 VR-010 rejections are the approved outcome; the as-of read orders versions by version number before `available_at`, so a version released at review after its successor never overtakes it (data_model section 5 and spec section 3, rule 5, "the latest result version").
+- Experiment 1 after the change (reported, never gated): C's exact reconstruction 0.973 (was 0.977; the 22 reads that fell back to a failed first attempt are gone), C's availability 0.905; other architectures unchanged; the sensitivity variants (review at shift end or next day 08:00; VR-015 and VR-020 rejected) give the same table because in this scenario every production hold is a reject or the rule does not fire.
+
+**Open**: a metric for results used although their sample exceeded its stability limit (truth-side), so that the cost of A and B using stale results shows beside C's rejections; it needs a design entry in spec section 8 first.

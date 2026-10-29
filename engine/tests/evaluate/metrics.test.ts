@@ -79,9 +79,10 @@ describe("Availability before the decision deadline (as-of read, truth release, 
   it("Given A (no available_at) Then 1 of 4 is available and 2 of 4 are shown although the truth world had not released them", () => {
     expect(mA.availability).toMatchObject({ available: r(1, 4), leaked: r(2, 4) });
   });
-  // C hides S1 until 2000 and the S2 rerun until 9000; the first S2 run (6500) is visible at 7000 but is not a release (QC failed).
-  it("Given C (available_at) Then 1 of 4 is available and 1 of 4 leaks (the first, QC-failed S2 result, which the record does not know to be failed)", () => {
-    expect(mC.availability).toMatchObject({ available: r(1, 4), leaked: r(1, 4) });
+  // C hides S1 until 2000. The first S2 run (6500, QC failed) is held by VR-012 and rejected at review, and the rerun (9000, hold 3500 s) by VR-010: S2 is never shown.
+  // Before the review step and VR-012 the failed first attempt was visible at 7000 and leaked (1 of 4); now nothing leaks.
+  it("Given C (available_at) Then 1 of 4 is available (S3) and none leaks: the failed S2 result is rejected, no longer shown", () => {
+    expect(mC.availability).toMatchObject({ available: r(1, 4), leaked: r(0, 4) });
   });
 });
 
@@ -90,15 +91,18 @@ const runSeedOn = (ds: RecordedDataset, architecture = "C") => evaluate({ truth:
 const copyOf = (id: "A" | "C"): RecordedDataset => structuredClone({ ...(out.datasets[id] as RecordedDataset), historian: { series: [], late: [] } });
 
 describe("Misattribution (recorded unit or batch against truth)", () => {
-  it("Given no injected error Then 0 of 4 are misattributed or unattributed and 1 of 4 (the refused draw) has no result, in A and in C", () => {
-    for (const m of [mA, mC]) expect(m.misattribution).toMatchObject({ misattributed: r(0, 4), unattributed: r(0, 4), no_result: r(1, 4) });
+  // C has no result for S2 since the review step: its failed first attempt (VR-012) and its late rerun (VR-010) are both rejected. A overwrote the failed attempt and has no VR-010.
+  it("Given no injected error Then 0 of 4 are misattributed or unattributed; 1 of 4 (the refused draw) has no result in A, 2 of 4 in C (S2 is rejected)", () => {
+    expect(mA.misattribution).toMatchObject({ misattributed: r(0, 4), unattributed: r(0, 4), no_result: r(1, 4) });
+    expect(mC.misattribution).toMatchObject({ misattributed: r(0, 4), unattributed: r(0, 4), no_result: r(2, 4) });
   });
-  it("Given S2 recorded on unit U2 (typed by hand) Then 1 of 4 is misattributed and S2 is no longer reconstructed exactly: 2 of 4 remain exact", () => {
+  // S2 was the sample typed here before the review step; in C it has no result now (both attempts rejected), so a wrong unit on it cannot be read. S1 takes its place.
+  it("Given S1 recorded on unit U2 (typed by hand) Then 1 of 4 is misattributed and S1 is no longer reconstructed exactly: 1 of 4 remains exact (S3)", () => {
     const ds = copyOf("C");
-    (ds.sample.find((s) => s.sample_id === "S2") as { unit_id: string }).unit_id = "U2";
+    (ds.sample.find((s) => s.sample_id === "S1") as { unit_id: string }).unit_id = "U2";
     const m = runSeedOn(ds);
-    expect(m.misattribution).toMatchObject({ misattributed: r(1, 4), unattributed: r(0, 4), no_result: r(1, 4) });
-    expect(m.exact_reconstruction).toMatchObject(r(2, 4));
+    expect(m.misattribution).toMatchObject({ misattributed: r(1, 4), unattributed: r(0, 4), no_result: r(2, 4) });
+    expect(m.exact_reconstruction).toMatchObject(r(1, 4));
   });
   it("Given no batch open on U1 at the stored time in A (keys derived by a time join) Then S1 and S2 are unattributed, not misattributed", () => {
     const ds = copyOf("A");
@@ -116,20 +120,21 @@ describe("Misattribution (recorded unit or batch against truth)", () => {
 });
 
 describe("Exact reconstruction (unit, batch, sampled_at, process context at the draw, instrument state; unanswerable counts as wrong)", () => {
-  // A stores no sampled_at and no instrument link: nothing is answerable. C: S1, S2 and S3 match truth on all five; S4 has no result.
-  it("Given A Then 0 of 4; given C Then 3 of 4", () => {
+  // A stores no sampled_at and no instrument link: nothing is answerable. C: S1 and S3 match truth on all five; S4 has no result and S2 has none either
+  // (the failed first attempt is rejected by VR-012 and the late rerun by VR-010 at review; before the review step the read fell back to the failed attempt: 3 of 4).
+  it("Given A Then 0 of 4; given C Then 2 of 4", () => {
     expect(mA.exact_reconstruction).toMatchObject(r(0, 4));
-    expect(mC.exact_reconstruction).toMatchObject(r(3, 4));
+    expect(mC.exact_reconstruction).toMatchObject(r(2, 4));
   });
-  it("Given C with the S3 sampled_at removed Then S3 is unanswerable and counts as wrong: 2 of 4", () => {
+  it("Given C with the S3 sampled_at removed Then S3 is unanswerable and counts as wrong: 1 of 4 (S1)", () => {
     const ds = copyOf("C");
     (ds.sample.find((s) => s.sample_id === "S3") as { sampled_at: number | null }).sampled_at = null;
-    expect(runSeedOn(ds).exact_reconstruction).toMatchObject(r(2, 4));
+    expect(runSeedOn(ds).exact_reconstruction).toMatchObject(r(1, 4));
   });
-  it("Given C with the instrument link of S1 removed Then S1 is unanswerable: 2 of 4", () => {
+  it("Given C with the instrument link of S1 removed Then S1 is unanswerable: 1 of 4 (S3)", () => {
     const ds = copyOf("C");
     (ds.run.find((x) => x.run_id === "S1/1/1") as { instrument_state_id: string | null }).instrument_state_id = null;
-    expect(runSeedOn(ds).exact_reconstruction).toMatchObject(r(2, 4));
+    expect(runSeedOn(ds).exact_reconstruction).toMatchObject(r(1, 4));
   });
 });
 
@@ -139,8 +144,9 @@ describe("Alignment error (seconds between the time the join used and the true s
   it("Given A Then 3 of 4 are joined, median 900 s, p90 4000 s, and 1 of 4 has a wrong process context", () => {
     expect(mA.alignment_error).toMatchObject({ joined: r(3, 4), median_s: 900, p90_s: 4000, context_mismatch: r(1, 4) });
   });
-  it("Given C (sampled_at stored) Then the join error is zero for the 3 joined requests and no context is wrong", () => {
-    expect(mC.alignment_error).toMatchObject({ joined: r(3, 4), median_s: 0, p90_s: 0, context_mismatch: r(0, 4) });
+  // C joins S1 and S3; S2 has no result (rejected at review), S4 none.
+  it("Given C (sampled_at stored) Then the join error is zero for the 2 joined requests and no context is wrong", () => {
+    expect(mC.alignment_error).toMatchObject({ joined: r(2, 4), median_s: 0, p90_s: 0, context_mismatch: r(0, 4) });
   });
 });
 
@@ -208,7 +214,7 @@ describe("Phantom effect size (recorded group effect against the true one, over 
   const truth: Truth = truthFrom([...["P1", "P2", "P3", "P4"].map(drawn), measured("P1", "AN-1", 10), measured("P2", "AN-1", 12), measured("P3", "AN-2", 11), measured("P4", "AN-2", 13)], { visits: {}, deadlines: {}, operators: [], analyzers: [] });
   const recorded = (values: Record<string, number>): RecordedDataset => ({
     ...emptyDataset(),
-    result: Object.entries(values).map(([id, value], i) => ({ result_id: `R${i}`, request_id: id, analyte: "glucose", version: 1, run_id: `${id}/1/1`, value, measured_at: 10, available_at: null, supersedes: null, ingested_at: null, state: null })),
+    result: Object.entries(values).map(([id, value], i) => ({ result_id: `R${i}`, request_id: id, analyte: "glucose", version: 1, run_id: `${id}/1/1`, value, measured_at: 10, available_at: null, supersedes: null, ingested_at: null, reviewed_at: null, state: null })),
   });
   const key = key10([]);
   it("Given the 1-unit bias on AN-1 Then the phantom effect is 1/sqrt(2), with 2 requests in each group", () => {

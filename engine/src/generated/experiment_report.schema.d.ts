@@ -36,6 +36,19 @@ export interface ExperimentReport {
     seed: number;
     truth_log_hash: string;
   }[];
+  /**
+   * The review settings of the run (data_model.md section 7, Review step and VR-012; ledger A213 to A215): when a held or quarantined row was reviewed, and the rules rejected beyond the policy. The outcome policy itself is the same in every run. A sensitivity variant is a different report.
+   */
+  review: {
+    /**
+     * next_shift_start is the default: the first staffed review point at or after the stamp, the shift starts of the roster of A201. shift_end: the end of the next shift. next_day_start: 08:00 of the next day.
+     */
+    timing: "next_shift_start" | "shift_end" | "next_day_start";
+    /**
+     * Rule ids rejected at review in addition to the policy (a sensitivity variant, for example VR-015 and VR-020). Empty for the default.
+     */
+    reject_also: string[];
+  };
   notes: string[];
   architectures: {
     id: string;

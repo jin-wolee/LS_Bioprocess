@@ -7,12 +7,14 @@ import type { ForcedError } from "../../inject/types.ts";
 import type { ObservableEvent, ObservableSensorSeries } from "../../observe.ts";
 import type { Architecture } from "../../record/architecture.ts";
 import { record } from "../../record/recorder.ts";
+import { review } from "../../record/review.ts";
+import type { ReviewConfig } from "../../record/review.ts";
 import type { QualificationInput, RecordedDataset } from "../../record/types.ts";
 import { validate } from "../../record/validate.ts";
 import type { RuleConfig } from "../../record/validate.ts";
 import { keyFile } from "./key_file.ts";
 
-// One truth run, every architecture: inject (fair opportunities), record, validate, write the answer key once, evaluate. The truth run is shared,
+// One truth run, every architecture: inject (fair opportunities), record, validate, review, write the answer key once, evaluate. The truth run is shared,
 // so the truth log is the same for every architecture (experiment 1, spec section 6.1). Detection raises flags and never re-draws or re-measures.
 
 export interface SeedInput {
@@ -30,6 +32,8 @@ export interface SeedInput {
   forced?: readonly ForcedError[];
   qualifications?: readonly QualificationInput[];
   rules: RuleConfig;
+  /** The review of held and quarantined rows (A213 to A215, S2 review step): the roster, the timing and the sensitivity variants. */
+  review: ReviewConfig;
   config: EvalConfig;
 }
 
@@ -54,8 +58,9 @@ export const runSeed = (input: SeedInput): SeedOutput => {
     const out = injected[i] as (typeof injected)[number];
     const recorded = record({ events: out.events, sensors: input.sensors, received_at: out.received_at, ...(input.qualifications && { qualifications: input.qualifications }) }, architecture);
     const validated = validate(recorded, input.rules);
-    datasets[architecture.id] = validated.dataset;
-    return evaluate({ truth: input.truth, dataset: validated.dataset, not_evaluable: validated.not_evaluable, key_text, architecture: architecture.id, config: input.config });
+    const reviewed = review(validated.dataset, input.review);
+    datasets[architecture.id] = reviewed;
+    return evaluate({ truth: input.truth, dataset: reviewed, not_evaluable: validated.not_evaluable, key_text, architecture: architecture.id, config: input.config });
   });
   return { key_text, cells, datasets };
 };

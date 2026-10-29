@@ -12,6 +12,7 @@ import { canonicalJson, logHash } from "../../src/trace.ts";
 import { SMALL, configOf } from "../support/scenarios.ts";
 import { makeEvalAjv, validates } from "../support/eval_schemas.ts";
 import { ELEVEN, ELEVEN_IDS, STAFF, openLoopInput } from "../support/open_loop_setup.ts";
+import { REVIEW } from "../support/review_setup.ts";
 
 // S2c2, experiment 1 (spec section 6.1): one truth run per seed, shared by A, B, C and the eight ablations of C. Structural relations only
 // (00 section 2 item 8): nothing here asserts a size, a sign or an ordering of a metric. Seeds are test-only values.
@@ -112,7 +113,7 @@ describe("Open loop: the error opportunities are common to all architectures", (
 describe("Open loop: detection never re-draws and never re-measures", () => {
   const seed = SEEDS[0] as number;
   const run = truthOf(seed);
-  const seedInput = seedInputFromRun(run, { scenario_id: "default-small", staff: STAFF, evaluation: input.evaluation, architectures: ELEVEN, days: 8 });
+  const seedInput = seedInputFromRun(run, { scenario_id: "default-small", staff: STAFF, evaluation: input.evaluation, architectures: ELEVEN, days: 8, review: REVIEW });
 
   it("Given the pipeline ran Then the observable events, the sensors and the truth handed to it are unchanged", () => {
     const before = structuredClone({ events: seedInput.events, sensors: seedInput.sensors, truth: seedInput.truth.events });

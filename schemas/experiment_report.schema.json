@@ -16,6 +16,7 @@
     "meets_min_seeds",
     "interval",
     "truth_log_hashes",
+    "review",
     "notes",
     "architectures",
     "ranks"
@@ -198,6 +199,34 @@
             "type": "string",
             "pattern": "^[0-9a-f]{64}$"
           }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "description": "The review settings of the run (data_model.md section 7, Review step and VR-012; ledger A213 to A215): when a held or quarantined row was reviewed, and the rules rejected beyond the policy. The outcome policy itself is the same in every run. A sensitivity variant is a different report.",
+      "additionalProperties": false,
+      "required": [
+        "timing",
+        "reject_also"
+      ],
+      "properties": {
+        "timing": {
+          "type": "string",
+          "enum": [
+            "next_shift_start",
+            "shift_end",
+            "next_day_start"
+          ],
+          "description": "next_shift_start is the default: the first staffed review point at or after the stamp, the shift starts of the roster of A201. shift_end: the end of the next shift. next_day_start: 08:00 of the next day."
+        },
+        "reject_also": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^VR-[0-9]{3}[a-z]?$"
+          },
+          "description": "Rule ids rejected at review in addition to the policy (a sensitivity variant, for example VR-015 and VR-020). Empty for the default."
         }
       }
     },

@@ -5,8 +5,9 @@ import type { Params } from "../../profiles.ts";
 import type { Architecture } from "../../record/architecture.ts";
 import { runScenario } from "../../run.ts";
 import type { ScenarioConfig } from "../../scenario.ts";
+import type { ReviewTiming } from "../../record/review.ts";
 import { ENGINE_VERSION, logHash } from "../../trace.ts";
-import { seedInputFromRun } from "./from_run.ts";
+import { rosterOf, seedInputFromRun } from "./from_run.ts";
 import { runSeed } from "./run_seed.ts";
 
 // Experiment 1, open loop (spec section 6.1): for each seed the truth is run once and shared by every architecture. Opportunities are common
@@ -26,6 +27,14 @@ export interface OpenLoopInput {
   architectures: readonly Architecture[];
   contrast?: Contrast;
   clock_offsets?: Readonly<Record<string, number>>;
+  /** Sensitivity variants of the review (A214, A215; reported, never gated). Default: the next shift start and no rule rejected beyond the policy. */
+  review?: { timing?: ReviewTiming; reject_also?: readonly string[] };
+}
+
+/** The review settings a run used, as the report states them. */
+export interface ReviewUsed {
+  timing: ReviewTiming;
+  reject_also: string[];
 }
 
 export interface SeedOutcome {
@@ -42,11 +51,13 @@ export interface OpenLoopResult {
   scenario_id: string;
   engine_version: string;
   seeds: number[];
+  review: ReviewUsed;
   outcomes: SeedOutcome[];
 }
 
 export const runOpenLoop = async (input: OpenLoopInput): Promise<OpenLoopResult> => {
   const outcomes: SeedOutcome[] = [];
+  const review: ReviewUsed = { timing: input.review?.timing ?? "next_shift_start", reject_also: [...(input.review?.reject_also ?? [])] };
   for (const seed of input.seeds) {
     const run = runScenario({ ...input.scenario, seed });
     const truth_log_hash = await logHash(run.events);
@@ -54,6 +65,7 @@ export const runOpenLoop = async (input: OpenLoopInput): Promise<OpenLoopResult>
       seedInputFromRun(run, {
         scenario_id: input.scenario.scenario_id, staff: input.staff, evaluation: input.evaluation, architectures: input.architectures,
         days: input.scenario.process.horizon_s / DAY,
+        review: { roster: rosterOf(input.scenario.sampling), timing: review.timing, reject_also: review.reject_also },
         ...(input.contrast && { contrast: input.contrast }), ...(input.clock_offsets && { clock_offsets: input.clock_offsets }),
       }),
     );
@@ -61,5 +73,5 @@ export const runOpenLoop = async (input: OpenLoopInput): Promise<OpenLoopResult>
     if (after !== truth_log_hash) throw new Error(`open loop: the truth log of seed ${seed} changed while the architectures were recorded (${truth_log_hash} before, ${after} after)`);
     outcomes.push({ seed, truth_log_hash, key_text: out.key_text, cells: out.cells });
   }
-  return { scenario_id: input.scenario.scenario_id, engine_version: ENGINE_VERSION, seeds: [...input.seeds], outcomes };
+  return { scenario_id: input.scenario.scenario_id, engine_version: ENGINE_VERSION, seeds: [...input.seeds], review, outcomes };
 };

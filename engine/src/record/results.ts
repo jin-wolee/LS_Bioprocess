@@ -8,7 +8,8 @@ import type { AuditEventRow, IngestConflictRow, ResultRow, SourceEventRow, Valid
 //                        conflict list for S2b (VR-008b). Without the flag a replay is another row (double count).
 //   append_only_versions a rerun (an attempt not seen for this request and analyte) adds a version that supersedes the last; without it
 //                        the rerun overwrites the rows in place and the earlier value is gone. A replay is an insert on every architecture.
-//   available_at         the row carries the stamp of its event as the instant it became knowable (S2a models no ingestion or review delay).
+//   available_at         the row carries the stamp of its event as the instant it became knowable; a row that the review step releases gets the review point
+//                        instead (record/review.ts).
 //   ingested_at          a row-creation stamp is stored whenever a system writes the rows, i.e. at least one flag is on (storesIngestedAt); the all-off
 //                        configuration, the spreadsheet, stores none (S2b, data_model section 7). It does not hang on one flag.
 //   audit_trail          a rerun that replaces an earlier attempt is an audit event with the old and the new value, kept even when the earlier
@@ -49,7 +50,7 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags, 
   const row = (e: Measured, version: number, supersedes: string | null, id?: string): ResultRow => ({
     result_id: id ?? `R${++counter}`, request_id: e.request_id, analyte: e.analyte, version, run_id: `${e.request_id}/${e.attempt}/${e.visit}`,
     value: e.value, measured_at: e.t, available_at: flags.available_at ? e.t : null, supersedes,
-    ingested_at: storesIngestedAt(flags) ? (receivedAt[`${e.analyzer}/${e.request_id}/${e.attempt}/${e.visit}/${e.analyte}`] ?? e.t) : null, state: null,
+    ingested_at: storesIngestedAt(flags) ? (receivedAt[`${e.analyzer}/${e.request_id}/${e.attempt}/${e.visit}/${e.analyte}`] ?? e.t) : null, reviewed_at: null, state: null,
   });
 
   for (const e of events) {

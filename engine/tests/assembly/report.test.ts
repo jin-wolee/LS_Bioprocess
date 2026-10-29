@@ -35,6 +35,7 @@ const result = (n = 20): OpenLoopResult => ({
   scenario_id: "hand",
   engine_version: "0.1.0",
   seeds: seeds.slice(0, n),
+  review: { timing: "next_shift_start", reject_also: [] },
   outcomes: seeds.slice(0, n).map((i) => ({
     seed: i, truth_log_hash: HASH, key_text: "{}",
     cells: [
@@ -63,6 +64,12 @@ describe("Stochastic report: rows, statuses and denominators (hand-set cells)", 
     expect(report).toMatchObject({ schema_version: "1", engine_version: "0.1.0", experiment_id: "hand", scenario_id: "hand", n_seeds: 20, min_seeds: 20, meets_min_seeds: true });
     expect(report.seeds).toEqual(seeds);
     expect(report.truth_log_hashes).toEqual(seeds.map((seed) => ({ seed, truth_log_hash: HASH })));
+  });
+
+  it("Given the review settings of the run Then the report states them, so that a sensitivity variant is a report that says what it varied", () => {
+    expect(report.review).toEqual({ timing: "next_shift_start", reject_also: [] });
+    const variant = buildReport({ ...result(), review: { timing: "shift_end", reject_also: ["VR-015", "VR-020"] } }, HEAD);
+    expect(variant.review).toEqual({ timing: "shift_end", reject_also: ["VR-015", "VR-020"] });
   });
 
   it("Given 19 seeds Then the report says it does not reach the minimum", () => {

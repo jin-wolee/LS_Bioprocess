@@ -8,6 +8,7 @@ import { canonicalJson, logHash } from "../../src/trace.ts";
 import { readJson } from "../support/paths.ts";
 import { SMALL, lookup, runOf } from "../support/scenarios.ts";
 import { makeEvalAjv, validates } from "../support/eval_schemas.ts";
+import { REVIEW } from "../support/review_setup.ts";
 
 // S2b: one truth run through the injector, three recorders, the validation rules and the evaluator (scenario default at a small size; seed 1).
 // Structural relations only (00 section 2 item 8): nothing here asserts a size or an ordering of the architectures.
@@ -17,7 +18,7 @@ const staff = loadProfile(lookup("staff", "experienced"), "staff").params;
 const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
 const architectures = ["a_manual", "b_lims_lite", "c_context"].map((n) => parseArchitecture(readJson("scenarios", "architectures", `${n}.json`)));
 const requests = run.events.filter((e) => e.type === "sample_drawn" || e.type === "draw_skipped_volume_budget").length;
-const input = seedInputFromRun(run, { scenario_id: "default-small", staff, evaluation, architectures, days: 8 });
+const input = seedInputFromRun(run, { scenario_id: "default-small", staff, evaluation, architectures, days: 8, review: REVIEW });
 
 describe("One truth run, three architectures", () => {
   const before = structuredClone(run.events);

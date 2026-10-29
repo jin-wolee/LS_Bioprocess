@@ -80,6 +80,11 @@ export interface RunRow {
   started_at: number;
   /** Null while no visit_finished has been seen for the run. */
   ended_at: number | null;
+  /**
+   * The outcome of the run's `qc_result` event (data_model section 2, "QC outcome"); null while none has been seen. No flag owns it: every architecture that
+   * records the run holds it (S2 review step, data_model section 7). VR-012 reads `qc_failed`.
+   */
+  qc_outcome: "qc_passed" | "qc_failed" | "over_range" | null;
 }
 
 export interface InstrumentStateRow {
@@ -110,11 +115,17 @@ export interface ResultRow {
    * the rows, i.e. with every flag off (architecture A; S2b decision on data_model section 14, question 7).
    */
   ingested_at: number | null;
-  /** The state a validation rule put the row in (hold, quarantine, reject; data_model sections 6 and 8). Null from the recorder: only a rule sets it, and never changes a value. */
+  /** The instant a reviewer acted on the row (data_model section 5): null from the recorder and for a row that was never held; only the review step sets it. */
+  reviewed_at: number | null;
+  /**
+   * The state a validation rule put the row in (hold, quarantine, reject; data_model sections 6 and 8), or `released` once the review step has let a held row through.
+   * Null from the recorder: only a rule or the review sets it, and never changes a value.
+   */
   state: ResultState | null;
 }
 
-export type ResultState = "held" | "quarantined" | "rejected";
+/** `held` and `quarantined` wait for the review; `rejected` (by a rule at ingest or by the review) and `released` are the end states (data_model section 6). */
+export type ResultState = "held" | "quarantined" | "rejected" | "released";
 
 /** audit_trail only: one row per change of a result (a rerun that replaces an earlier attempt). */
 export interface AuditEventRow {

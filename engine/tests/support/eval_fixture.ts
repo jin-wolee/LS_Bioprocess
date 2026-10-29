@@ -9,6 +9,7 @@ import type { Architecture } from "../../src/record/architecture.ts";
 import type { RecordedDataset } from "../../src/record/types.ts";
 import type { RuleConfig } from "../../src/record/validate.ts";
 import { NO_FLAGS, SENSORS, WITH_SKIP, arch } from "./record_fixture.ts";
+import { REVIEW } from "./review_setup.ts";
 
 // The hand-built world of the evaluator tests (S2b). Test-only values. It is the observable stream of record_fixture.ts (WITH_SKIP) with the
 // hidden truth fields added; every expected number in the tests is derived by hand from it. Times are integer seconds.
@@ -55,7 +56,7 @@ export const QUALIFICATIONS = [
 /** The input of `runSeed` for the hand world; a test overrides what it needs. */
 export const seedInput = (over: Partial<SeedInput> = {}): SeedInput => ({
   scenario_id: "hand", seed: 7, engine_version: "0.1.0", truth: WORLD, events: WORLD_EVENTS, sensors: SENSORS, architectures: [A, C],
-  forced: [], qualifications: QUALIFICATIONS, rules: RULES, config: CONFIG, ...over,
+  forced: [], qualifications: QUALIFICATIONS, rules: RULES, review: REVIEW, config: CONFIG, ...over,
 });
 
 /** A recorded dataset with every table empty, for fixtures typed row by row. */
