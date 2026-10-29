@@ -2,7 +2,7 @@
 # verification: snippet = seen only as a search/tool excerpt or second-hand, not opened;
 #               agent-read = opened and read by the research executor on the access date (part of a page may be all that was needed);
 #               main-reread = re-read by the orchestrator (public numbers may cite only these).
-# Nothing here is main-reread yet.
+# main-reread (11): S001, S002, S009, S011, S012, S013, S017, S022, S027, S029, S030. Every other source is provisional.
 sources:
   # ---- analyzers: all-in-one, cell counters, metabolite analyzers, HPLC ----
   - id: S001
@@ -13,7 +13,7 @@ sources:
     type: vendor-doc
     supports: "FLEX2 16-analyte menu; full menu needs 275 uL and 270 s (4.5 min); per-module times and volumes."
     verification: main-reread
-    used_in: [A019, A023, A057, A067, A069, A070, A074, A075]
+    used_in: [A019, A023, A057, A067, A069, A070, A074, A075, A107, A116]
   - id: S002
     title: "BioProfile FLEX2 On-Line Autosampler (brochure)"
     publisher: "Nova Biomedical (file hosted by chemie.de)"
@@ -22,16 +22,16 @@ sources:
     type: vendor-doc
     supports: "OLS connects up to 10 bioreactors, 5.6 mL per reactor sample, sequence as fast as 6 min, up to 24 samples/day per bioreactor."
     verification: main-reread
-    used_in: [A014, A024, A069]
+    used_in: [A014, A024, A069, A118]
   - id: S003
-    title: "BioProfile FLEX2 Instructions for Use manual (section 2.3.3 export)"
+    title: "BioProfile FLEX2 Instructions for Use manual (section 2.3.3 export; Appendix A specifications)"
     publisher: "Nova Biomedical"
     url: "https://novabiomedicaldocs.com/wp-content/uploads/filr/26707/LPN-57960-BioProfile-FLEX2-IFU-EN-Manual.pdf"
-    accessed: 2026-10-28
+    accessed: 2026-10-29
     type: vendor-doc
-    supports: "Results export as CSV to a shared folder C:\\Export on the Bridge computer (or to USB); file name pattern SampleResultsYYYY-MM-DD_HHMMSS.csv. Passage seen as a search excerpt; only the first part of the manual was opened."
-    verification: snippet
-    used_in: [A036, A069]
+    supports: "Results export as CSV to a shared folder C:\\Export on the Bridge computer (or to USB); file name pattern SampleResultsYYYY-MM-DD_HHMMSS.csv. Appendix A (read 2026-10-29 from a text conversion of the full manual): measurement ranges by selected dilution ratio (glucose 0.10-15.00 g/L at 1:1, 30 at 1:2, 60 at 1:4; lactate 0.10-6.00 g/L at 1:1; glutamine and glutamate 0.10-6.00 mmol/L; ammonium 0.20-25.00 mmol/L; cell density 0.10-35 e6/mL at 1:1, up to 80 e6 at 1:2 and 160 e6 at 1:6); imprecision specification (n >= 10): within-run CV 5.0% and day-to-day CV 7.0% for glucose, lactate, glutamine, glutamate and ammonium (SD 0.03 g/L within-run and 0.07 g/L day-to-day for glucose and lactate), pH SD 0.007 within-run and 0.018 day-to-day, pCO2 CV 5.0% and 7.0%, sodium 3.0% and 4.5%, potassium and calcium 4.0% and 5.6%; osmolality SD 3 mOsm/kg up to 400. Automatic 2-point calibration of the gas and chemistry modules every 2 h with a 1-point calibration at each sample; onboard QC can be scheduled. Analysis time for all modules 275 s in manual mode and 305 s from the carousel; sample volume for all modules 265 uL at cell-density dilution 1:2 or 1:6 and 350 uL at 1:1; chemistry plus cell density 235 s manual (265 s carousel). Default sample type in the software: chemistry 1:1, cell density 1:2. The manual differs slightly from the distributor page (S001: 270 s, 275 uL)."
+    verification: agent-read
+    used_in: [A019, A023, A036, A069, A070, A077, A078, A089, A090, A091, A092, A093, A101, A107]
   - id: S004
     title: "BioProfile FLEX2 OPC Server Instruction for Use manual"
     publisher: "Nova Biomedical"
@@ -47,9 +47,9 @@ sources:
     url: "https://www.beckman.com/resources/reading-material/application-notes/specification-comparison-vi-cell-xr-blu"
     accessed: 2026-10-28
     type: vendor-doc
-    supports: "Vi-CELL BLU single-sample analysis <130 s normal mode and <80 s fast mode; minimum sample 200 uL (170 uL fast); 24-position carousel; TXT and Excel export."
+    supports: "Vi-CELL BLU single-sample analysis <130 s normal mode and <80 s fast mode; minimum sample 200 uL (170 uL fast); 24-position carousel; TXT and Excel export; cell density range 5e4-1.5e7 cells/mL; counting accuracy +/-10% and counting repeatability +/-5% (the XR is listed at +/-10% repeatability)."
     verification: agent-read
-    used_in: [A025, A070]
+    used_in: [A025, A070, A079, A089, A107]
   - id: S006
     title: "Cedex Bio and Cedex Bio HT Analyzer comparison table"
     publisher: "Roche CustomBiotech"
@@ -85,7 +85,7 @@ sources:
     type: vendor-doc
     supports: "Ambr 250 HT is available in 12-vessel and 24-vessel configurations; liquid handler serves up to 24 single-use 250 mL vessels. The page gives no working volume."
     verification: main-reread
-    used_in: [A001, A066]
+    used_in: [A001, A066, A113, A115]
   - id: S010
     title: "Ambr 15 Cell Culture (product page)"
     publisher: "Sartorius"
@@ -94,7 +94,7 @@ sources:
     type: vendor-doc
     supports: "Ambr 15: 24 or 48 parallel cultivations, recommended working volume 10-15 mL, connects to Vi-CELL XR, Cedex HiRes or FLEX2."
     verification: agent-read
-    used_in: [A057, A065]
+    used_in: [A057, A065, A110, A111, A113]
   - id: S011
     title: "Scale-Down Model Development in ambr systems: An Industrial Perspective (Sandner et al.)"
     publisher: "Biotechnology Journal 2019;14:1700766 (Wiley-VCH); PDF hosted by Fujifilm"
@@ -103,7 +103,7 @@ sources:
     type: paper
     supports: "ambr15 working volume 10-15 mL and ambr250 100-250 mL; sample volume typically 600 uL, a burden for daily sampling of ambr15; analyzing all 48 ambr15 vessels can take up to 3 h; volume in ambr15 can fall because of sampling."
     verification: main-reread
-    used_in: [A002, A027, A057, A065, A066]
+    used_in: [A027, A057, A065, A066, A110, A112, A114]
   # ---- sample stability ----
   - id: S012
     title: "Effects of diluents on cell culture viability measured by automated cell counter (Chen et al.)"
@@ -111,7 +111,7 @@ sources:
     url: "https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0173375"
     accessed: 2026-10-28
     type: paper
-    supports: "CHO samples from shake flasks incubated neat for up to 55 min before Vi-Cell XR counting: viability-difference slope -0.03 per min (neat), -0.05 (fresh medium), -0.12 (PBS), -0.04 (PBS plus shear protectant). The paper's finding is a PBS-dilution artifact; hold temperature is not stated in the text read."
+    supports: "CHO samples from shake flasks incubated neat or in a diluent for up to 55 min before Vi-Cell XR counting. Handling was non-sterile and open to the environment at room temperature (diluents brought to 18-22 C before use). Viability-difference slopes (relative to the neat control average; percentage points per minute, unit inferred from the paper's own remark that -0.12 is about 4% over 30 min): -0.03 neat, -0.05 fresh medium, -0.12 PBS, -0.04 PBS plus shear protectant; no significance test is reported for the slopes. The authors state that the neat samples did not exhibit a decrease in viability and attribute the decline to the diluent."
     verification: main-reread
     used_in: [A038, A039, A040]
   - id: S013
@@ -120,9 +120,9 @@ sources:
     url: "https://www.mdpi.com/2227-9717/8/5/520"
     accessed: 2026-10-28
     type: paper
-    supports: "Offline pH is used to readjust bioreactor probes, treating the offline value as the source of truth; hold time, temperature shift and CO2 degassing add offsets; pH not stable after sampling at higher cell density; Ambr250 liquid-handler samples before inoculation showed mostly positive offsets with mean about 0.05; single-point offsets above 0.1 are not unusual; 2 L working volume in 3 L bench vessels; 250 L SUB samples drawn by syringe. The 0.05 sentence was seen as a search excerpt of the same page."
+    supports: "Abstract: a sample-based offline pH measurement is commonly used to ensure correct probe signals after sterilisation and to detect drifts of probe signals. Introduction: when the difference exceeds defined criteria, a readjustment is applied with the offline value as the source of truth; sampling procedures, equipment, hold times, temperature shifts and CO2 degassing all add offsets; at higher cell densities pH must not be considered stable after sampling. Three measured cases of offline minus bioreactor pH, all on cell-free medium before inoculation: (1) 2 L bench vessels, manual sampling, two independent pH meters, sample at 32 +/-2 C against 37 C in the vessel: offsets 0.02-0.06, all positive, average about 0.04 (the authors call this a best case); (2) Ambr 250 liquid handler, 200 uL samples: mostly positive, mean difference about 0.05; (3) 250 L single-use vessels, samples drawn by sterile syringe, blood-gas analyzer: mean difference 0.021, and an offset above 0.1 for a single data point is called not unusual. Bench vessels were 3 L total with about 2 L working volume. The GMP alternative described uses delta-probe alarms instead of frequent offline readjustment."
     verification: main-reread
-    used_in: [A002, A041, A051, A057, A067, A068]
+    used_in: [A002, A041, A051, A057, A067, A068, A104, A108, A113]
   - id: S014
     title: "Evidence-based guidelines for controlling pH in mammalian live-cell culture systems (Michl et al.)"
     publisher: "Communications Biology 2019 (PMC6486606)"
@@ -149,7 +149,7 @@ sources:
     type: vendor-doc
     supports: "Sample pH shifts as cells consume O2 and produce CO2; syringes limit gas exchange better than bags because of a stable surface-to-volume ratio; the longer the delay the less accurate the analysis."
     verification: agent-read
-    used_in: [A037, A067]
+    used_in: [A037, A067, A113]
   # ---- process: USP / DSP ----
   - id: S017
     title: "Product Development and Realisation Case Study A-Mab"
@@ -159,7 +159,7 @@ sources:
     type: paper
     supports: "Production culture 13-17 d (processes 13-15 d and 16-17 d), initial density 0.5-1.5e6/mL, glucose kept above 1.0 g/L by discrete feeds, harvest viability 40-80%; N-1 seed 2-4 d (200 L) and 3-5 d (1000-3000 L); Protein A input <=5 g/L, load 10-50 g/L over several cycles with pooled eluates, pool about 20 g/L with HCP about 7,200 ppm (3,000-12,000). Pool hold data are 'not shown'. No peak viable cell density is given."
     verification: main-reread
-    used_in: [A003, A004, A005, A007, A010, A012, A052, A053]
+    used_in: [A003, A004, A005, A007, A010, A012, A052, A053, A086]
   - id: S018
     title: "Validation of Intermediate Hold Times"
     publisher: "BioProcess International"
@@ -204,7 +204,7 @@ sources:
     type: paper
     supports: "Second-hand: daily sampling of each fed-batch bioreactor; gases on a blood-gas analyzer, cell density and viability on Vi-CELL XR, metabolites on Cedex Bio HT, titer by Protein A UPLC on supernatant spun at 500-1000 g for 5-10 min. The page could not be read (fetch returned a stub)."
     verification: snippet
-    used_in: [A014, A071]
+    used_in: [A014, A071, A117]
   # ---- data quality / people ----
   - id: S022
     title: "An international study of the performance of sample collection from patients (Dzik et al.)"
@@ -303,11 +303,11 @@ sources:
     url: "https://opcfoundation.org/news/press-releases/breakthrough-in-smarter-labs-spectaris-lads-showcases-integration-of-opc-ua-with-allotrope-standards/"
     accessed: 2026-10-28
     type: docs
-    supports: "OPC UA LADS (Spectaris joint working group) was shown with Allotrope models mapped into OPC UA in a May 2025 hackathon showcase; Allotrope Simple Model represented analytical results. A demonstration, not an installed-base statement."
-    verification: agent-read
+    supports: "OPC UA LADS (Spectaris joint working group) was shown with Allotrope models mapped into OPC UA in a May 2025 hackathon showcase; Allotrope Simple Model represented analytical results. A demonstration, not an installed-base statement. Seen as a search excerpt; the page was not opened end to end."
+    verification: snippet
     used_in: [README]
   - id: S032
-    title: "ANSI/ISA-95.00.03-2013 Enterprise-Control System Integration, Part 3 (preview pages)"
+    title: "ANSI/ISA-95.00.03-2013 Enterprise-Control System Integration, Part 3 (second-hand: preview page returned 403)"
     publisher: "ANSI / ISA"
     url: "https://webstore.ansi.org/preview-pages/ISA/preview_ANSI%2BISA%2B95.00.03-2013.pdf"
     accessed: 2026-10-28
@@ -451,7 +451,44 @@ sources:
     type: vendor-doc
     supports: "Single-use stirred-tank family with conserved geometry from 250 mL (Ambr 250) to 2,000 L; Generation 3 working volume range 12.5 L to 2,000 L."
     verification: agent-read
-    used_in: [A057, A068]
+    used_in: [A057, A068, A104]
+  # ---- kinetics and process control (added 2026-10-29) ----
+  - id: S053
+    title: "Computer programs for modeling mammalian cell batch and fed-batch cultures using logistic equations (Goudar)"
+    publisher: "Cytotechnology 2012;64(4):465-475 (Springer; PMC3397109)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3397109/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Introduction: typical mammalian fed-batch culture 12-16 d, starting density 0.2-1.0e6 cells/mL, peak density 10-30e6 cells/mL. Table 2, two published industrial CHO IgG fed-batch cultures (2 L and 5 L): maximum specific growth rate 0.64 and 0.54 per day, maximum death rate 0.16 and 0.07 per day, peak viable density 13.7 and 21.7e6 cells/mL, titer 4.1 and 9.8 g/L, average specific productivity 36.5 and 33.3 pg/cell/day, maximum 47.6 and 54.4 pg/cell/day. Logistic-fit parameters, not directly measured rates."
+    verification: agent-read
+    used_in: [A002, A008, A011, A080, A081, A086]
+  - id: S054
+    title: "Metabolic engineering of CHO cells to alter lactate metabolism during fed-batch cultures (Toussaint et al.)"
+    publisher: "Journal of Biotechnology 217:122-131 (2016), open access"
+    url: "https://www.sciencedirect.com/science/article/pii/S0168165615301826"
+    accessed: 2026-10-29
+    type: paper
+    supports: "mAb-producing CHO line (parent) and a lactate-consuming engineered clone. Maximum specific growth rate in shake-flask batch 0.023 per h (parent) and 0.033 per h (engineered), 0.032 per h in fed-batch (engineered). Table 2, parent line in a 2 L bioreactor (0.6 L start): exponential phase glucose 2.49, glutamine 1.18, lactate +2.34 (production), ammonia 1.11 pmol/cell/d; stationary phase glucose 2.06, glutamine 0.56, lactate +0.24, ammonia 0.24. Shake-flask fed-batch parent: glucose 1.65, glutamine 0.53, lactate +1.18 (exponential); stationary lactate -0.03. The engineered clone consumed lactate after day 7 (-0.17 pmol/cell/d in the bioreactor, -0.15 to -0.36 in shake flasks). Specific productivity of this research line was only 1.7-2.7 pg/cell/d."
+    verification: agent-read
+    used_in: [A080, A082, A083, A084, A085]
+  - id: S055
+    title: "Evaluation of single-use optical and electrochemical pH sensors in upstream bioprocessing (Fratz-Berilla et al.)"
+    publisher: "Heliyon 10(3):e25512 (2024), PMC10873650"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10873650/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "CHO fed-batch and perfusion runs, pH set point 7.1 +/-0.1. The pH set point range for mammalian cell bioreactors is typically at least 0.1 wide (about +/-0.05 pH). Average absolute discrepancy between in-line pH and an at-line analyzer 0.047 (reusable electrochemical probe), 0.044 (single-use electrochemical) and 0.072 (single-use optical); discrepancy correlated with batch age for both electrochemical types; a second reusable probe differed by 0.016 on average; all runs with the optical sensor showed drift to some degree. At-line checks at least daily are recommended for the optical sensor."
+    verification: agent-read
+    used_in: [A094, A095, A108]
+  - id: S056
+    title: "Using simple models to describe the kinetics of growth, glucose consumption, and monoclonal antibody formation in naive and infliximab producer CHO cells (Lopez-Meza et al.)"
+    publisher: "Cytotechnology 2015 (doi 10.1007/s10616-015-9889-2; first 30,000 characters read)"
+    url: "https://doi.org/10.1007/s10616-015-9889-2"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Shake-flask batch CHO-S cultures (naive and mAb producer) in diluted commercial medium. Monod fits with a glucose threshold of about 0.6 g/L below which growth stops: maximum specific growth rate 0.043 per h and Ks 0.929 g/L (producer), 0.050 per h and Ks 2.058 g/L (naive). Lactate was produced in exponential growth and consumed once glucose was depleted; the producer line's lactate consumption was about 0.05 ng/cell/day in glucose-depleted cultures. Producer specific productivity 0.58-1.0 pg/cell/day in this low-density setting."
+    verification: agent-read
+    used_in: [A080, A085, A109]
   # ---- prior art ----
   - id: S033
     title: "CAOS_SIMLAB (README)"
@@ -468,8 +505,8 @@ sources:
     url: "https://github.com/pythonhealthdatascience/stars-stlite-example"
     accessed: 2026-10-28
     type: docs
-    supports: "Healthcare SimPy model running in the browser via stlite; README notes stlite does not currently work in Firefox."
-    verification: agent-read
+    supports: "Healthcare SimPy model running in the browser via stlite; README notes stlite does not currently work in Firefox. Seen as a search excerpt; the repository was not opened end to end."
+    verification: snippet
     used_in: [README]
   - id: S035
     title: "IndPenSim: industrial-scale penicillin fermentation simulation and dataset"
