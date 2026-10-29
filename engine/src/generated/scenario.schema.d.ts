@@ -20,6 +20,22 @@ export interface Scenario {
   feedback?: boolean;
   sampling_plan?: "burst" | "staggered";
   label_method?: "handwritten" | "preprinted_barcode" | "issued_at_draw";
+  /**
+   * The raw device layer of ADR-0014 (spec section 2.4). Absent means false: every earlier scenario keeps a byte-identical event log. Not a ninth flag.
+   */
+  raw_layer?: boolean;
+  /**
+   * Overrides the capture path of every preset (spec section 5, 'Capture path'). Read only with raw_layer true; with the layer off a scenario that sets it fails validation, because a silent no-op would mislead.
+   */
+  capture_path?: "manual_transcription" | "adapter_ingest";
+  /**
+   * When an analyzer export reaches the host (A216; the staffed window is A098, spec section 2.4.2): at the end of each staffed window (window_end, the default) or at the instant each result is produced (per_run). Needs raw_layer true. A capture-path contrast holds it fixed so that only the path changes.
+   */
+  export_schedule?: "window_end" | "per_run";
+  /**
+   * The synthetic calendar date of scenario second 0 (a Monday, spec section 2.1), as YYYY-MM-DD; the emitters turn integer seconds into wall-clock text from it. Needs raw_layer true.
+   */
+  calendar_anchor?: string;
   profiles: {
     bioreactor: string;
     analyzer: string;

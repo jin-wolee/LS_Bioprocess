@@ -1,0 +1,69 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "a truncated file loads its complete lines and writes one parse_error for the broken one",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": 33000
+          },
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "lactate",
+            "value": 0.8,
+            "measured_at": 33000
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "glucose",
+            "value": 5.5,
+            "measured_at": 33270
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "lactate",
+            "value": 1.1,
+            "measured_at": 33270
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 4,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 5,
+            "state": "rejected",
+            "rule_id": "VR-023"
+          }
+        ],
+        "parse_errors": [
+          {
+            "line": 5,
+            "code": "bad_row_width"
+          }
+        ]
+      }
+    }
+  ]
+}

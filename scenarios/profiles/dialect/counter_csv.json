@@ -1,0 +1,25 @@
+{
+  "schema_version": "1",
+  "dialect_id": "counter_csv",
+  "kind": "analyzer_dialect",
+  "description": "Synthetic format modeled on public documentation, not a real instrument file: one CSV per sample set of a cell counter. Units sit in the column headers; the stamp is month, day, year, 24 h, to the minute, with no zone (A166); an optional append mode repeats earlier rows (A167).",
+  "banner": "synthetic, modeled on public documentation; not a real instrument file",
+  "modeled_on": ["S084", "S085", "S086"],
+  "grain": "analysis",
+  "file": {"name_prefix": "counter_export", "extension": "csv", "separator": ",", "quote_header": true, "trailing_separator": false, "units": "in_header", "ref": "A167"},
+  "stamp": {"order": "month_first", "separator": "/", "clock": "24h", "day_part_marker": false, "zone": "none", "means": "end", "ref": "A166"},
+  "columns": [
+    {"role": "sample_id", "label": "Sample ID", "kind": "text", "required": true, "ref": "A166"},
+    {"role": "stamp", "label": "Analysis Date Time", "kind": "stamp", "required": true, "ref": "A166"},
+    {"role": "dilution", "label": "Dilution", "kind": "number", "required": false, "ref": "A166"},
+    {"role": "analyte:vcd", "label": "Viable Density", "kind": "value", "required": false, "analyte": "vcd", "unit_text": "x10^6 cells/mL", "physical": "non_negative", "ref": "A166"},
+    {"role": "analyte:viability", "label": "Viability", "kind": "value", "required": false, "analyte": "viability", "unit_text": "%", "physical": "percent", "ref": "A166"}
+  ],
+  "units": {
+    "x10^6 cells/mL": {"ucum": "10*6/mL", "dimension": "number_concentration", "ref": "A166"},
+    "%": {"ucum": "%", "dimension": "fraction", "ref": "A166"}
+  },
+  "params": {
+    "resolution_s": {"value": 60, "unit": "s", "ref": "A166"}
+  }
+}

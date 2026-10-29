@@ -18,6 +18,13 @@ import { VALID_QUALIFICATIONS, byTime } from "./cell_stream.ts";
 import { CONFIGS } from "./cells.ts";
 import { REVIEW } from "./review_setup.ts";
 import { SENSORS, STREAM, WITH_CONFLICT, WITH_HARVEST, WITH_REPLAY, WITH_SKIP } from "./record_fixture.ts";
+import { runSeed } from "../../src/experiments/assembly/run_seed.ts";
+import { adapterEntry } from "../../src/ingest/adapters/entry.ts";
+import { parseFile } from "../../src/ingest/parse.ts";
+import { newStore } from "../../src/ingest/store.ts";
+import { runScenario } from "../../src/run.ts";
+import { rawConfigOf, rawInputOf } from "./raw_run.ts";
+import { dialectOf } from "./raw_fixtures.ts";
 import { assemble } from "./sc_run.ts";
 import { SMALL, runOf } from "./scenarios.ts";
 
@@ -58,6 +65,8 @@ const take = (ds: RecordedDataset): void => {
   for (const t of TABLES) for (const row of ds[t]) add(t, row);
   for (const series of ds.historian.series) add("historian_series", series);
   for (const row of ds.historian.late) add("historian_value", row);
+  // S2e1: the raw-side tables of an adapter_ingest dataset (data_model section 16.1)
+  for (const t of ["adapter", "raw_file", "raw_record", "parse_error"] as const) for (const row of ds.raw?.[t] ?? []) add(t, row);
   add("dataset", ds);
   walk(ds);
 };
@@ -106,6 +115,16 @@ for (const ds of Object.values(out.datasets)) {
   take(ds);
   exported(ds);
 }
+
+// S2e1: the raw device layer: the default scenario at the small size on each capture path (the new columns of result, the capture member of the dataset, the raw tables), and a
+// truncated file for the dead letter (parse_error)
+for (const path of ["manual_transcription", "adapter_ingest"] as const) {
+  const config = rawConfigOf("default", { seed: 1, settings: SMALL }, { capture_path: path });
+  for (const ds of Object.values(runSeed(rawInputOf(runScenario(config), config, "default", CONFIGS.slice(0, 3).map((c) => c.config), SMALL.horizon_days as number)).datasets)) take(ds);
+}
+const truncated = "synthetic, modeled on public documentation; not a real instrument file\nSample ID,Date Time\nS1,2030-01-07 09:10:00\nS2,2030-01-07";
+const parsed = parseFile(truncated, { entry: adapterEntry(dialectOf("allinone_csv"), { instrument: "AN-1", required_analytes: [] }), file_name: "x.csv", raw_file_id: "RF0", received_at: 0, anchor_epoch_s: 0, flags: { ingest_idempotency: true, append_only_versions: true }, store: newStore() });
+for (const e of parsed.parse_errors) add("parse_error", e);
 
 const summary = Object.fromEntries(
   [...tables].map(([t, cols]) => [t, Object.fromEntries([...cols].map(([c, s]) => [c, { types: [...s.types].sort(), values: s.values.size <= 16 ? [...s.values].sort() : [] }]))]),

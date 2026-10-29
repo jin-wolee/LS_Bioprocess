@@ -1,0 +1,4 @@
+synthetic, modeled on public documentation; not a real instrument file
+"Sample ID","Analysis Date Time","Dilution","Viable Density (x10^6 cells/mL)","Viability (%)"
+U01-D01-1,01/07/2030 09:14,1,12.5,97
+U02-D01-1,01/07/2030 09:14,1,10.1,96

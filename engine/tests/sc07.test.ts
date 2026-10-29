@@ -4,6 +4,7 @@ import { runSeed } from "../src/experiments/assembly/run_seed.ts";
 import type { ScenarioRun } from "../src/run.ts";
 import { CONFIGS } from "./support/cells.ts";
 import { eventsOf, inputOf, mixedUp } from "./support/sc_run.ts";
+import { RAW_ROWS, runRaw } from "./support/raw_cells.ts";
 import { SMALL, runOf } from "./support/scenarios.ts";
 
 // SC7 Re-run and dilution (spec 7): how are reruns and dilutions recorded? A small variant of the default scenario with the run-level rerun probability
@@ -66,7 +67,22 @@ describe("SC7 re-run and dilution", () => {
     expect(out.datasets["c_context"]?.audit_event.length).toBe(replaced);
   });
 
-  // Pending S2e (the capture path, spec section 5 "Capture path"): with the raw layer off no architecture setting says who types the dilution factor
-  // (spec section 5 names B, and A transcribes, but nothing is said for C) and the injector has no dilution-entry error (spec 2.4.8: no ledger entry).
-  it.todo("Given the raw layer off When dilution-factor errors are injected Then they occur only on manual paths (pending S2e, capture path: manual_transcription against adapter_ingest)");
+  // Closed by S2e1 (the capture path, spec section 5 "Capture path"; A048 "manual path only: factor missing or unit mismatch"): the dilution factor is typed from the screen or printout only on
+  // manual_transcription; on adapter_ingest the parser reads it from the file and there is no copy step. Expected cells typed by hand from that table, for A, B and C on each path.
+  describe("dilution-factor entry errors occur only where a person copies the result (manual_transcription)", () => {
+    const row = RAW_ROWS.find((r) => r.name.startsWith("transcription: a dilution factor of 3")) as (typeof RAW_ROWS)[number];
+    const presets = [CONFIGS[0], CONFIGS[1], CONFIGS[2]] as (typeof CONFIGS)[number][];
+    it.each(presets.map((c) => c.name))("Given %s on manual_transcription When a dilution factor of 3 is typed (the method offers 1, 2 and 4) Then the entry error arises and VR-013 holds the row", (name) => {
+      const { out, cell } = runRaw(row, (presets.find((c) => c.name === name) as (typeof CONFIGS)[number]).config, "manual_transcription");
+      expect([out.key.entry_errors.map((e) => [e.kind, e.typed]), cell]).toEqual([[["dilution", 3]], "detected:VR-013"]);
+    });
+    it.each(presets.map((c) => c.name))("Given %s on adapter_ingest Then no dilution entry error arises: the parser reads the factor of the file (1, the default ratio) and nothing is typed", (name) => {
+      const { out, ds, cell } = runRaw(row, (presets.find((c) => c.name === name) as (typeof CONFIGS)[number]).config, "adapter_ingest");
+      expect([out.key.entry_errors, ds.result.map((r) => r.dilution_factor), cell]).toEqual([[], [1], "not_applicable"]);
+    });
+  });
+  // The pre-dilution multiplier that an operator types at the analyzer (A090 notes; preset B's limit "dilution factor typed by hand") is typed by hand on both paths (spec 2.4.8, last bullet;
+  // orchestrator ruling 2026-10-30): an error in it enters the value before any file or printout exists, so it is in both paths alike and does not depend on the path. It is not modelled: there is
+  // no rate (A048) and whether the export carries the field is unsettled (A165 lists it as a screen field). No cell is asserted; the todo stays until a source settles it.
+  it.todo("Given the pre-dilution multiplier typed by hand at the analyzer When it is wrong Then the error is in both paths alike (not modelled: no rate, A048; whether the export carries the field is unsettled, spec 2.4.8)");
 });

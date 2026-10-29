@@ -1,0 +1,23 @@
+{
+  "schema_version": "1",
+  "profile_id": "ctrl_bench",
+  "kind": "controller_profile",
+  "description": "Synthetic format modeled on public documentation, not a real instrument file: controller family 2 writes five record types as separate exports (process data, user events, alarms, recipe steps, errors). The unit sits in parentheses in the variable name (A171) and an alarm row names the acknowledging user (A174). The column layout is not in the text read and is assumed (S099).",
+  "banner": "synthetic, modeled on public documentation; not a real instrument file",
+  "modeled_on": ["S099"],
+  "tag_naming": {"form": "unit_in_parentheses", "ref": "A171"},
+  "logs": [
+    {"log": "process_data", "file_prefix": "bench_process", "columns": ["Time", "Variable", "Value"], "ref": "A172"},
+    {"log": "user_events", "file_prefix": "bench_user", "columns": ["Time", "User", "Event"], "ref": "A174"},
+    {"log": "alarms", "file_prefix": "bench_alarms", "columns": ["Time", "Alarm", "State", "User"], "ref": "A174"},
+    {"log": "recipe_steps", "file_prefix": "bench_steps", "columns": ["Time", "Recipe", "Step", "State"], "ref": "A170"},
+    {"log": "errors", "file_prefix": "bench_errors", "columns": ["Time", "Message"], "ref": "A174"}
+  ],
+  "params": {
+    "ph_pv_log_deadband": {"value": 0.05, "unit": "pH", "ref": "A178"},
+    "do_pv_log_deadband": {"value": 2.0, "unit": "%", "ref": "A178"},
+    "temperature_pv_log_deadband": {"value": 0.2, "unit": "C", "ref": "A178"},
+    "agitation_pv_log_deadband": {"value": 0.5, "unit": "rpm", "ref": "A172"},
+    "max_log_interval": {"value": 60, "unit": "min", "ref": "A179"}
+  }
+}

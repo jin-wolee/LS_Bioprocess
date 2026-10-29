@@ -1,6 +1,7 @@
 import type { ObservableEvent } from "../observe.ts";
 import type { FlagName } from "./architecture.ts";
-import type { AuditEventRow, IngestConflictRow, ResultRow, SourceEventRow, ValidationFindingRow } from "./types.ts";
+import { transit } from "./transitions.ts";
+import type { AuditEventRow, CaptureInput, IngestConflictRow, ResultRow, SourceEventRow, ValidationFindingRow } from "./types.ts";
 
 // Results as the instrument file delivers them: one row per analyte value, with the effects of four flags (spec section 5).
 //   ingest_idempotency   the key is source, event id and content version (data_model section 7; the stream carries one content version, 1, so the value is not in it).
@@ -40,18 +41,33 @@ export interface ResultTables {
   ingest_conflict: IngestConflictRow[];
 }
 
-export const recordResults = (events: readonly ObservableEvent[], flags: Flags, receivedAt: Readonly<Record<string, number>> = {}): ResultTables => {
+export const recordResults = (events: readonly ObservableEvent[], flags: Flags, receivedAt: Readonly<Record<string, number>> = {}, capture?: CaptureInput): ResultTables => {
   const out: ResultTables = { result: [], audit_event: [], source_event: [], validation_finding: [], ingest_conflict: [] };
   const keys = new Map<string, Key>();
   const seen = new Map<string, { value: number; t: number }>();
   let counter = 0;
 
   // ingested_at (S2b): stored where a system writes the rows; the stamp of the event unless the host receipt time was handed over
-  const row = (e: Measured, version: number, supersedes: string | null, id?: string): ResultRow => ({
-    result_id: id ?? `R${++counter}`, request_id: e.request_id, analyte: e.analyte, version, run_id: `${e.request_id}/${e.attempt}/${e.visit}`,
-    value: e.value, measured_at: e.t, available_at: flags.available_at ? e.t : null, supersedes,
-    ingested_at: storesIngestedAt(flags) ? (receivedAt[`${e.analyzer}/${e.request_id}/${e.attempt}/${e.visit}/${e.analyte}`] ?? e.t) : null, reviewed_at: null, state: null,
-  });
+  // S2e1: with the raw layer on, a row also says how it became a record (data_model section 16.2), became knowable when the system received it (the file, or the typed entry:
+  // spec section 5, "Capture path"), and carries the state and findings the ingest stage gave it.
+  const row = (e: Measured, version: number, supersedes: string | null, id?: string): ResultRow => {
+    const key = `${e.analyzer}/${e.request_id}/${e.attempt}/${e.visit}/${e.analyte}`;
+    const prov = capture?.provenance[key];
+    const stage = prov?.findings ?? [];
+    const worst = stage.some((f) => f.action === "quarantine") ? "quarantined" : stage.length > 0 ? "held" : null;
+    const r: ResultRow = {
+      result_id: id ?? `R${++counter}`, request_id: e.request_id, analyte: e.analyte, version, run_id: `${e.request_id}/${e.attempt}/${e.visit}`,
+      value: e.value, measured_at: e.t, available_at: flags.available_at ? (capture ? (receivedAt[key] ?? e.t) : e.t) : null, supersedes,
+      ingested_at: storesIngestedAt(flags) ? (receivedAt[key] ?? e.t) : null, reviewed_at: null,
+      ...(capture && {
+        capture_path: capture.path, entered_by: flags.audit_trail ? (prov?.entered_by ?? null) : null, raw_ref: prov?.raw_ref ?? null, unit_original: prov?.unit_original ?? null,
+        unit_ucum: prov?.unit_ucum ?? null, dilution_factor: prov?.dilution_factor ?? null, time_resolution_s: prov?.time_resolution_s ?? null,
+      }),
+      state: worst === null ? null : (transit("result", "measured", worst, "rule") as "held" | "quarantined"),
+    };
+    if (id === undefined) for (const f of stage) out.validation_finding.push({ rule: f.rule, target: `result:${r.result_id}`, severity: f.severity, action: f.action, status: "open" });
+    return r;
+  };
 
   for (const e of events) {
     if (e.type !== "result_measured") continue;
@@ -97,6 +113,10 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags, 
       }
       key.value = e.value;
     }
+  }
+  if (capture) {
+    out.validation_finding.push(...(capture.findings ?? []));
+    out.ingest_conflict.push(...(capture.conflicts ?? []));
   }
   return out;
 };

@@ -84,10 +84,19 @@ def test_analytes_master_data_is_the_unit_table_of_the_export(d: dict, engine: d
     assert set(columns(d, "result")["analyte"]["values"]) == set(d["analytes"])
 
 
-def test_the_raw_layer_is_a_marked_placeholder_not_invented_entries(d: dict) -> None:
+def test_the_controller_side_of_the_raw_layer_is_a_marked_placeholder_not_invented_entries(d: dict) -> None:
+    # S2e1 describes the analyzer side as entries (below); the controller side waits for S2e2 and stays a placeholder (data_model sections 16.4 and 16.5)
     assert d["raw_layer"]["status"] == "placeholder"
-    assert d["raw_layer"]["entities"] == ["adapter", "raw_file", "raw_record", "parse_error", "alarm_event", "batch_phase_record"]  # data_model section 16.1 and 16.4
+    assert d["raw_layer"]["entities"] == ["alarm_event", "batch_phase_record"]
     assert not set(d["raw_layer"]["entities"]) & set(d["entities"])
+
+
+def test_the_analyzer_side_of_the_raw_layer_is_described_as_entries(d: dict) -> None:
+    assert {"adapter", "raw_file", "raw_record", "parse_error"} <= set(d["entities"])  # data_model section 16.1
+    assert all(d["entities"][e]["emitted"] for e in ("adapter", "raw_file", "raw_record", "parse_error"))
+    assert {"capture_path", "entered_by", "raw_ref", "unit_original", "unit_ucum", "dilution_factor", "time_resolution_s"} <= set(columns(d, "result"))  # data_model section 16.2
+    assert set(columns(d, "result")["capture_path"]["values"]) == {"manual_transcription", "adapter_ingest"}
+    assert set(d["dataset"]["other"]) >= {"capture", "raw"}
 
 
 # ---- what the engine emits is in the dictionary -----------------------------------------------------------------------------------------------------------------------------------

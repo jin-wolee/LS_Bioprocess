@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "controller_profile.schema.json",
+  "title": "ControllerProfile",
+  "description": "A controller family of the raw device layer (ADR-0014, spec section 2.4.2), profile data in the style of ADR-0012: the logs a bioreactor controller writes (tag log, alarm log, batch-phase log) and the logging deadbands of its tags. Every numeric parameter is {value, unit, ref} with ref a ledger id; modeled_on lists S### ids that must resolve; the banner line is required. A synthetic format modeled on public documentation, not a real controller file. The emitter and adapter for it are built in S2e2 (Step 7); this schema fixes the data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile_id", "kind", "banner", "modeled_on", "tag_naming", "logs", "params"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "profile_id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "const": "controller_profile" },
+    "description": { "type": "string" },
+    "banner": { "type": "string", "const": "synthetic, modeled on public documentation; not a real instrument file" },
+    "modeled_on": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^S\\d{3}$" } },
+    "tag_naming": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["form", "ref"],
+      "properties": {
+        "form": { "type": "string", "enum": ["unit_column", "unit_in_parentheses"], "description": "ctrl_neutral writes the unit in its own column, ctrl_bench in parentheses inside the variable name (A171); the adapter rewrites both to unit_tag.signal.role." },
+        "ref": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
+      }
+    },
+    "logs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["log", "file_prefix", "columns", "ref"],
+        "properties": {
+          "log": { "type": "string", "enum": ["tag", "alarm", "phase", "process_data", "user_events", "alarms", "recipe_steps", "errors"] },
+          "file_prefix": { "type": "string", "minLength": 1 },
+          "columns": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "ref": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
+        }
+      }
+    },
+    "params": { "type": "object", "additionalProperties": { "$ref": "profile.schema.json#/$defs/param" } }
+  }
+}

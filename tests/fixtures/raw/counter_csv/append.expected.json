@@ -1,0 +1,141 @@
+{
+  "dialect": "counter_csv",
+  "cases": [
+    {
+      "name": "RQ4 an append-mode file repeats the three earlier rows: they are no-ops, the new row loads",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "vcd",
+        "viability"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "date_order": "month_first",
+        "date_separator": "/"
+      },
+      "after": [
+        "clean"
+      ],
+      "expect": {
+        "records": [
+          {
+            "line": 6,
+            "sample_id": "U04-D01-1",
+            "analyte": "vcd",
+            "value": 8.8,
+            "measured_at": 33780,
+            "state": "loaded"
+          },
+          {
+            "line": 6,
+            "sample_id": "U04-D01-1",
+            "analyte": "viability",
+            "value": 94,
+            "measured_at": 33780
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "no_op",
+            "rule_id": "VR-008"
+          },
+          {
+            "line": 4,
+            "state": "no_op",
+            "rule_id": "VR-008"
+          },
+          {
+            "line": 5,
+            "state": "no_op",
+            "rule_id": "VR-008"
+          },
+          {
+            "line": 6,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ4 with ingest_idempotency off the repeated rows load again",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "vcd",
+        "viability"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "date_order": "month_first",
+        "date_separator": "/"
+      },
+      "after": [
+        "clean"
+      ],
+      "flags": {
+        "ingest_idempotency": false
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "vcd",
+            "value": 12.5,
+            "measured_at": 33000
+          },
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "viability",
+            "value": 97,
+            "measured_at": 33000
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "vcd",
+            "value": 10.1,
+            "measured_at": 33240
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "viability",
+            "value": 96,
+            "measured_at": 33240
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "vcd",
+            "value": 22.8,
+            "measured_at": 33540
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "viability",
+            "value": 95,
+            "measured_at": 33540
+          },
+          {
+            "line": 6,
+            "sample_id": "U04-D01-1",
+            "analyte": "vcd",
+            "value": 8.8,
+            "measured_at": 33780
+          },
+          {
+            "line": 6,
+            "sample_id": "U04-D01-1",
+            "analyte": "viability",
+            "value": 94,
+            "measured_at": 33780
+          }
+        ]
+      }
+    }
+  ]
+}

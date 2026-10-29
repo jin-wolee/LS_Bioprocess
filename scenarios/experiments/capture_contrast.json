@@ -1,0 +1,18 @@
+{
+  "schema_version": "1",
+  "experiment_id": "capture_contrast",
+  "description": "The capture-path contrast (spec section 5, Automatic linkage alone; prompts/20 Step 6): SC1 with the raw device layer on, each preset on manual_transcription and on adapter_ingest, paired by seed. The seed list is written here before any run: at least 20 seeds (A103), neutral integers, none date-shaped, chosen by hand and not a function of any result. Stochastic, reported with the seed count and the spread, never gated. The export schedule (A216) is named per block before any run: the first block, per_run, holds the timing fixed (each result reaches the host at the instant it is produced on both paths), so only the path changes and the block is linkage alone; the second block, window_end, is a timing sensitivity (export at the end of the staffed window against an entry delay that is not modelled, spec 2.4.8) and is not linkage alone. The calendar anchor is a synthetic Monday and the instrument zone a scenario input (A161).",
+  "scenario": "default",
+  "presets": ["a_manual", "b_lims_lite", "c_context"],
+  "blocks": [
+    {"label": "linkage alone: export per run, so a result reaches the host at the instant it is produced on both paths", "export_schedule": "per_run"},
+    {"label": "timing sensitivity: export at window end (A216) against an entry delay that is not modelled; not linkage alone", "export_schedule": "window_end"}
+  ],
+  "calendar_anchor": "2030-01-07",
+  "device_zone_h": {"value": 0, "unit": "h", "ref": "A161"},
+  "seeds": [
+    5003, 5107, 5233, 5347, 5471, 5569, 5683, 5741, 5857, 5981,
+    6073, 6151, 6269, 6361, 6473, 6571, 6679, 6791, 6907, 7013,
+    7103, 7211, 7333, 7459, 7561, 7669, 7789, 7901, 8011, 8123
+  ]
+}

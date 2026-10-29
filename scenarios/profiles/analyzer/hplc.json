@@ -6,6 +6,7 @@
   "route": [
     {
       "group": "HPLC",
+      "dialect": "cds_table",
       "analytes": [
         {
           "id": "titer"

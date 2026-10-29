@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "raw_quirk_key.schema.json",
+  "title": "RawQuirkKey",
+  "x-visibility": "hidden",
+  "description": "The raw quirk key (spec section 2.4.1 rule 6): which quirks the emitters realised, in which file and row, with the intended instant, and which entry errors the transcription step typed. Hidden: the assembly writes it from the emitters' plain-data output and only the evaluator reads it; the parser and the recorders never do. One key per (scenario, seed, architecture) because the capture path and the belief of an adapter can differ per architecture.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "engine_version", "scenario_id", "seed", "architecture", "capture_path", "files", "entry_errors", "opportunities", "not_modelled"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "engine_version": { "type": "string", "minLength": 1 },
+    "scenario_id": { "type": "string", "minLength": 1 },
+    "seed": { "type": "integer", "minimum": 0 },
+    "architecture": { "type": "string", "minLength": 1 },
+    "capture_path": { "type": "string", "enum": ["manual_transcription", "adapter_ingest"] },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file_name", "instrument", "dialect_id", "replay_of", "rows"],
+        "properties": {
+          "file_name": { "type": "string", "minLength": 1 },
+          "instrument": { "type": "string", "minLength": 1 },
+          "dialect_id": { "type": "string", "minLength": 1 },
+          "replay_of": { "type": ["string", "null"], "description": "The file this one repeats byte for byte (a transfer retry, RQ4), else null." },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["line", "sample_id", "intended_s", "resolution_s", "ambiguous", "repeat", "quirks", "unreadable"],
+              "properties": {
+                "line": { "type": "integer", "minimum": 1, "description": "Physical line of the file, banner included." },
+                "sample_id": { "type": "string", "minLength": 1, "description": "The sample-id text as written." },
+                "intended_s": { "type": "integer", "description": "The instant the row stands for, in seconds of the scenario, before any truncation to the resolution of the dialect." },
+                "resolution_s": { "type": "integer", "minimum": 1 },
+                "ambiguous": { "type": "boolean", "description": "The stamp text can be read validly in more than one way under the format the device writes (RQ2)." },
+                "repeat": { "type": "boolean", "description": "The row is a second or later copy of a row written before, in this file or an earlier one (append mode, overlapping export, replayed file; RQ4)." },
+                "quirks": { "type": "array", "items": { "type": "string", "pattern": "^RQ\\d+$" } },
+                "unreadable": { "type": "boolean", "description": "The row was written so that no parser can read it (a deliberately broken line)." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "entry_errors": {
+      "type": "array",
+      "description": "Manual transcription only: the results a person typed wrongly.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request_id", "analyte", "kind", "intended", "typed"],
+        "properties": {
+          "request_id": { "type": "string", "minLength": 1 },
+          "analyte": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["value", "unit", "dilution"] },
+          "intended": { "anyOf": [{ "type": "number" }, { "type": "string" }, { "type": "null" }] },
+          "typed": { "anyOf": [{ "type": "number" }, { "type": "string" }, { "type": "null" }] }
+        }
+      }
+    },
+    "opportunities": {
+      "type": "array",
+      "description": "The common draws, identical on both capture paths: purpose raw:<quirk id> or error:<type>, the id the draw is keyed by, and u in [0, 1).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["purpose", "id", "u"],
+        "properties": {
+          "purpose": { "type": "string", "pattern": "^(raw:RQ\\d+|error:[a-z_]+)$" },
+          "id": { "type": "string", "minLength": 1 },
+          "u": { "type": "number", "minimum": 0, "exclusiveMaximum": 1 }
+        }
+      }
+    },
+    "not_modelled": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Classes with no ledger rate that a production run reports as not modelled and never gives a number." }
+  }
+}

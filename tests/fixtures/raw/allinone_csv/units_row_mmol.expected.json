@@ -1,0 +1,45 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "RQ7 a unit text that maps to another dimension is quarantined (VR-005); the value is not changed",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "expect": {
+        "records": [
+          {
+            "line": 4,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": 33000,
+            "unit_original": "mmol/L",
+            "unit_ucum": "mmol/L",
+            "state": "quarantined"
+          },
+          {
+            "line": 4,
+            "sample_id": "U01-D01-1",
+            "analyte": "lactate",
+            "value": 0.8,
+            "measured_at": 33000,
+            "unit_original": "g/L",
+            "unit_ucum": "g/L",
+            "state": "loaded"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 4,
+            "state": "quarantined",
+            "rule_id": "VR-005"
+          }
+        ]
+      }
+    }
+  ]
+}

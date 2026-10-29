@@ -11,5 +11,6 @@
     "ingest_idempotency": true,
     "audit_trail": true
   },
-  "labelling": "issued_at_draw"
+  "labelling": "issued_at_draw",
+  "capture_path": "adapter_ingest"
 }

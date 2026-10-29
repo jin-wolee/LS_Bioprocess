@@ -1,0 +1,4 @@
+synthetic, modeled on public documentation; not a real instrument file
+"Sample ID","Date Time","Sample Time","Dilution","VCD","Viability","Glucose","Lactate","Glutamine","pH","Error Log",
+,,,,,,mmol/L,g/L,,,,
+U01-D01-1,2030-01-07 09:10:00,2030-01-07 09:10:00,1,,,4.2,0.8,,,,

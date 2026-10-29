@@ -1,0 +1,125 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "RQ2 entry order unknown and no day above 12: every row is unresolved and quarantined (VR-024)",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "date_order": "unknown",
+        "date_separator": "-"
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": null,
+            "state": "quarantined"
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "glucose",
+            "value": 5.5,
+            "measured_at": null,
+            "state": "quarantined"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "quarantined",
+            "rule_id": "VR-024"
+          },
+          {
+            "line": 4,
+            "state": "quarantined",
+            "rule_id": "VR-024"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ2 an entry pinned to the wrong order (month-first) loads valid wrong instants: May 1 and August 1",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "date_order": "month_first",
+        "date_separator": "-"
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": 9882600,
+            "state": "loaded"
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "glucose",
+            "value": 5.5,
+            "measured_at": 17831670,
+            "state": "loaded"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 4,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ2 the right pin (day-first) reads January 5 and January 8",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "date_order": "day_first",
+        "date_separator": "-"
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": -139800,
+            "state": "loaded"
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "glucose",
+            "value": 5.5,
+            "measured_at": 119670,
+            "state": "loaded"
+          }
+        ]
+      }
+    }
+  ]
+}

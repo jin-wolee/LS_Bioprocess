@@ -6,6 +6,7 @@
   "route": [
     {
       "group": "AIO",
+      "dialect": "allinone_csv",
       "analytes": [
         {
           "id": "vcd",

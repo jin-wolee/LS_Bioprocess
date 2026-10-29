@@ -1,0 +1,267 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "clean file, entry believes what the device does",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": 33000,
+            "unit_ucum": "g/L",
+            "unit_original": null,
+            "dilution_factor": 1,
+            "state": "loaded",
+            "source_event_id": "AN-1|2030-01-07 09:10:00|U01-D01-1|glucose",
+            "event_time": "2030-01-07 09:10:00",
+            "version": 1,
+            "source_zone_s": 0,
+            "time_resolution_s": 1
+          },
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "lactate",
+            "value": 0.8,
+            "measured_at": 33000,
+            "unit_ucum": "g/L",
+            "dilution_factor": 1,
+            "state": "loaded"
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "glucose",
+            "value": 5.5,
+            "measured_at": 33270,
+            "unit_ucum": "g/L",
+            "dilution_factor": 1,
+            "state": "loaded"
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "lactate",
+            "value": 1.1,
+            "measured_at": 33270,
+            "dilution_factor": 1,
+            "state": "loaded"
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "glucose",
+            "value": 9.3,
+            "measured_at": 33540,
+            "dilution_factor": 2,
+            "state": "loaded"
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "lactate",
+            "value": 1.9,
+            "measured_at": 33540,
+            "dilution_factor": 2,
+            "state": "loaded"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 4,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 5,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ],
+        "parse_errors": []
+      }
+    },
+    {
+      "name": "RQ1 a stamp with no zone and an entry zone of +2 h loads as the UTC instant two hours earlier, the source zone stored beside it (test-only zone)",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "source_zone_s": 7200
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": 25800,
+            "source_zone_s": 7200,
+            "state": "loaded"
+          },
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "lactate",
+            "value": 0.8,
+            "measured_at": 25800,
+            "source_zone_s": 7200
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "glucose",
+            "value": 5.5,
+            "measured_at": 26070,
+            "source_zone_s": 7200
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "lactate",
+            "value": 1.1,
+            "measured_at": 26070
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "glucose",
+            "value": 9.3,
+            "measured_at": 26340
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "lactate",
+            "value": 1.9,
+            "measured_at": 26340
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ1 an entry without a zone leaves the stamp unresolved: stored, quarantined (VR-024), no instant",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "source_zone_s": null
+      },
+      "expect": {
+        "partial": true,
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": null,
+            "source_zone_s": null,
+            "state": "quarantined"
+          },
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "lactate",
+            "value": 0.8,
+            "measured_at": null,
+            "state": "quarantined"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "quarantined",
+            "rule_id": "VR-024"
+          },
+          {
+            "line": 4,
+            "state": "quarantined",
+            "rule_id": "VR-024"
+          },
+          {
+            "line": 5,
+            "state": "quarantined",
+            "rule_id": "VR-024"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ2 a 12 h clock without a day-part marker is unresolved (test-only belief)",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "clock_style": "12h"
+      },
+      "expect": {
+        "partial": true,
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": null,
+            "state": "quarantined"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "quarantined",
+            "rule_id": "VR-024"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ7 a file without a units row takes the unit from the entry: unit_original is null, the code is the entry's",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "expect": {
+        "partial": true,
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": 33000,
+            "unit_original": null,
+            "unit_ucum": "g/L"
+          }
+        ]
+      }
+    }
+  ]
+}

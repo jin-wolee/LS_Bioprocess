@@ -1,0 +1,35 @@
+{
+  "schema_version": "1",
+  "dialect_id": "allinone_csv",
+  "kind": "analyzer_dialect",
+  "description": "Synthetic format modeled on public documentation, not a real instrument file: one CSV per operator export of an all-in-one at-line analyzer. Quoted header row, an optional units row, one row per analysis, a trailing separator, a blank cell where a value is absent (A160). The stamp is local wall-clock text with no zone (A161). The over-range note form and the default date order are assumed (A163, A161).",
+  "banner": "synthetic, modeled on public documentation; not a real instrument file",
+  "modeled_on": ["S003", "S038", "S086"],
+  "grain": "analysis",
+  "file": {"name_prefix": "analysis_export", "extension": "csv", "separator": ",", "quote_header": true, "trailing_separator": true, "units": "optional_row", "ref": "A160"},
+  "stamp": {"order": "year_first", "separator": "-", "clock": "24h", "day_part_marker": false, "zone": "none", "means": "end", "ref": "A161"},
+  "columns": [
+    {"role": "sample_id", "label": "Sample ID", "kind": "text", "required": true, "ref": "A165"},
+    {"role": "stamp", "label": "Date Time", "kind": "stamp", "required": true, "ref": "A164"},
+    {"role": "sample_time", "label": "Sample Time", "kind": "stamp", "required": false, "ref": "A164"},
+    {"role": "dilution", "label": "Dilution", "kind": "number", "required": false, "ref": "A165"},
+    {"role": "analyte:vcd", "label": "VCD", "kind": "value", "required": false, "analyte": "vcd", "unit_text": "x10^6 cells/mL", "physical": "non_negative", "ref": "A162"},
+    {"role": "analyte:viability", "label": "Viability", "kind": "value", "required": false, "analyte": "viability", "unit_text": "%", "physical": "percent", "ref": "A162"},
+    {"role": "analyte:glucose", "label": "Glucose", "kind": "value", "required": false, "analyte": "glucose", "unit_text": "g/L", "physical": "non_negative", "ref": "A162"},
+    {"role": "analyte:lactate", "label": "Lactate", "kind": "value", "required": false, "analyte": "lactate", "unit_text": "g/L", "physical": "non_negative", "ref": "A162"},
+    {"role": "analyte:glutamine", "label": "Glutamine", "kind": "value", "required": false, "analyte": "glutamine", "unit_text": "mmol/L", "physical": "non_negative", "ref": "A162"},
+    {"role": "analyte:ph", "label": "pH", "kind": "value", "required": false, "analyte": "ph", "unit_text": "pH", "physical": "ph_scale", "ref": "A162"},
+    {"role": "note", "label": "Error Log", "kind": "note", "required": false, "ref": "A163"}
+  ],
+  "units": {
+    "g/L": {"ucum": "g/L", "dimension": "mass_concentration", "ref": "A162"},
+    "mmol/L": {"ucum": "mmol/L", "dimension": "substance_concentration", "ref": "A162"},
+    "x10^6 cells/mL": {"ucum": "10*6/mL", "dimension": "number_concentration", "ref": "A162"},
+    "%": {"ucum": "%", "dimension": "fraction", "ref": "A162"},
+    "pH": {"ucum": "[pH]", "dimension": "ph", "ref": "A162"}
+  },
+  "range_note": {"high_word": "High", "low_word": "Low", "ref": "A163"},
+  "params": {
+    "resolution_s": {"value": 1, "unit": "s", "ref": "A161"}
+  }
+}

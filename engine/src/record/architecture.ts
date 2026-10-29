@@ -13,7 +13,8 @@ export const FLAG_NAMES = [
 
 const LABELLING = ["handwritten", "preprinted_barcode", "issued_at_draw"] as const;
 const SYSTEMS = ["lims", "mes_ebr"] as const;
-const TOP = ["schema_version", "id", "flags", "labelling", "source_of_record"];
+const CAPTURE_PATHS = ["manual_transcription", "adapter_ingest"] as const;
+const TOP = ["schema_version", "id", "flags", "labelling", "capture_path", "source_of_record"];
 
 const fail = (why: string): never => {
   throw new Error(`architecture: ${why}`);
@@ -27,6 +28,7 @@ export const parseArchitecture = (doc: unknown): Architecture => {
   if (doc.schema_version !== "1") fail('schema_version must be "1"');
   if (typeof doc.id !== "string" || doc.id === "") fail("id must be a non-empty string");
   if (!LABELLING.includes(doc.labelling as (typeof LABELLING)[number])) fail(`labelling must be one of ${LABELLING.join(", ")}`);
+  if (doc.capture_path !== undefined && !CAPTURE_PATHS.includes(doc.capture_path as (typeof CAPTURE_PATHS)[number])) fail(`capture_path must be one of ${CAPTURE_PATHS.join(", ")}`);
   if (doc.source_of_record !== undefined && !SYSTEMS.includes(doc.source_of_record as (typeof SYSTEMS)[number])) fail(`source_of_record must be one of ${SYSTEMS.join(", ")}`);
   const flags = doc.flags;
   if (!isRecord(flags)) return fail("flags must be an object");

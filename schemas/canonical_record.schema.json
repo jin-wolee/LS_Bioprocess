@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "canonical_record.schema.json",
+  "title": "CanonicalRecord",
+  "description": "A canonical record produced by an adapter (data_model sections 7 and 16.3): the ingestion envelope with raw_ref as file and line, and the payload of the target. The analyzer result is built in S2e1; the three controller targets (data_model 16.4) are fixed here and filled in S2e2 (Step 7). A rule changes a state and never a value; a rejected line is not a record but a parse_error row.",
+  "oneOf": [
+    { "$ref": "#/$defs/result_record" },
+    { "$ref": "#/$defs/historian_value" },
+    { "$ref": "#/$defs/alarm_event" },
+    { "$ref": "#/$defs/batch_phase_record" }
+  ],
+  "$defs": {
+    "raw_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_file_id", "line_no"],
+      "properties": {
+        "raw_file_id": { "type": "string", "minLength": 1 },
+        "line_no": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_system", "source_event_id", "idempotency_key", "schema_version", "raw_ref", "event_time", "received_at"],
+      "properties": {
+        "source_system": { "type": "string", "minLength": 1 },
+        "source_event_id": { "type": "string", "minLength": 1 },
+        "idempotency_key": { "type": "string", "minLength": 1 },
+        "schema_version": { "type": "string", "const": "1" },
+        "raw_ref": { "$ref": "#/$defs/raw_ref" },
+        "event_time": { "type": "string", "description": "The stamp text as sent." },
+        "received_at": { "type": "integer", "description": "The file's received_at (host clock, seconds of the scenario); it becomes ingested_at." }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "severity", "action"],
+      "properties": {
+        "rule": { "type": "string", "pattern": "^VR-\\d{3}b?$" },
+        "severity": { "type": "string", "enum": ["info", "warning", "error"] },
+        "action": { "type": "string", "enum": ["no-op", "hold", "quarantine", "reject"] }
+      }
+    },
+    "result_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_kind", "envelope", "payload", "state", "findings"],
+      "properties": {
+        "record_kind": { "type": "string", "const": "result" },
+        "envelope": { "$ref": "#/$defs/envelope" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sample_id", "analyte", "value", "unit_original", "unit_ucum", "dilution_factor", "measured_at", "source_zone_s", "time_resolution_s", "range_flag", "version", "supersedes"],
+          "properties": {
+            "sample_id": { "type": "string", "minLength": 1, "description": "The sample-id text as typed at the analyzer, passed through unchanged (VR-014 still applies)." },
+            "analyte": { "type": "string", "minLength": 1 },
+            "value": { "type": ["number", "null"], "description": "Null for an analytical-range breach (A163) and nowhere else." },
+            "unit_original": { "type": ["string", "null"], "description": "The unit text of the file, or null when the file carries none." },
+            "unit_ucum": { "type": ["string", "null"], "description": "The UCUM code the unit text, or the adapter entry, gives." },
+            "dilution_factor": { "type": ["number", "null"] },
+            "measured_at": { "type": ["integer", "null"], "description": "The UTC instant in seconds of the scenario; null while the stamp is unresolved." },
+            "source_zone_s": { "type": ["integer", "null"], "description": "The zone offset the adapter applied, stored beside the UTC instant (K14); null when the entry has none." },
+            "time_resolution_s": { "type": "integer", "minimum": 1 },
+            "range_flag": { "type": ["string", "null"], "enum": ["above_analytical", "below_analytical", "above_process", "below_process", null] },
+            "version": { "type": "integer", "minimum": 1 },
+            "supersedes": { "type": ["string", "null"] }
+          }
+        },
+        "state": { "type": "string", "enum": ["loaded", "held", "quarantined"] },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    },
+    "historian_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_kind", "envelope", "payload", "state", "findings"],
+      "properties": {
+        "record_kind": { "type": "string", "const": "tag_value" },
+        "envelope": { "$ref": "#/$defs/envelope" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tag", "ts", "value", "quality"],
+          "properties": {
+            "tag": { "type": "string", "pattern": "^[^.]+\\.[^.]+\\.(PV|SP|OUT)$", "description": "unit_tag.signal.role (data_model 16.4)." },
+            "ts": { "type": "integer" },
+            "value": { "type": "number" },
+            "quality": { "type": "string", "minLength": 1 }
+          }
+        },
+        "state": { "type": "string", "enum": ["loaded", "held", "quarantined"] },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    },
+    "alarm_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_kind", "envelope", "payload", "state", "findings"],
+      "properties": {
+        "record_kind": { "type": "string", "const": "alarm_transition" },
+        "envelope": { "$ref": "#/$defs/envelope" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["alarm_id", "unit_id", "tag", "severity", "from_state", "to_state", "ts", "actor", "comment"],
+          "properties": {
+            "alarm_id": { "type": "string", "minLength": 1 },
+            "unit_id": { "type": "string", "minLength": 1 },
+            "tag": { "type": "string", "minLength": 1 },
+            "severity": { "type": ["integer", "null"] },
+            "from_state": { "type": "string", "minLength": 1 },
+            "to_state": { "type": "string", "minLength": 1 },
+            "ts": { "type": "integer" },
+            "actor": { "type": ["string", "null"] },
+            "comment": { "type": ["string", "null"] }
+          }
+        },
+        "state": { "type": "string", "enum": ["loaded", "held", "quarantined"] },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    },
+    "batch_phase_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_kind", "envelope", "payload", "state", "findings"],
+      "properties": {
+        "record_kind": { "type": "string", "const": "phase_transition" },
+        "envelope": { "$ref": "#/$defs/envelope" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["batch_id", "unit_id", "recipe_id", "procedure", "unit_procedure", "operation", "phase", "from_state", "to_state", "ts", "actor", "command"],
+          "properties": {
+            "batch_id": { "type": "string", "minLength": 1 },
+            "unit_id": { "type": "string", "minLength": 1 },
+            "recipe_id": { "type": "string", "minLength": 1 },
+            "procedure": { "type": "string", "minLength": 1 },
+            "unit_procedure": { "type": "string", "minLength": 1 },
+            "operation": { "type": "string", "minLength": 1 },
+            "phase": { "type": "string", "minLength": 1 },
+            "from_state": { "type": "string", "minLength": 1 },
+            "to_state": { "type": "string", "minLength": 1 },
+            "ts": { "type": "integer" },
+            "actor": { "type": ["string", "null"] },
+            "command": { "type": ["string", "null"] }
+          }
+        },
+        "state": { "type": "string", "enum": ["loaded", "held", "quarantined"] },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    }
+  }
+}

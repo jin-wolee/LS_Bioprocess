@@ -1,0 +1,93 @@
+{
+  "dialect": "counter_csv",
+  "cases": [
+    {
+      "name": "clean file: month, day, year to the minute, units in the header, time_resolution_s 60",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "vcd",
+        "viability"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "date_order": "month_first",
+        "date_separator": "/"
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "vcd",
+            "value": 12.5,
+            "measured_at": 33000,
+            "unit_original": "x10^6 cells/mL",
+            "unit_ucum": "10*6/mL",
+            "dilution_factor": 1,
+            "time_resolution_s": 60,
+            "state": "loaded",
+            "source_event_id": "AN-1|01/07/2030 09:10|U01-D01-1|vcd"
+          },
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "viability",
+            "value": 97,
+            "measured_at": 33000,
+            "unit_original": "%",
+            "unit_ucum": "%",
+            "time_resolution_s": 60,
+            "state": "loaded"
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "vcd",
+            "value": 10.1,
+            "measured_at": 33240,
+            "time_resolution_s": 60
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "viability",
+            "value": 96,
+            "measured_at": 33240
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "vcd",
+            "value": 22.8,
+            "measured_at": 33540,
+            "dilution_factor": 2
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "viability",
+            "value": 95,
+            "measured_at": 33540
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 4,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 5,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ]
+      }
+    }
+  ]
+}

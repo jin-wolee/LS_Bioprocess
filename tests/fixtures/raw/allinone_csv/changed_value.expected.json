@@ -1,0 +1,70 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "RQ4 same key and a changed value after the clean file: the glucose row is quarantined (VR-008b), the unchanged lactate row is a no-op (VR-008)",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "after": [
+        "clean"
+      ],
+      "expect": {
+        "records": [],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "quarantined",
+            "rule_id": "VR-008b"
+          }
+        ],
+        "conflicts": 1,
+        "findings": [
+          {
+            "rule": "VR-008",
+            "target": "source_event:AN-1|2030-01-07 09:10:00|U01-D01-1|lactate"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ4 with ingest_idempotency off both rows load again (double count)",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "after": [
+        "clean"
+      ],
+      "flags": {
+        "ingest_idempotency": false
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.9,
+            "measured_at": 33000,
+            "state": "loaded"
+          },
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "lactate",
+            "value": 0.8,
+            "measured_at": 33000,
+            "state": "loaded"
+          }
+        ],
+        "conflicts": 0
+      }
+    }
+  ]
+}

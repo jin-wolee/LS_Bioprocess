@@ -1,0 +1,21 @@
+{
+  "schema_version": "1",
+  "profile_id": "ctrl_neutral",
+  "kind": "controller_profile",
+  "description": "Synthetic format modeled on public documentation, not a real instrument file: controller family 1 writes three logs. The tag log has a UTC stamp with offset, the tag, the value and the quality; the tag name is unit tag, signal and role (A171). The alarm log follows the ISA-18.2 states (A174) and the batch-phase log the ISA-88 hierarchy and phase states (A170). Logging by deadband and maximum interval (A172, A178, A179).",
+  "banner": "synthetic, modeled on public documentation; not a real instrument file",
+  "modeled_on": ["S093", "S094", "S095", "S097", "S101"],
+  "tag_naming": {"form": "unit_column", "ref": "A171"},
+  "logs": [
+    {"log": "tag", "file_prefix": "ctrl_tags", "columns": ["Timestamp", "Unit", "Tag", "Value", "Quality"], "ref": "A171"},
+    {"log": "alarm", "file_prefix": "ctrl_alarms", "columns": ["Timestamp", "Unit", "Alarm", "Tag", "Severity", "From", "To"], "ref": "A174"},
+    {"log": "phase", "file_prefix": "ctrl_phases", "columns": ["Timestamp", "Unit", "Batch", "Recipe", "Procedure", "Unit Procedure", "Operation", "Phase", "From", "To"], "ref": "A170"}
+  ],
+  "params": {
+    "ph_pv_log_deadband": {"value": 0.05, "unit": "pH", "ref": "A178"},
+    "do_pv_log_deadband": {"value": 2.0, "unit": "%", "ref": "A178"},
+    "temperature_pv_log_deadband": {"value": 0.2, "unit": "C", "ref": "A178"},
+    "agitation_pv_log_deadband": {"value": 0.5, "unit": "rpm", "ref": "A172"},
+    "max_log_interval": {"value": 60, "unit": "min", "ref": "A179"}
+  }
+}

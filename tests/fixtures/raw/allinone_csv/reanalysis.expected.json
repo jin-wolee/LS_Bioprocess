@@ -1,0 +1,88 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "RQ5 a reanalysis row after version 1: version 2, the original measured_at, the row time as event_time, supersedes version 1",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose"
+      ],
+      "received_at": 36000,
+      "after": [
+        "clean"
+      ],
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.0,
+            "measured_at": 33000,
+            "version": 2,
+            "supersedes": "RF1:3:glucose",
+            "event_time": "2030-01-07 09:50:00",
+            "state": "loaded"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ5 without version 1 in the store the reanalysis row is quarantined (VR-019)",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose"
+      ],
+      "received_at": 36000,
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.0,
+            "measured_at": 33000,
+            "version": 2,
+            "supersedes": null,
+            "state": "quarantined"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "quarantined",
+            "rule_id": "VR-019"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RQ5 with append_only_versions off the reanalysis overwrites: version 1, no supersedes",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose"
+      ],
+      "received_at": 36000,
+      "after": [
+        "clean"
+      ],
+      "flags": {
+        "append_only_versions": false
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.0,
+            "measured_at": 33000,
+            "version": 1,
+            "supersedes": null,
+            "state": "loaded"
+          }
+        ]
+      }
+    }
+  ]
+}

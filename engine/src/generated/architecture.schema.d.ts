@@ -50,6 +50,10 @@ export interface Architecture {
    */
   labelling: "handwritten" | "preprinted_barcode" | "issued_at_draw";
   /**
+   * How a result an instrument has produced becomes a record (spec section 5, 'Capture path'; ADR-0014): typed by hand from the screen or printout, or parsed from the raw device file. A setting, not a ninth flag. The preset default (A manual_transcription, B and C adapter_ingest) is inert while the scenario's raw_layer is off; a scenario may override it.
+   */
+  capture_path?: "manual_transcription" | "adapter_ingest";
+  /**
    * The system of record for routine in-process results (spec section 5, A056). A setting, not a flag; nothing in S2a reads it.
    */
   source_of_record?: "lims" | "mes_ebr";

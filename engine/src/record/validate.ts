@@ -1,4 +1,5 @@
 import type { Rule, RuleConfig } from "./rule_types.ts";
+import { ENTRY_RULES } from "./rules_entry.ts";
 import { KEY_RULES } from "./rules_keys.ts";
 import { QC_RULES } from "./rules_qc.ts";
 import { TIME_RULES } from "./rules_time.ts";
@@ -42,7 +43,9 @@ export const requestOfTarget = (ds: RecordedDataset, target: string): string | n
 export const validate = (ds: RecordedDataset, cfg: RuleConfig, log?: Transition[]): Validation => {
   const not_evaluable: Validation["not_evaluable"] = [];
   const found: ValidationFindingRow[] = [];
-  for (const rule of RULES) {
+  // S2e1: VR-005, VR-006 and VR-013 read a typed entry, so they run only on the manual_transcription path of the raw layer (spec section 5, rule table)
+  const rules = ds.capture?.path === "manual_transcription" ? [...RULES, ...ENTRY_RULES].sort((a, b) => (a.id < b.id ? -1 : 1)) : RULES;
+  for (const rule of rules) {
     const reason = rule.unmet(ds, cfg);
     if (reason !== null) {
       not_evaluable.push({ rule: rule.id, reason });
@@ -62,6 +65,7 @@ export const validate = (ds: RecordedDataset, cfg: RuleConfig, log?: Transition[
     if (kind === "result" || kind === "sample") raise(`${kind}:${rest.join(":")}`, STATE_OF[f.action]);
   }
   const result: ResultRow[] = ds.result.map((r) => {
+    if (r.state !== null) return r; // already put in a state by the ingest stage (S2e1): the finding of that stage stays, the state is not moved twice
     const own = states.get(`result:${r.result_id}`);
     const request = states.get(`sample:${r.request_id}`);
     const state = own && request ? (RANK[own] >= RANK[request] ? own : request) : (own ?? request ?? null);

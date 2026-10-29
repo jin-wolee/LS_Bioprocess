@@ -25,6 +25,7 @@
       }
     },
     "labelling": { "type": "string", "enum": ["handwritten", "preprinted_barcode", "issued_at_draw"], "description": "The L2 labelling method (spec section 2.2); set independently of the flags." },
+    "capture_path": { "type": "string", "enum": ["manual_transcription", "adapter_ingest"], "description": "How a result an instrument has produced becomes a record (spec section 5, 'Capture path'; ADR-0014): typed by hand from the screen or printout, or parsed from the raw device file. A setting, not a ninth flag. The preset default (A manual_transcription, B and C adapter_ingest) is inert while the scenario's raw_layer is off; a scenario may override it." },
     "source_of_record": { "type": "string", "enum": ["lims", "mes_ebr"], "description": "The system of record for routine in-process results (spec section 5, A056). A setting, not a flag; nothing in S2a reads it." }
   }
 }

@@ -1,0 +1,43 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "RQ6 a blank value with a range note loads as a null value with range_flag above_analytical",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": null,
+            "measured_at": 33000,
+            "range_flag": "above_analytical",
+            "state": "loaded"
+          },
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "lactate",
+            "value": 0.8,
+            "measured_at": 33000,
+            "range_flag": null,
+            "state": "loaded"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ]
+      }
+    }
+  ]
+}

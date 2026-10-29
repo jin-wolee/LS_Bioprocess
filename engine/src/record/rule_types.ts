@@ -1,3 +1,4 @@
+import type { Physical } from "./entry_checks.ts";
 import type { RecordedDataset, ValidationFindingRow } from "./types.ts";
 
 // The shape of a validation rule (data_model section 8). A rule reads a recorded dataset and names the targets it fires on; it can only
@@ -12,6 +13,17 @@ export interface RuleConfig {
   late_tolerance_s?: number;
   /** VR-004: measured_at and ingested_at apart by more than this many seconds, either way. */
   clock_tolerance_s?: number;
+  /** VR-005, VR-006 and VR-013 on a typed entry (manual_transcription): what the method expects. Absent: those rules are not evaluable. */
+  entry?: EntryConfig;
+}
+
+/** The method's expectations for a typed result (data_model section 8; spec section 5, rule table): units and bounds from the analyte master data, the dilution rule from the analyzer profile (A090). */
+export interface EntryConfig {
+  analytes: Readonly<Record<string, { dimension: string; physical: Physical }>>;
+  /** UCUM code to dimension, for every unit text the entry form may carry. */
+  dimension_of: Readonly<Record<string, string>>;
+  /** VR-013: the analytes that need a dilution factor, and the factors the method allows. */
+  dilution: { analytes: readonly string[]; factors: readonly number[] };
 }
 
 export interface Rule {

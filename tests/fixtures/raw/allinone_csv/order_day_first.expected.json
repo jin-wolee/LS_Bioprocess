@@ -1,0 +1,49 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "RQ2 entry order unknown: the row with day 13 pins day-first for the whole file, so the row with day 08 is January 8",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose"
+      ],
+      "received_at": 36000,
+      "belief": {
+        "date_order": "unknown",
+        "date_separator": "-"
+      },
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": 551400,
+            "state": "loaded"
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "glucose",
+            "value": 5.5,
+            "measured_at": 119670,
+            "state": "loaded"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 4,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ]
+      }
+    }
+  ]
+}

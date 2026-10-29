@@ -59,6 +59,19 @@ describe("Zone 1: truth modules are importable only from the observe side, the e
     expect(restricted(await messages(importOf("../../process.ts"), "engine/src/record/deep/planted.ts")).length).toBe(1);
   });
 
+  // S2e1: the raw device layer (ADR-0014, prompts/20 Step 5). raw/ and ingest/ are already in BLOCKED above; the adapters folder is one level deeper.
+  it.each(TRUTH)("ingest/adapters/ importing %s.ts is an error (the adapter entries and the bridge read recorded data and plain data only)", async (m) => {
+    const found = restricted(await messages(importOf(`../../${m}.ts`), "engine/src/ingest/adapters/planted.ts"));
+    expect(found.length).toBe(1);
+    expect(found[0]?.text).toMatch(/truth/i);
+  });
+
+  it("ingest/adapters/ importing the answer key, the hidden event type or a Node module is an error (the parser never reads the key or truth)", async () => {
+    expect(restricted(await messages(importOf("../../evaluate/answer_key.ts"), "engine/src/ingest/adapters/planted.ts")).some((m) => /answer key/i.test(m.text))).toBe(true);
+    expect(restricted(await messages(importOf("../../generated/event.schema"), "engine/src/ingest/adapters/planted.ts")).length).toBe(1);
+    expect(restricted(await messages('import { readFileSync } from "node:fs";\nexport const x = readFileSync;\n', "engine/src/raw/planted.ts")).length).toBe(1);
+  });
+
   it("a local module with the name of a truth module is not mistaken for it (./process.ts inside record/)", async () => {
     expect(restricted(await messages(importOf("./process.ts"), "engine/src/record/planted.ts"))).toEqual([]);
   });
@@ -83,7 +96,7 @@ describe("Zone 4 (S2b): the generated Event type, which carries the hidden field
 });
 
 describe("Zone 2: the error answer key is importable only inside engine/src/evaluate", () => {
-  it.each(["record", "observe", "experiments/assembly", "experiments/oracle", "experiments/arms", "inject", "export"])("%s/ importing the answer key is an error", async (dir) => {
+  it.each(["record", "observe", "experiments/assembly", "experiments/oracle", "experiments/arms", "inject", "export", "raw", "ingest"])("%s/ importing the answer key is an error", async (dir) => {
     for (const spec of [`${up(dir)}evaluate/answer_key.ts`, `${up(dir)}evaluate/answer_key`]) {
       const found = restricted(await messages(importOf(spec), `engine/src/${dir}/planted.ts`));
       // arms also match the recorded-data zone (the path runs through evaluate/), so the key message is one of up to two
@@ -102,6 +115,44 @@ describe("Zone 2: the error answer key is importable only inside engine/src/eval
 
   it("tests are outside the zones (they open the key to check it)", async () => {
     expect(restricted(await messages(importOf("../src/evaluate/answer_key.ts"), "engine/tests/planted.ts"))).toEqual([]);
+  });
+});
+
+// S2e1 rework W1: the raw quirk key is hidden (schemas/raw_quirk_key.schema.json, spec 2.4.1 rule 6): the evaluator is its only reader. The key types live in raw/key.ts and the generated
+// type of the schema; the emitter writes them, the assembly writes the key file, the evaluator reads it. Everything else is refused, the parser included.
+describe("Zone 5: the hidden raw quirk key is importable only from evaluate/, experiments/assembly/ and raw/", () => {
+  const KEY = (dir: string): string[] => [`${up(dir)}raw/key.ts`, `${up(dir)}raw/key`, `${up(dir)}generated/raw_quirk_key.schema`];
+  const REFUSED = ["ingest", "ingest/adapters", "record", "inject", "export", "experiments/arms", "experiments/oracle", "observe"];
+  const READERS = ["evaluate", "experiments/assembly", "raw"];
+
+  it.each(REFUSED)("%s/ importing the raw key module or its generated type is an error", async (dir) => {
+    for (const spec of KEY(dir)) {
+      const found = restricted(await messages(importOf(spec), `engine/src/${dir}/planted.ts`));
+      expect(found.some((m) => /raw quirk key/i.test(m.text)), spec).toBe(true);
+    }
+  });
+  it.each(REFUSED)("%s/ importing the raw key with a type import is an error too", async (dir) => {
+    const found = restricted(await messages(`import type { KeyRow } from "${up(dir)}raw/key.ts";\nexport type X = KeyRow;\n`, `engine/src/${dir}/planted.ts`));
+    expect(found.some((m) => /raw quirk key/i.test(m.text))).toBe(true);
+  });
+  it.each(READERS)("%s/ may import the raw key module and its generated type", async (dir) => {
+    for (const spec of KEY(dir)) expect(restricted(await messages(importOf(spec), `engine/src/${dir}/planted.ts`)), spec).toEqual([]);
+  });
+  it("raw/ may import its own key module as a sibling", async () => {
+    expect(restricted(await messages(importOf("./key.ts"), "engine/src/raw/planted.ts"))).toEqual([]);
+  });
+  it("a top-level file of engine/src, new or existing, importing the raw key is an error; a local file named key.ts elsewhere is not mistaken for it", async () => {
+    for (const file of ["planted", "observe", "process", "run", "scenario"]) {
+      expect(restricted(await messages(importOf("./raw/key.ts"), `engine/src/${file}.ts`)).some((m) => /raw quirk key/i.test(m.text)), file).toBe(true);
+    }
+    expect(restricted(await messages(importOf("./key.ts"), "engine/src/ingest/planted.ts"))).toEqual([]);
+  });
+  it("the older zones still hold beside the key zone: ingest/ importing a truth module or the answer key is still an error, and raw/ still may not import a truth module", async () => {
+    expect(restricted(await messages(importOf("../process.ts"), "engine/src/ingest/planted.ts")).some((m) => /truth/i.test(m.text))).toBe(true);
+    expect(restricted(await messages(importOf("../../evaluate/answer_key.ts"), "engine/src/experiments/assembly/planted.ts")).some((m) => /answer key/i.test(m.text))).toBe(true); // the assembly keeps the zone it had
+    expect(restricted(await messages(importOf("../evaluate/answer_key.ts"), "engine/src/raw/planted.ts")).some((m) => /answer key/i.test(m.text))).toBe(true);
+    expect(restricted(await messages(importOf("../process.ts"), "engine/src/raw/planted.ts")).some((m) => /truth/i.test(m.text))).toBe(true);
+    expect(restricted(await messages(importOf("../process.ts"), "engine/src/experiments/assembly/planted.ts"))).toEqual([]);
   });
 });
 

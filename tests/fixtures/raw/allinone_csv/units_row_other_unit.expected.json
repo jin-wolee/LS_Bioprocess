@@ -1,0 +1,42 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "RQ7 the same dimension and a plausible value loads, the invisible case (test-only unit text mg/dL added to the entry's unit map)",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "unit_map_extra": {
+        "mg/dL": {
+          "ucum": "mg/dL",
+          "dimension": "mass_concentration"
+        }
+      },
+      "expect": {
+        "partial": true,
+        "records": [
+          {
+            "line": 4,
+            "sample_id": "U01-D01-1",
+            "analyte": "glucose",
+            "value": 4.2,
+            "measured_at": 33000,
+            "unit_original": "mg/dL",
+            "unit_ucum": "mg/dL",
+            "state": "loaded"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 4,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ]
+      }
+    }
+  ]
+}

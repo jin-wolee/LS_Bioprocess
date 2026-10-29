@@ -1,0 +1,24 @@
+{
+  "schema_version": "1",
+  "dialect_id": "cds_table",
+  "kind": "analyzer_dialect",
+  "description": "Synthetic format modeled on public documentation, not a real instrument file: a user-designed result table of a chromatography data system, one row per injection with a titer amount. The columns and their order come from a template, so the adapter maps them by role (A168). The amount column and the zone convention are assumed (A168); a new result id is written per processing run (A169).",
+  "banner": "synthetic, modeled on public documentation; not a real instrument file",
+  "modeled_on": ["S088", "S089", "S090", "S091"],
+  "grain": "injection",
+  "file": {"name_prefix": "cds_export", "extension": "csv", "separator": ",", "quote_header": false, "trailing_separator": false, "units": "in_header", "ref": "A168"},
+  "stamp": {"order": "year_first", "separator": "-", "clock": "24h", "day_part_marker": false, "zone": "none", "means": "start", "ref": "A168"},
+  "columns": [
+    {"role": "injection_id", "label": "Injection ID", "kind": "text", "required": true, "ref": "A168"},
+    {"role": "stamp", "label": "Injection Time", "kind": "stamp", "required": true, "ref": "A168"},
+    {"role": "sample_id", "label": "Sample ID", "kind": "text", "required": true, "ref": "A168"},
+    {"role": "result_id", "label": "Result ID", "kind": "text", "required": false, "ref": "A169"},
+    {"role": "analyte:titer", "label": "Titer Amount", "kind": "value", "required": false, "analyte": "titer", "unit_text": "g/L", "physical": "non_negative", "ref": "A168"}
+  ],
+  "units": {
+    "g/L": {"ucum": "g/L", "dimension": "mass_concentration", "ref": "A168"}
+  },
+  "params": {
+    "resolution_s": {"value": 1, "unit": "s", "ref": "A168"}
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "dialect": "allinone_csv",
+  "cases": [
+    {
+      "name": "RQ4 an overlapping export after the clean file: the repeated row is a no-op, the new row loads",
+      "instrument": "AN-1",
+      "required_analytes": [
+        "glucose",
+        "lactate"
+      ],
+      "received_at": 36000,
+      "after": [
+        "clean"
+      ],
+      "expect": {
+        "records": [
+          {
+            "line": 4,
+            "sample_id": "U04-D01-1",
+            "analyte": "glucose",
+            "value": 5.0,
+            "measured_at": 33780,
+            "state": "loaded"
+          },
+          {
+            "line": 4,
+            "sample_id": "U04-D01-1",
+            "analyte": "lactate",
+            "value": 1.0,
+            "measured_at": 33780,
+            "state": "loaded"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "no_op",
+            "rule_id": "VR-008"
+          },
+          {
+            "line": 4,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ]
+      }
+    }
+  ]
+}

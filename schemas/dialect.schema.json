@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dialect.schema.json",
+  "title": "Dialect",
+  "description": "An analyzer output dialect of the raw device layer (ADR-0014, spec section 2.4.2): profile data in the style of ADR-0012. Every numeric parameter is {value, unit, ref} with ref a ledger id; modeled_on lists S### ids that must resolve; the banner line is required. A synthetic format modeled on public documentation, not a real instrument file. Labels are short field names from the ledger field lists (A160, A162, A165, A166, A168); no manual text is stored here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dialect_id", "kind", "banner", "modeled_on", "grain", "file", "stamp", "columns", "units", "params"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "dialect_id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "const": "analyzer_dialect" },
+    "description": { "type": "string" },
+    "banner": { "type": "string", "const": "synthetic, modeled on public documentation; not a real instrument file", "description": "The first line of every emitted file (ADR-0014 rule R3)." },
+    "modeled_on": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^S\\d{3}$" } },
+    "grain": { "type": "string", "enum": ["analysis", "injection"], "description": "What one data row is: one analysis of a sample, or one injection of a data system." },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name_prefix", "extension", "separator", "quote_header", "trailing_separator", "units", "ref"],
+      "properties": {
+        "name_prefix": { "type": "string", "minLength": 1, "description": "Vendor-neutral file-name prefix; the instrument id and the export time follow (A159)." },
+        "extension": { "type": "string", "minLength": 1 },
+        "separator": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "quote_header": { "type": "boolean" },
+        "trailing_separator": { "type": "boolean" },
+        "units": { "type": "string", "enum": ["optional_row", "in_header"], "description": "Where the unit text sits: an optional units row under the header (RQ7) or in the header cell as 'Label (unit)'." },
+        "ref": { "$ref": "#/$defs/ledger_id" }
+      }
+    },
+    "stamp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order", "separator", "clock", "day_part_marker", "zone", "means", "ref"],
+      "properties": {
+        "order": { "type": "string", "enum": ["year_first", "day_first", "month_first"] },
+        "separator": { "type": "string", "enum": ["-", "/", "."] },
+        "clock": { "type": "string", "enum": ["24h", "12h"] },
+        "day_part_marker": { "type": "boolean", "description": "A 12 h clock writes AM or PM; without it the stamp is ambiguous (RQ2)." },
+        "zone": { "type": "string", "const": "none", "description": "The stamp is local wall-clock text with no zone (RQ1)." },
+        "means": { "type": "string", "enum": ["start", "end"], "description": "Whether the row stamp is the start or the end of the run; the default, end, is an assumption (spec 2.4.8)." },
+        "ref": { "$ref": "#/$defs/ledger_id" }
+      }
+    },
+    "columns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "label", "kind", "required", "ref"],
+        "properties": {
+          "role": { "type": "string", "minLength": 1, "description": "The raw role: sample_id, stamp, sample_time, dilution, injection_id, result_id, note, or analyte:<id>." },
+          "label": { "type": "string", "minLength": 1, "description": "Header text: a short field name." },
+          "kind": { "type": "string", "enum": ["text", "stamp", "number", "value", "note"] },
+          "required": { "type": "boolean", "description": "A required role missing from the header rejects the file (VR-023)." },
+          "analyte": { "type": "string", "minLength": 1 },
+          "unit_text": { "type": "string", "minLength": 1, "description": "The unit text of a value column as the device writes it by default (a key of units)." },
+          "physical": { "type": "string", "enum": ["non_negative", "percent", "ph_scale"], "description": "The definitional bound of VR-006: no negative amount, a percent between 0 and 100, a pH on its scale." },
+          "ref": { "$ref": "#/$defs/ledger_id" }
+        }
+      }
+    },
+    "units": {
+      "type": "object",
+      "description": "Unit texts a device of this dialect may write, to a UCUM code and a dimension (A162 lists the options).",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ucum", "dimension", "ref"],
+        "properties": {
+          "ucum": { "type": "string", "minLength": 1 },
+          "dimension": { "type": "string", "enum": ["mass_concentration", "substance_concentration", "number_concentration", "fraction", "ph", "pressure", "none"] },
+          "ref": { "$ref": "#/$defs/ledger_id" }
+        }
+      }
+    },
+    "range_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["high_word", "low_word", "ref"],
+      "properties": {
+        "high_word": { "type": "string", "minLength": 1 },
+        "low_word": { "type": "string", "minLength": 1 },
+        "ref": { "$ref": "#/$defs/ledger_id" }
+      },
+      "description": "The note of an analytical-range breach reads '<analyte> Analytical Range <word>' (the CSV form is assumed, A163)."
+    },
+    "params": { "type": "object", "additionalProperties": { "$ref": "profile.schema.json#/$defs/param" } }
+  },
+  "$defs": {
+    "ledger_id": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
+  }
+}

@@ -1,5 +1,9 @@
 import type { ObservableEvent, ObservableSensorSeries } from "../observe.ts";
+import type { RawTables } from "../ingest/canonical.ts";
+import type { CapturePath } from "../raw/types.ts";
 import type { Architecture } from "./architecture.ts";
+
+export type { CapturePath };
 
 // The recorded dataset of one architecture (data_model section 2). Column names are data_model's. A column an architecture cannot
 // know is null (data_model principle 7), never absent, so a test can state "stored" as "not null". Times are integer seconds of
@@ -14,6 +18,30 @@ export interface QualificationInput {
   valid_from: number;
   /** Null while the qualification has no end. */
   valid_to: number | null;
+}
+
+/** S2e1: what a result carries from the capture step beyond its value (data_model section 16.2); plain data from the assembly. */
+export interface CaptureProvenance {
+  /** adapter_ingest: the line of the raw file the row was loaded from. */
+  raw_ref?: { raw_file_id: string; line_no: number } | null;
+  /** manual_transcription: the operator who typed the result. */
+  entered_by?: string | null;
+  unit_original?: string | null;
+  unit_ucum?: string | null;
+  dilution_factor?: number | null;
+  time_resolution_s?: number | null;
+  /** The findings of the ingest stage that hold or quarantine this row. */
+  findings?: readonly { rule: string; severity: "info" | "warning" | "error"; action: "hold" | "quarantine" }[];
+}
+
+/** S2e1: the capture path of the architecture and what the capture step knows of each result, by source event id (`analyzer/request/attempt/visit/analyte`). Present only with the raw layer on. */
+export interface CaptureInput {
+  path: CapturePath;
+  provenance: Readonly<Record<string, CaptureProvenance>>;
+  /** Findings of the ingest stage that concern a file or a source event, not a result row (VR-008 information, unknown columns). */
+  findings?: readonly ValidationFindingRow[];
+  /** Incoming rows kept aside by the adapter's idempotency rule (VR-008b): not loaded, the original stays. */
+  conflicts?: readonly IngestConflictRow[];
 }
 
 export interface RecorderInput {
@@ -34,6 +62,8 @@ export interface RecorderInput {
    * the plan names none, and the columns are null.
    */
   plan?: { controls?: Readonly<Record<string, string>>; containers?: Readonly<Record<string, string>> };
+  /** S2e1: the capture path and the provenance of each result; absent with the raw layer off, which leaves every row and column as before. */
+  capture?: CaptureInput;
 }
 
 export interface SampleRow {
@@ -117,6 +147,14 @@ export interface ResultRow {
   ingested_at: number | null;
   /** The instant a reviewer acted on the row (data_model section 5): null from the recorder and for a row that was never held; only the review step sets it. */
   reviewed_at: number | null;
+  /** Raw layer only (data_model section 16.2): how the row became a record, and what the capture step knew of it. Absent with the layer off. */
+  capture_path?: CapturePath;
+  entered_by?: string | null;
+  raw_ref?: { raw_file_id: string; line_no: number } | null;
+  unit_original?: string | null;
+  unit_ucum?: string | null;
+  dilution_factor?: number | null;
+  time_resolution_s?: number | null;
   /**
    * The state a validation rule put the row in (hold, quarantine, reject; data_model sections 6 and 8), or `released` once the review step has let a held row through.
    * Null from the recorder: only a rule or the review sets it, and never changes a value.
@@ -198,6 +236,10 @@ export interface HistorianRow {
 
 export interface RecordedDataset {
   architecture: Pick<Architecture, "id" | "flags" | "labelling">;
+  /** Raw layer only: the capture path of this dataset. Absent with the layer off. */
+  capture?: { path: CapturePath };
+  /** adapter_ingest only (data_model section 16.1): the adapter registry rows and the files, lines and dead letters of what was parsed. */
+  raw?: RawTables;
   sample: SampleRow[];
   analysis_request: AnalysisRequestRow[];
   run: RunRow[];

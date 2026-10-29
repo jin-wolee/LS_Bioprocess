@@ -11,5 +11,6 @@
     "ingest_idempotency": false,
     "audit_trail": false
   },
-  "labelling": "handwritten"
+  "labelling": "handwritten",
+  "capture_path": "manual_transcription"
 }

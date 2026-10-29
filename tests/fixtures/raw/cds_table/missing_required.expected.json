@@ -1,0 +1,26 @@
+{
+  "dialect": "cds_table",
+  "cases": [
+    {
+      "name": "RQ8 a missing required column (the stamp) rejects the file (VR-023)",
+      "instrument": "HP-1",
+      "required_analytes": [
+        "titer"
+      ],
+      "run_s": 60,
+      "received_at": 36000,
+      "expect": {
+        "records": [],
+        "raw_records": [],
+        "parse_errors": [
+          {
+            "line": null,
+            "code": "required_column_missing",
+            "column_role": "stamp"
+          }
+        ],
+        "file_state": "rejected"
+      }
+    }
+  ]
+}

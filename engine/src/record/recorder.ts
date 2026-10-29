@@ -113,12 +113,13 @@ export const record = (input: RecorderInput, config: Architecture, log?: Transit
 
   return {
     architecture: { id: config.id, flags: config.flags, labelling: config.labelling },
+    ...(input.capture && { capture: { path: input.capture.path } }),
     sample,
     analysis_request: [...requests.values()],
     run: [...runs.values()],
     instrument_state: flags.instrument_state_snapshot ? states : [],
     qualification: qualifications.map((q) => ({ ...q })),
-    ...recordResults(events, flags, input.received_at),
+    ...recordResults(events, flags, input.received_at, input.capture),
     batch: [...batch.values()],
     process_event,
     // the series are copied field by field: an object handed over with more than the process value (a truth array) keeps none of it

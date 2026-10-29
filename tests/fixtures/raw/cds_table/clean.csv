@@ -1,0 +1,5 @@
+synthetic, modeled on public documentation; not a real instrument file
+Injection ID,Injection Time,Sample ID,Result ID,Titer Amount (g/L)
+INJ-U01-D01-1-1,2030-01-07 09:08:00,U01-D01-1,RES-U01-D01-1-1-1,1.2
+INJ-U02-D01-1-1,2030-01-07 09:12:00,U02-D01-1,RES-U02-D01-1-1-1,1.5
+INJ-U03-D01-1-1,2030-01-07 09:16:00,U03-D01-1,RES-U03-D01-1-1-1,1.1

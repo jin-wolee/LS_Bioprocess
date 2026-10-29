@@ -10,6 +10,8 @@ import type { QualificationInput } from "../../record/types.ts";
 import type { ScenarioRun } from "../../run.ts";
 import type { SamplingConfig } from "../../sampling.ts";
 import { ENGINE_VERSION } from "../../trace.ts";
+import type { EntryConfig } from "../../record/rule_types.ts";
+import type { RawSetup } from "./raw_path.ts";
 import type { SeedInput } from "./run_seed.ts";
 
 // The experiment assembly may read truth (spec section 3, rule 2): it turns a truth run into the plain data the recorded side and the evaluator take.
@@ -27,6 +29,9 @@ export interface RunSettings {
   clock_offsets?: Readonly<Record<string, number>>;
   /** The review of held rows (A213 to A215): the roster of the scenario, the timing and the variants. */
   review: ReviewConfig;
+  /** The raw device layer (ADR-0014); absent with the layer off. */
+  raw?: RawSetup;
+  entry_rules?: EntryConfig;
 }
 
 /** The roster of A201 as the scenario sets it (its sampling settings), as plain data for the review: the engine hard-codes no clock time. */
@@ -47,6 +52,8 @@ export const seedInputFromRun = (run: ScenarioRun, s: RunSettings): SeedInput =>
   label_rate_by_operator: Object.fromEntries(run.operators.map((o) => [o.operator_id, labelErrorRate(s.staff)])),
   ...(s.clock_offsets && { clock_offsets: s.clock_offsets }),
   qualifications: qualificationsOf(run),
+  ...(s.raw && { raw: s.raw }),
+  ...(s.entry_rules && { entry_rules: s.entry_rules }),
   // the tolerances of VR-003 and VR-004 have no ledger entry (scenarios/evaluation/default.json): those two rules are reported as not evaluable
   rules: { hold_limit_s: s.evaluation.hold_limit_s },
   review: s.review,

@@ -6,6 +6,7 @@
   "route": [
     {
       "group": "CELL",
+      "dialect": "counter_csv",
       "analytes": [
         {
           "id": "vcd",
@@ -22,6 +23,7 @@
     },
     {
       "group": "CHEM",
+      "dialect": "allinone_csv",
       "analytes": [
         {
           "id": "glucose",

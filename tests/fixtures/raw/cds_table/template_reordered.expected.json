@@ -1,0 +1,64 @@
+{
+  "dialect": "cds_table",
+  "cases": [
+    {
+      "name": "RQ8 a template with the columns in another order gives the same canonical records",
+      "instrument": "HP-1",
+      "required_analytes": [
+        "titer"
+      ],
+      "run_s": 60,
+      "received_at": 36000,
+      "expect": {
+        "records": [
+          {
+            "line": 3,
+            "sample_id": "U01-D01-1",
+            "analyte": "titer",
+            "value": 1.2,
+            "measured_at": 32940,
+            "unit_original": "g/L",
+            "unit_ucum": "g/L",
+            "dilution_factor": null,
+            "state": "loaded",
+            "source_event_id": "HP-1|INJ-U01-D01-1-1|RES-U01-D01-1-1-1|titer",
+            "event_time": "2030-01-07 09:08:00"
+          },
+          {
+            "line": 4,
+            "sample_id": "U02-D01-1",
+            "analyte": "titer",
+            "value": 1.5,
+            "measured_at": 33180,
+            "state": "loaded"
+          },
+          {
+            "line": 5,
+            "sample_id": "U03-D01-1",
+            "analyte": "titer",
+            "value": 1.1,
+            "measured_at": 33420,
+            "state": "loaded"
+          }
+        ],
+        "raw_records": [
+          {
+            "line": 3,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 4,
+            "state": "loaded",
+            "rule_id": null
+          },
+          {
+            "line": 5,
+            "state": "loaded",
+            "rule_id": null
+          }
+        ]
+      }
+    }
+  ]
+}
