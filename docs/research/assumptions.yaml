@@ -78,10 +78,11 @@ assumptions:
     name: peak_vcd_perfusion_e6_per_ml
     default: 60
     range: [30, 100]
+    range_grade: A
     unit: 1e6 cells/mL
-    grade: A
-    sources: []
-    notes: "No page read gives a peak viable cell density for perfusion. A model scenario in S020 (abstract only, numbers not seen) is a lead, not a source. The range is a placeholder around the default."
+    grade: P
+    sources: [S080, S079]
+    notes: "Regraded from A on 2026-10-29 after S080 and S079 were read. The default 60 is the density reached on day 10, when a constant 0.3 vvd bleed starts, in a worked fed-batch-versus-perfusion case from one CHO mAb line (S080). That case assumes a constant specific productivity of 25 pg/cell/d and the paper calls it an illustration, not plant data; the abstract-only record S020 is the same paper and says its figures come from a model scenario, not a measured run. A published illustration is not a measurement, so the grade is P, not S (A128 and A129 take rates from the same case). The upper end 100 sits below the density that the introduction of S079 quotes for perfusion processes in general (above 100e6 cells/mL; a statement, not a measurement). The lower end 30 has no source, hence range_grade A. For context, a measured 1 L perfused CHO culture started bleeding when density passed 55e6 (S063); that is consistent with the default and sets the bleed rule (A129), not a peak. The value is per mode and cell line: the clone spread of A121 applies on top."
   - id: A010
     name: glucose_floor_g_per_l
     default: 1.0
@@ -987,3 +988,495 @@ assumptions:
     grade: S
     sources: [S002]
     notes: "The on-line autosampler's pumps transfer 5.6 mL of sample per reactor for analysis (S002); up to 10 bioreactors per autosampler. This volume is drawn from the vessel, not the analyzer's own sample volume (A019)."
+  # ---------------- design extension: cell lines, operating modes, contamination (added 2026-10-29) ----------------
+  - id: A119
+    name: cell_line_growth_rate_cv_between_clones
+    default: 0.065
+    range: [0.03, 0.15]
+    unit: "fraction (SD / mean)"
+    grade: D
+    range_grade: A
+    sources: [S077, S053, S054, S079]
+    notes: "Derived. Five clonal CHO populations from one stability study differed by at most 0.0041 per h in maximum growth rate between the two most distant clones (S077, search excerpt only). Against the 0.027 per h default of A080 that span is 0.0041 / 0.027 = 15%; the expected range of five normal draws is about 2.33 SD, so SD is about 15% / 2.33 = 6.5% of the mean. The base value comes from other studies (A080), not from S077, so the ratio is a cross-study proxy. Three CHO K1 GS lines from one parent also grew differently (S079). The range ends 0.03 and 0.15 are the author's bounds."
+  - id: A120
+    name: cell_line_qp_max_over_min_ratio
+    default: 2.5
+    range: [2.4, 15.5]
+    unit: "ratio (highest / lowest clone)"
+    grade: A
+    range_grade: D
+    sources: [S074, S079]
+    notes: "Eight clones of one mAb in 1.2 mL wells (S074): specific productivity spanned 17.31-41.95 pg/cell/d in semi-perfusion in a fed-batch medium (ratio 2.4), 16.46-39.14 in a perfusion medium (2.4), 16.46-46.57 with partial exchange (2.8) and 1.64-25.47 in fed-batch (15.5); the ratios are derived from the quoted ends, so the range is D. The default 2.5 sits at the narrow end by choice: the 15.5 comes from well-scale fed-batch where rank order also changed with operating mode, and no bioreactor-scale spread was found. Within two similar-growth lines, cell-specific productivity also differed (S079). The spread is mode-dependent, so a clone draw should be repeated if the mode changes."
+  - id: A121
+    name: cell_line_peak_vcd_max_over_min_ratio
+    default: 2.5
+    range: [1.6, 5.3]
+    unit: "ratio (highest / lowest clone)"
+    grade: A
+    range_grade: D
+    sources: [S074]
+    notes: "Same panel as A120 (S074): maximum viable cell concentration 4-21e6 cells/mL in fed-batch wells (ratio 5.3), 23-54e6 in semi-perfusion in a fed-batch medium (2.3) and 25-41e6 in a perfusion medium (1.6), derived from the quoted ends (range grade D). Well scale, not bioreactor. The default 2.5 is a choice. In fed-batch wells viability fell below 50% by day 10 for all clones except one at about 70% (S074)."
+  - id: A122
+    name: cell_line_lactate_production_multiplier
+    default: 1.0
+    range: [0.44, 1.25]
+    unit: "factor on A084"
+    grade: P
+    sources: [S075, S074, S076]
+    notes: "Multiplier on the platform lactate production rate (A084). Lower end: a high-producer clone made 46% less lactate at mid-exponential and 56% less at the end of exponential growth than its parental clone (S075, search excerpt only; an inducible research system, not a production platform), so 0.54 and 0.44. Upper end: one of eight clones reached about 25 mmol/L lactate against 15-20 for the rest in fed-batch wells (S074), a concentration ratio of 1.25 used as a stand-in for a rate; another study of 11 clones found one that made clearly more lactate on days 3-8 (S076, search excerpt only). Concentrations are not rates, so this end is proxy grade."
+  - id: A123
+    name: cell_line_lactate_consumption_trigger
+    default: "net consumption starts when glucose falls below about 0.6 g/L; applies only to clones flagged as switchers"
+    range: ["glucose below about 0.6 g/L", "late (after day 7)", "never"]
+    unit: category
+    grade: A
+    sources: [S056, S074, S054]
+    notes: "Refines A085 (global switch, default off). When net consumption starts: lactate fell as glucose reached zero in eight clones in wells (S074; two clones fell in semi-perfusion but stayed flat in fed-batch); an infliximab-producing CHO-S line consumed lactate once glucose was depleted, with growth stopping near 0.6 g/L glucose (S056); an engineered clone consumed lactate after day 7 in fed-batch while its parent kept producing (S054). In a glucose-controlled fed-batch, A010 keeps glucose above 1.0 g/L, so the first rule never fires; a consumer there needs the late rule. The share of clones that are switchers has no source, hence grade A."
+  - id: A124
+    name: operating_mode_set
+    default: "batch; fed-batch; intensified fed-batch (high inoculation density from an N-1 perfusion or enriched-batch seed, production in fed-batch); perfusion (cell retention, bleed, cell-free permeate harvest)"
+    range: "n/a"
+    unit: category
+    grade: S
+    sources: [S079, S080, S078, S074, S060]
+    notes: "Range n/a because this is a list. Extends A003, which only lists fed-batch and perfusion. N-1 intensification raises the production inoculation density to 2-20e6 cells/mL (S079); perfusion pairs a fresh-medium feed with a cell-free harvest and a bleed that holds density (S080); semi-perfusion by medium exchange is used at small scale (S074). Continuous chemostat is left out on purpose: no CHO production case for it was found in the pages read."
+  - id: A125
+    name: batch_mode_duration_days
+    default: 5
+    range: [3, 7]
+    unit: d
+    grade: A
+    sources: [S074, S078]
+    notes: "No source gives the length of a pure batch CHO production culture. The pages read show only 3-day batch phases that precede feeding or perfusion (S074, S078). The default and range are the author's choice. Glucose is not held above a floor in batch mode (A010 applies to fed-batch)."
+  - id: A126
+    name: intensified_fedbatch_inoculation_density_e6_per_ml
+    default: 5
+    range: [2, 20]
+    unit: "1e6 cells/mL"
+    grade: A
+    range_grade: S
+    sources: [S079]
+    notes: "N-1 seed intensification enables production inoculation at 2-20e6 cells/mL (S079, abstract); the default 5 is a choice inside that range (range grade S). The standard fed-batch value is A007 (0.5-1.5e6). Cell-line dependent: of three CHO lines from one parent, two behaved alike on enriched-batch and perfusion seeds and the third differed (S079)."
+  - id: A127
+    name: intensified_fedbatch_duration_days
+    default: 10
+    range: [7, 14]
+    unit: d
+    grade: A
+    sources: [S079]
+    notes: "S079 says a higher inoculation density could shorten the production culture, but the pages read give no duration for an intensified run (its fed-batch comparisons ran to day 14). The default 10 d is a choice; the upper end equals the fed-batch default of A004."
+  - id: A128
+    name: perfusion_rate_vvd
+    default: "1 rising to 3 vessel volumes per day"
+    range: [0.75, 3.5]
+    unit: vvd
+    grade: P
+    range_grade: S
+    sources: [S080, S063, S074, S078]
+    notes: "Fresh-medium exchange in vessel volumes per day. A fed-batch versus perfusion case starts perfusion at 1 vvd and raises it to 3 (S080); a perfused 1 L CHO culture ran at 1 to 3.5 L/day, stepped up with density (S063); well-scale semi-perfusion used 1 and 0.75 reactor volumes per day (S074). In an N-1 perfusion the rate is set once a day after sampling or by a capacitance probe every 30 min (S078). The ramp shape is a choice. The same case (S080) reaches 60e6 cells/mL on day 10, the default of A009, which is left unchanged here. Regraded from S to P on 2026-10-29 for consistency with A009: the default ramp (1 rising to 3 vvd) is the worked case in S080, which the paper calls an illustration with an assumed constant specific productivity, not a measurement. The range ends are measured values from other studies (up to 3.5 L/day in a 1 L culture in S063, 0.75 reactor volumes per day in S074), so range_grade is S."
+  - id: A129
+    name: perfusion_bleed_rate_vvd
+    default: 0.3
+    range: "fixed"
+    unit: vvd
+    grade: P
+    sources: [S080, S063]
+    notes: "A constant 0.3 vvd bleed from day 10 in a 30 d case with perfusion at 3 vvd, leaving a permeate harvest of 2.7 vvd (S080). A different run bled intermittently when density passed 55e6 cells/mL, down to 20-40e6 (S063). One published illustration, not a norm; the bleed rule is a mode choice. Regraded from S to P on 2026-10-29 for consistency with A009: 0.3 vvd is the constant bleed assumed in the S080 illustration, and the one measured run (S063) used a different, intermittent rule, so no measurement supports the default."
+  - id: A130
+    name: perfusion_samples_per_reactor_per_day
+    default: 2
+    range: [1, 2]
+    unit: "samples/reactor/day"
+    grade: S
+    sources: [S063, S078]
+    notes: "Culture samples were taken in the morning and evening about 8 h apart in a perfused CHO bioreactor study (S063); an N-1 perfusion set its perfusion rate once a day after sampling (S078). Both are lab-scale studies. Fed-batch cadence is A014 and A015; permeate and bleed are separate streams (A133)."
+  - id: A131
+    name: intensified_fedbatch_samples_per_reactor_per_day
+    default: 1
+    range: "fixed"
+    unit: "samples/reactor/day"
+    grade: S
+    sources: [S079]
+    notes: "Production bioreactors were sampled daily for gases, cell count, nutrients and metabolites; amino-acid samples were taken every second day from day 2 to day 14 (S079). The same as the fed-batch default A014. A perfused N-1 seed is sampled as in A130."
+  - id: A132
+    name: perfusion_harvest_window_h
+    default: 24
+    range: [8, 168]
+    unit: h
+    grade: A
+    sources: [S060]
+    notes: "Context unit for continuous harvest. ICH Q5A(R2) asks that the sampling strategy (periodicity and composition) for a continuous harvest be justified and, in a passage seen only as an excerpt, that release document the absence of viral contamination for the period of harvest (S060), but it gives no length. A 24 h window (one daily harvest pool) is a design choice; 8 h and 168 h are the author's bounds."
+  - id: A133
+    name: perfusion_stream_set
+    default: "medium in; cell-free permeate/harvest out; cell bleed out; culture samples"
+    range: "n/a"
+    unit: category
+    grade: S
+    sources: [S080, S060]
+    notes: "Range n/a because this is a list. The perfusion rate equals the harvest rate plus the bleed rate in steady state (S080). With hollow-fibre retention, where cells are not accessible, the cell-free harvest is what gets tested (S060). Retention-device or filter events and transmembrane pressure matter operationally, but no source was read for them and they are not modelled."
+  - id: A134
+    name: sampling_port_connection_limit
+    default: 50
+    range: "fixed"
+    unit: "samples per connection"
+    grade: S
+    sources: [S069]
+    notes: "Needle-free Luer-lock sampling connections on single-use bioreactor bags are described as validated for up to 50 samples according to one vendor, as reported in a trade review (S069). A 14 d fed-batch at 1.6 samples/day is about 22 draws (A004, A014, A015; derived); a 40 d perfusion at 2 samples/day is 80 draws (A130, A006; derived), so it needs a second port or a closed sampling device. The 50 is a validation limit, not a failure threshold."
+  - id: A135
+    name: contamination_probability_per_batch
+    default: 0.0077
+    range: [0.0077, 0.023]
+    unit: "probability per batch"
+    grade: D
+    sources: [S066, S067, S058]
+    notes: "Microbial contamination as the leading stated cause of batch failure was 2.3% in facilities of 1,000 L and larger; the article calls that threefold the small-facility rate, so 2.3 / 3 = 0.77% below 1,000 L (S066: an industry survey of 434 developers and contract manufacturers, 2008, self-reported, not cell-line specific). Another source says the rate in production-scale bioreactors is still above 2% (S067, search excerpt only). Expected contaminated batches among the 24 reactors of A001: 24 x 0.0077 = 0.18 and 24 x 0.023 = 0.55 (derived), so a scenario that needs an event should inject it, not wait for chance. Viral events are far rarer: 18 since 1985 at 9 of 20 reporting companies, with no denominator (S058)."
+  - id: A136
+    name: contamination_probability_per_sampling_event
+    default: 0.0002
+    range: [0, 0.001]
+    unit: "probability per draw"
+    grade: A
+    range_grade: D
+    sources: [S064, S068, S069, S070]
+    notes: "No measured rate was found. Qualitative support: feed and sampling ports are named the more probable breach route by one consultant from experience (S064); contamination probability grows with the number of operations in a batch (S068, abstract); frequent aseptic sampling is standing practice and connections have a validated draw count (S069); closed sterile sampling is marketed for exactly the bioburden and mycoplasma samples (S070, vendor, excerpt only). Upper bound by arithmetic: if sampling were the only route, the per-batch rate divided by about 22 draws per fed-batch (A004, A014, A015) gives A135 0.0077 / 22 = 0.00035 up to 0.023 / 22 = 0.001 (range end D). The default 0.0002 sits below that bound by choice. Manual versus closed sampling is not modelled."
+  - id: A137
+    name: contamination_type_mix
+    default: "bacterial 0.70; fungal 0.20; mycoplasma 0.08; viral 0.02 (used only if a type is drawn at random; otherwise the scenario names the type)"
+    range: "n/a"
+    unit: "probability weights"
+    grade: A
+    sources: [S058, S059, S064, S061, S081]
+    notes: "Range n/a because these are weights. No source gives a mix. What is known: bacterial contamination is the usual explanation of a sudden bioreactor failure in trade practice (S064, S065); mycoplasma is reported at facilities and in lab work without a per-batch rate (S061, S063); viral contamination is rare, 18 events since 1985 (S058), mostly in CHO and traced to animal-derived raw materials or medium components (S059, excerpt only). Some contaminants evade compendial methods: one bacterium passed 0.1 um filters and was not detectable by compendial methods (S081, excerpt only). The weights only order the types by rarity and are a choice; scenarios should name the type."
+  - id: A138
+    name: mycoplasma_signal_lag_days
+    default: 2
+    range: [2, 6]
+    unit: d
+    grade: S
+    sources: [S063]
+    notes: "After a CHO DG44 perfusion bioreactor was spiked with Mycoplasma arginini, nothing changed for at least 2 d; growth plateaued 2-4 d after the spike, viability began to fall after 3-6 d, and DO and gas-mix/base-addition trends were indicators from about 2 d (S063). The organism peaked near 1e7 CFU/mL and doubles in about 6 h or more (S063). One species, one line, perfusion; the timing depends on cell density and perfusion rate at the time of contamination, and for other species the cells may not be affected at all."
+  - id: A139
+    name: bacterial_onset_to_signal_lag_h
+    default: 12
+    range: [4, 36]
+    unit: h
+    grade: A
+    sources: [S064, S065, S082]
+    notes: "No source gives a lag. Direction only: contamination of a mammalian-cell bioreactor shows first as a drop in dissolved oxygen, then a pH fall, shifted nutrient use and changed growth or viability (S065); the time of the DO drop is used to back-estimate when contamination began (S064); in one study conductivity rose hours before DO fell (S082, abstract seen as an excerpt). The lag depends on organism growth rate, starting count and cell density. Fungal contamination uses the same placeholder."
+  - id: A140
+    name: contamination_signature_by_type
+    default: "bacterial/fungal: DO falls, pH falls, nutrient use and growth or viability deviate from history; mycoplasma: growth plateau then viability fall, glucose and glutamine uptake fall with growth, ammonia rises, arginine is consumed, DO rises and CO2 in the gas mix rises with little base needed; virus: possibly no process change, or a growth or viability change, often found by required tests"
+    range: "n/a"
+    unit: category
+    grade: S
+    sources: [S065, S064, S063, S058, S060]
+    notes: "Range n/a because this is a description. Bacterial direction: S065, S064. Mycoplasma direction and timing: S063. Virus: in two consortium cases the cells looked normal and testing found the virus, in many others dying or unhealthy cells were the first sign (S058); monitoring growth and viability may help early detection (S060). Direction only; magnitudes are A141."
+  - id: A141
+    name: bacterial_signal_magnitude_placeholder
+    default: "DO reaches its low alarm within 6 h after the lag; pH falls 0.3 below set point before base addition catches up"
+    range: "n/a"
+    unit: "% air saturation and pH units"
+    grade: A
+    sources: [S065]
+    notes: "Range n/a because this is a placeholder text. S065 says 'a drop in % DO' and 'a drastic decrease in pH' without numbers. The values are a choice meant to cross a normal alarm band (the pH controller deadband of A095 is +/-0.05 for comparison) and should be kept as scenario knobs; remove if the design uses categorical severity instead."
+  - id: A142
+    name: bioburden_test_turnaround_days
+    default: 5
+    range: [3, 7]
+    unit: d
+    grade: P
+    sources: [S073]
+    notes: "Plate-count method for non-sterile products: aerobic count plates at 30-35 C for 3-5 d and yeast and mold plates at 20-25 C for 5-7 d (S073, search excerpt of a harmonization document; chapter scope is non-sterile products, so applying it to an in-process bioreactor sample is a proxy). A site's in-process method may differ. Transport and logging time are separate. The default 5 d is the upper end of the bacterial count and the lower end of the fungal count."
+  - id: A143
+    name: sterility_test_turnaround_days
+    default: 14
+    range: "fixed"
+    unit: d
+    grade: S
+    sources: [S072]
+    notes: "Media are incubated for not less than 14 days (S072, a 2008 interim draft of the harmonized chapter; the current official text was not open). A satisfactory result only means no contaminant was found in the sample examined. The chapter's scope is articles required to be sterile, so using it for a production-bioreactor sample or an in-process pool is a design choice. Transport time is separate."
+  - id: A144
+    name: mycoplasma_culture_turnaround_days
+    default: 28
+    range: [14, 28]
+    unit: d
+    grade: S
+    sources: [S061, S063, S083]
+    notes: "All compendial culture methods run 28 days with subcultures (S061; also S083 for direct culture). Conventional assays are quoted as 14-28 days (S063), the shorter end reflecting older US wording. A negative result needs the full period."
+  - id: A145
+    name: mycoplasma_indicator_cell_turnaround_days
+    default: 8
+    range: [6, 10]
+    unit: d
+    grade: D
+    sources: [S061, S083]
+    notes: "Under the European and US methods the sample grows 3-5 d on indicator cells and is then passaged onto coverslips for another 3-5 d (S061), so 6-10 d; a 2022 trade article says 6-7 d (S083, search excerpt only). The default 8 d is the midpoint of 6-10. Older US and Japanese wording stained after a single 3-5 d step (S061)."
+  - id: A146
+    name: nucleic_acid_test_turnaround_days
+    default: 1
+    range: [0.33, 3]
+    unit: d
+    grade: A
+    sources: [S062, S060, S059, S058]
+    notes: "Nucleic-acid tests (PCR, targeted sequencing) are accepted alternatives to the indicator cell method for mycoplasma (S062, excerpt only) and can support real-time decisions for specific viruses (S060). No turnaround is stated in the pages read. A 1994 mouse minute virus contamination was found by PCR on unprocessed bulk in 8 h (S059, excerpt only), giving the lower end 0.33 d. Sequence-specific: it finds only what the assay targets (S058). The default and the upper end are choices."
+  - id: A147
+    name: adventitious_virus_in_vitro_assay_turnaround_days
+    default: 28
+    range: [14, 28]
+    unit: d
+    grade: S
+    sources: [S060, S058]
+    notes: "Indicator cell cultures are observed for 28 days with at least one sub-passage at two weeks, and the duration may be cut to 14 days with a risk-based justification (S060; the 28 d for cell banks was read in section 3.2.2 of the opened text, the 14 d reduction and its application to unprocessed bulk were seen in a search excerpt of the same file). The press summary says the most used test takes at least two weeks (S058). Applies to unprocessed bulk of each batch."
+  - id: A148
+    name: contamination_test_sample_volume_ml
+    default: "mycoplasma 10.5 mL culture + 1 mL indicator cell = 11.5 mL; sterility 20 mL per medium for a container above 40 mL, two media"
+    range: "n/a"
+    unit: mL
+    grade: S
+    sources: [S083, S072]
+    notes: "Range n/a because the default lists several tests. Mycoplasma volumes are from a trade article (S083, search excerpt only). The sterility table is written for final-container units (S072, Table 2), not for a bioreactor, so its 20 mL per medium is a scale proxy. No bioburden volume was found. Against the culture volume, 11.5 mL is 77-115% of a micro-parallel vessel (A110, 10-15 mL), 4.6-11.5% of a mini-parallel one (A114, 100-250 mL) and 0.23-0.58% of a 2-5 L bench vessel (A002) (derived), so these tests cannot be drawn from the smallest vessels and need pooled or end-of-run material there."
+  - id: A149
+    name: contamination_investigation_scope
+    default: "walk back from a positive result to: (1) all samples and results of the affected reactor since the estimated onset; (2) the pooled harvest, downstream pool and lots holding its material; (3) other reactors or batches sharing the seed train, feed lot, media lot or equipment; (4) a written deviation record with conclusions and follow-up"
+    range: "n/a"
+    unit: category
+    grade: S
+    sources: [S071, S060, S064, S065]
+    notes: "Range n/a because this is a rule list. Onset is estimated from the DO drop and growth rate, and events in that window (sampling, additions, new probes) are reviewed (S064, S065); feed samples are tested at several times to back-calculate load at introduction (S065). Harvest from an affected unprocessed bulk is not used unless justified and potentially contaminated material is segregated; continuous processes document absence over the harvest period (S060, last two points from a search excerpt). The investigation extends to other batches associated with the failure, whether or not distributed, and is written up with conclusions and follow-up (S071). Part 211 is cGMP for finished pharmaceuticals; which text governs a given biologic is a regulatory question not settled here. Which entities count as 'associated' is a design choice."
+  - id: A150
+    name: profile_cell_line_clone_panel
+    default: "per-reactor clone drawn around the platform kinetics"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S074, S077, S075, S053, S054]
+    components: [A119, A120, A121, A122, A080, A084, A086]
+    notes: "Each reactor draws its clone from the spreads A119 (growth), A120 (productivity), A121 (peak density) and A122 (lactate production) around the platform means A080, A084 and A086. Grade is the weakest component; the productivity and density spreads are assumed defaults on well-scale data."
+  - id: A151
+    name: profile_cell_line_lactate_consumer
+    default: "clone that turns to net lactate consumption late in the run"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S054, S056, S074]
+    components: [A080, A084, A085, A123]
+    notes: "Net consumption after the producing phase: an engineered clone consumed lactate at -0.17 pmol/cell/d in a 2 L bioreactor after day 7, while its parent produced +2.34 in the exponential phase (S054); a CHO-S line consumed lactate after glucose depletion (S056). Components: growth (A080), exponential production (A084), the global switch (A085, on for this profile) and the trigger (A123)."
+  - id: A152
+    name: profile_cell_line_high_lactate_producer
+    default: "clone at the upper lactate multiplier (1.25 x A084)"
+    range: "bundle"
+    unit: bundle
+    grade: P
+    sources: [S074, S076]
+    components: [A084, A122]
+    notes: "Upper end of A122. Proxy because the multiplier rests on a concentration ratio in wells (S074) and an excerpt of an 11-clone study (S076)."
+  - id: A153
+    name: profile_mode_batch
+    default: "single inoculation, no feed, no outflow; harvest at the end"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S074, S078]
+    components: [A125, A007, A014]
+    notes: "Context unit: one batch id per reactor, as in fed-batch. Glucose falls without a floor, so lactate behaviour (A123) matters more. Duration A125, inoculation A007, cadence A014."
+  - id: A154
+    name: profile_mode_fed_batch
+    default: "current default: bolus-fed, 14 d, one batch id per reactor"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S017, S019, S053]
+    components: [A003, A004, A007, A008, A010, A014, A015]
+    notes: "Components: mode default (A003), duration (A004), inoculation (A007), peak density (A008), glucose floor (A010), cadence (A014, A015). Extra context: feed events (A050). Working volume rises with feeds."
+  - id: A155
+    name: profile_mode_intensified_fed_batch
+    default: "fed-batch started from a high-density seed"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S079, S078, S017]
+    components: [A126, A127, A131, A005, A010]
+    notes: "The production reactor is a fed-batch started at A126; its seed (a perfused N-1 or an enriched batch) is a lineage parent, so the context unit gains a seed-lot link. Daily samples (A131) plus seed-train samples (A130 when the seed is perfused). Components also include the N-1 duration (A005) and glucose floor (A010)."
+  - id: A156
+    name: profile_mode_perfusion
+    default: "long run with medium in, permeate and bleed out; no single batch boundary"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S080, S063, S060, S019, S069]
+    components: [A006, A009, A128, A129, A130, A132, A133, A134]
+    notes: "Duration A006, peak density A009, rate A128, bleed A129, cadence A130, harvest window A132, streams A133, port limit A134. The context unit is a campaign split into harvest windows (S060, last parts from an excerpt). Over 40 d at 2 samples/day a single port passes its 50-draw validation limit (derived in A134)."
+  - id: A157
+    name: profile_contamination_origin
+    default: "rare, scenario-injected event; sampling is one route among several"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S066, S064, S068, S069, S058]
+    components: [A135, A136, A137, A134]
+    notes: "Rate per batch (A135), added risk per draw (A136), type mix (A137) and the draw-count limit of a port (A134). Few viral events were ever reported (S058), so the type mix is assumed."
+  - id: A158
+    name: profile_contamination_detection
+    default: "process signals first, confirming tests days later"
+    range: "bundle"
+    unit: bundle
+    grade: A
+    sources: [S063, S065, S064, S082, S073, S072, S061, S083, S062, S060, S059, S058]
+    components: [A138, A139, A140, A141, A142, A143, A144, A145, A146, A147, A148]
+    notes: "Signals: A140, lags A138 and A139, magnitude A141. Confirming tests: bioburden A142, sterility A143, mycoplasma culture A144 or indicator cells A145, nucleic-acid test A146, virus assay A147; sample volumes A148. The at-line analyzers keep returning results for days or weeks after the unit was already contaminated."
+  # ---------------- device output formats (S2 scope extension; modeled on public documentation) ----------------
+  - id: A159
+    name: metabolite_analyzer_export_file_name
+    default: "SampleResults[<analyzer id>]YYYY-MM-DD_HHMMSS.csv, one file per export action"
+    range: "pattern, not numeric"
+    unit: text
+    grade: S
+    sources: [S003, S086]
+    notes: "Pattern and sibling files from the manual (section 2.3.3); the analyzer id between the word and the date comes from a community regular expression (S086), so that part is weaker evidence. An export is an operator-selected set of rows, so a file does not map one-to-one to a draw."
+  - id: A160
+    name: metabolite_analyzer_csv_layout
+    default: "quoted header row, optional units row, one data row per analysis, trailing comma, blank cell when a value is absent"
+    range: "units row on or off"
+    unit: layout
+    grade: P
+    sources: [S086, S038]
+    notes: "Header spellings come from community fixtures; the vendor manual lists screen fields only. S038 says units are not in the export, while a 2025 fixture has a units row. The parser must handle both."
+  - id: A161
+    name: analyzer_timestamp_format_and_zone
+    default: "local wall clock with no zone; date order YYYY MM DD, separator '-', 24 h as the simulator default; the other 2 orders, 3 separators and 12 h are test variants"
+    range: "3 orders x 3 separators x 2 clock styles"
+    unit: format
+    grade: A
+    range_grade: S
+    sources: [S003, S004, S038]
+    notes: "The options are in the manual (3.5.1.7 to 3.5.1.9), so the range is sourced; which option is the simulator default is a choice, hence grade A. Day-first order is ambiguous with month-first and the integrator guide tells users to avoid it. The device UTC offset comes from configuration, not from the file; the OPC side exposes UTC and the local offset as separate tags (S004)."
+  - id: A162
+    name: metabolite_analyzer_units
+    default: "glucose and lactate g/L; glutamine, glutamate, ammonium, sodium, potassium, calcium mmol/L; pO2 and pCO2 mmHg; cell density x10^6 cells/mL; osmolality mOsm/kg"
+    range: "unit options per the manual table in section 3.5.3.1"
+    unit: text
+    grade: P
+    sources: [S003, S038, S086]
+    notes: "The unit options are in the manual. The default of each is taken as the first-listed option, which agrees with a community connector; the bold marking of defaults did not survive text conversion, so the defaults are inferred. The cell-density default (10^5 or 10^6) is unresolved: S038 says 10^5 and tells users to switch to 10^6."
+  - id: A163
+    name: metabolite_analyzer_range_flags
+    default: "analytical-range breach: blank value plus an error-log line '<analyte> Analytical Range High/Low'; process-range breach: status Low/High only"
+    range: "n/a"
+    unit: category
+    grade: A
+    sources: [S003, S004]
+    notes: "Range n/a because this is a rule. The semantics are in the manual (sample type settings, page 3-48; error list, page 5-18) and in per-analyte error-status tags (S004). How a flag looks inside the exported CSV is not documented in what was read, so the CSV form is assumed. The limits that apply depend on the dilution ratio (A089, A090)."
+  - id: A164
+    name: metabolite_analyzer_reanalysis_rows
+    default: "a reanalysis adds a new row with a new Date & Time and keeps the old time in Sample Time; cell-density images can be reanalysed within 30 days"
+    range: "fixed"
+    unit: d
+    grade: S
+    sources: [S003, S004]
+    notes: "Manual page 2-19; the OPC modified time differs from the sample time after a reanalysis (S004). The 30 d window is the manual's own limit, so the range is fixed."
+  - id: A165
+    name: metabolite_analyzer_record_fields
+    default: "sample id, sample type, operator, batch id, vessel id, cell type, vessel temperature 37 degC, vessel pressure 0 psi, sparging O2 20.9%, chemistry dilution, cell-density dilution, pre-dilution multiplier, tray location, time in tray, original sample time"
+    range: "field set"
+    unit: fields
+    grade: S
+    sources: [S003, S004]
+    notes: "Screen field list on manual page 2-17 and the OPC start tags (S004). The dilution ratio options extend A089 and A090. Header spellings in an export file are A160."
+  - id: A166
+    name: cell_counter_csv_columns
+    default: "Sample ID; counts; total and viable x10^6 cells/mL; viability %; diameter and circularity; cell type; diameter limits; dilution; analysis and reanalysis date/time and user; wash and mixing settings; tag"
+    range: "32 headers in the fixture"
+    unit: layout
+    grade: P
+    sources: [S086, S085, S084]
+    notes: "The header list comes from a community fixture; the vendor tech note confirms the export types but defers the columns to an instructions-for-use manual that was not opened. In the fixture the timestamp is month/day/year 24 h without seconds and without a zone."
+  - id: A167
+    name: cell_counter_export_scope_and_append
+    default: "one CSV per sample set; an optional append mode repeats earlier rows"
+    range: "append on or off"
+    unit: mode
+    grade: S
+    sources: [S084, S085]
+    notes: "S085 warns that the append mode concatenates all data over time and can create repeated measures. The parser therefore needs an idempotent ingest."
+  - id: A168
+    name: cds_injection_peak_record
+    default: "per injection: injection id and time, injection volume uL, sample name and id, operator, sequence name and line, method name and id, signal name; per peak: retention time s, area mAU*s, height mAU, area %, tailing, plates, resolution, amount with units"
+    range: "template-driven column choice"
+    unit: layout
+    grade: P
+    sources: [S088, S090, S091]
+    notes: "Names and units are from a vendor mapping table (excerpt only); the amount flow is from the Empower guide. No vendor document shows a titer amount column, so that column is assumed. Both data system families export user-designed tables, so the dialect is a template."
+  - id: A169
+    name: cds_audit_and_version_fields
+    default: "audit entries for injection, result set, sequence and method; user shown as 'Full Name (userid)'; a new result id per processing run"
+    range: "n/a"
+    unit: category
+    grade: P
+    sources: [S089, S090]
+    notes: "Range n/a because this is a field list. The four audit scopes are from the Agilent article (excerpt); the result id per run is from the Waters tip (excerpt). A reason-for-change comment on reprocessing is assumed."
+  - id: A170
+    name: batch_procedural_hierarchy_and_phase_states
+    default: "procedure > unit procedure > operation > phase; 13 phase states (idle, running, complete, pausing, paused, holding, held, restarting, stopping, stopped, aborting, aborted, resetting)"
+    range: "fixed model"
+    unit: model
+    grade: P
+    sources: [S093, S094, S051]
+    notes: "From vendor guides and a documentation page, not from the standard text, which is paywalled. The state numbers are one vendor's and are not used. Batch list entry fields (batch id, lot id, campaign id, recipe id, requested and actual start and end, equipment) are the element names of the BatchML schema (S051)."
+  - id: A171
+    name: process_tag_roles_and_naming
+    default: "<channel>.PV, .SP, .Out with the unit in the header; pH, DO, temperature, stirrer, gas flows, feed and base pumps, level and off-gas CO2 as channels"
+    range: "naming grammar"
+    unit: text
+    grade: P
+    sources: [S099, S101, S100]
+    notes: "The role suffixes come from a third-party description of one vendor export (S101); the bench-controller manual puts the unit in parentheses in the variable name (S099). Two dialects exist and the simulator would use one."
+  - id: A172
+    name: controller_logging_deadband_and_max_interval
+    default: "log a value when it changes by its deadband or when the maximum log interval has passed; manual example: 1 RPM deadband and 15 s maximum interval; the default deadband of the agitation PV is 0.5 RPM"
+    range: "deadband per variable; interval 15 s up to minutes"
+    unit: "RPM, s"
+    grade: S
+    range_grade: A
+    sources: [S099]
+    notes: "The mechanism, the example and the default deadband are in the manual (page 167, Appendix 4). The 15 s is the manual's worked example, not a stated default, and the setting is labelled in minutes while the example is in seconds. The range ends are not sourced."
+  - id: A173
+    name: historian_exception_compression_defaults
+    default: "ExcDev 0.1% of span, ExcMax 600 s, CompDev 0.2% of span, CompMax 28800 s, span 100"
+    range: "0 to 1% of span"
+    unit: "% of span, s"
+    grade: P
+    range_grade: A
+    sources: [S098]
+    notes: "Generic historian defaults from training material (excerpt), not tuned for bioreactor tags. Used only if an optional historian stage is switched on."
+  - id: A174
+    name: alarm_state_model
+    default: "ISA-18.2 states: normal, unacknowledged, acknowledged, return-to-normal unacknowledged, shelved, suppressed by design, out of service; acknowledge and return-to-normal are separate events"
+    range: "fixed model"
+    unit: model
+    grade: P
+    sources: [S095, S096, S097, S099]
+    notes: "Alarm record fields follow OPC UA Part 9 names (severity, active, acknowledged, confirmed, comment). A bench controller manual records the acknowledging user and time of each alarm (S099)."
+  - id: A175
+    name: alarm_deadband_and_delay_starting_points
+    default: "flow 5% and 15 s, level 5% and 60 s, pressure 2% and 15 s, temperature 1% and 60 s; pH and DO not given"
+    range: "none stated"
+    unit: "% of span, s"
+    grade: P
+    sources: [S096]
+    notes: "Process-industry starting points from a vendor white paper (excerpt); values for pH and DO would be assumed."
+  - id: A176
+    name: contamination_response_delay_h
+    default: "no default; a scenario input per scripted response step, printed with every result"
+    range: "n/a"
+    unit: h
+    grade: A
+    sources: [S065, S058]
+    notes: "Range n/a because the value is a scenario input, not a parameter with a default (simulation_spec section 11.7). Two delays are meant: from the first process signal to the first scripted response (isolate the unit, stop feeds, draw confirming samples) and from a confirmed positive result to a hold or quarantine action on the affected lots. No source gives either delay. Direction only: containment after a suspected contamination is to isolate the bioreactor and stop feeds (S065), and the most used virus test takes at least two weeks, so material can move on downstream before a positive is known (S058). The delay is identical across architectures, so it changes how much material is touched before containment, not which architecture finds it. Sweep points for tests (for example 0 h, 24 h, 72 h) are a test design choice, not data."
+  - id: A177
+    name: shared_lot_topology
+    default: "no default; a scenario input giving, for each of seed lot, media lot and feed lot, how many reactors draw from it"
+    range: "1 to the number of reactors (A001)"
+    unit: reactors per lot
+    grade: A
+    sources: [S071, S049]
+    notes: "No source gives how many reactors share a lot. The range ends are logical bounds: 1 means no sharing and the upper end is every reactor in the scenario (A001 sets 24 by default, range 5-100). Why it matters: the investigation walk-back extends to other reactors or batches that share a seed train, feed lot, media lot or equipment (A149), and the production record review rule extends an investigation to other batches associated with the failure (S071); 'seed train' is a term of the industrial biopharma ontology (S049). Sharing is also what scenario SC12 injects when an event enters through a shared medium lot (A157). The topology is a map from lot to reactors, set per scenario and printed with every result. Lot withdrawal timing is a separate gap and is not covered here."

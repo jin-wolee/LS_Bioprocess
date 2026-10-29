@@ -31,7 +31,7 @@ Three rules keep the ledger honest:
 - A culture is expanded through a seed train (N-2, then N-1, then production), a term defined in the biopharma industrial ontology (S049, provisional). In the public A-Mab case study the N-1 seed runs 2-5 d (A005, S017).
 - The production culture runs 13-17 d in the A-Mab case study and about 12 d in one fed-batch study (A004, S017, S019, provisional). An intensified perfusion run was about 40 d in one bispecific study (A006, S019, provisional); the range ends 30 d and 90 d have no source (A006).
 - The production culture starts at 0.5-1.5e6 cells/mL (A007, S017). Glucose is kept above 1.0 g/L with discrete feeds (A010, S017), so a feed can fall between a draw and its measurement.
-- Peak viable cell density in fed-batch is typically 10-30e6 cells/mL according to one paper (A008, S053, provisional); no source was found for perfusion (A009).
+- Peak viable cell density in fed-batch is typically 10-30e6 cells/mL according to one paper (A008, S053, provisional). For perfusion the default of 60e6 is the density in one worked illustration, not a measurement, so it is graded P (A009, S080, provisional); a general statement of more than 100e6 sits above its upper end (A009, S079, provisional), and the low end 30 has no source (A009).
 - Downstream, clarified harvest goes to a Protein A step that is run in several cycles whose eluates are pooled; the pool is about 20 g/L and carries about 7,200 ppm host-cell protein (range 3,000-12,000 ppm) (A052, A053, S017). One harvest split over cycles and re-pooled still has one origin batch; many-to-many lineage appears only when batches are merged.
 - Pool hold limits are product-specific. A 36 h hold point is discussed as an example in a trade article and graded A (A054, S018, provisional), and the A-Mab hold data are "not shown" (S017). No turnaround time for downstream assays was found (A055).
 - A-Mab is a hypothetical antibody published as a teaching case. It gives the narrative a public anchor; it is not plant data.
@@ -131,13 +131,13 @@ Among examples surveyed, the closest on method is a browser-based discrete-event
 
 ## Known gaps
 
-- Peak viable cell density in perfusion has no source (A009). A model scenario in a productivity paper was a lead only, and its figures were not seen (A009, S020, provisional).
+- Peak viable cell density in perfusion has no measurement: the default of 60e6 is the density in a worked illustration whose figures come from a model scenario (A009, S080, S020, provisional; graded P). The upper end 100 sits below a general statement of more than 100e6 (A009, S079, provisional), and the low end 30 has no source (A009).
 - Only 40 d is sourced for perfusion; the range ends are leads (A006, S019, provisional).
 - No instrument-to-instrument bias data for FLEX2 or Vi-CELL, no hold-time limit from a bioreactor sample vendor, no downstream assay turnaround, no clock-error incidence, no sampling-technique error rate (A032, A046, A055, A049, A064). No source for QC failure, rerun, drift size or lot-step size either (A087, A088, A092, A093). Provisional.
 - The Cedex Bio HT per-test sample volume is not on the vendor page read (A107, S006, provisional).
 - Staff-proficiency evidence is clinical or bead-based; no bioprocess study of trainee effects was found (A062, A076, S024, provisional).
 - Per-cell kinetics come from a few CHO studies at modest density, one of them a research line with low productivity; the lactate switch and the extension to high density are assumptions (A085, A082, S054, provisional).
-- Second-hand sources not opened: the Processes 8(6) automated-sampling paper (A014, A032, S021), the Bioresources and Bioprocessing sampling paper (A014, S037), the FLEX2 OPC manual (A036, S004), the ISA-95 preview (S032) and several vendor blogs (S040-S046). Their claims stay at `snippet`, and all of these lines are provisional.
+- Second-hand sources not opened: the Processes 8(6) automated-sampling paper (A014, A032, S021), the Bioresources and Bioprocessing sampling paper (A014, S037), the ISA-95 preview (S032) and several vendor blogs (S040-S046). Their claims stay at `snippet`, and all of these lines are provisional.
 - Corrections to earlier notes found while reading: a "typical 110 s" Vi-CELL BLU cycle is not on the vendor page (A025, S005, provisional); the +0.05 pH offset is for cell-free medium and an Ambr 250 handler, not for open cups at bench scale (A041, S013); the A-Mab fed-batch range starts at 13 d, and 12 d comes from a different study (A004, S017, S019, provisional); the viability slope of a neat sample is not a decline (A038, A040, S012); utilisation always states its window (A074); the counting-bead study was regraded from sourced to proxy (A058, A059, A060, S025, provisional).
 - Eleven sources are main-reread: S001, S002, S009, S011, S012, S013, S017, S022, S027, S029, S030. Before any other number goes on a public page, the orchestrator re-reads its source and sets `main-reread`.
 
@@ -146,3 +146,62 @@ Among examples surveyed, the closest on method is a browser-based discrete-event
 - Add a source with the `source-add` skill, then cite it by id; add or change a parameter with the `assumption-check` skill.
 - `uv run --frozen python scripts/check_docs.py --all` checks the schema (range, unit, components, range_grade), unknown ids, banned tokens, and the public-number gate.
 - The public README and the infographic may cite only `main-reread` sources, directly or through the sources behind an A id. A line that cites anything else must say "provisional"; the check enforces both.
+
+## Planned extensions (designed, not built)
+
+The current build stays focused on results that lose their process context. Three extensions are researched and parametrised in the ledgers only; nothing here is implemented. All lines below are provisional: none of the new sources (S057-S083) is main-reread, and several were seen only as search excerpts.
+
+### Cell-line profiles
+
+- Reactors would differ by clone. In one panel of eight clones in 1.2 mL wells the best clone had 2.4 to 15.5 times the specific productivity of the worst depending on mode (A120, S074; provisional, ratios derived from quoted ends), and peak density differed 1.6 to 5.3 times (A121, S074; provisional). The defaults for both are assumed.
+- Growth rate varies less. The widest gap among five clones was 0.0041 per h, about 15% of the default growth rate, so a clone SD of about 6.5% is derived (A119, S077; provisional, search excerpt only).
+- Lactate behaviour is the visible difference: a production multiplier of 0.44 to 1.25 (A122, S075, S074; provisional proxy) and a late switch to net consumption in some clones (A123, A151, S054, S074; provisional; the share of switchers is assumed). Bundles: A150, A151, A152 (provisional).
+
+### Operating modes
+
+- Batch and intensified fed-batch would join fed-batch and perfusion (A124, S079, S080; provisional). An intensified run starts at 2 to 20e6 cells/mL from a perfused or enriched-batch N-1 seed (A126, S079; provisional), so the seed becomes a lineage parent (A155; provisional). Batch length and intensified run length are assumed (A125, A127).
+- Perfusion runs at 1 to 3 vessel volumes per day with a 0.3 per day bleed, both taken from one worked illustration and graded P (A128, A129, S080; provisional), is sampled twice a day (A130, S063; provisional), and has no batch boundary, so the context unit is a harvest window whose length is assumed (A132, S060; provisional). Permeate and bleed are extra streams (A133, S080; provisional).
+- Cadence has a side effect on sampling hygiene: 40 days at 2 samples per day is 80 draws against a 50-draw validation limit of one single-use port connection (A134, A156, S069; provisional, derived).
+
+### Contamination: origin and detection
+
+- Rate. Contamination as the stated cause of batch failure was 2.3% in large facilities, about 0.77% in small ones by derivation (A135, S066; provisional, a 2008 self-reported survey). That is about 0.18 events per 24 reactors per cycle (A135, A001; provisional), so a scenario should inject an event rather than wait for chance. Viral events are rarer: 18 since 1985 at 9 of 20 companies (S058; provisional), mostly in CHO and traced to raw materials (S059; provisional).
+- Sampling as a route. No measured rate per draw was found; the assumed default sits under a derived ceiling of 0.001 (A136, S064, S068; provisional, graded A). The type mix is assumed (A137; provisional).
+- Signals come before tests. Mycoplasma changed the culture 2 to 6 days after introduction in one study (A138, S063; provisional); bacterial contamination shows first as a DO drop and a pH fall (A140, S065, S064; provisional), with the lag and magnitudes assumed (A139, A141).
+- Test turnaround. Bioburden 3 to 7 d as a proxy (A142, S073; provisional), sterility 14 d (A143, S072; provisional), mycoplasma culture 28 d or indicator cells 6 to 10 d (A144, A145, S061; provisional), virus assay 14 to 28 d (A147, S060; provisional), nucleic-acid tests about a day (A146; provisional, assumed). Bundles: A157, A158 (provisional).
+- Test samples are large. The mycoplasma set needs 11.5 mL (A148, S083; provisional), which is 77% to 115% of a micro-parallel vessel (A148, A110; provisional, derived), so those vessels cannot supply it.
+
+### What an investigation needs from the data
+
+- A positive result starts a walk back over three sets: the reactor's samples and results since the estimated onset, the pools and downstream lots holding its material, and other reactors or batches sharing a seed, feed lot, media lot or equipment; a written deviation record closes it (A149, S071, S060, S064; provisional). For continuous harvest the unit is the harvest window (A132, S060; provisional).
+- Two scenario inputs have no source and no default, so each result prints them: the delay from the first signal, and from a confirmed positive, to a hold or quarantine action (A176, S065, S058; provisional, graded A), and how many reactors share a seed, media or feed lot (A177, S071, S049; provisional, graded A). Lot withdrawal timing is not in the ledger.
+
+### Gaps (provisional)
+
+- No measured contamination probability per draw (A136), no CHO bench-scale per-batch rate (A135 rests on S066, provisional), and no source for the type mix, the bacterial lag, the signal magnitudes or the nucleic-acid turnaround (A137, A139, A141, A146).
+- No source for batch length or intensified run length (A125, A127). The perfusion peak density A009 is graded P: its default is one worked illustration and its upper end a general statement, not a measurement, and the low end is unsourced (A009, S080, S079; provisional).
+- The sterility text is a 2008 draft and the enumeration text was seen only as an excerpt (S072, S073; provisional); the body of the consortium paper was not read (S057; provisional).
+
+## Device output formats (planned for S2)
+
+The simulator would write synthetic raw files in the shapes that public documentation describes for lab equipment, then parse them into the canonical schema, so the whole path from raw device output to contextualised data can be shown. The formats are modeled on public documentation; the project does not claim to read any real instrument's files, and no manual text is copied. All lines below are provisional: none of the new sources (S084-S103) is main-reread, and several were seen only as search excerpts.
+
+### Analyzers
+
+- Metabolite and cell analyzer. An export is a CSV named `SampleResultsYYYY-MM-DD_HHMMSS.csv`, written when an operator exports selected rows (A159, S003, S086; provisional). Times are local with no zone, the date order and 12 or 24 h are set by the user, and units sit in a second row or are implied by settings (A160, A161, A162, S003, S038, S086; provisional). A reanalysis adds a row and keeps the original time (A164, S003; provisional). An over-range result is documented as error-log text; how it looks in the CSV is assumed (A163, S003, S004; provisional).
+- The same analyzer's OPC interface exposes the record with UTC time, a separate local offset, operator, dilution ratios and per-analyte error status (A165, S004; provisional), plus autosampler request and aspirate events (S004; provisional).
+- Cell counter. The sample export has 32 columns with units in the headers and a timestamp without seconds or zone (A166, S084, S085, S086; provisional). An append mode can repeat earlier rows, so ingest must be idempotent (A167, S085; provisional).
+- Titer by HPLC. A data-system result export is a user-designed table of injection and peak fields, with retention time in seconds and area in mAU*s for UV; the amount column for a titer method is assumed (A168, S088, S090, S091; provisional). Audit trails and result ids exist per injection, result set, sequence and method (A169, S089, S090; provisional).
+- Vendor-neutral names are borrowed from public Allotrope and AnIML structures with no conformance claim (S087, S092; provisional). The Allotrope Simple Model licence is non-commercial (CC-BY-NC) or no-derivatives (CC-BY-ND), so no schema file is copied (S087; provisional).
+
+### Controllers
+
+- Vendor-neutral. ISA-88 procedure, unit procedure, operation and phase, with 13 phase states (A170, S093, S094, S051; provisional). Process tags with PV, SP and Out roles (A171, S099, S101; provisional). The ISA-18.2 alarm states and OPC UA alarm fields (A174, S095, S097; provisional), with starting alarm deadbands and delays borrowed from the process industry (A175, S096; provisional). Historian exception and compression defaults (A173, S098; provisional).
+- Bench-scale family. One public controller manual describes five record types, deadband logging with a maximum log interval, and an appendix of logger variables (A172, S099; provisional). Another family's OPC tag list is on request only, so it is not usable (S103; provisional); a third has OPC and CSV but no published tag list (S100, S102; provisional).
+
+### Gaps (provisional)
+
+- The analyzer manuals describe screen fields, not the CSV header, so the header spellings come from community test files (A160, A166, S086; provisional).
+- No vendor document shows a titer amount column, and the cell counter's instructions for use were not opened (A168, A166, S084; provisional).
+- Analyzer files carry no time zone; only the OPC side gives UTC and the local offset (A161, S004; provisional).
+- The ISA-88 and ISA-18.2 standards are paywalled and OPC UA Part 13 aggregates were not opened, so those models rest on summaries (A170, A174, S093, S095; provisional).

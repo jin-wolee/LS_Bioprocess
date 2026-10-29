@@ -29,18 +29,18 @@ sources:
     url: "https://novabiomedicaldocs.com/wp-content/uploads/filr/26707/LPN-57960-BioProfile-FLEX2-IFU-EN-Manual.pdf"
     accessed: 2026-10-29
     type: vendor-doc
-    supports: "Results export as CSV to a shared folder C:\\Export on the Bridge computer (or to USB); file name pattern SampleResultsYYYY-MM-DD_HHMMSS.csv. Appendix A (read 2026-10-29 from a text conversion of the full manual): measurement ranges by selected dilution ratio (glucose 0.10-15.00 g/L at 1:1, 30 at 1:2, 60 at 1:4; lactate 0.10-6.00 g/L at 1:1; glutamine and glutamate 0.10-6.00 mmol/L; ammonium 0.20-25.00 mmol/L; cell density 0.10-35 e6/mL at 1:1, up to 80 e6 at 1:2 and 160 e6 at 1:6); imprecision specification (n >= 10): within-run CV 5.0% and day-to-day CV 7.0% for glucose, lactate, glutamine, glutamate and ammonium (SD 0.03 g/L within-run and 0.07 g/L day-to-day for glucose and lactate), pH SD 0.007 within-run and 0.018 day-to-day, pCO2 CV 5.0% and 7.0%, sodium 3.0% and 4.5%, potassium and calcium 4.0% and 5.6%; osmolality SD 3 mOsm/kg up to 400. Automatic 2-point calibration of the gas and chemistry modules every 2 h with a 1-point calibration at each sample; onboard QC can be scheduled. Analysis time for all modules 275 s in manual mode and 305 s from the carousel; sample volume for all modules 265 uL at cell-density dilution 1:2 or 1:6 and 350 uL at 1:1; chemistry plus cell density 235 s manual (265 s carousel). Default sample type in the software: chemistry 1:1, cell density 1:2. The manual differs slightly from the distributor page (S001: 270 s, 275 uL)."
+    supports: "Results export as CSV to a shared folder C:\\Export on the Bridge computer (or to USB); file name pattern SampleResultsYYYY-MM-DD_HHMMSS.csv. Appendix A (read 2026-10-29 from a text conversion of the full manual): measurement ranges by selected dilution ratio (glucose 0.10-15.00 g/L at 1:1, 30 at 1:2, 60 at 1:4; lactate 0.10-6.00 g/L at 1:1; glutamine and glutamate 0.10-6.00 mmol/L; ammonium 0.20-25.00 mmol/L; cell density 0.10-35 e6/mL at 1:1, up to 80 e6 at 1:2 and 160 e6 at 1:6); imprecision specification (n >= 10): within-run CV 5.0% and day-to-day CV 7.0% for glucose, lactate, glutamine, glutamate and ammonium (SD 0.03 g/L within-run and 0.07 g/L day-to-day for glucose and lactate), pH SD 0.007 within-run and 0.018 day-to-day, pCO2 CV 5.0% and 7.0%, sodium 3.0% and 4.5%, potassium and calcium 4.0% and 5.6%; osmolality SD 3 mOsm/kg up to 400. Automatic 2-point calibration of the gas and chemistry modules every 2 h with a 1-point calibration at each sample; onboard QC can be scheduled. Analysis time for all modules 275 s in manual mode and 305 s from the carousel; sample volume for all modules 265 uL at cell-density dilution 1:2 or 1:6 and 350 uL at 1:1; chemistry plus cell density 235 s manual (265 s carousel). Default sample type in the software: chemistry 1:1, cell density 1:2. The manual differs slightly from the distributor page (S001: 270 s, 275 uL). Also read on 2026-10-29: the export file list and folders (2.3.3, page 2-32), the Historical Results field list (page 2-17), the reanalysis rule (page 2-19), date, time and numeric format options (3.5.1.7 to 3.5.1.10), unit options (3.5.3.1), the process-range flag (page 3-48) and the analytical-range error text (page 5-18). The manual lists screen fields, not the CSV header."
     verification: agent-read
-    used_in: [A019, A023, A036, A069, A070, A077, A078, A089, A090, A091, A092, A093, A101, A107]
+    used_in: [A019, A023, A036, A069, A070, A077, A078, A089, A090, A091, A092, A093, A101, A107, A159, A161, A162, A163, A164, A165]
   - id: S004
     title: "BioProfile FLEX2 OPC Server Instruction for Use manual"
     publisher: "Nova Biomedical"
     url: "https://novabiomedicaldocs.com/wp-content/uploads/filr/26729/LPN%2060644%20-BioProfile-FLEX2-IFU-EN-Manual-OPC.pdf"
-    accessed: 2026-10-28
+    accessed: 2026-10-29
     type: vendor-doc
-    supports: "The vendor OPC server (UA and DA) is a separately licensed add-on to the FLEX2; it is the vendor's own server, not the LADS companion specification."
-    verification: snippet
-    used_in: [A036]
+    supports: "The vendor OPC server (UA and DA) is a separately licensed add-on to the FLEX2; it is the vendor's own server, not the LADS companion specification. Read on 2026-10-29 from a text conversion of the downloaded manual: section 9 lists the tags of the historical sample results (operator, sample type, sample id, batch id, vessel id, dilution ratios, pre-dilution multiplier, flow times, analyte results and units, per-analyte error status and measurement limits, sample time, modified time, time in tray), automation events of the autosampler and external sampler, and system time tags (UTC date and time, local time zone name and offset)."
+    verification: agent-read
+    used_in: [A036, A161, A163, A164, A165]
   - id: S005
     title: "Specification Comparison of Vi-CELL XR and Vi-CELL BLU"
     publisher: "Beckman Coulter"
@@ -319,21 +319,21 @@ sources:
     title: "B2MML-BatchML schema repository"
     publisher: "MESA International (GitHub)"
     url: "https://github.com/MESAInternational/B2MML-BatchML/tree/master/Schema"
-    accessed: 2026-10-28
+    accessed: 2026-10-29
     type: docs
-    supports: "Second-hand: the schema folder lists OperationsDefinition, Schedule, Performance, Capability and OperationsTest schemas and no quality-named schema; the README does not map files to ISA-95 parts."
-    verification: snippet
-    used_in: [README]
+    supports: "The schema folder lists (checked on 2026-10-29 in the repository file listing) OperationsDefinition, Schedule, Performance, Capability and OperationsTest schemas and no quality-named schema; the README does not map files to ISA-95 parts. The folder also holds BatchML-BatchInformation.xsd, whose batch list entry has ID, Status, Mode, RecipeID, RecipeVersion, BatchID, LotID, CampaignID, ProductID, OrderID, requested and actual start and end times, requested and actual batch size and equipment ids, and BatchML-BatchProductionRecord.xsd, which includes the BatchInformation, OperationsPerformance and WorkDefinition schemas. The MESA licence in the file header allows use, copying, modification and redistribution without fee with a notice."
+    verification: agent-read
+    used_in: [A170, README]
   # ---- integration practice ----
   - id: S038
     title: "Nova Biomedical BioProfile FLEX2 Configuration Guide"
     publisher: "Benchling Help Center"
     url: "https://help.benchling.com/hc/en-us/articles/21342279921165-Nova-Biomedical-BioProfile-Flex2-Configuration-Guide"
-    accessed: 2026-10-28
+    accessed: 2026-10-29
     type: docs
-    supports: "Connector workflow starts from a SampleResults .csv export produced by the user (file-based)."
-    verification: snippet
-    used_in: [A036]
+    supports: "Connector workflow starts from a SampleResults .csv export produced by the user (file-based). Read on 2026-10-29 through a second fetch tool (the first returned 403): the guide says units are not reported in the export so default units apply, with cell density set to 10^6 cells/mL instead of the 10^5 default; tells users to choose a month-first or year-first date and not day-first; and tells them to set an Analyzer ID so it appears in the file name."
+    verification: agent-read
+    used_in: [A036, A160, A161, A162]
   - id: S039
     title: "Out-of-the-box Connectors"
     publisher: "Benchling Help Center"
@@ -432,7 +432,7 @@ sources:
     type: standard
     supports: "Second-hand: defines 'seed train' in the biopharma ontology release 2026-03."
     verification: snippet
-    used_in: [README]
+    used_in: [A177, README]
   - id: S050
     title: "OpenLineage object model"
     publisher: "OpenLineage project"
@@ -515,5 +515,430 @@ sources:
     accessed: 2026-10-28
     type: dataset
     supports: "Second-hand: 100 batches of a 100,000 L penicillin fed-batch with simulated Raman, CC BY 4.0; no at-line analyzer or sample-context layer; not CHO."
+    verification: snippet
+    used_in: [README]
+  # ---- design extension research (added 2026-10-29): cell lines, operating modes, contamination ----
+  - id: S057
+    title: "Viral contamination in biologic manufacture and implications for emerging therapies (Barone et al., CAACB)"
+    publisher: "Nature Biotechnology 38:563-572 (2020), doi 10.1038/s41587-020-0507-2"
+    url: "https://www.nature.com/articles/s41587-020-0507-2"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Opened 2026-10-29 but only the abstract, figure titles and reference list came back; the body text was not read. Abstract: viral contamination of recombinant proteins made in cell culture is very rare, costs millions of dollars to recover from and can leave patients without a therapy, and a consortium of biotech companies with MIT collected the events. Figure titles: virus testing of contaminated processes, extent of contamination, manufacturing shut down, media treatment. The event counts the ledgers use come from S058 and S059, not from this page. Table 1 (year, virus, host cell) was seen only as a search excerpt."
+    verification: agent-read
+    used_in: [README]
+  - id: S058
+    title: "Study analyzes contamination in drug manufacturing plants (press summary of the CAACB study)"
+    publisher: "MIT News Office (Anne Trafton), 2020-04-27"
+    url: "https://news.mit.edu/2020/contamination-drug-manufacturing-plants-0427"
+    accessed: 2026-10-29
+    type: docs
+    supports: "Second-hand summary of S057: 18 viral contamination incidents since 1985 at 9 of the 20 biopharmaceutical companies that reported data; 12 of the 18 in CHO cells, the rest in human or non-human primate cells; all were found before drugs reached patients; many were first noticed because cells were dying or looked unhealthy; in two cases the cells looked normal and required safety testing found the virus; the most used test takes at least two weeks, so the virus can move further through manufacturing before it is found; a faster PCR-based test must be built for specific sequences; a 2009 incident shut one plant for about 10 months. No denominator (batches or reactor-years) is given. The CHO count differs from S059 (13 there)."
+    verification: agent-read
+    used_in: [A135, A137, A140, A146, A147, A157, A158, A176]
+  - id: S059
+    title: "Identification of infectious viruses for risk-based virus testing of CHO unprocessed bulk using next-generation sequencing (Hsu et al.)"
+    publisher: "Biotechnology Progress (2024), doi 10.1002/btpr.3485"
+    url: "https://doi.org/10.1002/btpr.3485"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Seen only as a search excerpt. Citing Barone et al.: CHO cells had 13 contamination events caused by 6 unique viruses (5 mouse minute virus, 4 vesivirus 2117); of 12 CHO events with a known cause, 11 were traced to animal-derived raw materials (7 to serum) or medium components (4); most contaminant viruses were detected through cell-culture indicators or the in vitro virus assay on unprocessed bulk; one 1994 mouse minute virus contamination was found by PCR on unprocessed bulk in 8 h and stayed in a single fermenter. Event counts differ from S058."
+    verification: snippet
+    used_in: [A137, A146, A158]
+  - id: S060
+    title: "ICH Q5A(R2): Viral safety evaluation of biotechnology products derived from cell lines of human or animal origin"
+    publisher: "ICH (final version adopted 1 November 2023)"
+    url: "https://database.ich.org/sites/default/files/ICH_Q5A%28R2%29_Guideline_2023_1101.pdf"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Opened PDF read through section 3.2 and the first part of section 4 (the opened text ended mid-section 4; sections 5-7 not read). Read: section 2.2 lists contamination routes (animal-derived raw materials, environment, personnel) and says monitoring cell growth and viability may help early detection; section 3.2.2 requires 28-day indicator-cell testing with at least one sub-passage at two weeks for cell banks; section 4 says adventitious virus testing should be applied to each unprocessed bulk, that for perfusion or continuous harvest with hollow-fibre retention the cell-free harvest can be tested, and that for continuous harvest the sampling strategy (periodicity and composition) should be justified. Seen only in a search excerpt of the same PDF: the in vitro assay on unprocessed bulk is observed 28 days with a sub-passage at two weeks and may be cut to 14 days with a risk-based justification; NAT or targeted NGS can support real-time decisions; a detected virus means the harvest is not used unless justified, with root cause and extent checked; for continuous manufacturing, a procedure to segregate potentially contaminated material is expected and batch release should document absence of viral contamination for the period of harvest."
+    verification: agent-read
+    used_in: [A124, A132, A133, A140, A146, A147, A149, A156, A158]
+  - id: S061
+    title: "Biosafety Testing of Biologicals for Mycoplasma Contamination (Armstrong, Patel, McKee)"
+    publisher: "BioProcess International, 2010-07-01 (authors at a contract testing laboratory)"
+    url: "https://www.bioprocessintl.com/analytical/biosafety-testing-of-biologicals-for-mycoplasma-contamination"
+    accessed: 2026-10-29
+    type: blog
+    supports: "Testing for mycoplasma is required by regulators for biologics made in cell substrates, including cell banks. Mycoplasma can be present with no obvious change in the host culture, even at 10-100 times the host cell concentration. All compendial culture methods run for 28 days with subculturing (two to four subcultures depending on the text); under the European and US methods the indicator-cell method grows the sample 3-5 days and then passages onto coverslips for another 3-5 days, while the older US and Japanese points-to-consider texts stain after one 3-5 day step. Written in 2010; the revised European chapter is in S062."
+    verification: agent-read
+    used_in: [A137, A144, A145, A158]
+  - id: S062
+    title: "Comments concerning texts published in Ph. Eur. Issue 12.2 (general chapter 2.6.7 Mycoplasmas, revised)"
+    publisher: "EDQM (European Pharmacopoeia)"
+    url: "https://www.edqm.eu/documents/52006/2202859/Comments%20concerning%20texts%20published%20in%20Issue%2012.2.pdf/5b1c66ed-a6df-2149-f5a6-508dadbd13af?t=1757687768600"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Seen only as a search excerpt. The revised chapter covers the whole Mollicutes class; the culture method and the indicator cell culture method (or, alternatively, a nucleic-acid-amplification method) should be used conjointly to detect cultivable and non-cultivable mycoplasmas unless a monograph says otherwise or a risk assessment authorised by the competent authority justifies otherwise; samples should contain cells and supernatant whenever possible; the text that said which method applies at which production stage was deleted."
+    verification: snippet
+    used_in: [A146, A158]
+  - id: S063
+    title: "Impacts of intentional mycoplasma contamination on CHO cell bioreactor cultures (Fratz-Berilla et al.)"
+    publisher: "Biotechnology and Bioengineering 116(12):3242-3252 (2019), PMC6900124"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6900124/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Opened through the methods and the first results sections (about 22,000 characters). CHO DG44 IgG1 line in single-use rocking bioreactors, 1 L culture, perfusion 1-3.5 L/day, bleed when density passed 55e6 cells/mL (down to 20-40e6), cultures sampled twice daily about 8 h apart for cell count, pH and metabolites on an at-line analyzer. Mycoplasma arginini spiked at 15-300 CFU/mL grew exponentially, peaked near 1e7 CFU/mL whatever the spike level, with doubling time about 6 h or more. Conclusion: effects appeared 2-6 days after introduction; CHO growth plateaued 2-4 days after contamination and viability fell after 3-6 days; glucose and glutamine consumption fell with growth; ammonia accumulated and arginine was consumed; DO and the CO2/base control showed changes from about 2 days (DO rose as oxygen use stopped; CO2 in the gas mix rose and base was not needed in early-stage cases); nothing changed for at least 2 days. Conventional mycoplasma assays are quoted as taking 14-28 days. One species and one line; the timing depends on density and perfusion rate at the time of contamination."
+    verification: agent-read
+    used_in: [A128, A129, A130, A138, A140, A144, A156, A158]
+  - id: S064
+    title: "Troubleshooting Bacterial Contamination In Bioreactors (Blackwell)"
+    publisher: "Bioprocess Online guest column, 2017-01-31"
+    url: "https://www.bioprocessonline.com/doc/troubleshooting-bacterial-contamination-in-bioreactors-0001"
+    accessed: 2026-10-29
+    type: blog
+    supports: "Consultant's column, opinion grade. The sterile boundary after steam-in-place is kept by sterile-grade gas and liquid filtration, steaming of ports before and after each feed or sampling event, and positive pressure. The author ranks breach modes by probability from personal experience: feed and sampling ports (improper steaming, cracked diaphragms, missing gaskets) are the more probable route; gas-filter breaches less probable; seals, valves, dead legs and corrosion are other possibilities. Root-cause work uses the time of the sudden DO drop to estimate when contamination began and its slope to estimate organism growth rate, a review of events in that window (sampling, additions, new probes), valve steaming profiles, species identification and maintenance history, drawing on QC data, historians, batch records, work orders, nonconformance records and training records. Mycoplasma and virus are out of its scope."
+    verification: agent-read
+    used_in: [A136, A137, A139, A140, A149, A157, A158]
+  - id: S065
+    title: "Investigating Bioreactor Contamination, Modeling Contaminant Introduction, and Ensuring Bioburden Test Reliability (Muralidharan)"
+    publisher: "BioPharm International 38(3):20-24 (2025-04-07), peer-reviewed; author at a contract manufacturer"
+    url: "https://www.biopharminternational.com/view/investigating-bioreactor-contamination-modeling-contaminant-introduction-and-ensuring-bioburden-test-reliability"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Mammalian-cell bioreactor contamination is identified through process deviations: a drop in % DO (microbial respiration), a drastic pH decrease (acid production), unusual metabolic shifts in nutrient consumption, and unexpected changes in growth and viability against history. Containment: isolate the bioreactor, stop feeds (nutrients, base, antifoam). Investigation: bioburden tests (CFU/mL), Gram stain, molecular identification and turbidity; feed samples tested at three times (identification, +6-8 h, +6-8 h) to estimate growth rate and back-calculate load at the time of introduction; Poisson analysis of bioburden test reliability; chronology of bioreactor activities mapped against the estimated onset. No numeric DO or pH thresholds are given."
+    verification: agent-read
+    used_in: [A139, A140, A141, A149, A158, A176]
+  - id: S066
+    title: "Biotech Facilities Average a Batch Failure Every 40.6 Weeks (Langer; BioPlan Associates annual survey)"
+    publisher: "BioProcess International, 2008-09-01"
+    url: "https://www.bioprocessintl.com/bioanalytical-methods/biotech-facilities-average-a-batch-failure-every-40-6-weeks"
+    accessed: 2026-10-29
+    type: blog
+    supports: "Industry survey of 434 biopharmaceutical developers and contract manufacturers (32 countries), 145 weighted responses on failures: a facility averages one batch failure every 40.6 weeks. For facilities of 1,000 L and larger the leading cause is contamination at 2.3% (average percentage rate), followed by operator error, equipment failure and out-of-specification; below 1,000 L the leading cause is material failure (1.9%) with product cross-contamination at 1.1%. Total failure rate 7.6% (large) and 6.6% (small). The text calls the large-facility contamination rate threefold higher than the small-facility rate without printing the small-facility figure. Self-reported, 2008, not specific to CHO or to a run mode; the unit of the percentage (batches) is the article's wording."
+    verification: agent-read
+    used_in: [A135, A157]
+  - id: S067
+    title: "Simple Strategies to Improve Bioprocess Pure Culture Processing (Hines, Holmes, Schad)"
+    publisher: "ISPE (file hosted on the ISPE Japan affiliate site), 2012"
+    url: "https://www.ispe.gr.jp/ISPE/02_katsudou/pdf/201205_en.pdf"
+    accessed: 2026-10-29
+    type: docs
+    supports: "Seen only as a search excerpt: 'a recent study found that the contamination rate in production-scale bioreactors is still over 2%' (reference not seen); most microbial and cell-culture processes have zero tolerance for contamination, so any detectable event is a complete loss."
+    verification: snippet
+    used_in: [A135]
+  - id: S068
+    title: "Microbial contamination in industrial animal cell culture operations (Croughan, Delfosse, Svay)"
+    publisher: "Pharmaceutical Bioprocessing, 2014-01-31, doi 10.4155/pbp.13.67"
+    url: "https://doi.org/10.4155/pbp.13.67"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Only the abstract was available. Contamination routes include human error, inadequate aseptic protocol, failure of a sterilization step, loss of equipment integrity such as a crack in a disposable bioreactor, and a new adventitious agent; the probability of at least one problem anywhere along a linked sequence of operations (such as a batch) typically increases with the number of operations, so contamination probability typically increases with scale, culture duration and complexity. No rates in the abstract."
+    verification: agent-read
+    used_in: [A136, A157]
+  - id: S069
+    title: "Applications of Disposable Technologies for Upstream Bioprocessing (Warreth)"
+    publisher: "BioProcess International, 2020-06-11"
+    url: "https://www.bioprocessintl.com/single-use/applications-of-disposable-technologies-for-upstream-bioprocessing"
+    accessed: 2026-10-29
+    type: blog
+    supports: "Read the first section through the sampling paragraph. Frequent aseptic sampling of a bioreactor culture is required; single-use bioreactors are generally sampled through ports with a needle-free Luer-lock connection, and such connections have been validated for up to 50 samples according to a single-use vendor (as reported by the author). Stainless-steel vessels use sterile sampling devices that pierce a diaphragm into a sampling bag; sample volumes from 1 mL (syringe) to 1,000 mL (bottle)."
+    verification: agent-read
+    used_in: [A134, A136, A156, A157]
+  - id: S070
+    title: "Bioprocess Sampling Systems: Find the Right Sampling Approach for Your Needs (technical article)"
+    publisher: "MilliporeSigma (Merck KGaA)"
+    url: "https://www.merckmillipore.com/ER/en/technical-documents/technical-article/pharmaceutical-and-biopharmaceutical-manufacturing/sampling/which-sterile-or-aseptic-sampling-method-is-right-for-me"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as a search excerpt, vendor marketing: for bioburden, mycoplasma and endotoxin testing, where samples are typically collected manually and transported away from the production environment, closed sterile sampling devices are recommended; off-line measurements delay data availability."
+    verification: snippet
+    used_in: [A136]
+  - id: S071
+    title: "21 CFR 211.192 Production record review"
+    publisher: "US Code of Federal Regulations (text via Cornell Legal Information Institute)"
+    url: "https://www.law.cornell.edu/cfr/text/21/211.192"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Read through a page-extraction summary, not word for word. Any unexplained discrepancy, or a batch or component failing specifications, must be thoroughly investigated whether or not the batch has been distributed; the investigation extends to other batches of the same drug product and to other products that may have been associated with the failure; a written record of the investigation with conclusions and follow-up is required. Part 211 is cGMP for finished pharmaceuticals; whether and how it governs a given biologic is a regulatory question not settled here."
+    verification: agent-read
+    used_in: [A149, A177]
+  - id: S072
+    title: "General chapter 71 Sterility Tests (Pharmacopeial Forum 34(6) interim revision announcement, harmonized text)"
+    publisher: "United States Pharmacopeial Convention (draft hosted by USP, dated 2008)"
+    url: "https://www.usp.org/sites/default/files/usp/document/harmonization/gen-method/q11_pf_ira_34_6_2008.pdf"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Opened and read to the aqueous-solution membrane filtration steps (about 24,000 characters). Media are incubated for not less than 14 days; each sterilized medium batch is itself confirmed sterile over 14 days; fluid thioglycollate at 30-35 C and soybean-casein digest at 22.5 +/- 2.5 C; at least two media; Table 2 minimum quantity per medium for liquids: whole content under 1 mL, half but not less than 1 mL for 1-40 mL, 20 mL for 40-100 mL, 10% but not less than 20 mL above 100 mL. The text states that a satisfactory result only indicates that no contaminant was found in the sample examined. An interim draft from 2008, not the current official chapter; scope is articles required to be sterile."
+    verification: agent-read
+    used_in: [A143, A148, A158]
+  - id: S073
+    title: "General chapter 61 Microbiological examination of nonsterile products: microbial enumeration tests (harmonization stage document)"
+    publisher: "United States Pharmacopeial Convention (document hosted by USP, 2024-04)"
+    url: "https://www.usp.org/sites/default/files/usp/document/harmonization/gen-method/20240426HSm98800.pdf"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Seen only as a search excerpt. Membrane filtration and plate-count methods: total aerobic microbial count plates on soybean-casein digest agar at 30-35 C for 3-5 days; total combined yeasts and molds plates on Sabouraud dextrose agar at 20-25 C for 5-7 days. The chapter is written for non-sterile products, so it is a proxy for an in-process bioreactor bioburden method."
+    verification: snippet
+    used_in: [A142, A158]
+  - id: S074
+    title: "Cell clone selection: impact of operation modes and medium exchange strategies on clone ranking (Dorn et al.)"
+    publisher: "Frontiers in Bioengineering and Biotechnology 12:1479633 (2025), PMC11788354"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11788354/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Opened (about 30,000 characters, through the single-parameter clone ranking). Eight CHO clones of one mAb from an industrial panel, 24-well plates at 1.2 mL, fed-batch versus semi-perfusion (1 and 0.75 reactor volumes per day), sacrificial wells sampled every 24 h. Maximum viable cell concentration 4-21e6 cells/mL in fed-batch (peak days 5-7), 23-54e6 in semi-perfusion in a fed-batch medium and 25-41e6 in a perfusion medium. Cell-specific productivity 1.64-25.47 pg/cell/d in fed-batch, 17.31-41.95 and 16.46-39.14 pg/cell/d in semi-perfusion (two media) and 16.46-46.57 with partial exchange. Lactate rose to 15-20 mmol/L (one clone near 25) and fell as glucose ran out, read as a shift from production to consumption; two clones declined in semi-perfusion but stayed flat in fed-batch. The same top clone ranked first in both modes, others changed rank. Fed-batch viability fell below 50% by day 10 except one clone (about 70%). Microwell scale, not bioreactor; the second panel (bispecific, six clones) was not read."
+    verification: agent-read
+    used_in: [A120, A121, A122, A123, A124, A125, A128, A150, A151, A152, A153]
+  - id: S075
+    title: "Analyzing clonal variation of monoclonal antibody-producing CHO cell lines using an in silico metabolomic platform (Ghorbaniaghdam et al.)"
+    publisher: "PLOS ONE (2014), doi 10.1371/journal.pone.0090832"
+    url: "https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0090832"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Seen only as a search excerpt. In a cumate-inducible mAb system, the high-producer clone had a lower lactate production rate than the parental clone (-46% at mid-exponential and -56% at the end of exponential growth) and a lower lactate-to-glucose ratio, reading as a more respiratory metabolism."
+    verification: snippet
+    used_in: [A122, A150]
+  - id: S076
+    title: "Feasibility and performance of cross-clone Raman calibration models in CHO cultivation (Machleid et al.)"
+    publisher: "Biotechnology Journal (2023), doi 10.1002/biot.202300289"
+    url: "https://doi.org/10.1002/biot.202300289"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Seen only as a search excerpt. Eleven CHO clones from one cell line with diverse productivity and growth; peak cell density on cultivation days 6 or 7 except one clone (day 8); one clone produced considerably more lactate on days 3-8 than all others; glucose and lactate Raman models transferred between clones but titer models showed clone-related bias."
+    verification: snippet
+    used_in: [A122, A152]
+  - id: S077
+    title: "Considerations of the impacts of cell-specific growth and production rates on process productivity (clonal CHO populations)"
+    publisher: "Processes 9(6):964 (2021), MDPI"
+    url: "https://www.mdpi.com/2227-9717/9/6/964"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Seen only as a search excerpt. Five clonal CHO populations from a 3-month stability study differed significantly in most pairs; the largest difference in maximum empirical growth rate was 0.0041 per h (between two of the clones); one clone had significantly higher specific productivity than all others. A model study found growth rate had up to three times the effect of productivity on overall process productivity when seed-train time is counted. Base growth rates were not seen in the excerpt."
+    verification: snippet
+    used_in: [A119, A150]
+  - id: S078
+    title: "Cell specific perfusion rates drive growth dynamics and metabolism in CHO N-1 perfusion processes (Walther et al.)"
+    publisher: "Frontiers in Bioengineering and Biotechnology (2025-07-18)"
+    url: "https://www.frontiersin.org/journals/bioengineering-and-biotechnology/articles/10.3389/fbioe.2025.1608889/full"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Opened (abstract, introduction, methods through the perfusion-control paragraph). Industrial CHO-K1 GS line, 3 L glass N-1 perfusion for 6 days, perfusion started 24 h after inoculation. Cell-specific perfusion rate 0.036-0.113 nL/cell/day; integral of the perfusion rate over time 3.8-12.0 vessel volumes; perfusion rate either set once per day after sampling from a predefined plan or controlled every 30 min from a capacitance probe; glucose bolus when below 3 g/L. Perfusion rate in vessel volumes per day is usually increased over time. N-1 perfusion enables high seeding density production processes. Lab scale, six-day N-1 only."
+    verification: agent-read
+    used_in: [A124, A125, A128, A130, A153, A155]
+  - id: S079
+    title: "Fed-batch performance profiles for mAb production using different intensified N-1 seed strategies are CHO cell-line dependent (Tang et al.)"
+    publisher: "Biotechnology Progress (2024-02-28), doi 10.1002/btpr.3446"
+    url: "https://doi.org/10.1002/btpr.3446"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Opened (abstract, introduction, methods, start of results). N-1 seed intensification raises the production inoculation density to 2-20e6 cells/mL, usually run in fed-batch, with possible shorter culture and higher volumetric productivity; reached by perfusion or by enriched-batch or fed-batch N-1. Three CHO K1 GS lines from the same parent made three mAbs: growth and productivity were comparable between the two seed types for two lines and very different for the third, and cell-specific productivity differed within the two similar lines. Production bioreactors were sampled daily for gases, cell count, nutrients and metabolites, titer by Protein A UPLC from the centrifuged broth, amino acids on days 2, 4, 6, 8, 10, 12 and 14. Perfusion processes are quoted as reaching above 100e6 cells/mL. Adoption of perfusion at scale is limited by cost, complexity and media volumes."
+    verification: agent-read
+    used_in: [A009, A119, A120, A124, A126, A127, A131, A155]
+  - id: S080
+    title: "Recommendations for Comparison of Productivity Between Fed-Batch and Perfusion Processes (Bausch, Schultheiss, Sieck)"
+    publisher: "Biotechnology Journal 14(2):1700721 (2019), open access"
+    url: "https://analyticalsciencejournals.onlinelibrary.wiley.com/doi/10.1002/biot.201700721"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Opened through the productivity-definition paragraphs. Perfusion has a continuous medium feed (perfusion rate P) and a cell-free harvest (H), with a cell bleed (B) added to hold steady state; rates are expressed in vessel volumes per day (vvd); when retention is incomplete part of the harvest counts as bleed. Worked case from one CHO mAb line: fed-batch 14 d, maximum 20e6 cells/mL, 4.3 g/L; perfusion first batch, then 1 to 3 vvd, 60e6 cells/mL on day 10 when a constant 0.3 vvd bleed started, reported for 30 d, steady titer 0.5 g/L at P 3 vvd and H 2.7 vvd. The case assumes a constant qP of 25 pg/cell/d, so it is an illustration, not plant data."
+    verification: agent-read
+    used_in: [A009, A124, A128, A129, A133, A156]
+  - id: S081
+    title: "Case Study: A Novel Bacterial Contamination in Cell Culture Production, Leptospira licerasiae (Chen et al.)"
+    publisher: "PDA Journal of Pharmaceutical Science and Technology 66(6):580-591 (2012)"
+    url: "https://journal.pda.org/content/66/6/580"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Seen only as a search excerpt of the abstract. A novel bacterial contaminant found in a cell culture manufacturing operation passes 0.1 um sterilizing-grade filters and is not detectable by the standard compendial microbiological methods used for release of raw materials, in-process intermediates and finished products; genetic identification and real-time PCR on affected product batches aided the root-cause investigation, which covered root cause, impact assessment, risk assessment and corrective actions."
+    verification: snippet
+    used_in: [A137]
+  - id: S082
+    title: "Single in-line biomass probe detects CHO cell growth by capacitance and bacterial contamination by conductivity in bioreactor (Morris et al.)"
+    publisher: "PubMed 34591352 (2021)"
+    url: "https://pubmed.ncbi.nlm.nih.gov/34591352/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Seen only as a search excerpt of the abstract. In fed-batch IgG1 CHO cultures, abnormal rises in conductivity consistently corresponded to bacterial contamination (confirmed by other methods); contaminated runs showed sharp conductivity increases hours before dissolved oxygen fell precipitously. No lag in numbers in the excerpt."
+    verification: snippet
+    used_in: [A139, A158]
+  - id: S083
+    title: "Mycoplasma Testing in an Ever-Changing World"
+    publisher: "American Pharmaceutical Review, 2022-03-24"
+    url: "https://www.americanpharmaceuticalreview.com/Featured-Articles/584555-Mycoplasma-Testing-in-an-Ever-Changing-World/"
+    accessed: 2026-10-29
+    type: blog
+    supports: "Seen only as a search excerpt. Compendial direct culture method needs 10.5 mL of sample and 28 days; the indicator cell culture method needs 1 mL and 6-7 days; together 11.5 mL, which can exceed the amount available for some advanced-therapy products."
+    verification: snippet
+    used_in: [A144, A145, A148, A158]
+  # ---- device output formats (S2 scope extension; modeled on public documentation) ----
+  - id: S084
+    title: "Vi-CELL BLU Analyzer Data Exports and Offline Analysis Instructions (tech note)"
+    publisher: "Beckman Coulter"
+    url: "https://www.beckman.com/resources/reading-material/application-notes/vi-cell-blu-analyzer-data-exports-and-offline-analysis-instructions"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Lists the export types of the cell counter: sample data as single-sample or multiple-sample CSV from the home screen; audit log, sample activity log, system error log and concentration slope log as CSV; run results report as CSV and PDF; scheduled exports as zipped encrypted or unencrypted files; a read-only PostgreSQL results table. Column details are deferred to the instructions for use (PN C13232AH), which was not opened. The example screenshots did not come through in the text."
+    verification: agent-read
+    used_in: [A166, A167]
+  - id: S085
+    title: "Beckman Coulter, Vi-Cell BLU Configuration Guide (Benchling Connect)"
+    publisher: "Benchling Help Center"
+    url: "https://help.benchling.com/hc/en-us/articles/21197446401549"
+    accessed: 2026-10-29
+    type: docs
+    supports: "File-based connector that reads CSV exports of a Sample Set; Sample ID values are typed by the user; the 'append results and export to' option concatenates all data over time and can create repeated measures. Lists the output columns after mapping to a cell-counting Allotrope model (units folded into labels). A secondary source: an integrator, not the instrument maker. Read through a second fetch tool because the first returned 403."
+    verification: agent-read
+    used_in: [A166, A167]
+  - id: S086
+    title: "allotropy: parsers and test fixtures for a metabolite analyzer and a cell counter"
+    publisher: "Benchling-Open-Source (GitHub, MIT licence)"
+    url: "https://github.com/Benchling-Open-Source/allotropy"
+    accessed: 2026-10-29
+    type: dataset
+    supports: "Community code, not vendor documentation. Only header spellings, the file-name regular expression and the presence of a units row were taken, from the analyzer fixtures under tests/parsers/novabio_flex2/testdata and the cell-counter fixtures under tests/parsers/beckman_vi_cell_blu/testdata. The fixtures may be hand-edited; one mixes month-first and day-first dates. No code or fixture is copied into this project."
+    verification: agent-read
+    used_in: [A159, A160, A162, A166]
+  - id: S087
+    title: "Allotrope Simple Models (public REC JSON schemas: solution-analyzer, cell-counting, liquid-chromatography.tabular)"
+    publisher: "Allotrope Foundation (GitLab allotrope-public/asm)"
+    url: "https://gitlab.com/allotrope-public/asm"
+    accessed: 2026-10-29
+    type: standard
+    supports: "Public concept names for sample, measurement, analyte, processed data, peak list, injection, error and electronic signature documents. Licence text in the repository: CC-BY-NC 4.0 for non-commercial use, CC-BY-ND 4.0 for commercial use, or a member licence. Used for naming only; no schema file is copied."
+    verification: agent-read
+    used_in: [README]
+  - id: S088
+    title: "ADF Content Description 1.4 (OpenLab CDS to Allotrope mapping)"
+    publisher: "Agilent Technologies"
+    url: "https://www.agilent.com/cs/library/usermanuals/public/ADFExport_ADFContentDescription_1.4.pdf"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as a search excerpt. Table of chromatography data system parameter names against Allotrope properties: Injection ID, Injection Time, Injection Volume (uL), Sample name and ID, Acq. Operator, Sequence name and line, Method name and ID, Signal name, Retention Time (sec), Peak area (mAU*sec), Height (mAU), Area%, Tailing, plate counts, resolution, instrument and column identity."
+    verification: snippet
+    used_in: [A168]
+  - id: S089
+    title: "How to check and output Audit Trail at Data Analysis in OpenLab CDS (version 2.x)"
+    publisher: "Agilent Community"
+    url: "https://community.agilent.com/knowledge/chromatography-software-portal/kmp/chromatography-software-articles/kp168.how-to-check-and-output-audit-trail-at-data-analysis-in-openlab-cds-version-2-x-"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as a search excerpt. Audit trails exist for the injection, the result set, the sequence and the processing method linked to a result set."
+    verification: snippet
+    used_in: [A169]
+  - id: S090
+    title: "Empower Tip: Export Methods"
+    publisher: "Waters"
+    url: "https://help.waters.com/help/en/product-support/empower-chromatography-data-system-support/empower-tips/tip-218.html"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as a search excerpt. Export methods write result tables as ASCII or open them in Excel; the user chooses the fields; sample information such as Sample Name and Injection should be included; the four-digit number in the file name is the Result ID."
+    verification: snippet
+    used_in: [A168, A169]
+  - id: S091
+    title: "Empower 3 Getting Started Guide (715005480)"
+    publisher: "Waters"
+    url: "https://help.waters.com/content/dam/waters/en/support/usermanuals/2017/715005480/715005480ra.pdf"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as a search excerpt. Project, method set, sample set and result set concepts; the amount is computed from the calibration curve, divided by the sample weight and multiplied by the dilution (both 1 by default); the processing method used is named in the review window."
+    verification: snippet
+    used_in: [A168]
+  - id: S092
+    title: "AnIML core schema (animl-core.xsd) and technique definitions"
+    publisher: "AnIML (ASTM E1947 family), GitHub AnIML/schemas and animl.org"
+    url: "https://github.com/AnIML/schemas/blob/master/animl-core.xsd"
+    accessed: 2026-10-29
+    type: standard
+    supports: "Root AnIML with SampleSet, ExperimentStepSet, AuditTrailEntrySet and SignatureSet; a Sample has sampleID, barcode, derived, containerID and locationInContainer; an ExperimentStep references samples and parent data points and carries a dateTime timestamp; the core schema file in the repository declares version 0.90. A chromatography technique definition exists. The root structure and the version line were read from the downloaded schema file."
+    verification: agent-read
+    used_in: [README]
+  - id: S093
+    title: "Introduction to Batch Processing with S88 (guide)"
+    publisher: "Hallam-ICS"
+    url: "https://www.hallam-ics.com/hubfs/Gated_Content/Guide-Introduction_to_Batch_Processing_With_S88-Hallam-ICS.pdf"
+    accessed: 2026-10-29
+    type: blog
+    supports: "Seen only as a search excerpt. Procedure, unit procedure, operation and phase hierarchy; one unit procedure per unit at a time; the phase is the smallest module; a control recipe carries the batch id and the equipment used; equipment phase states and commands. A vendor guide, secondary to the standard, whose text is paywalled. The file path contains 'Gated_Content' but the document opened without a login."
+    verification: snippet
+    used_in: [A170]
+  - id: S094
+    title: "Batch Command Life Cycle"
+    publisher: "Sepasoft"
+    url: "https://docs.sepasoft.com/articles/user-manual/batch-command-life-cycle"
+    accessed: 2026-10-29
+    type: docs
+    supports: "Seen only as a search excerpt. Table of phase commands (Start, Pause, Resume, Hold, Restart, Stop, Reset, Abort) and 13 states plus a permissive-start state, with the batch engine sending commands and the controller writing states. The numeric codes are the vendor's own, not the standard's."
+    verification: snippet
+    used_in: [A170]
+  - id: S095
+    title: "Understanding and Applying the ANSI/ISA 18.2 Alarm Management Standard"
+    publisher: "ISA"
+    url: "https://www.isa.org/getmedia/55b4210e-6cb2-4de4-89f8-2b5b6b46d954/PAS-Understanding-ISA-18-2.pdf"
+    accessed: 2026-10-29
+    type: docs
+    supports: "Seen only as a search excerpt. The ISA-18.2 alarm definition and the alarm states (normal, unacknowledged, acknowledged, returned to normal, shelved, suppressed by design, out of service), with the meaning of shelved, suppressed by design and out of service."
+    verification: snippet
+    used_in: [A174]
+  - id: S096
+    title: "Setting a New Standard in Alarm Management (white paper)"
+    publisher: "Siemens"
+    url: "https://assets.new.siemens.com/siemens/assets/api/uuid:234f1026-298f-49dc-8961-0c5223c38588/Siemens-White-Paper-Alarm-Management.pdf"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as a search excerpt. Recommended starting alarm deadbands and delay timers: flow 5% and 15 s, level 5% and 60 s, pressure 2% and 15 s, temperature 1% and 60 s; a table of ISA-18.2 alarm state indications. No pH or dissolved oxygen values."
+    verification: snippet
+    used_in: [A174, A175]
+  - id: S097
+    title: "OPC Unified Architecture Part 9: Alarms & Conditions (reference site)"
+    publisher: "OPC Foundation"
+    url: "https://reference.opcfoundation.org/specs/OPC-10000-9/full"
+    accessed: 2026-10-29
+    type: standard
+    supports: "Seen only as a search excerpt. Condition and AlarmConditionType properties: EnabledState, ActiveState, AckedState, ConfirmedState, SuppressedState, OutOfServiceState, Severity 1-1000, Retain, Quality and Comment."
+    verification: snippet
+    used_in: [A174]
+  - id: S098
+    title: "Exception and compression in a data historian (PI Data Archive)"
+    publisher: "AVEVA / OSIsoft (course PDF and conference session PDF)"
+    url: "https://osicdn.blob.core.windows.net/learningcontent/pdfs/PI_System_Administration.pdf"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as search excerpts. Exception reporting at the interface (ExcDev, ExcMin, ExcMax) and compression at the archive (CompDev, CompMin, CompMax); defaults ExcDevPercent 0.1, ExcMax 600 s, CompDevPercent 0.2, CompMax 28800 s, span 100; compression changes what a refreshed trend shows."
+    verification: snippet
+    used_in: [A173]
+  - id: S099
+    title: "PBS-15/80 User Manual IC03771 Rev 8"
+    publisher: "PBS Biotech"
+    url: "https://47232567.fs1.hubspotusercontent-na1.net/hubfs/47232567/user-manuals/pbs-15/IC03771%20Rev%208.pdf"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Read from a text conversion of the downloaded manual. Five record types (process data, user events, alarms, recipe steps, errors) are stored in a database and exported as CSV; process data has over 300 variables, each logged by deadband with a maximum log interval; alarm acknowledgement records the user and time; Appendix 4 lists logger variables with default deadbands and a source column (calc, sensor, system, user); the manual warns that spreadsheets can mangle CSV timestamps. The column layout of the CSV reports is not in the text read."
+    verification: agent-read
+    used_in: [A171, A172, A174]
+  - id: S100
+    title: "DASware control and DASware connect (product pages)"
+    publisher: "Eppendorf"
+    url: "https://www.eppendorf.com/us-en/Products/Bioprocess/Bioprocess-Software/DASware-connect-p-PF-25158"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "The connect page was read in full: an OPC DA server exposing set-points, process values, feed profiles, calibration and controller parameters, events and alarms. The control page was seen only as a search excerpt: automated Excel export and a PostgreSQL store. No tag list is published on these pages."
+    verification: agent-read
+    used_in: [A171]
+  - id: S101
+    title: "The ingest layer against a real vendor export (DASGIP/DASware export analysis)"
+    publisher: "engin.bio documentation"
+    url: "https://docs.engin.bio/en/stable/methods/vendor-export-ingest.html"
+    accessed: 2026-10-29
+    type: docs
+    supports: "Third-party description of one bioreactor export: an INI-style container with one TrackData section per vessel plus an event log and a calibration block, latin-1 text, headers such as 'Unit 1.pH1.PV' combining vessel, channel and role (.PV, .SP, .Out), a wall-clock Timestamp plus an elapsed Duration in days, one-minute logging. The page rests on test files of an AGPL-3.0 project; those files are not used here."
+    verification: agent-read
+    used_in: [A171]
+  - id: S102
+    title: "PendoTECH Bioreactor Control System (spec sheet)"
+    publisher: "PendoTECH"
+    url: "http://www.pendotech.com/wp-content/uploads/2020/08/PendoTECH_Bioreactor_SpecSheet.pdf"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as a search excerpt. Built-in OPC server; process data written to a CSV file on a real-time basis; time-stamped electronic notes; alarm set-points and pre-alarm notifications."
+    verification: snippet
+    used_in: [README]
+  - id: S103
+    title: "my-Control Software Reference Manual (v2.9, mirror copy)"
+    publisher: "Applikon (Getinge)"
+    url: "https://smileincubator.life/smilelabs/wp-content/uploads/2022/11/2-my-Control-Software-Reference-Manual-mE_2_9_X-Doc-V2_93.pdf"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Seen only as a search excerpt of a mirror copy. The OPC UA server is a licensed option and 'The description of the OPC and OPC UA tags is available on request', so there is no public tag list. The trend shows at most 72 hours; deviation and system alarms exist."
     verification: snippet
     used_in: [README]
