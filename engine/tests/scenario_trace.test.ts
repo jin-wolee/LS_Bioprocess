@@ -51,8 +51,17 @@ describe("The event log of a scenario run matches the event schema", () => {
       expect(validate?.(e), `${i} ${JSON.stringify(e)} ${JSON.stringify(validate?.errors?.slice(0, 1))}`).toBe(true);
       if (i > 0) expect(e.t).toBeGreaterThanOrEqual((run.events[i - 1] as { t: number }).t);
     });
-    for (const t of ["inoculation", "process_event", "sample_planned", "sample_drawn", "label_bound", "sample_received", "aliquot_created", "calibration_recorded", "result_measured", "dilution_applied"]) expect(kinds.has(t), t).toBe(true);
+    for (const t of ["inoculation", "process_event", "sample_planned", "sample_drawn", "label_bound", "sample_received", "aliquot_created", "calibration_recorded", "result_measured"]) expect(kinds.has(t), t).toBe(true);
     for (const e of sensorTickEvents(run.sensors[0] as SensorSeries).slice(0, 50)) expect(validate?.(e)).toBe(true);
+  });
+
+  // 2026-10-29 lactate calibration (A084, A085): the default culture no longer exceeds an analyzer limit (A089), so it logs no dilution_applied; a culture that starts above the 6 g/L lactate limit does
+  it("Given a culture that starts at 8 g/L lactate, above the 6 g/L limit Then the over_range rerun and its dilution_applied validate too", () => {
+    const run = runOf("default", { seed: 2, settings: { reactor_count: 6, bay_size: 6, cohort_size: 6, horizon_days: 8, production_days: 6, initial_lactate_g_per_l: 8 } });
+    const validate = makeAjv().getSchema("event.schema.json");
+    const dilutions = run.events.filter((e) => e.type === "dilution_applied" || (e.type === "rerun_requested" && e.reason === "over_range"));
+    expect(dilutions.some((e) => e.type === "dilution_applied")).toBe(true);
+    for (const e of dilutions) expect(validate?.(e), JSON.stringify(e)).toBe(true);
   });
 
   it("Then a skipped draw validates too (micro-scale profile)", () => {

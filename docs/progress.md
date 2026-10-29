@@ -325,3 +325,81 @@ Before the calibration (entry above): harvest at about day 8, lactate about 9.75
 **Decision (author, 2026-10-29)**: calibrate lactate as its own step before the golden event logs.
 
 **Next**: lactate sources (in progress), proposal for the author, implementation, then Step 4.
+
+## 2026-10-29 — S1b: lactate calibration (executor, uncommitted)
+
+**Result**: plan A of the author (2026-10-29) is in, spec and ledger first, then tests, then code; every gate is green. Base commit 790c5bd; nothing committed; Step 4 (golden event logs) not run; no ADR touched. The metrics below are reported, not gated, and no value was tuned to reach a range.
+
+**Done**
+- Spec 2.1: lactate production is A084 x X x (mu / mu_max) = A084 x X x m_T,mu x phi (the temperature multiplier of A196 is now inside it); the lactate switch (A085) is on by default: from culture day 7 the net rate is -0.15 pmol/cell/d x X, it replaces production, does not depend on glucose, and lactate never goes below zero; a scenario can switch it off. Sources for the onset days, the counter-cases and the known limitation of the growth course (peak at about culture day 12 against 7.5-9.6 in the sources; no quantitative end-of-growth rule; the candidates that would move it were not used) are in the section.
+- Ledger: A011 (form, limitation), A080 (default is S053's Combs culture, temperature conditions not confirmed; the stale "temperature shifts are not modelled" now points to A196), A084 (net rate from the sign convention, the 0.79 against 2.34 / 2.49 = 0.94 discrepancy, parent maximum density under about 6.5e6 cells/mL), A085 (default on, onset sources and counter-cases, grade A for the default), A086 (open question below), A123 (trigger candidates: growth deceleration, glutamine depletion; sources gain S121), A195 (density trigger S113), A196 (S122 for growth x 0.5, S120 on per-cell lactate; "lactate rates unchanged" deleted, glucose and glutamine per-cell rates unchanged). New sources S120 Nam et al. 2009, S121 Brunner et al. 2017 (print 2018; online 2017-12-19), S122 Matsuoka et al. 2013, all `agent-read`; title, journal, volume and pages checked against CrossRef. `used_in` of S110 and S114 gained A085 (A085 now lists them as sources).
+- Code: `engine/src/process.ts` (292 lines): `advance(c, s, m, dt, age_s = 0)` with the lactate rule above, the age taken at the start of the step in `simulate` and `stateAt`; `ProcessConfig` gains `lacOn`, `lacOnset_s`, `qLacNet`, read from three new scenario settings with ref A085 (`lactate_switch_on` unit flag, `lactate_switch_day` d, `lactate_net_rate_pmol_per_cell_d`) in the three scenarios; a switch other than 0 or 1 or a negative day is refused.
+- Tests: `engine/tests/process_lactate.test.ts` (new, 21 tests); two existing expectations changed because L1 and L2 change them (below).
+
+**Evidence**
+- Structure-only step first (settings read and validated, unused): `process`, `process_calibration`, `sampling`, `scenarios_data` tests 82 passed, `tsc` clean.
+- Red (new tests and the updated one against that code): `Test Files 2 failed (2) | Tests 12 failed | 32 passed (44)`. Reasons, each by value: no growth multiplier in lactate `expected 0.38632666666666665 to be close to 0.3431633333333333`; production at the onset instead of the net rate `expected 0.38632666666666665 to be close to 0.29436999999999997`; no consumption and no clamp `expected 0.039668159761104896 to be +0`; whole run lactate flat `expected 0.5 to be close to 0.36488`; structural gate `expected 174660 to be +0` (174,660 steps with a rise after day 7).
+- Green: `npm run check` -> `Test Files 26 passed (26)`, `Tests 2434 passed (2434)` (before: 25 files, 2412); `uv run pytest -q` -> `186 passed, 62 deselected`; `check_docs --all` -> `232 files, 0 failure(s), 0 warning(s)`; `check_all --manual: PASS`. `git status --short -uall -- tests/golden tests/fixtures sql reference` is empty.
+- Hand values (one step of 3600 s, X = 10, 90.08 g/mol): production phi = 1: 0.3 + 0.207184 x 10 / 24 = 0.38632667; after the shift (m_T = 0.5): 0.3 + 0.5 x 0.207184 x 10 / 24 = 0.34316333; net step: 0.3 - 0.15 x 10 x 0.09008 / 24 = 0.3 - 0.00563 = 0.29437; whole run without growth, glucose use or production, 0.5 g/L at X = 10: 0.5 until day 7, 0.5 - 0.13512 = 0.36488 on day 8, 0 from day 11 (0.5 / 0.13512 = 3.7 d).
+- Mutations, scratch edits of `process.ts`, each reverted (file identical afterwards): no growth multiplier in lactate -> 3 tests fail; no phi -> 4; no clamp -> 3; onset exclusive -> 6; flag ignored -> 3; production added to the net rate -> 5; age of the step end -> 2; `stateAt` without the age -> 1; switch day read as hours -> 6.
+- Gate on the default scenario: after culture day 7 lactate never increases in any reactor (the check has steps and falls; with the switch off it does rise, so the relation belongs to the switch).
+
+**Changed existing expectations** (each because L1 or L2 changes it)
+- `process_calibration.test.ts`, the phi = 0.25 lactate test: "whatever the temperature multiplier" became half the rise after the shift (0.3 + 0.207184 x 10 x 0.25 x 0.5 / 24).
+- `scenario_trace.test.ts`, the default-scenario schema test: `dilution_applied` is no longer in the kinds the default run must log (the default culture has no over_range any more, see the table); a new test starts a small culture at 8 g/L lactate, above the 6 g/L limit (A089), and validates its `dilution_applied` and over_range `rerun_requested` events.
+
+**Trajectory of the default scenario** (L1 has no RNG draw, so the trajectory is the same for every seed; min / median / max over the 24 reactors; growth and death do not depend on lactate, so the growth rows equal the L1 entry above)
+
+| Quantity | Before (790c5bd) | After | Source range it can be compared with |
+|---|---|---|---|
+| Peak VCD | 11.48 / 11.51 / 11.55 e6 cells/mL | same | A008: 10-30e6 |
+| Culture day of the peak VCD | 12.03 / 12.05 / 12.08 | same | S053 tmax 8.4 and 9.6 d; S121 between day 7.5 and 8.5 |
+| Peak lactate | 7.09 / 7.11 / 7.14 g/L | 2.60 / 2.61 / 2.62 g/L | S056 at most 1.0 g/L; Ruhl 0.9 g/L (not in the ledger); S074 15-20 mmol/L = 1.35-1.80 g/L (CD CHO fed-batch); A089 analyzer limit 6 g/L |
+| Culture day of the peak lactate | 12.03 / 12.05 / 12.08 (the harvest) | 7.00 in all 24 (the onset: production before, net consumption after) | |
+| Lactate at harvest | 7.09 / 7.11 / 7.14 g/L | 1.84 / 1.84 / 1.85 g/L | same |
+| Harvest day, cause | 12.03 / 12.05 / 12.08, rule 24 of 24 | same | A004 14 d |
+| Viability at harvest | 78.83 / 78.88 / 78.97 % | same | S119 day 14: 90.3 +/- 3.8 % (standard fed-batch) |
+| Seed 1: runs, over_range (by analyte) | 449, 51 (lactate 51) | 398, 0 | A089: lactate 6 g/L, glucose 15 g/L |
+
+The peak lactate is 2.6 to 2.9 times the S056 and Ruhl maxima and 1.4 to 1.9 times the S074 range: still above all three. The peak sits on the switch day by construction (production rises until day 7, the net rate then lowers it); it is not a source result. Reported, not tuned.
+
+**Metric report of SC2 and SC5, re-run** (not gated; seeds 1 to 20; sample sd; the same script as the L1 entry above)
+- SC2, per-seed p90 `hold_time` in seconds: burst arm mean 1506.7, sd 45.7, min-max 1429.0-1636.0; staggered arm mean 1464.9, sd 14.3, min-max 1435.0-1494.0. Staggered minus burst: mean -41.8, sd 41.6, min-max -161.0 to 12.0; the staggered arm is lower in 18 of 20 seeds (L1 entry: 14 of 20). p90 queue wait: burst 337.5 (sd 71.6), staggered 232.8 (sd 31.7).
+- SC5, per-seed mean `hold_time` of the first attempt of samples that arrive 08:00 to 12:30 on day 8: no maintenance mean 1169.4 (sd 88.4, min-max 1041.6-1366.1); maintenance 1900.6 (sd 380.7, min-max 1303.4-2581.7); difference mean 731.2 (sd 337.5, min-max 150.5-1382.1), higher with the window in 20 of 20. EDF against FIFO, every run of those samples: due next day FIFO 1229.2 (sd 154.2), EDF 1233.7 (sd 165.9), difference mean 4.5 (sd 20.1, min-max 0.0 to 90.0), EDF higher in 1 of 20; due today FIFO 2131.4 (sd 477.2), EDF 2129.9 (sd 476.9), difference mean -1.4 (sd 6.5, min-max -28.9 to 0.0), EDF higher in 0 of 20. The SC5 figures equal the L1 entry's to the last digit; not diagnosed (the SC2 figures, over the whole run, did change).
+- I12: median of 5, seed 1, after one warm-up: 79 ms (86, 84, 77, 77, 79), 398 runs, 394 samples and 7,211 events; `perf_i12.test.ts` passes.
+
+**Modelling choices** (for review)
+- mu / mu_max is implemented as m_T,mu x phi, not as a division, so a scenario with mu_max at 0 still produces lactate from phi (the existing process tests rely on it).
+- The age is taken at the start of the step, the onset is inclusive (age 7 d exactly uses the net rate, one second before it uses production), and `stateAt` inside a step uses the age of the stored step it starts from, like the shift multipliers.
+- The net rate is not scaled by glucose or temperature and does not return to production later (S110 cell line 1 produced lactate again after day 7).
+- A bolus dilutes lactate as before; lactate at 0 stays at 0.
+
+**Open questions**
+- The peak lactate of 2.6 g/L is above the S056, Ruhl and S074 ranges (table). The growth course is the larger known gap (peak at about day 12 against 7.5 to 9.6 days in the sources, no quantitative end-of-growth rule); the author decides whether the research role looks for one.
+- A086 (S054 productivity): the supports text of S054 gives 1.7-2.7 pg/cell/d from the flask values only; the 2 L values differ (PYC2 2.21, parent 2.86). Recorded in the A086 notes, not resolved.
+- A084: the printed parent lactate/glucose ratio 0.79 against 2.34 / 2.49 = 0.94 (S054 Table 2) is not resolved by the source.
+- Open question for S4: with A085 on by default the platform line already switches to net consumption on day 7, so the `lactate_consumer` clone of the cell-line extension (A151, A123, spec 11.2 and 11.3, SC13) is no longer the only line that consumes. The SC13 design needs a decision: a consumer clone that differs by onset and rate (the spec 11.3 row now says so), or the platform switched off in that scenario.
+
+**Parked**
+- `docs/research/README.md` line 157 and the `lactate_consumer` and `high_lactate_producer` rows of spec 11.2 were not changed (line 157 says only that the switch is an assumption; the clone rows stay valid as onset and rate differences).
+- The S074 sentences of the `supports` text in `sources.yaml` and of A122 ("one of eight clones ... 25 mmol/L") were not re-checked against the S074 fact-check.
+- S120, S121 and S122 need a `main-reread` of the quoted passages before a public number may use them. The molar-mass refs (F8 above) are untouched.
+- Step 4, the golden event logs, waits for the orchestrator's go-ahead.
+- Structure-only versus behaviour paths. Structure-only (no behaviour change; settings read and validated, unused; related tests green before and after): `scenarios/default.json`, `scenarios/sc02_shift_burst.json`, `scenarios/sc05_one_analyzer_down.json`, and the `ProcessConfig` and `processConfig` hunks of `engine/src/process.ts` (interleaved with the behaviour hunks: `git add -p`). Docs first, as in the L1 step: `docs/design/simulation_spec.md`, `docs/research/assumptions.yaml`, `docs/research/sources.yaml`. Behaviour: the `advance`, `simulate` and `stateAt` hunks of `engine/src/process.ts`, `engine/tests/process_lactate.test.ts`, `engine/tests/process_calibration.test.ts`, `engine/tests/scenario_trace.test.ts`, `docs/progress.md`.
+
+**Rework round 1** (orchestrator verdict REWORK, docs only, no code or value change)
+- R1: spec 11.3 row "Lactate consumption", `docs/research/README.md` line 43 and the table row of line 118 now say that A085 is on by default (net -0.15 pmol/cell/d from culture day 7, grade and "provisional" wording kept); the spec row adds that consumer clones differ from the platform by onset and rate, not by switching on. The SC13 question is recorded above as an open question for S4.
+- R2: the S074 sentence of A123 now reads "in CD CHO medium lactate of 15-20 mmol/L remained stable for 3-4 days and then decreased slowly towards the end of the culture, and the decrease coincided with glucose depletion; in the mAb1 panel of eight clones, two clones, C3 and C8, are named as staying flat in fed-batch, and the source gives no count of flat clones (S074)".
+- `check_docs --all` and `check_all --manual`: see the report.
+
+**Next**: the orchestrator reviews, the fact-checker goes over the new wordings, the author decides the SC13 clone design and the growth-course question; then Step 4.
+
+## 2026-10-29 — S1b lactate calibration review (orchestrator)
+
+**Verdict**: PASS after one rework round (docs only). Plan A approved by the author on 2026-10-29: lactate production follows the actual growth rate including the temperature multiplier; A085 on by default (net -0.15 pmol/cell/d from culture day 7, replacing production); growth course unchanged, A196 now cites S122 for growth x 0.5, and the late peak is a known limitation.
+- Research before the plan: the growth course has no sourced fix. No source supports double counting of the shift in A080; the only number for the shift effect (S122, constant temperature, ratio 0.53) matches A196; every candidate that would move the peak to days 7.5-9.6 (age stop at a tmax, growth x 0.2, another Xmax) is a value picked to hit the range and was not used.
+- Fact-check (`fact-checker`, Sonnet) before the executor started: seven claims confirmed with caveats (S120 shift coincided with stationary phase; S122 is a constant-temperature ratio; S110 consumption is inferred from CO2/base demand; S114 has one rising condition; S074 gives no count of flat clones). The caveats were in the brief from the start.
+- Orchestrator runs: `npm run check` → 26 files, 2434 passed; `uv run pytest -q` → 186 passed; `check_docs --all` → 0 failure(s); `check_all --manual: PASS`; goldens, fixtures, `sql/`, `reference/` unchanged. Trajectory reproduced: lactate maximum 2.62 g/L on culture day 7 (was 7.14), 0 of 398 runs over-range in seed 1 (was 51, all lactate), harvest unchanged at culture day about 12.1.
+- Remaining gaps, reported not tuned: lactate maximum above the source maxima (S056 at most 1.0 g/L, Ruhl 0.9, S074 1.35-1.80 g/L in CD CHO); peak viable density at about culture day 12 against days 7.5-9.6.
+
+**Next**: golden event logs (S1b Step 4) on the orchestrator go-ahead.

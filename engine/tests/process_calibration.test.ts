@@ -83,10 +83,10 @@ describe("L1 calibration: mass balance (A011, A082, A083, A084)", () => {
     expect(step({ ...FREE, mu: 0 }, {}).l).toBeCloseTo(0.3 + (0.207184 * 10) / 24, 12);
   });
 
-  it("Given phi = 0.25 (glucose = Ks, X = Xmax / 2) When one step passes Then lactate rises at a quarter of the rate: 0.3 + 0.207184 x 10 x 0.25 / 24, whatever the temperature multiplier", () => {
-    const expected = 0.3 + (0.207184 * 10 * 0.25) / 24;
-    expect(step({}, { g: 0.93 }).l).toBeCloseTo(expected, 12);
-    expect(step({}, { g: 0.93 }, { mu: 0.5, kd: 0.5, prod: 1.5 }).l).toBeCloseTo(expected, 12);
+  // 2026-10-29 lactate calibration (A011, A084, A196): lactate follows mu / mu_max, so the growth multiplier of the shift enters it; the second line changed from "whatever the temperature multiplier"
+  it("Given phi = 0.25 (glucose = Ks, X = Xmax / 2) When one step passes Then lactate rises at a quarter of the rate: 0.3 + 0.207184 x 10 x 0.25 / 24, and at half of that after the shift (growth multiplier 0.5)", () => {
+    expect(step({}, { g: 0.93 }).l).toBeCloseTo(0.3 + (0.207184 * 10 * 0.25) / 24, 12);
+    expect(step({}, { g: 0.93 }, { mu: 0.5, kd: 0.5, prod: 1.5 }).l).toBeCloseTo(0.3 + (0.207184 * 10 * 0.25 * 0.5) / 24, 12);
   });
 
   it("Given the density is at the ceiling (phi = 0) When one step passes Then lactate does not rise", () => {

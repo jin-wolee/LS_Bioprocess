@@ -7,7 +7,7 @@ import { buildSensors } from "./sensors.ts";
 import type { SensorConfig, SensorSeries } from "./sensors.ts";
 
 // L1 process model (spec 2.1, A011): nutrient-limited growth (Monod on glucose) under a logistic ceiling, death between an early and a late rate by
-// the limitation of growth, nutrient use proportional to viable cells and capped by what is present, lactate from growth, product from integrated
+// the limitation of growth, nutrient use proportional to viable cells and capped by what is present, lactate from the growth rate in effect and a net consumption from the switch day (A085), product from integrated
 // viable cells, fed by discrete boluses. Explicit Euler at the integration step (A200).
 // The truth run is open loop: nothing from L3, L4 or L5 enters (feedback is false). Every value comes from scenario settings;
 // the unit conversions below (1000 mM*g/mol per g/L, 1e-3 g/L per pg/cell/d at 1e6 cells/mL, seconds per hour and day) are not domain values.
@@ -47,6 +47,10 @@ export interface ProcessConfig {
   qGlc: number;
   qGln: number;
   qLac: number;
+  /** The lactate switch (A085): on or off, the culture age in seconds from which it applies, and the net rate in pmol/cell/d (negative is consumption). */
+  lacOn: boolean;
+  lacOnset_s: number;
+  qLacNet: number;
   qProd: number;
   mwGlc: number;
   mwLac: number;
@@ -76,6 +80,7 @@ export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedE
     harvestViability: ["harvest_viability_pct", "%"],
     mu: ["mu_max_per_h", "1/h"], kdMin: ["early_death_per_h", "1/h"], kdLate: ["late_death_per_h", "1/h"], ks: ["glucose_ks_g_per_l", "g/L"], xmax: ["carrying_capacity_e6_per_ml", "1e6 cells/mL"],
     qGlc: ["glucose_uptake_pmol_per_cell_d", "pmol/cell/d"], qGln: ["glutamine_uptake_pmol_per_cell_d", "pmol/cell/d"], qLac: ["lactate_production_pmol_per_cell_d", "pmol/cell/d"],
+    lacSwitch: ["lactate_switch_on", "flag"], lacDay: ["lactate_switch_day", "d"], qLacNet: ["lactate_net_rate_pmol_per_cell_d", "pmol/cell/d"],
     qProd: ["productivity_pg_per_cell_d", "pg/cell/d"], mwGlc: ["glucose_molar_mass_g_per_mol", "g/mol"], mwLac: ["lactate_molar_mass_g_per_mol", "g/mol"],
     floor: ["glucose_floor_g_per_l", "g/L"], decisionMin: ["feed_decision_min", "min"], bolusPct: ["feed_bolus_pct", "%"], feedGlc: ["feed_glucose_g_per_l", "g/L"], feedGln: ["feed_glutamine_mm", "mM"],
     shiftDay: ["shift_day", "d"], shiftSp: ["shift_setpoint_c", "C"], shiftMu: ["shift_growth_multiplier", "factor"], shiftKd: ["shift_death_multiplier", "factor"], shiftProd: ["shift_productivity_multiplier", "factor"],
@@ -88,13 +93,15 @@ export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedE
   if (v.cohortSize <= 0) throw new Error("the cohort size must be positive");
   if (!(v.feedGlc > v.floor)) throw new Error("the glucose of the feed must exceed the glucose floor (A193, A010)");
   if (!(v.xmax > 0)) throw new Error("the carrying capacity must be positive (A008)");
+  if (v.lacSwitch !== 0 && v.lacSwitch !== 1) throw new Error("the lactate switch must be 1 (on) or 0 (off) (A085)");
+  if (!(v.lacDay >= 0)) throw new Error("the culture day of the lactate switch must not be negative (A085)");
   // every instant and duration derived from a parameter becomes whole seconds here, once (contract: Time)
   const whole = wholeSeconds;
   return {
     reactors: v.reactors, baySize: v.baySize, horizon_s: whole(v.horizonDays * DAY), step_s: v.step,
     cohortSize: v.cohortSize, cohortInterval_s: whole(v.cohortIntervalD * DAY), inocStart_s: whole(v.inocStartMin * 60), inocStep_s: whole(v.inocStepMin * 60),
     production_s: whole(v.productionDays * DAY), density: v.density, viability0: v.viability0, glucose0: v.glucose0, glutamine0: v.glutamine0, lactate0: v.lactate0, titer0: v.titer0,
-    harvestViability: v.harvestViability, mu: v.mu, kdMin: v.kdMin, kdLate: v.kdLate, ks: v.ks, xmax: v.xmax, qGlc: v.qGlc, qGln: v.qGln, qLac: v.qLac, qProd: v.qProd, mwGlc: v.mwGlc, mwLac: v.mwLac,
+    harvestViability: v.harvestViability, mu: v.mu, kdMin: v.kdMin, kdLate: v.kdLate, ks: v.ks, xmax: v.xmax, qGlc: v.qGlc, qGln: v.qGln, qLac: v.qLac, lacOn: v.lacSwitch === 1, lacOnset_s: whole(v.lacDay * DAY), qLacNet: v.qLacNet, qProd: v.qProd, mwGlc: v.mwGlc, mwLac: v.mwLac,
     floor: v.floor, decision_s: whole(v.decisionMin * 60), bolus: v.bolusPct / 100, feedGlc: v.feedGlc, feedGln: v.feedGln,
     shiftOffset_s: whole(v.shiftDay * DAY), shiftMu: v.shiftMu, shiftKd: v.shiftKd, shiftProd: v.shiftProd, volume_l: volume, ph: v.ph,
     sensors: { step_s: v.step, cadence_s: v.cadence, phSp: v.ph, phSd: v.phSd, doSp: v.doSp, doSd: v.doSd, tempSp: v.tempSp, tempSd: v.tempSd, tempShiftSp: v.shiftSp, tempLag_s: whole(v.lagMin * 60) },
@@ -149,8 +156,8 @@ export interface ProcessRun {
 const BASE: Mult = { mu: 1, kd: 1, prod: 1 };
 const shifted = (c: ProcessConfig): Mult => ({ mu: c.shiftMu, kd: c.shiftKd, prod: c.shiftProd });
 
-/** One explicit Euler step of dt seconds, in place; every increment is computed from the state at the start of the step. */
-export const advance = (c: ProcessConfig, s: State, m: Mult, dt: number): void => {
+/** One explicit Euler step of dt seconds, in place; every increment is computed from the state at the start of the step, which is at culture age age_s (0 when the age does not matter). */
+export const advance = (c: ProcessConfig, s: State, m: Mult, dt: number, age_s = 0): void => {
   const dh = dt / 3600;
   const dd = dt / DAY;
   const x = s.x;
@@ -160,7 +167,10 @@ export const advance = (c: ProcessConfig, s: State, m: Mult, dt: number): void =
   const kd = (c.kdMin + (c.kdLate - c.kdMin) * (1 - phi)) * m.kd;
   s.g -= Math.min(s.g, ((c.qGlc * x * c.mwGlc) / 1000) * dd);
   s.q -= Math.min(s.q, c.qGln * x * dd);
-  s.l += ((c.qLac * x * c.mwLac) / 1000) * phi * dd; // follows growth, so none without glucose (A084, S056, S054)
+  // lactate: production follows the growth rate in effect, mu / mu_max = m_T x phi, so none without glucose and half after the shift (A084, A196, S056, S054);
+  // from the switch day the net rate replaces it and lactate stops at zero (A085)
+  const lactate = c.lacOn && age_s >= c.lacOnset_s ? c.qLacNet * x : c.qLac * x * m.mu * phi;
+  s.l = Math.max(0, s.l + ((lactate * c.mwLac) / 1000) * dd);
   s.p += c.qProd * m.prod * x * 1e-3 * dd;
   s.x += (mu - kd) * x * dh;
   s.d += kd * x * dh;
@@ -251,7 +261,7 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
     r.x[k] = s.x; r.d[k] = s.d; r.g[k] = s.g; r.q[k] = s.q; r.l[k] = s.l; r.p[k] = s.p;
     r.n = k + 1;
     if (done || t >= last) break;
-    advance(c, s, mult, c.step_s);
+    advance(c, s, mult, c.step_s, k * c.step_s);
   }
   return r;
 };
@@ -277,6 +287,6 @@ export const stateAt = (run: ProcessRun, unit_id: string, t: number): CultureSta
   const tk = r.inoculated_s + k * r.step_s;
   const s: State = { x: r.x[k] as number, d: r.d[k] as number, g: r.g[k] as number, q: r.q[k] as number, l: r.l[k] as number, p: r.p[k] as number };
   const dt = Math.min(t, r.harvested_s) - tk;
-  if (dt > 0) advance(run.cfg, s, tk >= r.shift_s ? shifted(run.cfg) : BASE, dt);
+  if (dt > 0) advance(run.cfg, s, tk >= r.shift_s ? shifted(run.cfg) : BASE, dt, tk - r.inoculated_s);
   return { vcd: s.x, viability: viabilityOf(s), glucose: s.g, glutamine: s.q, lactate: s.l, titer: s.p, ph: run.cfg.ph };
 };
