@@ -19,10 +19,10 @@ Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_sp
 | Entity | Grain | Key | Main attributes | Notes |
 |---|---|---|---|---|
 | `unit` | one vessel (ISA-88 unit) | `unit_id` | area, bay, bioreactor profile reference, working volume with UCUM unit, `unit_tag` | master data; profile ids per A065 to A068; `unit_tag` is the historian tag prefix of the unit, and a historian tag is `unit_tag`, a dot and a signal name (for example `U03.pH`; with the raw layer on the signal name ends in a role, `U03.pH.PV`, section 16.4) |
-| `batch` | one culture run on a unit | `batch_id` | `unit_id`, process mode (A003), inoculated and harvested times, seed-train parent via a lineage edge | at most one open batch per unit at a time |
+| `batch` | one culture run on a unit | `batch_id` | `unit_id`, process mode (A003), `inoculated_at`, `harvested_at` (null while the batch is open), seed-train parent via a lineage edge | at most one open batch per unit at a time |
 | `process_event` | one event in a batch | `event_id` | `batch_id`, `unit_id`, type (feed, temperature shift, alarm, harvest), `occurred_at`, amount with unit, source | feeds are discrete (A010, S017) |
-| `sample` | one physical draw | `sample_id` | `unit_id`, `batch_id`, `sampled_at`, `planned_at`, sampler `operator_id`, container, label method, state | `sampled_at` lives here and only here, and is stored only when `two_clocks` is on; `planned_at` is recorded only where a sampling plan issues the label (`system_issued_id`) |
-| `aliquot` | one portion of a sample | `aliquot_id` | `sample_id`, storage condition (A021), volume, state | portions sum to at most the sample volume |
+| `sample` | one physical draw | `sample_id` | `unit_id`, `batch_id`, `sampled_at`, `arrived_at`, `planned_at`, `volume_ul`, sampler `operator_id`, container, label method, state | `sampled_at` lives here and only here, and is stored only when `two_clocks` is on; `planned_at` is recorded only where a sampling plan issues the label (`system_issued_id`); `arrived_at` is the receipt at the analyzer bench, the instant of the event `sample_received`; `volume_ul` is the volume drawn (UCUM `uL`) and is summed per unit against the volume budget (A057, cap A207) |
+| `aliquot` | one portion of a sample | `aliquot_id` | `sample_id`, storage condition (A021), `volume_ul` (nullable), state | the non-null portions sum to at most `sample.volume_ul`; `volume_ul` is null where the volume is not known (a subset schema, principle 7) |
 | `analysis_request` | one analyte panel asked of one aliquot | `request_id` | `aliquot_id`, analytes, `method_id`, `control_id`, priority or deadline, requested time, state | denominator unit for the metrics; `control_id` identifies the bridging or control sample: requests that share it measure the same material on different instruments or instrument states, and it is null for ordinary requests |
 | `instrument` | one analyzer | `instrument_id` | class (A069 to A071), serial, interface (A036), configured time zone | |
 | `instrument_state` | one versioned state of an instrument | `instrument_state_id` | `instrument_id`, `calibration_ref`, `reagent_lot`, `qc_lot`, `software_version`, `valid_from`, `valid_to` | linked from `run` when `instrument_state_snapshot` is on |
@@ -32,7 +32,7 @@ Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_sp
 | `process_context` (view) | one result or sample at one as-of time | derived | process state at `sampled_at` from the historian and events, as known at the as-of time | versioned projection, joined with an as-of join |
 | `lineage_edge` | one derivation step between two items | `edge_id` | `from_item_id`, `to_item_id`, `relation`, `activity`, `occurred_at`, `available_at` | items are samples, aliquots, results or process materials; `relation` is one of the eight values of section 12, plus two in section 15.1 when extensions are on |
 
-Supporting entities: `operator` (pseudonymous id, role, shift), `qualification` (operator, scope, level such as experienced or trainee per A072 and A073, valid from and to), `source_event` (ingestion envelope, section 7), `audit_event` (who, when, what changed, reason, old and new version), `validation_finding` (rule, target, severity, action, status), `historian_value` (`tag`, `ts`, `value`, `quality`, `ingested_at`; rows are not versioned, a late or corrected value arrives as a new row with a later `ingested_at`). With the raw layer on, section 16 adds `adapter`, `raw_file`, `raw_record`, `parse_error`, `alarm_event` and `batch_phase_record`.
+Supporting entities: `operator` (pseudonymous id, role, shift, `qualified`: the training status in the truth world, true for the `experienced` staff profile and false for `trainee`, A072, A073; the recorded counterpart is `qualification`), `qualification` (operator, scope, level such as experienced or trainee per A072 and A073, valid from and to), `source_event` (ingestion envelope, section 7), `audit_event` (who, when, what changed, reason, old and new version), `validation_finding` (rule, target, severity, action, status), `historian_value` (`tag`, `ts`, `value`, `quality`, `ingested_at`; rows are not versioned, a late or corrected value arrives as a new row with a later `ingested_at`). With the raw layer on, section 16 adds `adapter`, `raw_file`, `raw_record`, `parse_error`, `alarm_event` and `batch_phase_record`.
 
 ## 3. Entity-relationship sketch
 
@@ -61,7 +61,9 @@ erDiagram
     text unit_id FK
     text batch_id FK
     timestamp sampled_at
+    timestamp arrived_at
     timestamp planned_at
+    numeric volume_ul
     text operator_id FK
     text state
   }
@@ -85,6 +87,7 @@ erDiagram
     text instrument_state_id FK
     text method_id FK
     timestamp started_at
+    timestamp ended_at
     text operator_id FK
   }
 ```
@@ -98,7 +101,7 @@ erDiagram
 | K1 | `result` is unique on (`request_id`, analyte, version). |
 | K2 | `result.measured_at` and `result.run_id` are not null. A result cannot exist without a run. |
 | K3 | `sampled_at` is stored on `sample` only, and only when `two_clocks` is on. Results reach it by join; `hold_time` and `turnaround` are derived (section 5). |
-| K4 | `sampled_at <= run_started_at <= measured_at` is a truth-world invariant. In recorded data it is a validation rule (VR-002) because clocks and typing can violate it. |
+| K4 | `sampled_at <= arrived_at <= run_started_at <= measured_at` is a truth-world invariant. In recorded data it is a validation rule (VR-002) because clocks and typing can violate it. |
 | K5 | `sample.sample_id`, `sample.unit_id` and `sample.batch_id` are never re-keyed after write (flag `write_time_keys`, VR-018). `sampled_at` is never overwritten either; a correction is a new version (principle 4). |
 | K6 | A unit has at most one open batch at any time. |
 | K7 | An instrument does not process two runs at once. Checked by an acceptance query rather than a database constraint. |
@@ -106,7 +109,7 @@ erDiagram
 | K9 | (`source_system`, `source_event_id`) is unique in `source_event`, and so is `idempotency_key`. |
 | K10 | `lineage_edge` is acyclic. Checked by an acceptance query. |
 | K11 | A numeric result stores the original value and unit and a canonical value and unit, both as UCUM codes. |
-| K12 | Aliquot volumes sum to at most the sample volume; this ties to the volume budget (A057). |
+| K12 | The non-null `aliquot.volume_ul` of a sample sum to at most `sample.volume_ul`; this ties to the volume budget (A057, cap A207). |
 | K13 | A method version is immutable once a run has used it. |
 | K14 | All instants are stored as UTC with the source's local offset or zone name beside them. |
 
@@ -115,7 +118,9 @@ erDiagram
 | Field | Meaning | On |
 |---|---|---|
 | `sampled_at` | instant the sample left the process; stored only when `two_clocks` is on | `sample` |
-| `run_started_at` (column `run.started_at`) | instant the instrument began the run | `run` |
+| `arrived_at` (column `sample.arrived_at`) | instant the sample was received at the analyzer bench, the instant of the event `sample_received` | `sample` |
+| `run_started_at` (column `run.started_at`) | instant the instrument began the run, after any setup; the instant of the event `run_started` | `run` |
+| `ended_at` (column `run.ended_at`) | instant the instrument run ended and the analyzer was freed (event `visit_finished`) | `run` |
 | `measured_at` | instant the instrument completed the measurement, the end of the run (`run.ended_at`); a truth event. With `two_clocks` off, the one time stored is this instant | `result` |
 | `occurred_at`, `ts` | valid time of a process event, and of a historian value | `process_event`, `historian_value` |
 | `ingested_at` | instant the system received the record | `result`, `process_event`, `historian_value`, `source_event` |
@@ -126,12 +131,24 @@ Two derived quantities are defined here and nowhere else.
 
 | Quantity | Definition | Used for |
 |---|---|---|
-| `hold_time` | `run_started_at` minus `sampled_at` (truth) | sample stability (A046, A039), the holding-time metric and rule VR-010; it is not the queue wait alone |
+| `hold_time` | `run_started_at` minus `sampled_at` (truth) | sample stability (A046, A039), the holding-time metric and rule VR-010; it is not the queue wait alone: it spans transport to the analyzer bench (`arrived_at`), the queue wait and any setup |
 | `turnaround` | `available_at` minus `sampled_at` | whether a result could inform a decision; includes measurement, ingestion and review |
 
 In the truth world both quantities use truth stamps. In recorded data they exist only where both clocks are stored (`two_clocks` on), and a recorded clock may be skewed in L4 (an instrument clock offset, A049), so a recorded value can differ from the truth value. Metrics compare recorded values with the truth value.
 
-Expected order for a released result: `sampled_at` <= `run_started_at` <= `measured_at` <= `ingested_at` <= `reviewed_at` <= `available_at` (when release is gated by review; otherwise `available_at` follows `ingested_at`). Violations are findings, not exceptions.
+**Engine events and trace fields.** The engine names one visit of a sample on an analyzer as follows (spec section 2.3); the time fields above are their instants.
+
+| Name | Kind | Meaning |
+|---|---|---|
+| `sample_received` | event | the sample arrives at the analyzer bench; its instant is `sample.arrived_at` |
+| `visit_started` | event | the sample is loaded on an instrument; setup, if any, follows |
+| `run_started` | event | the instrument run begins, after any setup; its instant is `run.started_at` |
+| `visit_finished` | event | the run ends at `run.ended_at` and the analyzer is freed |
+| `qc_window_started`, `qc_window_ended` | events | the daily QC window of an analyzer opens and closes; the analyzer is unavailable inside it; windows are half-open, `[start, end)`; maintenance has the same pair, `maintenance_started` and `maintenance_ended` |
+| `setup_s` | trace field, per run | seconds of setup applied immediately before the run (0 if none), so the visit began at `run_started_at` minus `setup_s` |
+| `transfer_s` | trace field, per visit | seconds of transfer between instruments before a visit that is not the first (A106 for the split profile); 0 or absent on the first visit |
+
+Expected order for a released result: `sampled_at` <= `arrived_at` <= `run_started_at` <= `measured_at` <= `ingested_at` <= `reviewed_at` <= `available_at` (when release is gated by review; otherwise `available_at` follows `ingested_at`). Violations are findings, not exceptions.
 
 **Bitemporal and as-of rule.** `sampled_at`, `run_started_at`, `measured_at`, `occurred_at` and `ts` are valid time: when something was true in the lab. `ingested_at` and `available_at` are transaction time: when the system knew it. A decision or query "as of t" uses, per logical key, the latest result version (greatest `available_at`) among those with `available_at` at or before t, and the historian rows and process events with `ingested_at` at or before t (for a repeated `tag` and `ts`, the latest ingested row). Process context for a result is then matched on valid time at `sampled_at`. With the flag `available_at` off, queries see everything as of now, which leaks late corrections into earlier decisions. With `two_clocks` off, only the measured time is stored; `sampled_at` is not stored and cannot be reconstructed. A tag logged by deadband has rows only where the value moved or the maximum log interval passed, so the value at a time is the last row at or before it (section 16.4).
 
@@ -151,7 +168,7 @@ gantt
   Decision due :milestone, due, 10:00, 0m
 ```
 
-The bar is the draw-to-measurement span (45 min, A102). `hold_time` ends when the run starts, so it is shorter than the bar by the run itself (A023).
+The bar is the draw-to-measurement span (45 min, A102). `hold_time` ends when the run starts, so it is shorter than the bar by the run itself (A023). The 09:00 bolus is a scripted event of SC3 (A102); routine operation decides the bolus at 10:00 (A050, A194), the time marked "Decision due".
 
 ## 6. State machines
 
@@ -181,7 +198,7 @@ A label binding is an event, not a state, because its position depends on the la
 |---|---|
 | `aliquot` | created, stored (condition per A021), in use, consumed or discarded; a frozen retain stays stored |
 | `analysis_request` | requested, accepted, queued, in run, measured, under review, released; side states: rerun pending (returns to queued), rejected, cancelled |
-| `run` | scheduled, setup, running, QC pending, QC passed or QC failed, closed; aborted at any point. A failed QC holds the results of the run and requests reruns |
+| `run` | scheduled, setup, running, QC pending, QC passed or QC failed, closed; aborted at any point. A failed QC holds the results of the run and requests reruns. In the S1 engine `qc_failed` is a run-level failure that leads to a rerun with probability A088; holding the results of the run (VR-012) and the analyzer hold after a failed scheduled QC run (A087) belong to S2 (SC7) |
 
 ```mermaid
 stateDiagram-v2
