@@ -1,5 +1,5 @@
 # ADR-0015: Mixed fleets: profiles per bay and per analyzer
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-29
 ## Context
 
@@ -45,4 +45,4 @@ Proposed: option 2, with the bay as the grain for bioreactor profiles and the si
 > Chose "ADR 초안 → S3/S4 구현" (chat, 2026-10-29)
 
 ## Decider's note
-_(author only — Claude never writes here)_
+Decided by the author in chat on 2026-10-29: "혼합구성 허락."
