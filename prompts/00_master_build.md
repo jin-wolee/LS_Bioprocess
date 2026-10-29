@@ -46,11 +46,11 @@ The portfolio centre is not the screen. It is: the single-sample failure trace, 
 | S1a contracts + L3 core | reproducibility contract, schemas, hand fixtures, scaffold, TS L3 analyzer core, M/M/c mode, trace export, acceptance tests for the author's code | SimPy core loop, canonical DDL | L3 core judged by hand fixtures, invariants I1-I9 and the M/M/c check; lint, typecheck, tests green; live hook check | SimPy parity, DDL acceptance (`pytest -m user_track`) |
 | S1b process + sampling | L1 process, L2 sampling and logistics, profiles, default scenario, SC2 and SC5, golden event logs | - | invariants I1-I12, scenario relations, budget; goldens created once; `sim-adversary` pass | - |
 | S2 capture + metrics | flags and presets, error injector, evaluator, experiments 1 and 2, raw device layer (emitters and adapters, ADR-0014), data dictionary, single-sample trace, datapackage, SQL acceptance tests | three SQL queries | forced-error detection fixtures exact; evaluator and answer-key isolation tests; experiment invariants; raw-layer Gates 5 to 7 and the Step 8 checklist (`20_*`); `sim-adversary` pass | SQL results equal fixture answers |
-| S3 lab UI | UI, presets, lineage view, challenge, E2E, Pages workflow (`30_*` written at session start) | approve the public flip (author changes visibility) | Playwright headless green; full-history banned-token scan 0; size budgets met | - |
-| S4 DSP | genealogy, HPLC contention (`40_*`) | - | many-to-many lineage query test | - |
+| S3 lab UI | UI, presets, lineage view, challenge, E2E, Pages workflow, break-out events and SC12 (ADR-0013, spec §11; `30_*` written at session start) | approve the public flip (author changes visibility) | Playwright headless green; full-history banned-token scan 0; size budgets met | - |
+| S4 DSP | genealogy, HPLC contention, cell-line and operating-mode profiles, SC13 and SC14 (ADR-0013, spec §11; `40_*`) | - | many-to-many lineage query test | - |
 | S5 release | model card, demo GIF, case write-up, external-review dispositions (`50_*`) | review a private 90-second explanation script; run and explain it unaided | author sign-off; only then a draft authorship statement | - |
 
-Scenario-to-session assignment: spec §7. Prompts `30_*`, `40_*`, `50_*` are written at the start of their session, not before.
+Scenario-to-session assignment: spec §7 (SC12 to SC14: §11.5). Prompts `30_*`, `40_*`, `50_*` are written at the start of their session, not before.
 
 **Budgets (measured, not estimated).** Default scenario, one seed: the engine run (scenario start to the complete in-memory truth log and observable events, excluding sensor-tick serialisation and log hashing) at most 1 s in a Web Worker (S1b checks a Node median of 5 runs as a proxy; S3 checks the Worker). Infographic at most 150 KB gzip; lab first load at most 300 KB gzip (`gzip -c <file> | wc -c`). A breach is a major finding.
 

@@ -359,7 +359,7 @@ Acceptance tests (`tests/user_track/`, run with `pytest -m user_track`) are spec
 
 ## 15. Extensions: material lots, holds, confirming tests and retro-flags (designed, not built)
 
-Status: designed under ADR-0013 (Proposed). The seed-lot link comes with the cell-line profiles in S4 and the rest with break-out events in S5. The ledger ids cited are provisional (none of S057 to S083 is `main-reread`). Names here are canonical for prompts and schemas; the DDL and the walk-back SQL stay the author's task (ADR-0010). With no extension selected, the earlier schema is unchanged and none of the entities below exists.
+Status: designed under ADR-0013 (Proposed). Break-out events come in S3, so the entities for material lots, quality holds and deviations (section 15.1), with the changes to existing entities they rely on, are needed by S3; only the cell-line attribute of the seed lot (`material_lot.cell_line_id`) waits for the cell-line profiles in S4. The ledger ids cited are provisional (none of S057 to S083 is `main-reread`). Names here are canonical for prompts and schemas; the DDL and the walk-back SQL stay the author's task (ADR-0010). With no extension selected, the earlier schema is unchanged and none of the entities below exists.
 
 ### 15.1 Entities and changes
 

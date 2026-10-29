@@ -51,6 +51,7 @@ The one place where the working principles are defined. Every brief and rubric p
 | S0 design | SDD + PDD + HITL |
 | S1a, S1b, S2 engine, capture, metrics | SDD + TDD + EDD + BDD + YAGNI + HITL |
 | S3 UI exploration | YOLO + FAFO + KISS; then lock what stays with TDD + E2E |
+| S3 break-out events (engine) | SDD + TDD + EDD + BDD + YAGNI + HITL (ADR-0013) |
 | S4-S5 and maintenance | Tidy First + DRY + SRP + TDD |
 | Always | KISS, AHA, SRP, Small Batches |
 

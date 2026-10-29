@@ -28,15 +28,15 @@ Two facts shape the choice. First, the ledgers now hold the parameters for all t
 
 ## Decision
 
-Proposed: option 4.
+Proposed: option 4, with the schedule the author chose in the guided review: break-out events in S3, cell-line and operating-mode profiles in S4.
 
 | Extension | What it adds | Built in | Ledger bundles | Bundle grade (weakest component) |
 |---|---|---|---|---|
 | Cell-line profiles | per-reactor clone draw around the platform kinetics; lactate consumers and high producers | S4 | A150, A151, A152 | A, A, P |
 | Operating-mode profiles | batch, fed-batch, intensified fed-batch, perfusion; cadence and context unit per mode | S4 | A153, A154, A155, A156 | A, A, A, A |
-| Break-out events | contamination first: origin, signal, confirming tests, holds, investigation walk-back, retro-flagging | S5 | A157, A158 | A, A |
+| Break-out events | contamination first: origin including sampling, signal lag, confirmatory tests and turnaround, holds, investigation walk-back, retro-flagging | S3 | A157, A158 | A, A |
 
-- Scheduling. S0 to S2 are unchanged and stay on context loss. Nothing in this ADR is implemented before S2 ends. With no extension selected, every earlier scenario produces a byte-identical event log.
+- Scheduling. S0 to S2 are unchanged and stay on context loss. Nothing in this ADR is implemented before S2 ends. Cell-line profiles and operating-mode profiles are built in S4. Break-out events are built in S3, together with the lab UI. With no extension selected, every earlier scenario produces a byte-identical event log.
 - Mechanism. Cell lines, modes and event types are data under `scenarios/`, validated like the ADR-0012 profiles (`{value, unit, ref}` with `ref` resolving to a ledger id). The engine gains only generic mechanisms (a per-reactor parameter draw, material-lot consumption, an event script with onset, signal and test times) and never branches on a profile, mode or event id.
 - Open loop. Break-out events run as a variant of experiment 1: the truth run, including the scripted response (unit stopped, confirming samples drawn), is shared by all architectures. Architectures differ only in what their records let an investigator find. Detection never changes the truth run (ADR-0004).
 - Honesty about rates. The per-batch contamination rate is derived from a 2008 self-reported survey (A135, S066, grade D) and the per-draw rate is an assumption under a derived ceiling (A136, grade A). Scenarios therefore inject an event at a chosen time, origin and type instead of waiting for chance, and any random-draw mode is labelled assumed. No result is presented as a prediction of a real plant.
@@ -47,8 +47,9 @@ Proposed: option 4.
 
 - Positive: the simulator can show an investigation, the use of lineage with the highest stakes; cell-line and instrument effects can be confounded on purpose (SC13); the context unit can change (SC14); no new mechanism type is needed beyond ADR-0012's.
 - Negative: scope grows by three profile families, new entities (material lots, quality holds, deviations), two new lineage relations and new scenario-level metrics. Almost every new parameter is provisional (none of S057 to S083 is `main-reread`) and many bundles are graded A, so nothing from the extensions may go on a public page until its sources are re-read.
+- Schedule: in S3 the walk-back covers the reactor's samples and results and the other reactors that share a seed, feed or media lot (material lots). The downstream walk-back through pools and lots extends in S4, when genealogy lands (SC10). S3 workload grows: it carries the break-out engine work (event script, material lots, holds, confirming tests, retro-flagging) next to the lab UI and its end-to-end tests.
 - Data needs: the delays between the first signal, the confirmed result and the hold/quarantine action are A176, and the shared-lot topology (how many reactors share a seed, media or feed lot) is A177; both are grade A scenario inputs without defaults, printed with every result. The lot withdrawal schedule after a recall decision is A187 (grade P).
-- Open question for ADR-0005: lot and derivation links need a recorder that stores them. The eight flags may not cover this. Either architectures A and B store lot links as free text (the subset rule of the data model), or a ninth flag is added, which would be an amendment to ADR-0005. Parked; decide when SC12 is built.
+- Open question for ADR-0005: lot and derivation links need a recorder that stores them. The eight flags may not cover this. Either architectures A and B store lot links as free text (the subset rule of the data model), or a ninth flag is added, which would be an amendment to ADR-0005. Parked; decide when SC12 is built, which is now in S3.
 - Keeping YAGNI: events other than contamination (equipment faults, power loss, operator errors) stay out until the first event type has run.
 
 ## Evidence
@@ -61,6 +62,8 @@ Proposed: option 4.
 ## Author statement (verbatim, if any)
 
 > "가능한 바이오 제조에서 일어날 수 있는 일들을 폭넓게 다루고 시뮬레이션 하는게 좋지 않겠어? 각 바이오리액터 마다 사용하는 cell line에 대한 변화도 줄 수 있게 하고, 운전 방식에 대해서 변화가 있을 수도 있고, 물론, CFD를 넣는건 너무 too much하겠지만, 오염-멸균 사고는 break-out-event로 둘만 하지 않아? 실제로 일어날 법하잖아. 물론, 지금 당장은 샘플 결과가 공정 맥락을 잃는 이야기에 집중해도 좋아." (chat, 2026-10-29)
+
+> "break-out을 앞당김(S3)" (guided review, chosen option label, 2026-10-29)
 
 ## Decider's note
 

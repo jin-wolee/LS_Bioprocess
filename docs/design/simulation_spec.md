@@ -423,7 +423,7 @@ Each scenario asks one question. Scenarios live in `scenarios/*.json`.
 
 **Scripted and routine feeds.** In the central case the feed at 09:00 (A102) is a scripted event of SC3 "Feed in the gap"; routine operation decides the bolus at 10:00 (A050, A194). The two are different events, and a scenario says which of them it uses.
 
-Scenarios SC12 to SC14 belong to the extensions and are catalogued with the same columns in section 11.5; they are built after S2.
+Scenarios SC12 to SC14 belong to the extensions and are catalogued with the same columns in section 11.5; they are built after S2, SC12 in S3 and SC13 and SC14 in S4.
 
 No numeric claim is made for any scenario until its session has produced results.
 
@@ -485,7 +485,7 @@ The recorders' gate in S2 is separate from this ladder: the forced-error fixture
 
 ## 11. Extensions (designed, not built)
 
-Status: designed in ADR-0013 (Proposed); built after S2 (cell lines and modes in S4, break-out events in S5). Nothing here changes S0 to S2. Every figure in this section rests on sources S057 to S083, none of which is `main-reread`, so every figure here is provisional and may not appear on a public page. Table, column and state names for the new entities are defined once in `data_model.md` section 15.
+Status: designed in ADR-0013 (Proposed); built after S2 (break-out events in S3 together with the lab UI, cell lines and modes in S4). Nothing here changes S0 to S2. Every figure in this section rests on sources S057 to S083, none of which is `main-reread`, so every figure here is provisional and may not appear on a public page. Table, column and state names for the new entities are defined once in `data_model.md` section 15.
 
 ### 11.1 Scope and invariants
 
@@ -493,7 +493,7 @@ Status: designed in ADR-0013 (Proposed); built after S2 (cell lines and modes in
 |---|---|---|---|
 | Cell-line profiles | L1 (per-reactor kinetics); batch master data (seed lot) | S4 | A150, A151, A152 |
 | Operating-mode profiles | L1 (duration, feeds, streams), L2 (cadence, context unit) | S4 | A153, A154, A155, A156 |
-| Break-out events | L1 (hidden onset and signature), L2 (confirming draws), L3 (long-turnaround tests), L4 (holds, deviation, retro-flag), L5 (investigation walk-back) | S5 | A157, A158 |
+| Break-out events | L1 (hidden onset and signature), L2 (confirming draws), L3 (long-turnaround tests), L4 (holds, deviation, retro-flag), L5 (investigation walk-back) | S3 | A157, A158 |
 
 1. **Off by default.** With no extension selected, every S0 to S2 scenario produces the same event log as before. This is a regression check against the existing goldens and never regenerates them.
 2. **Data, not code.** Cell lines, modes and event types are data under `scenarios/`, each numeric parameter `{value, unit, ref}` with `ref` resolving to a ledger id (ADR-0012). The engine gains generic mechanisms only: a per-reactor parameter draw, material-lot consumption, and an event script with onset, signal and test times. Nothing branches on a profile, mode or event id.
@@ -631,7 +631,7 @@ flowchart LR
 | 2 Downstream | which harvests, pools and lots hold this reactor's material? | forward over derivation edges (`harvested_from`, `split_into`, `pooled_into`, `drawn_as`) and the samples and results drawn from what it reaches | a pool that merges a clean batch with the affected one is held whole (A052, A053); the continuous-harvest unit is the window (A132) |
 | 3 Siblings | which other batches share a seed, feed lot, media lot or equipment? | backward one step from the batch to its lots and seed parent (`consumed_in`, `seeded_from`), then forward from those to other batches and from those over derivation edges | every sibling is a candidate; if the origin was a sampling event the siblings are clean, a precision cost |
 
-The walk-back is a recursive traversal over material and derivation edges as of the decision time (data_model section 15.4); the SQL is the author's task. Hypothesis, to be tested in S5 and not a result: direction 1 needs `write_time_keys` and `two_clocks`; directions 2 and 3 need derivation and lot edges, which no flag covers today (ADR-0013 open question); reproducing what was released when needs `available_at` and `append_only_versions`; who held what and why needs `audit_trail`.
+The walk-back is a recursive traversal over material and derivation edges as of the decision time (data_model section 15.4); the SQL is the author's task. By session: S3 covers direction 1 and direction 3 (the reactor's samples and results, and the other reactors that share a seed, feed or media lot); direction 2 through pools and downstream lots extends in S4, when genealogy lands. Hypothesis, to be tested from S3 and not a result: direction 1 needs `write_time_keys` and `two_clocks`; directions 2 and 3 need derivation and lot edges, which no flag covers today (ADR-0013 open question); reproducing what was released when needs `available_at` and `append_only_versions`; who held what and why needs `audit_trail`.
 
 ### 11.5 Scenarios SC12 to SC14
 
@@ -639,7 +639,7 @@ Same columns as the catalogue in section 7. Given-When-Then tests named after th
 
 | ID | Question | Settings (ids) | Main metrics | Session |
 |---|---|---|---|---|
-| SC12 Contamination break-out and walk-back | After one reactor shows a contamination signal, how fast and how completely can each architecture find everything the event touched? | a bacterial event injected through a shared medium lot, then again through a sampling event and through a seed lot (A157, A135, A136, A137); signal lag and magnitudes (A139, A140, A141); investigation scope (A149) with the assumed lag swept (A139 range); confirming tests (A142 to A147, volumes A148, budget A057); mycoplasma variant (A138, A144 to A146); lot topology and response delays are scenario inputs without defaults (section 11.7) | time to containment; identification recall, precision and false-alarm rate by direction; released-before-containment share and retro-flag completeness | S5 |
+| SC12 Contamination break-out and walk-back | After one reactor shows a contamination signal, how fast and how completely can each architecture find everything the event touched? | a bacterial event injected through a shared medium lot, then again through a sampling event and through a seed lot (A157, A135, A136, A137); signal lag and magnitudes (A139, A140, A141); investigation scope (A149) with the assumed lag swept (A139 range); confirming tests (A142 to A147, volumes A148, budget A057); mycoplasma variant (A138, A144 to A146); lot topology and response delays are scenario inputs without defaults (section 11.7) | time to containment; identification recall, precision and false-alarm rate by direction; released-before-containment share and retro-flag completeness | S3 |
 | SC13 Cell line or instrument? | When two groups of reactors differ in lactate, does the record let an analyst tell a clone difference from an analyzer bias? | two bays, one `platform` and one `high_lactate_producer` (A152, A122, A084) crossed with an analyzer bias and a lot-change step (A032, A034, A033, A093, A092) in a two-by-two design; bridging samples (`control_id`); cells with a true effect of zero are the phantom tests | phantom effect size; detection recall, precision and false-alarm rate for the instrument effect; exact reconstruction (process context now includes the cell line) | S4 |
 | SC14 Mode switch | What happens to the records when part of a fleet moves from fed-batch to perfusion? | a share of reactors changes from `fed_batch` to `perfusion` (A154, A156), cadence from A014 and A015 to A130, context unit from batch to harvest window (A132), port limit (A134), duration and peak density (A006, A009); builds on SC9 | exact reconstruction by context-unit kind; `hold_time` median, p90 and SLA exceedance (A097) before and after the switch; utilisation in both windows (A098, A074); draws beyond the port limit; misattribution at window boundaries | S4 |
 

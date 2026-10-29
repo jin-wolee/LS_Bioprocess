@@ -42,11 +42,11 @@ A record that stores only `measured_at` pairs the result with the post-feed proc
 |---|---|
 | S1 engine | Contracts, schemas, hand-calculated fixtures, TypeScript engine for process, sampling and analysis (L1 to L3); the author's SimPy core loop and DDL |
 | S2 capture and metrics | Flags and presets, error injector, evaluator, experiments 1 and 2, raw device layer, data dictionary; the author's three SQL queries |
-| S3 lab UI | Browser UI with presets and a lineage view, end-to-end tests |
-| S4 downstream | Genealogy (many-to-many lineage) and HPLC contention |
+| S3 lab UI | Browser UI with presets and a lineage view, end-to-end tests; contamination break-out events and the investigation walk-back (ADR-0013, SC12) |
+| S4 downstream | Genealogy (many-to-many lineage) and HPLC contention; cell-line and operating-mode profiles (ADR-0013, SC13, SC14) |
 | S5 release | Model card, demo, case write-up, external-review dispositions |
 
-Planned extensions (cell-line profiles, operating modes, contamination break-out events; ADR-0013) are designed but not built before S2.
+Planned extensions (ADR-0013) are designed but not built before S2: contamination break-out events come with S3, cell-line profiles and operating modes with S4.
 
 ## Repository map
 
