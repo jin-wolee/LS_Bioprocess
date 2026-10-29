@@ -78,3 +78,20 @@ Newest entry last. Each entry: what was done, what is open for the author, what 
 - Author track (non-blocking): canonical DDL, three SQL queries, SimPy core loop (`prompts/60_user_track.md`).
 
 **Next**: start a new session inside the repo; S1a Step 0 checks that the hooks fire live, then contracts and the analyzer DES.
+
+## 2026-10-29 — ADRs accepted by the author
+
+**Done**
+- Guided review of ADR-0001 to ADR-0014; the author's answers are recorded verbatim in `docs/adr/review_2026-10-29.json`. Thirteen accepted as proposed; ADR-0013 accepted with a change: break-out events move to S3 (with the lab UI), cell-line and operating-mode profiles stay in S4.
+- The author applied the record with `scripts/adr_accept.py` and committed it personally (`docs: accept ADR-0001 to ADR-0014`, no co-author trailer).
+- ADR-0008 in effect: `LICENSE` (MIT, code) and `LICENSE-docs.md` (CC BY 4.0, text and figures); README and infographic footer updated; infographic roadmap shows break-out events in S3.
+
+**Open for the author (HITL)**
+- Private backup repository and first push.
+- Vault: review and commit the hub note and the two MOC lines.
+- Author track (non-blocking): canonical DDL, three SQL queries, SimPy core loop.
+
+**Open questions**
+- ADR-0013 leaves open whether break-out events need a ninth flag in ADR-0005; decide in S3.
+
+**Next**: new session inside the repo → S1a Step 0.
