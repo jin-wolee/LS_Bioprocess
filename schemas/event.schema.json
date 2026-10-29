@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "event.schema.json",
   "title": "Event",
-  "description": "One line of the canonical event log: the L3 event types of docs/design/simulation_spec.md section 2.3 and a log_header that binds schema_version, engine_version and seed to the log. t is an integer second from scenario t0. Fields annotated x-visibility hidden exist in the truth log only and never reach a recorder. S1b adds the L1 and L2 types additively.",
+  "description": "One line of the canonical event log: the L3 event types of docs/design/simulation_spec.md section 2.3 and a log_header that binds schema_version, engine_version and seed to the log. t is an integer second from scenario t0. Fields annotated x-visibility hidden exist in the truth log only and never reach a recorder. S1b adds the L1 and L2 types and the instrument calibration record additively.",
   "oneOf": [
     { "$ref": "#/$defs/log_header" },
     { "$ref": "#/$defs/request_queued" },
@@ -16,7 +16,17 @@
     { "$ref": "#/$defs/qc_window_started" },
     { "$ref": "#/$defs/qc_window_ended" },
     { "$ref": "#/$defs/maintenance_started" },
-    { "$ref": "#/$defs/maintenance_ended" }
+    { "$ref": "#/$defs/maintenance_ended" },
+    { "$ref": "#/$defs/inoculation" },
+    { "$ref": "#/$defs/process_event" },
+    { "$ref": "#/$defs/sensor_tick" },
+    { "$ref": "#/$defs/sample_planned" },
+    { "$ref": "#/$defs/sample_drawn" },
+    { "$ref": "#/$defs/label_bound" },
+    { "$ref": "#/$defs/sample_received" },
+    { "$ref": "#/$defs/aliquot_created" },
+    { "$ref": "#/$defs/draw_skipped_volume_budget" },
+    { "$ref": "#/$defs/calibration_recorded" }
   ],
   "$defs": {
     "time": { "type": "integer", "minimum": 0 },
@@ -94,7 +104,10 @@
         "analyte": { "$ref": "#/$defs/ident" },
         "value": { "type": "number" },
         "true_value": { "type": "number", "x-visibility": "hidden" },
-        "noise": { "type": "number", "x-visibility": "hidden" }
+        "noise": { "type": "number", "x-visibility": "hidden" },
+        "stability_kind": { "type": "string", "enum": ["linear_rate", "first_order_offset"], "x-visibility": "hidden" },
+        "stability_delta": { "type": "number", "x-visibility": "hidden" },
+        "extrapolated": { "type": "boolean", "x-visibility": "hidden" }
       }
     },
     "qc_result": {
@@ -181,6 +194,143 @@
       "additionalProperties": false,
       "required": ["type", "t", "analyzer"],
       "properties": { "type": { "type": "string", "const": "maintenance_ended" }, "t": { "$ref": "#/$defs/time" }, "analyzer": { "$ref": "#/$defs/ident" } }
+    },
+    "inoculation": {
+      "title": "Inoculation",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "unit_id", "batch_id", "density_e6_per_ml"],
+      "properties": {
+        "type": { "type": "string", "const": "inoculation" },
+        "t": { "$ref": "#/$defs/time" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" },
+        "density_e6_per_ml": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "process_event": {
+      "title": "ProcessEvent",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "unit_id", "batch_id", "kind", "source"],
+      "properties": {
+        "type": { "type": "string", "const": "process_event" },
+        "t": { "$ref": "#/$defs/time" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" },
+        "kind": { "type": "string", "enum": ["feed", "temperature_shift", "alarm", "harvest"] },
+        "source": { "type": "string", "enum": ["rule", "scheduled", "scripted"] },
+        "amount": { "type": "number" },
+        "amount_unit": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sensor_tick": {
+      "title": "SensorTick",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "unit_id", "signal", "value", "true_value"],
+      "properties": {
+        "type": { "type": "string", "const": "sensor_tick" },
+        "t": { "$ref": "#/$defs/time" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "signal": { "type": "string", "enum": ["pH", "DO", "temperature"] },
+        "value": { "type": "number" },
+        "true_value": { "type": "number", "x-visibility": "hidden" }
+      }
+    },
+    "sample_planned": {
+      "title": "SamplePlanned",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "sample_id", "unit_id", "batch_id"],
+      "properties": {
+        "type": { "type": "string", "const": "sample_planned" },
+        "t": { "$ref": "#/$defs/time" },
+        "sample_id": { "$ref": "#/$defs/ident" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" }
+      }
+    },
+    "sample_drawn": {
+      "title": "SampleDrawn",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "sample_id", "unit_id", "batch_id", "operator_id", "volume_ul", "true_state"],
+      "properties": {
+        "type": { "type": "string", "const": "sample_drawn" },
+        "t": { "$ref": "#/$defs/time" },
+        "sample_id": { "$ref": "#/$defs/ident" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" },
+        "operator_id": { "$ref": "#/$defs/ident" },
+        "volume_ul": { "type": "number", "exclusiveMinimum": 0 },
+        "true_state": { "type": "object", "additionalProperties": { "type": "number" }, "x-visibility": "hidden" }
+      }
+    },
+    "label_bound": {
+      "title": "LabelBound",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "sample_id", "method"],
+      "properties": {
+        "type": { "type": "string", "const": "label_bound" },
+        "t": { "$ref": "#/$defs/time" },
+        "sample_id": { "$ref": "#/$defs/ident" },
+        "method": { "type": "string", "enum": ["handwritten", "preprinted_barcode", "issued_at_draw"] }
+      }
+    },
+    "sample_received": {
+      "title": "SampleReceived",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "sample_id"],
+      "properties": {
+        "type": { "type": "string", "const": "sample_received" },
+        "t": { "$ref": "#/$defs/time" },
+        "sample_id": { "$ref": "#/$defs/ident" }
+      }
+    },
+    "aliquot_created": {
+      "title": "AliquotCreated",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "sample_id", "aliquot_id", "storage", "volume_ul"],
+      "properties": {
+        "type": { "type": "string", "const": "aliquot_created" },
+        "t": { "$ref": "#/$defs/time" },
+        "sample_id": { "$ref": "#/$defs/ident" },
+        "aliquot_id": { "$ref": "#/$defs/ident" },
+        "storage": { "type": "string", "enum": ["ice", "room_temperature", "frozen"] },
+        "volume_ul": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "draw_skipped_volume_budget": {
+      "title": "DrawSkippedVolumeBudget",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "sample_id", "unit_id", "batch_id", "volume_ul", "cumulative_ul"],
+      "properties": {
+        "type": { "type": "string", "const": "draw_skipped_volume_budget" },
+        "t": { "$ref": "#/$defs/time" },
+        "sample_id": { "$ref": "#/$defs/ident" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" },
+        "volume_ul": { "type": "number", "exclusiveMinimum": 0 },
+        "cumulative_ul": { "type": "number", "minimum": 0 }
+      }
+    },
+    "calibration_recorded": {
+      "title": "CalibrationRecorded",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "analyzer", "lot_id", "drift_before_pct"],
+      "properties": {
+        "type": { "type": "string", "const": "calibration_recorded" },
+        "t": { "$ref": "#/$defs/time" },
+        "analyzer": { "$ref": "#/$defs/ident" },
+        "lot_id": { "$ref": "#/$defs/ident" },
+        "drift_before_pct": { "type": "number", "x-visibility": "hidden" }
+      }
     }
   }
 }

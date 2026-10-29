@@ -1,0 +1,14 @@
+{
+  "schema_version": "1",
+  "profile_id": "pilot",
+  "kind": "bioreactor",
+  "description": "50 to 250 L single-use vessel, sterile syringe from a sampling line (spec 4.1; bundle A068, grade A).",
+  "containers": {
+    "ph": "closed",
+    "default": "open"
+  },
+  "params": {
+    "working_volume_l": {"value": 50, "unit": "L", "ref": "A104"},
+    "sample_volume_pct": {"value": 0.00055, "unit": "%", "ref": "A057"}
+  }
+}

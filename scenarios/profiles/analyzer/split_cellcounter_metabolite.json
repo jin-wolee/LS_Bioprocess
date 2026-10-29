@@ -1,0 +1,74 @@
+{
+  "schema_version": "1",
+  "profile_id": "split_cellcounter_metabolite",
+  "kind": "analyzer",
+  "description": "A cell counter and a metabolite analyzer, two visits per sample with a hand-off between them (spec 4.2; bundle A070, grade A). The counter has no dilution ladder in A090, so its 15e6 limit (A089) is not applied.",
+  "route": [
+    {
+      "group": "CELL",
+      "analytes": [
+        {
+          "id": "vcd",
+          "noise": "noise_cv_vcd_pct",
+          "relative": true
+        },
+        {
+          "id": "viability",
+          "relative": false
+        }
+      ],
+      "service": "service_s_counter",
+      "storage": "room_temperature"
+    },
+    {
+      "group": "CHEM",
+      "analytes": [
+        {
+          "id": "glucose",
+          "noise": "noise_cv_glucose_pct",
+          "relative": true,
+          "limit": "over_range_glucose_g_per_l"
+        },
+        {
+          "id": "lactate",
+          "noise": "noise_cv_lactate_pct",
+          "relative": true,
+          "limit": "over_range_lactate_g_per_l"
+        },
+        {
+          "id": "glutamine",
+          "noise": "noise_cv_glutamine_pct",
+          "relative": true,
+          "limit": "over_range_glutamine_mm"
+        },
+        {
+          "id": "ph",
+          "noise": "noise_sd_ph",
+          "relative": false
+        }
+      ],
+      "service": "service_s_chemistry",
+      "transfer": "handoff_s",
+      "storage": "room_temperature",
+      "dilution_factors": ["dilution_1", "dilution_2", "dilution_3"]
+    }
+  ],
+  "params": {
+    "service_s_counter": {"value": 130, "unit": "s", "ref": "A025"},
+    "service_s_chemistry": {"value": 120, "unit": "s", "ref": "A107"},
+    "handoff_s": {"value": 60, "unit": "s", "ref": "A106"},
+    "sample_volume_counter_ul": {"value": 200, "unit": "uL", "ref": "A107"},
+    "sample_volume_chemistry_ul": {"value": 135, "unit": "uL", "ref": "A107"},
+    "noise_cv_glucose_pct": {"value": 5.0, "unit": "%", "ref": "A077"},
+    "noise_cv_lactate_pct": {"value": 5.0, "unit": "%", "ref": "A077"},
+    "noise_cv_glutamine_pct": {"value": 5.0, "unit": "%", "ref": "A077"},
+    "noise_cv_vcd_pct": {"value": 5.0, "unit": "%", "ref": "A079"},
+    "noise_sd_ph": {"value": 0.007, "unit": "pH", "ref": "A078"},
+    "over_range_glucose_g_per_l": {"value": 15, "unit": "g/L", "ref": "A089"},
+    "over_range_lactate_g_per_l": {"value": 6, "unit": "g/L", "ref": "A089"},
+    "over_range_glutamine_mm": {"value": 6, "unit": "mM", "ref": "A089"},
+    "dilution_1": {"value": 1, "unit": "factor", "ref": "A090"},
+    "dilution_2": {"value": 2, "unit": "factor", "ref": "A090"},
+    "dilution_3": {"value": 4, "unit": "factor", "ref": "A090"}
+  }
+}

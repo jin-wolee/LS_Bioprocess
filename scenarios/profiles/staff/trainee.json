@@ -1,0 +1,16 @@
+{
+  "schema_version": "1",
+  "profile_id": "trainee",
+  "kind": "staff",
+  "description": "Trainee operator (spec 4.3; bundle A073, grade A). Multipliers apply to the base values of the experienced profile.",
+  "params": {
+    "qualified": {"value": 0, "unit": "flag", "ref": "A073"},
+    "count_cv_manual_pct": {"value": 2.81, "unit": "%", "ref": "A058"},
+    "count_cv_multiplier": {"value": 2.0, "unit": "factor", "ref": "A076"},
+    "count_cv_automated_pct": {"value": 0.46, "unit": "%", "ref": "A059"},
+    "label_error_per_1000": {"value": 6.1, "unit": "per 1000", "ref": "A047"},
+    "label_error_multiplier": {"value": 2.0, "unit": "factor", "ref": "A062"},
+    "delay_sd_min": {"value": 12, "unit": "min", "ref": "A063"},
+    "technique_error_probability": {"value": 0.1, "unit": "probability", "ref": "A064"}
+  }
+}

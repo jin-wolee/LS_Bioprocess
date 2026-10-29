@@ -14,6 +14,12 @@ export interface Scenario {
   description?: string;
   seed: number;
   queue_policy?: "fifo" | "edf";
+  /**
+   * L5 feeds back into L1 (experiment 2). Absent means false; S1 builds only the open loop.
+   */
+  feedback?: boolean;
+  sampling_plan?: "burst" | "staggered";
+  label_method?: "handwritten" | "preprinted_barcode" | "issued_at_draw";
   profiles: {
     bioreactor: string;
     analyzer: string;
@@ -22,6 +28,29 @@ export interface Scenario {
   settings?: {
     [k: string]: Param;
   };
+  maintenance?: {
+    analyzer: string;
+    start: Param;
+    length: Param;
+  }[];
+  lot_changes?: {
+    analyzer: string;
+    at: Param;
+  }[];
+  scripted_events?: {
+    type: "feed" | "alarm";
+    unit_id: string;
+    at: Param;
+  }[];
+  stability?: {
+    effect: "linear_rate" | "first_order_offset";
+    analyte: string;
+    container: "open" | "closed";
+    rate?: Param;
+    valid_to?: Param;
+    offset?: Param;
+    tau?: Param;
+  }[];
 }
 export interface Param {
   value: number;

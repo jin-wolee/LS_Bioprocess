@@ -1,0 +1,15 @@
+{
+  "schema_version": "1",
+  "profile_id": "experienced",
+  "kind": "staff",
+  "description": "Experienced operator (spec 4.3; bundle A072, grade A).",
+  "params": {
+    "qualified": {"value": 1, "unit": "flag", "ref": "A072"},
+    "count_cv_manual_pct": {"value": 2.81, "unit": "%", "ref": "A058"},
+    "count_cv_automated_pct": {"value": 0.46, "unit": "%", "ref": "A059"},
+    "counting_floor_cv_pct": {"value": 5, "unit": "%", "ref": "A060"},
+    "label_error_per_1000": {"value": 6.1, "unit": "per 1000", "ref": "A047"},
+    "delay_sd_min": {"value": 5, "unit": "min", "ref": "A063"},
+    "technique_error_probability": {"value": 0.02, "unit": "probability", "ref": "A064"}
+  }
+}

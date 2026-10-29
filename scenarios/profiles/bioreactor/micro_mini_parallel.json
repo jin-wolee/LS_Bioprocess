@@ -1,0 +1,14 @@
+{
+  "schema_version": "1",
+  "profile_id": "micro_mini_parallel",
+  "kind": "bioreactor",
+  "description": "Micro-scale class of the parallel systems, automated liquid handler into a cup (spec 4.1; bundle A065, grade D). The mini-scale class (A066: 175 mL, 0.31 percent) needs a second profile file.",
+  "containers": {
+    "ph": "open",
+    "default": "open"
+  },
+  "params": {
+    "working_volume_l": {"value": 0.0125, "unit": "L", "ref": "A110"},
+    "sample_volume_pct": {"value": 4.8, "unit": "%", "ref": "A057"}
+  }
+}

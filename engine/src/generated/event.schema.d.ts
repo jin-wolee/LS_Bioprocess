@@ -6,7 +6,7 @@
  */
 
 /**
- * One line of the canonical event log: the L3 event types of docs/design/simulation_spec.md section 2.3 and a log_header that binds schema_version, engine_version and seed to the log. t is an integer second from scenario t0. Fields annotated x-visibility hidden exist in the truth log only and never reach a recorder. S1b adds the L1 and L2 types additively.
+ * One line of the canonical event log: the L3 event types of docs/design/simulation_spec.md section 2.3 and a log_header that binds schema_version, engine_version and seed to the log. t is an integer second from scenario t0. Fields annotated x-visibility hidden exist in the truth log only and never reach a recorder. S1b adds the L1 and L2 types and the instrument calibration record additively.
  */
 export type Event =
   | LogHeader
@@ -21,7 +21,17 @@ export type Event =
   | QcWindowStarted
   | QcWindowEnded
   | MaintenanceStarted
-  | MaintenanceEnded;
+  | MaintenanceEnded
+  | Inoculation
+  | ProcessEvent
+  | SensorTick
+  | SamplePlanned
+  | SampleDrawn
+  | LabelBound
+  | SampleReceived
+  | AliquotCreated
+  | DrawSkippedVolumeBudget
+  | CalibrationRecorded;
 export type Time = number;
 export type Ident = string;
 export type Count = number;
@@ -70,6 +80,9 @@ export interface ResultMeasured {
   value: number;
   true_value: number;
   noise: number;
+  stability_kind?: "linear_rate" | "first_order_offset";
+  stability_delta?: number;
+  extrapolated?: boolean;
 }
 export interface QcResult {
   type: "qc_result";
@@ -123,4 +136,83 @@ export interface MaintenanceEnded {
   type: "maintenance_ended";
   t: Time;
   analyzer: Ident;
+}
+export interface Inoculation {
+  type: "inoculation";
+  t: Time;
+  unit_id: Ident;
+  batch_id: Ident;
+  density_e6_per_ml: number;
+}
+export interface ProcessEvent {
+  type: "process_event";
+  t: Time;
+  unit_id: Ident;
+  batch_id: Ident;
+  kind: "feed" | "temperature_shift" | "alarm" | "harvest";
+  source: "rule" | "scheduled" | "scripted";
+  amount?: number;
+  amount_unit?: string;
+}
+export interface SensorTick {
+  type: "sensor_tick";
+  t: Time;
+  unit_id: Ident;
+  signal: "pH" | "DO" | "temperature";
+  value: number;
+  true_value: number;
+}
+export interface SamplePlanned {
+  type: "sample_planned";
+  t: Time;
+  sample_id: Ident;
+  unit_id: Ident;
+  batch_id: Ident;
+}
+export interface SampleDrawn {
+  type: "sample_drawn";
+  t: Time;
+  sample_id: Ident;
+  unit_id: Ident;
+  batch_id: Ident;
+  operator_id: Ident;
+  volume_ul: number;
+  true_state: {
+    [k: string]: number;
+  };
+}
+export interface LabelBound {
+  type: "label_bound";
+  t: Time;
+  sample_id: Ident;
+  method: "handwritten" | "preprinted_barcode" | "issued_at_draw";
+}
+export interface SampleReceived {
+  type: "sample_received";
+  t: Time;
+  sample_id: Ident;
+}
+export interface AliquotCreated {
+  type: "aliquot_created";
+  t: Time;
+  sample_id: Ident;
+  aliquot_id: Ident;
+  storage: "ice" | "room_temperature" | "frozen";
+  volume_ul: number;
+}
+export interface DrawSkippedVolumeBudget {
+  type: "draw_skipped_volume_budget";
+  t: Time;
+  sample_id: Ident;
+  unit_id: Ident;
+  batch_id: Ident;
+  volume_ul: number;
+  cumulative_ul: number;
+}
+export interface CalibrationRecorded {
+  type: "calibration_recorded";
+  t: Time;
+  analyzer: Ident;
+  lot_id: Ident;
+  drift_before_pct: number;
 }

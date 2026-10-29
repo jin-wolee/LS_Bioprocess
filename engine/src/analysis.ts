@@ -36,8 +36,8 @@ export interface L3Window {
   analyzer: string;
   start_s: number;
   end_s: number;
-  /** Not part of a trace. Names the logged events; default "qc". */
-  kind?: "qc" | "maintenance";
+  /** Not part of a trace. Names the logged events; default "qc". "closed" (hours outside the roster, A201) logs nothing. */
+  kind?: "qc" | "maintenance" | "closed";
 }
 /** A trace plus the engine-only extras above and `dilution_factor` (a fixture-only input of the truth log). */
 export interface L3Input {
@@ -68,6 +68,35 @@ export interface L3Output {
   /** In order of completion; trace.ts sorts them for a trace_result. */
   runs: L3Run[];
 }
+
+/** What the core tells a measurement hook about the run that just ended. */
+export interface MeasureContext {
+  request: L3Request;
+  visit: number;
+  attempt: number;
+  analyzer: string;
+  start_s: number;
+  end_s: number;
+}
+export interface MeasuredResult {
+  analyte: string;
+  value: number;
+  true_value: number;
+  noise: number;
+  stability_kind?: "linear_rate" | "first_order_offset";
+  stability_delta?: number;
+  extrapolated?: true;
+}
+export interface Measurement {
+  /** One result_measured is logged per entry, in order. */
+  results: MeasuredResult[];
+  /** Default qc_passed; a forced outcome of the input wins over it. */
+  outcome?: Outcome;
+  /** The dilution of the next attempt when the outcome is over_range (logged as dilution_applied). */
+  next_dilution_factor?: number;
+}
+/** S1b: what a run measures and how it ends comes from the caller, so the core holds no profile, scenario or ledger value. */
+export type MeasureFn = (ctx: MeasureContext) => Measurement;
 
 interface Entry {
   request: L3Request;
@@ -113,7 +142,7 @@ const validate = (input: L3Input): void => {
   }
 };
 
-export const runL3 = (input: L3Input, opts: { onKey?: (key: StreamKey) => void } = {}): L3Output => {
+export const runL3 = (input: L3Input, opts: { onKey?: (key: StreamKey) => void; measure?: MeasureFn } = {}): L3Output => {
   validate(input);
   const rng = createRng(opts.onKey);
   const events: Event[] = [{ type: "log_header", t: 0, schema_version: "1", engine_version: input.engine_version, seed: input.seed }];
@@ -177,21 +206,27 @@ export const runL3 = (input: L3Input, opts: { onKey?: (key: StreamKey) => void }
     const { entry: e, machine: m } = run;
     const v = visitOf(e);
     const ids = { request_id: e.request.request_id, attempt: e.attempt, visit: e.visit, analyzer: m.id };
-    const outcome = forced.get(`${ids.request_id}#${e.attempt}#${e.visit}`) ?? "qc_passed";
-    const analyte = v.analyte ?? v.group;
-    const sd = v.noise_sd ?? 0;
-    const noise = sd > 0 ? sd * rng.stream([input.seed, ids.request_id, analyte, e.attempt, "noise"]).gaussian() : 0;
-    const truth = v.true_value ?? 0;
+    const meas = opts.measure?.({ request: e.request, visit: e.visit, attempt: e.attempt, analyzer: m.id, start_s: run.start, end_s: t });
+    const outcome = forced.get(`${ids.request_id}#${e.attempt}#${e.visit}`) ?? meas?.outcome ?? "qc_passed";
     m.busy = false;
-    events.push({ type: "result_measured", t, ...ids, analyte, value: truth + noise, true_value: truth, noise });
+    if (meas) {
+      for (const r of meas.results) events.push({ type: "result_measured", t, ...ids, ...r });
+    } else {
+      const analyte = v.analyte ?? v.group;
+      const sd = v.noise_sd ?? 0;
+      const noise = sd > 0 ? sd * rng.stream([input.seed, ids.request_id, analyte, e.attempt, "noise"]).gaussian() : 0;
+      const truth = v.true_value ?? 0;
+      events.push({ type: "result_measured", t, ...ids, analyte, value: truth + noise, true_value: truth, noise });
+    }
     events.push({ type: "qc_result", t, ...ids, outcome }, { type: "visit_finished", t, ...ids });
     runs.push({ ...ids, setup_s: run.setup, start_s: run.start, end_s: t, outcome });
     if (outcome !== "qc_passed") {
       // The failed attempt stays in the log; the same physical sample re-enters as attempt + 1 with a new seq. Nothing is held.
       const again: Entry = { request: e.request, visit: e.visit, attempt: e.attempt + 1, arrival: t, seq: seq++ };
       events.push({ type: "rerun_requested", t, request_id: ids.request_id, attempt: e.attempt, visit: e.visit, reason: outcome });
-      if (outcome === "over_range" && input.dilution_factor !== undefined) {
-        events.push({ type: "dilution_applied", t, request_id: ids.request_id, attempt: again.attempt, visit: e.visit, dilution_factor: input.dilution_factor });
+      const dilution = meas ? meas.next_dilution_factor : input.dilution_factor;
+      if (outcome === "over_range" && dilution !== undefined) {
+        events.push({ type: "dilution_applied", t, request_id: ids.request_id, attempt: again.attempt, visit: e.visit, dilution_factor: dilution });
       }
       q.push(t, PRIORITY.requestQueued, again.seq, { kind: "arrive", entry: again });
     } else if (e.visit < e.request.visits.length) {
@@ -224,7 +259,7 @@ export const runL3 = (input: L3Input, opts: { onKey?: (key: StreamKey) => void }
       wantDispatch(ev.t);
     } else if (p.kind === "window") {
       const kind = p.w.kind === "maintenance" ? "maintenance" : "qc_window";
-      events.push({ type: `${kind}_${p.edge === "start" ? "started" : "ended"}`, t: ev.t, analyzer: p.w.analyzer } as Event);
+      if (p.w.kind !== "closed") events.push({ type: `${kind}_${p.edge === "start" ? "started" : "ended"}`, t: ev.t, analyzer: p.w.analyzer } as Event);
       if (p.edge === "end") wantDispatch(ev.t);
     } else {
       dispatchAt = -1;

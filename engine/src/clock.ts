@@ -63,3 +63,6 @@ export const createEventQueue = <T>(): EventQueue<T> => {
 
 /** Sampled continuous durations become whole seconds: floor(x + 0.5), at least one second. */
 export const roundDuration = (x: number): number => Math.max(1, Math.floor(x + 0.5));
+
+/** An instant or an offset in seconds from a value that is not yet whole: floor(x + 0.5). Zero is allowed (unlike roundDuration). */
+export const wholeSeconds = (x: number): number => Math.floor(x + 0.5);

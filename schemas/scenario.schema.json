@@ -12,6 +12,9 @@
     "description": { "type": "string" },
     "seed": { "type": "integer", "minimum": 0 },
     "queue_policy": { "type": "string", "enum": ["fifo", "edf"] },
+    "feedback": { "type": "boolean", "default": false, "description": "L5 feeds back into L1 (experiment 2). Absent means false; S1 builds only the open loop." },
+    "sampling_plan": { "type": "string", "enum": ["burst", "staggered"] },
+    "label_method": { "type": "string", "enum": ["handwritten", "preprinted_barcode", "issued_at_draw"] },
     "profiles": {
       "type": "object",
       "additionalProperties": false,
@@ -25,6 +28,58 @@
     "settings": {
       "type": "object",
       "additionalProperties": { "$ref": "profile.schema.json#/$defs/param" }
+    },
+    "maintenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["analyzer", "start", "length"],
+        "properties": {
+          "analyzer": { "type": "string", "minLength": 1 },
+          "start": { "$ref": "profile.schema.json#/$defs/param" },
+          "length": { "$ref": "profile.schema.json#/$defs/param" }
+        }
+      }
+    },
+    "lot_changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["analyzer", "at"],
+        "properties": { "analyzer": { "type": "string", "minLength": 1 }, "at": { "$ref": "profile.schema.json#/$defs/param" } }
+      }
+    },
+    "scripted_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "unit_id", "at"],
+        "properties": {
+          "type": { "type": "string", "enum": ["feed", "alarm"] },
+          "unit_id": { "type": "string", "minLength": 1 },
+          "at": { "$ref": "profile.schema.json#/$defs/param" }
+        }
+      }
+    },
+    "stability": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["effect", "analyte", "container"],
+        "properties": {
+          "effect": { "type": "string", "enum": ["linear_rate", "first_order_offset"] },
+          "analyte": { "type": "string", "minLength": 1 },
+          "container": { "type": "string", "enum": ["open", "closed"] },
+          "rate": { "$ref": "profile.schema.json#/$defs/param" },
+          "valid_to": { "$ref": "profile.schema.json#/$defs/param" },
+          "offset": { "$ref": "profile.schema.json#/$defs/param" },
+          "tau": { "$ref": "profile.schema.json#/$defs/param" }
+        }
+      }
     }
   }
 }

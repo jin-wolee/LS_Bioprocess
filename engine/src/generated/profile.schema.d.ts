@@ -13,9 +13,42 @@ export interface Profile {
   profile_id: string;
   kind: "bioreactor" | "analyzer" | "staff";
   description?: string;
+  /**
+   * Analyzer profiles: the visits of one sample, in order. Names in a stage refer to keys of params.
+   *
+   * @minItems 1
+   */
+  route?: [Stage, ...Stage[]];
+  /**
+   * Bioreactor profiles: sample container per analyte, with a default entry.
+   */
+  containers?: {
+    [k: string]: "open" | "closed";
+  };
   params: {
     [k: string]: Param;
   };
+}
+export interface Stage {
+  group: string;
+  /**
+   * @minItems 1
+   */
+  analytes: [Analyte, ...Analyte[]];
+  service: string;
+  transfer?: string;
+  method_id?: string;
+  storage: "ice" | "room_temperature" | "frozen";
+  /**
+   * @minItems 1
+   */
+  dilution_factors?: [string, ...string[]];
+}
+export interface Analyte {
+  id: string;
+  noise?: string;
+  relative?: boolean;
+  limit?: string;
 }
 export interface Param {
   value: number;

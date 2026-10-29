@@ -1,0 +1,14 @@
+{
+  "schema_version": "1",
+  "profile_id": "bench_manual",
+  "kind": "bioreactor",
+  "description": "2 to 5 L glass or single-use vessel, operator draws into a closed container or syringe (spec 4.1; bundle A067, grade D).",
+  "containers": {
+    "ph": "closed",
+    "default": "open"
+  },
+  "params": {
+    "working_volume_l": {"value": 2, "unit": "L", "ref": "A002"},
+    "sample_volume_pct": {"value": 0.014, "unit": "%", "ref": "A057"}
+  }
+}

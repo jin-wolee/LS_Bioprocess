@@ -65,3 +65,10 @@ export const toTraceResult = (input: { engine_version: string; seed: number }, r
   seed: input.seed,
   runs: [...runs].sort((a, b) => a.start_s - b.start_s || byCode(a.analyzer, b.analyzer) || byCode(a.request_id, b.request_id) || a.attempt - b.attempt),
 });
+
+/** The trace of a scenario run: its L3 part. What the run drew (QC failure, over-range) travels as forced outcomes, so the S1a core replays the same runs. */
+export const traceOfRun = (input: L3Input, runs: readonly L3Run[]): Trace =>
+  exportTrace({
+    ...input,
+    forced_outcomes: runs.filter((r) => r.outcome !== "qc_passed").map((r) => ({ request_id: r.request_id, attempt: r.attempt, visit: r.visit, outcome: r.outcome })),
+  });

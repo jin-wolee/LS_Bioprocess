@@ -1,0 +1,65 @@
+{
+  "schema_version": "1",
+  "profile_id": "allinone_atline",
+  "kind": "analyzer",
+  "description": "One all-in-one at-line analyzer, one visit per sample (spec 4.2; bundle A069, grade D). Service 4.5 min (A023).",
+  "route": [
+    {
+      "group": "AIO",
+      "analytes": [
+        {
+          "id": "vcd",
+          "noise": "noise_cv_vcd_pct",
+          "relative": true,
+          "limit": "over_range_vcd_e6_per_ml"
+        },
+        {
+          "id": "viability",
+          "relative": false
+        },
+        {
+          "id": "glucose",
+          "noise": "noise_cv_glucose_pct",
+          "relative": true,
+          "limit": "over_range_glucose_g_per_l"
+        },
+        {
+          "id": "lactate",
+          "noise": "noise_cv_lactate_pct",
+          "relative": true,
+          "limit": "over_range_lactate_g_per_l"
+        },
+        {
+          "id": "glutamine",
+          "noise": "noise_cv_glutamine_pct",
+          "relative": true,
+          "limit": "over_range_glutamine_mm"
+        },
+        {
+          "id": "ph",
+          "noise": "noise_sd_ph",
+          "relative": false
+        }
+      ],
+      "service": "service_s",
+      "storage": "room_temperature",
+      "dilution_factors": ["dilution_1", "dilution_2", "dilution_3"]
+    }
+  ],
+  "params": {
+    "service_s": {"value": 270, "unit": "s", "ref": "A023"},
+    "sample_volume_ul": {"value": 275, "unit": "uL", "ref": "A019"},
+    "noise_cv_glucose_pct": {"value": 5.0, "unit": "%", "ref": "A077"},
+    "noise_cv_lactate_pct": {"value": 5.0, "unit": "%", "ref": "A077"},
+    "noise_cv_glutamine_pct": {"value": 5.0, "unit": "%", "ref": "A077"},
+    "noise_cv_vcd_pct": {"value": 5.0, "unit": "%", "ref": "A079"},
+    "noise_sd_ph": {"value": 0.007, "unit": "pH", "ref": "A078"},
+    "over_range_glucose_g_per_l": {"value": 15, "unit": "g/L", "ref": "A089"},
+    "over_range_lactate_g_per_l": {"value": 6, "unit": "g/L", "ref": "A089"},
+    "over_range_glutamine_mm": {"value": 6, "unit": "mM", "ref": "A089"},
+    "dilution_1": {"value": 1, "unit": "factor", "ref": "A090"},
+    "dilution_2": {"value": 2, "unit": "factor", "ref": "A090"},
+    "dilution_3": {"value": 4, "unit": "factor", "ref": "A090"},
+    "over_range_vcd_e6_per_ml": {"value": 35, "unit": "1e6 cells/mL", "ref": "A089"}
+  }
+}
