@@ -18,6 +18,12 @@ const ANSWER_KEY = {
   regex: "(^|/)evaluate/answer_key(\\.ts)?$",
   message: "The error answer key is importable only inside engine/src/evaluate; the injector returns plain data and the assembly writes the key.",
 };
+// 2026-10-29 S2b: the generated Event type still carries the hidden fields (true_value, noise, true_state, ...). The recorded side
+// uses the observable types of observe.ts, in which those fields are removed from the type (S2a Parked, closed here).
+const HIDDEN_EVENT = {
+  regex: "(^|/)generated/event\\.schema(\\.ts)?$",
+  message: "The generated Event type carries the hidden truth fields: the recorded side uses ObservableEvent from engine/src/observe.ts.",
+};
 const ARMS_ONLY_RECORDED = {
   regex: "(^|/)(oracle|assembly|evaluate)(/|$)",
   message: "experiments/arms sees recorded data only; the oracle arm is the single place that reads truth for a decision.",
@@ -71,13 +77,13 @@ export default tseslint.config(
     // Zone 1, folders: record, ingest, raw, inject, export, experiments/arms and any folder added later.
     files: ["engine/src/*/**/*.ts"],
     ignores: TRUTH_READERS,
-    rules: { "no-restricted-imports": restrict(ANSWER_KEY, { regex: `^(\\.\\./)+(${TRUTH})(\\.ts)?$`, message: TRUTH_MESSAGE }) },
+    rules: { "no-restricted-imports": restrict(ANSWER_KEY, { regex: `^(\\.\\./)+(${TRUTH})(\\.ts)?$`, message: TRUTH_MESSAGE }, HIDDEN_EVENT) },
   },
   {
     // Zone 3: the decision code of experiment 2.
     files: ["engine/src/experiments/arms/**/*.ts"],
     rules: {
-      "no-restricted-imports": restrict(ANSWER_KEY, { regex: `^(\\.\\./)+(${TRUTH})(\\.ts)?$`, message: TRUTH_MESSAGE }, ARMS_ONLY_RECORDED),
+      "no-restricted-imports": restrict(ANSWER_KEY, { regex: `^(\\.\\./)+(${TRUTH})(\\.ts)?$`, message: TRUTH_MESSAGE }, ARMS_ONLY_RECORDED, HIDDEN_EVENT),
     },
   },
 );

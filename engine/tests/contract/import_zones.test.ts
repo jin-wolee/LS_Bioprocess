@@ -36,7 +36,7 @@ describe("Zone 1: truth modules are importable only from the observe side, the e
   });
 
   it.each(BLOCKED)("%s/ may import the observe side and the recorded-data modules", async (dir) => {
-    for (const ok of ["observe.ts", "record/types.ts", "trace.ts", "generated/event.schema"]) {
+    for (const ok of ["observe.ts", "record/types.ts", "trace.ts", "generated/architecture.schema"]) {
       expect(restricted(await messages(importOf(`${up(dir)}${ok}`), `engine/src/${dir}/planted.ts`)), ok).toEqual([]);
     }
   });
@@ -61,6 +61,24 @@ describe("Zone 1: truth modules are importable only from the observe side, the e
 
   it("a local module with the name of a truth module is not mistaken for it (./process.ts inside record/)", async () => {
     expect(restricted(await messages(importOf("./process.ts"), "engine/src/record/planted.ts"))).toEqual([]);
+  });
+});
+
+describe("Zone 4 (S2b): the generated Event type, which carries the hidden fields, is not importable from the recorded side", () => {
+  it.each(BLOCKED)("%s/ importing generated/event.schema is an error (with a type import too)", async (dir) => {
+    for (const code of [importOf(`${up(dir)}generated/event.schema`), `import type { Event } from "${up(dir)}generated/event.schema";\nexport type X = Event;\n`]) {
+      const found = restricted(await messages(code, `engine/src/${dir}/planted.ts`));
+      expect(found.length).toBe(1);
+      expect(found[0]?.text).toMatch(/hidden/i);
+    }
+  });
+
+  it.each(ALLOWED)("%s/ may import it (the truth side and the evaluator read the full event)", async (dir) => {
+    expect(restricted(await messages(importOf(`${up(dir)}generated/event.schema`), `engine/src/${dir}/planted.ts`))).toEqual([]);
+  });
+
+  it.each(BLOCKED)("%s/ may import the observable types of observe.ts instead", async (dir) => {
+    expect(restricted(await messages(`import type { ObservableEvent } from "${up(dir)}observe.ts";\nexport type X = ObservableEvent;\n`, `engine/src/${dir}/planted.ts`))).toEqual([]);
   });
 });
 
