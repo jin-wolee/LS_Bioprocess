@@ -109,7 +109,7 @@ Design: `docs/design/simulation_spec.md` §2.4 and `docs/design/data_model.md` �
 
 ## Step 7 — controller side: tags, alarms, batch-phase records
 
-Ledger gate first (Step 5 preamble): the log deadband and maximum interval of each tag, the signal parameters of gas flows, pumps and off-gas CO2, and the alarm acknowledge times must exist as entries. If they do not, stop this step, report the list to the orchestrator and go on with Step 8.
+Ledger gate first (Step 5 preamble): the log deadband and maximum interval of each tag, the signal parameters of gas flows, pumps and off-gas CO2, and the alarm acknowledge times must exist as entries. If one does not, build what the existing entries cover (as in Step 5), stop only the parts that need the missing entry, report the list to the orchestrator and go on with Step 8. Test-only values in hand fixtures need no entry; they are named as test-only in the test.
 
 - [ ] L1: add the `sensor_tick` signals of spec §2.4.4 that are not in A100 only when `raw_layer` is on. A test shows the layer-off event log byte-identical to the goldens. SP and OUT come from the generic controller rule on observable PV; nothing reads hidden state in an emitter.
 - [ ] Controller emitter for `ctrl_neutral` and `ctrl_bench`: deadband and maximum-interval logging per tag (RQ9), scheduled L1 `alarm` events rendered as alarm transitions (RQ10), phase transitions from the process events and the batch (RQ11). The bench family writes its five record types as separate files.
