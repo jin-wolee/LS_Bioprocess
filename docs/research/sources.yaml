@@ -650,9 +650,9 @@ sources:
     url: "https://www.law.cornell.edu/cfr/text/21/211.192"
     accessed: 2026-10-29
     type: regulation
-    supports: "Read through a page-extraction summary, not word for word. Any unexplained discrepancy, or a batch or component failing specifications, must be thoroughly investigated whether or not the batch has been distributed; the investigation extends to other batches of the same drug product and to other products that may have been associated with the failure; a written record of the investigation with conclusions and follow-up is required. Part 211 is cGMP for finished pharmaceuticals; whether and how it governs a given biologic is a regulatory question not settled here."
+    supports: "Read through a page-extraction summary, not word for word. Any unexplained discrepancy, or a batch or component failing specifications, must be thoroughly investigated whether or not the batch has been distributed; the investigation extends to other batches of the same drug product and to other products that may have been associated with the failure; a written record of the investigation with conclusions and follow-up is required. Part 211 is cGMP for finished pharmaceuticals; whether and how it governs a given biologic is a regulatory question not settled here. Re-opened on the eCFR on 2026-10-29: the text sets no deadline for completing the investigation."
     verification: agent-read
-    used_in: [A149, A177]
+    used_in: [A149, A177, A187]
   - id: S072
     title: "General chapter 71 Sterility Tests (Pharmacopeial Forum 34(6) interim revision announcement, harmonized text)"
     publisher: "United States Pharmacopeial Convention (draft hosted by USP, dated 2008)"
@@ -878,7 +878,7 @@ sources:
     type: vendor-doc
     supports: "Seen only as a search excerpt. Recommended starting alarm deadbands and delay timers: flow 5% and 15 s, level 5% and 60 s, pressure 2% and 15 s, temperature 1% and 60 s; a table of ISA-18.2 alarm state indications. No pH or dissolved oxygen values."
     verification: snippet
-    used_in: [A174, A175]
+    used_in: [A174, A175, A185]
   - id: S097
     title: "OPC Unified Architecture Part 9: Alarms & Conditions (reference site)"
     publisher: "OPC Foundation"
@@ -903,9 +903,9 @@ sources:
     url: "https://47232567.fs1.hubspotusercontent-na1.net/hubfs/47232567/user-manuals/pbs-15/IC03771%20Rev%208.pdf"
     accessed: 2026-10-29
     type: vendor-doc
-    supports: "Read from a text conversion of the downloaded manual. Five record types (process data, user events, alarms, recipe steps, errors) are stored in a database and exported as CSV; process data has over 300 variables, each logged by deadband with a maximum log interval; alarm acknowledgement records the user and time; Appendix 4 lists logger variables with default deadbands and a source column (calc, sensor, system, user); the manual warns that spreadsheets can mangle CSV timestamps. The column layout of the CSV reports is not in the text read."
+    supports: "Read from a text conversion of the downloaded manual. Five record types (process data, user events, alarms, recipe steps, errors) are stored in a database and exported as CSV; process data has over 300 variables, each logged by deadband with a maximum log interval; alarm acknowledgement records the user and time; Appendix 4 lists logger variables with default deadbands and a source column (calc, sensor, system, user); the manual warns that spreadsheets can mangle CSV timestamps. The column layout of the CSV reports is not in the text read. Also read on 2026-10-29: Appendix 1 process alarm defaults (pH, DO, temperature, pressure, level, main gas) and the system settings Max Data Log Interval (60) and Alarm Snooze Time (300 s); Appendix 4 default deadbands and default-record marks for the pH, DO, temperature, duty and pressure variables; chapter 4 specifications (gas flow range by gas, pump types); the pH and DO controller deadbands and the acknowledge and snooze text. PID gains and the pump speed tables were not read."
     verification: agent-read
-    used_in: [A171, A172, A174]
+    used_in: [A171, A172, A174, A178, A179, A180, A181, A182, A184, A185, A186]
   - id: S100
     title: "DASware control and DASware connect (product pages)"
     publisher: "Eppendorf"
@@ -942,3 +942,57 @@ sources:
     supports: "Seen only as a search excerpt of a mirror copy. The OPC UA server is a licensed option and 'The description of the OPC and OPC UA tags is available on request', so there is no public tag list. The trend shows at most 72 hours; deviation and system alarms exist."
     verification: snippet
     used_in: [README]
+  - id: S104
+    title: "DASbox Mini Bioreactor System, cell culture version (catalog 76DX04CC, technical data)"
+    publisher: "Eppendorf"
+    url: "https://www.eppendorf.com/dk-en/Products/Bioprocess/Bioprocess-Controllers/DASbox-Mini-Bioreactor-System-p-76DX04CC"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Read from a text conversion of the product page. Up to 24 parallel units, total vessel volume 350 mL; thermal mass flow controllers with overlay and/or sparger; standard gas flow rates 0.04-5 sL/h and 0.04-3.5 sL/h for CO2; gas mixing of air, N2, O2 and/or CO2; two feed lines per vessel (four optional) with standard feed rates from 0.3-9.5 mL/h up to 13-420 mL/h depending on tube diameter; temperature range 10-60 C at 25 C room temperature; pH control by CO2 and base, DO control as a cascade of O2 concentration and gas flow rate; exhaust analysis is not offered for this version (the field shows a dash). The page carries no alarm or logging parameters."
+    verification: agent-read
+    used_in: [A180, A181, A183]
+  - id: S105
+    title: "pH Sensor Recalibration Based on Exhaust CO2 Concentration for Bioprocess Transfer and Scaling (Application Note 363)"
+    publisher: "Eppendorf, with Roche Pharma Technical Development (May 2018)"
+    url: "https://www.eppendorf.com/product-media/doc/en/357425/Fermentors-Bioreactors_Application-Note_363_GA-gas-analyzer_pH-Sensor-Recalibration-Based-Exhaust-CO2-Concentration-Bioprocess-Transfer-Scaling.pdf"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Read in full. A four-channel exhaust analyzer with a dual-beam infrared CO2 sensor; the ordering information gives CO2 0-25 % and O2 1-50 % or 0-100 %. Exhaust CO2 over cell-free carbonate medium correlated with pH independently of scale (2 L, 100 L, 400 L vessels); the plotted axes reach about 8 to 10 % CO2 but the text states no CO2 values; at the large vessels the gas flow to the analyzer was held at or below 250 sL/h. Product page and brochure of the analyzer, seen only as search excerpts, repeat CO2 0-25 % and give a mass flow range of 0-300 sL/h."
+    verification: agent-read
+    used_in: [A183]
+  - id: S106
+    title: "Achieving Effective Alarm System Performance: Results of ASM Consortium Benchmarking against the EEMUA Guide for Alarm Systems"
+    publisher: "Reising, Montgomery and colleagues (Honeywell Laboratories, ChevronTexaco), ASM Consortium, 20th CCPS International Conference, Atlanta, 2005"
+    url: "https://process.honeywell.com/content/dam/process/en/documents/document-lists/doc_asm-consortium/white-papers/February%2028%202005%20-%20Acheiving%20Effective%20Alarm%20System%20Performance%20Benchmarking.pdf"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Read in full from a text conversion. States, second-hand, the EEMUA Publication 191 (1999) recommendations: an average of less than 1 alarm per 10-minute period in steady state and fewer than 10 alarms per 10 minutes following a plant upset. Cites a human-performance study (Reising, Downs and Bayn 2004) of video-recorded operators in high-fidelity simulator training under upset conditions that derived an average time to respond to an alarm of approximately 49 seconds, so about 1 minute per alarm during alarm bursts. ASM member consoles had a median monthly average rate of 1.77 alarms per 10-minute period. Process-industry control rooms, not bioprocess laboratories; EEMUA 191 itself was not opened."
+    verification: agent-read
+    used_in: [A186]
+  - id: S107
+    title: "Safety communications concerning medicines, medical devices and other healthcare products (recall classes)"
+    publisher: "MHRA, GOV.UK"
+    url: "https://www.gov.uk/government/publications/safety-communications-concerning-medicines-medical-devices-and-other-healthcare-products/safety-communications-concerning-medicines-medical-devices-and-other-healthcare-products"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Read through a page-extraction summary, not word for word. Medicines recall classes with their action timescale: Class 1 immediate action (risk of death or disability, usually a National Patient Safety Alert), Class 2 action within 48 hours (harm possible but not life-threatening), Class 3 action within 5 days (harm unlikely, recall for other reasons such as non-compliance with the marketing authorisation), Class 4 caution in use with no timescale; a company-led recall or notification is used when the licence holder can identify the affected customers. UK rules for human medicines; not a US or biologics-specific source."
+    verification: agent-read
+    used_in: [A187]
+  - id: S108
+    title: "A Guide to Defective Medicinal Products (published February 2026)"
+    publisher: "MHRA Defective Medicines Report Centre (DMRC), GOV.UK"
+    url: "https://assets.publishing.service.gov.uk/media/698f286b43eb912f2e15b3fd/DMRC_Guide-to-Defective-Medicinal_Products-Feb2026.pdf"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Read sections 5 and 6 and the notification-recipient advice from a text conversion of the 66-page guide. Manufacturers must have a system for recalling 'promptly and at any time' and, as a statutory duty, must inform the authority 'immediately' of a defect that could result in a recall; the first report needs batch dates, an impact assessment of the batches affected (including admixed product) and proposals for recall, quarantine or other containment; the licence holder may be required to quarantine remaining stock during the investigation, extended to the wholesale chain in serious cases; the decision to recall is usually taken after consultation with the DMRC; recall depth (wholesaler, pharmacy or patient) depends on risk; the timescales on recall notifications are advice on priority, not legal deadlines; a final report is due no later than 12 weeks after the initial report unless agreed otherwise. The guide's own class table does not repeat the 48 h and 5 d timescales (S107 does)."
+    verification: agent-read
+    used_in: [A187]
+  - id: S109
+    title: "21 CFR 600.14 Biological product deviation reporting"
+    publisher: "US Code of Federal Regulations (eCFR)"
+    url: "https://www.ecfr.gov/current/title-21/section-600.14"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Read through a page-extraction summary, not word for word. The holder of the biological product licence, or the manufacturer that had control when the deviation occurred, must report a deviation or unexpected event affecting a distributed licensed biological product (safety, purity or potency) as soon as possible and not to exceed 45 calendar days after acquiring information that reasonably suggests a reportable event; reported on Form FDA-3486. The section sets a reporting deadline, not a hold or withdrawal deadline, and applies to distributed product only."
+    verification: agent-read
+    used_in: [A187]

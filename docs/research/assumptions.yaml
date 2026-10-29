@@ -804,12 +804,12 @@ assumptions:
     notes: "Drift rate of the in-line pH probe between readjustments is an assumption. Reference magnitude: in CHO runs the average absolute discrepancy between the in-line probe and an at-line analyzer was 0.047 pH for a reusable electrochemical probe, 0.044 for a single-use electrochemical probe and 0.072 for an optical sensor, correlated with batch age for the electrochemical types (S055). That discrepancy also contains the at-line sample offset (A041) and the effect of readjustments, so it bounds drift plus offset and is not a drift rate."
   - id: A095
     name: ph_controller_deadband
-    default: 0.05
-    range: [0.05, 0.1]
+    default: 0.02
+    range: [0, 0.05]
     unit: "pH units, half-width around the set point"
-    grade: A
-    sources: [S055]
-    notes: "S055 states that the pH set point range for mammalian cell bioreactors is typically at least 0.1 wide (about +/-0.05 pH) and ran its own cultures at 7.1 +/-0.1; those are the two ends of the range. The paper does not use the word deadband; treating the set-point range as the controller deadband is an assumption, hence grade A."
+    grade: S
+    sources: [S099, S055]
+    notes: "Controller deadband from the public bench-controller manual (S099; the same value as the pH part of A182). S055's statement that the pH set-point range for mammalian cultures is typically at least 0.1 wide (about +/-0.05) describes the tolerated culture band, not the controller deadband, and is kept here only as context. Reconciled 2026-10-29 (was default 0.05, range 0.05-0.1, grade A)."
   - id: A108
     name: ph_probe_recalibration_interval_h
     default: 24
@@ -1438,7 +1438,7 @@ assumptions:
     grade: S
     range_grade: A
     sources: [S099]
-    notes: "The mechanism, the example and the default deadband are in the manual (page 167, Appendix 4). The 15 s is the manual's worked example, not a stated default, and the setting is labelled in minutes while the example is in seconds. The range ends are not sourced."
+    notes: "The mechanism, the example and the default deadband are in the manual (page 167, Appendix 4). The 15 s is the manual's worked example, not a stated default, and the setting is labelled in minutes while the example is in seconds. The range ends are not sourced. Defaults for the other tags and the 60-minute default maximum interval are A178 and A179."
   - id: A173
     name: historian_exception_compression_defaults
     default: "ExcDev 0.1% of span, ExcMax 600 s, CompDev 0.2% of span, CompMax 28800 s, span 100"
@@ -1471,7 +1471,7 @@ assumptions:
     unit: h
     grade: A
     sources: [S065, S058]
-    notes: "Range n/a because the value is a scenario input, not a parameter with a default (simulation_spec section 11.7). Two delays are meant: from the first process signal to the first scripted response (isolate the unit, stop feeds, draw confirming samples) and from a confirmed positive result to a hold or quarantine action on the affected lots. No source gives either delay. Direction only: containment after a suspected contamination is to isolate the bioreactor and stop feeds (S065), and the most used virus test takes at least two weeks, so material can move on downstream before a positive is known (S058). The delay is identical across architectures, so it changes how much material is touched before containment, not which architecture finds it. Sweep points for tests (for example 0 h, 24 h, 72 h) are a test design choice, not data."
+    notes: "Range n/a because the value is a scenario input, not a parameter with a default (simulation_spec section 11.7). Two delays are meant: from the first process signal to the first scripted response (isolate the unit, stop feeds, draw confirming samples) and from a confirmed positive result to a hold or quarantine action on the affected lots. No source gives either delay. Direction only: containment after a suspected contamination is to isolate the bioreactor and stop feeds (S065), and the most used virus test takes at least two weeks, so material can move on downstream before a positive is known (S058). The delay is identical across architectures, so it changes how much material is touched before containment, not which architecture finds it. Sweep points for tests (for example 0 h, 24 h, 72 h) are a test design choice, not data. Withdrawal timing once a recall is decided is A187."
   - id: A177
     name: shared_lot_topology
     default: "no default; a scenario input giving, for each of seed lot, media lot and feed lot, how many reactors draw from it"
@@ -1480,3 +1480,88 @@ assumptions:
     grade: A
     sources: [S071, S049]
     notes: "No source gives how many reactors share a lot. The range ends are logical bounds: 1 means no sharing and the upper end is every reactor in the scenario (A001 sets 24 by default, range 5-100). Why it matters: the investigation walk-back extends to other reactors or batches that share a seed train, feed lot, media lot or equipment (A149), and the production record review rule extends an investigation to other batches associated with the failure (S071); 'seed train' is a term of the industrial biopharma ontology (S049). Sharing is also what scenario SC12 injects when an event enters through a shared medium lot (A157). The topology is a map from lot to reactors, set per scenario and printed with every result. Lot withdrawal timing is a separate gap and is not covered here."
+
+  # ---------------- controller emitters (simulation_spec section 2.4.8) ----------------
+  - id: A178
+    name: controller_log_deadband_defaults
+    default: "bench controller defaults, same on its two models: pH PV 0.05 pH and SP 0.01; DO PV 2.0 % and SP 1.0 %; temperature PV 0.2 C and SP 0.1 C; base pump duty 1.0 %; heat duty 2.0 %; main gas set flow 0.4 L/min on the 15-class model (2.0 on the larger one); agitation PV 0.5 RPM (A172). No row for the feed pump, the individual gas flows or an off-gas analyzer"
+    range: "per variable, user-set; no range stated"
+    unit: "pH, % DO, C, % duty, L/min"
+    grade: S
+    range_grade: A
+    sources: [S099]
+    notes: "Appendix 4 of the one public bench-controller manual gives a default deadband per logger variable and marks the ones recorded by default; pH, DO and temperature PV and SP, the base duty and the heat duty are marked, the individual gas flows are not (only raw valve voltages with a 0.1 V deadband exist). A tag without a row (feed pump, gas flows, off-gas CO2) has no sourced deadband; the nearest sourced fallback is the generic historian exception deviation of A173 (0.1 % of span, grade P, optional stage). Deadbands are the logging deadband, not the control deadband (A182) and not an alarm deadband (A185)."
+  - id: A179
+    name: controller_max_log_interval_min
+    default: 60
+    range: "user-set; the manual's worked example uses 15 s (A172); the generic historian exception maximum is 600 s (A173)"
+    unit: min
+    grade: S
+    range_grade: A
+    sources: [S099]
+    notes: "System setting 'Max Data Log Interval (min)' has default 60 on both models and applies to every logged variable on top of its deadband: a value that never moves by its deadband is still logged once per interval. The unit is an interpretation: the setting is labelled in minutes, its global variable in ms, and the manual's chart example is in seconds, all with the same figure 60 in the two tables; minutes is taken because the setting's own label says so. With the A178 deadbands a flat tag therefore produces one row an hour, while a moving one produces rows at about the deadband steps."
+  - id: A180
+    name: gas_flow_capability_ranges
+    default: "no operating default (gas names and flows are scenario data). Capability ranges: 15-class controller air and N2 100-2000 mL/min, O2 30-500, CO2 30-300; its larger model air, N2 and O2 300-10000, CO2 80-2000; mini cell-culture system (0.35 L vessels) total 0.04-5 sL/h (about 0.7-83 mL/min) and CO2 0.04-3.5 sL/h (about 0.7-58 mL/min)"
+    range: [0.7, 10000]
+    unit: mL/min
+    grade: P
+    sources: [S099, S104]
+    notes: "These are mass flow controller capability ranges from two vendor specifications, not typical operating flows, and they bracket the 2-5 L bench class of the profiles rather than sit on it (no 2-5 L controller manual was opened); the vessel size of the 15-class model is not given in the text read, hence grade P. The bench controller lets the user set the total (main gas) flow manually, and the DO and pH loops set the share of each gas, so the individual flows are outputs (OUT); CO2 is pulsed at the controller minimum when the requested amount is below it. Minimum flows for the 15-class and the larger model: CO2 0.03 and 0.08, N2 and air 0.10 and 0.25, O2 0.03 and 0.30 L/min. Default main-gas alarm limits on the 15-class model: low-low 0.2, low 0.4, high 1.6, high-high 1.8 L/min. The mini system lists exhaust analysis as not offered for its cell-culture version (A183)."
+  - id: A181
+    name: pump_output_ranges
+    default: "pump outputs are duty in % of full speed: base pump 0-100 % duty with a cap of 50 % in auto mode (100 % in manual); the maker advises limiting the range to the expected base use. Feed rate range of the mini system: 0.3-9.5 mL/h up to 13-420 mL/h depending on tube diameter"
+    range: "0 to 100 % duty; 0.3 to 420 mL/h"
+    unit: "% duty, mL/h"
+    grade: P
+    sources: [S099, S104]
+    notes: "Media and the two addition pumps of the bench controller are variable-speed and one-directional, the sample pump is fixed-speed and two-directional; one addition pump must be chosen by the user as the base pump. The feed pump follows the scheduled feed events of the scenario, so its OUT is scenario data and only the logging deadband (A178) and the rate bounds here are needed. The two sources are different products and scales, so the pair is a proxy."
+  - id: A182
+    name: ph_do_controller_out_rule
+    default: "two-sided control with an internal deadband: pH, CO2 flows only when pH PV is above SP + deadband and base is added only when PV is below SP - deadband, default pH deadband 0.02, allowed 0-0.05; DO, the N2 set point is DO SP + deadband and the O2 set point is DO SP - deadband, default deadband 1.0 % DO, allowed 0-5 %; base duty capped at 50 % in auto mode (A181)"
+    range: "pH deadband 0-0.05; DO deadband 0-5 %"
+    unit: "pH units, % DO"
+    grade: S
+    sources: [S099]
+    notes: "Gives the simulator a generic rule for OUT (section 2.4.4): OUT is zero inside the deadband and rises outside it. PID gains and output limits exist in the manual and were not read, so the shape of the rise is the engine's choice. The pH part matches A095 (reconciled 2026-10-29)."
+  - id: A183
+    name: offgas_co2_range
+    default: "no operating default; analyzer span 0-25 % CO2 by infrared, mass flow range 0-300 sL/h"
+    range: [0, 25]
+    unit: "% v/v"
+    grade: P
+    sources: [S105, S104]
+    notes: "The span is that of one bench exhaust analyzer (O2 1-50 % or 0-100 % beside it) and is used as the plausible range of the signal, not as a typical value: no source states a typical exhaust CO2 of a mammalian culture. The only data in the opened note are plots of cell-free medium whose axes reach about 8 to 10 %, with no values in the text. The engine would compute the off-gas value from hidden state (section 2.4.4), so only the span and the physical bound 0-25 % are needed here. The mini cell-culture system offers no exhaust analysis, so the tag exists only on setups with a separate analyzer."
+  - id: A184
+    name: ph_do_temperature_alarm_limit_defaults
+    default: "bench controller defaults, absolute values: pH low-low 7.10, low 7.15, high 7.25, high-high 7.30; DO low-low 30 %, low 40 %, high 60 %, high-high 70 %; temperature low-low 35 C, low 36 C, high 38 C, high-high 39 C"
+    range: "user-defined (limits are entirely selectable)"
+    unit: "pH, % DO, C"
+    grade: S
+    range_grade: A
+    sources: [S099]
+    notes: "Read from the process alarm table of the manual. The limits sit symmetrically around 7.20, 50 % and 37 C (windows of +/-0.05 and +/-0.10 pH, +/-10 and +/-20 % DO, +/-1 and +/-2 C, derived), but the manual states no default set point (recommended auto set points: pH 6.8-7.4, DO 25-100 %, temperature 37 C). The limits are absolute, not relative to the set point, so a scheduled temperature shift below 35 C would cross the low-low limit unless the scenario moves the limits too. The manual's state column labels low-low as an error and the others as warnings; only the limits are used here."
+  - id: A185
+    name: ph_do_alarm_deadband_and_delay
+    default: "no default; not needed while only scheduled alarm events are rendered (simulation_spec section 2.4.3)"
+    range: "n/a"
+    unit: "pH units or % of span, s"
+    grade: A
+    sources: [S096, S099]
+    notes: "Neither opened source gives an alarm deadband or on-delay for pH or DO: the bench controller's process alarm settings are limits only (plus a snooze time, A186), and the process-industry table of S096 (A175) lists flow, level, pressure and temperature. If a limit-based alarm rule is ever built, the nearest sourced row is the temperature row of A175 (1 % of span, 60 s, grade P for temperature) and the values for pH and DO stay assumed and printed as assumed."
+  - id: A186
+    name: alarm_acknowledge_response_time_s
+    default: "operator response to an alarm about 49 s on average (upset conditions, simulator training in the process industry), about 1 min per alarm in a burst; an alarm acknowledged while its condition persists is raised again after the snooze time, default 300 s on the bench controller"
+    range: "none stated"
+    unit: s
+    grade: P
+    sources: [S106, S099]
+    notes: "The 49 s comes from a human-performance study cited by S106 (video-recorded operators in simulator training under upset conditions), so it is a process-industry proxy and a response time, not a measured acknowledgement delay; no distribution for a bioprocess laboratory (night, unattended, one person for many reactors) was found, so a scenario that needs a long acknowledgement sets it as an input and prints it. The bench controller records the acknowledging user and time (A174) and, for audible alarms, silences the buzzer for the snooze time; the manual says an acknowledged alarm whose condition persists is regenerated after that time, which yields repeated alarm rows. Return-to-normal follows the process and has no parameter. Alarm volume check from EEMUA 191 as cited second-hand by S106: an average of less than 1 alarm per 10 minutes in steady state and fewer than 10 in the 10 minutes after an upset."
+  - id: A187
+    name: lot_withdrawal_schedule_h
+    default: "no default; a scenario input per lot kind, printed with every result. Public reference points for withdrawing distributed batches once a recall is decided: Class 1 immediate action, Class 2 within 48 h, Class 3 within 5 d, given as advice on priority"
+    range: [0, 120]
+    unit: h
+    grade: P
+    sources: [S107, S108, S109, S071]
+    notes: "UK finished-medicine recall classes (S107, S108) stand in for the schedule of SC12; they apply to distributed batches after a recall decision, not to pools or intermediates held in the plant, and the timescales are not legal deadlines (S108). Not found in any opened source: the delay from a confirmed positive to the recall decision and class, and how fast unreleased pools are put on hold (the hold delay stays A176). Related limits: a UK licence holder must inform the authority immediately of a defect that could lead to a recall and may be told to quarantine remaining stock during the investigation, with a final report within 12 weeks of the first (S108); for a distributed licensed biological product a deviation report is due as soon as possible and within 45 calendar days of learning of it (S109, a reporting limit, not a hold or withdrawal limit); the US production record review rule widens an investigation to other batches associated with the failure and sets no time limit (S071, text re-opened on the eCFR). Sweep points for tests (0 h, 48 h, 120 h) are a test design choice, not data."

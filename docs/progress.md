@@ -57,5 +57,5 @@ Newest entry last. Each entry: what was done, what is open for the author, what 
 
 **Open questions**
 - S2 Step 7 (controller emitters) needs ledger entries first: logging deadband and maximum interval for tags other than agitation, gas-flow/pump/off-gas CO2 signal parameters, alarm acknowledgement time, pH/DO alarm deadbands (`simulation_spec.md` §2.4.8). Without them Step 7 stops and reports.
-- Lot withdrawal schedule for SC12 is not in the ledgers yet (before S5).
+- Lot withdrawal schedule for SC12: now A187 (P); the time from a confirmed positive to the recall decision has no source (inside A176).
 - Before any number from a non-re-read source goes on a public page, the orchestrator re-reads it.

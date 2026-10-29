@@ -650,7 +650,7 @@ Recall is always shown with precision, and detection with the false-alarm rate. 
 
 ### 11.7 Gaps to close before building
 
-- The delay between the first signal and the scripted response, and from a confirmed positive to a hold, is ledger entry A176, and the shared-lot topology (how many reactors share a seed, media or feed lot) is A177. Both are graded A and have no default, so they stay scenario inputs printed with every result. The lot withdrawal schedule is still not in the ledger and stays a scenario input too.
+- The delay between the first signal and the scripted response, and from a confirmed positive to a hold, is ledger entry A176, and the shared-lot topology (how many reactors share a seed, media or feed lot) is A177. Both are graded A and have no default, so they stay scenario inputs printed with every result. The lot withdrawal schedule after a recall decision is A187 (graded P, from public recall-class guidance); the time from a confirmed positive to that decision has no source and stays inside A176.
 - No source for a viral signal lag, for assay sensitivity, for a per-origin split of contamination, or for a hazard change beyond a port's validated draw count (A137, A134, A146).
 - Batch length and intensified run length are choices (A125, A127). The cell-line spreads for productivity and density come from well-scale data (A120, A121).
 - The open flag question (lot and derivation links) is recorded in ADR-0013 and in data_model section 14.

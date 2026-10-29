@@ -120,7 +120,7 @@ These parameters were missing when the engine and metrics briefs were written. T
 | Over-range limits and dilution factors | glucose 15 g/L, lactate 6 g/L; factors 1, 2, 4 | A089, A090, S003 | provisional |
 | Recalibration interval | 2 h | A091, S003 | provisional |
 | Drift per interval and lot step | 1.0% and 2.0% of reading, bounded by a derived 4.9% | A092, A093 | assumed, provisional |
-| In-line pH probe drift, controller deadband, readjustment interval | 0.01 pH per day, +/-0.05, daily | A094, A095, A108 | assumed, provisional |
+| In-line pH probe drift, controller deadband, readjustment interval | 0.01 pH per day, +/-0.02, daily | A094, A095, A108 | drift and interval assumed; deadband from a public manual; provisional |
 | Maintenance window, holding-time threshold | 4 h, 30 min | A096, A097 | assumed |
 | Roster, fatigue multiplier, hands-on time | 10 h staffed window with 2 experienced operators, 1.0 (off), 2 min per sample | A098, A099, A101 | assumed, provisional |
 | Sensor cadence, example timeline, minimum seeds | 60 s, draw 08:40 / feed 09:00 / measured 09:25, 20 seeds | A100, A102, A103 | assumed |
@@ -174,7 +174,7 @@ The current build stays focused on results that lose their process context. Thre
 ### What an investigation needs from the data
 
 - A positive result starts a walk back over three sets: the reactor's samples and results since the estimated onset, the pools and downstream lots holding its material, and other reactors or batches sharing a seed, feed lot, media lot or equipment; a written deviation record closes it (A149, S071, S060, S064; provisional). For continuous harvest the unit is the harvest window (A132, S060; provisional).
-- Two scenario inputs have no source and no default, so each result prints them: the delay from the first signal, and from a confirmed positive, to a hold or quarantine action (A176, S065, S058; provisional, graded A), and how many reactors share a seed, media or feed lot (A177, S071, S049; provisional, graded A). Lot withdrawal timing is not in the ledger.
+- Two scenario inputs have no source and no default, so each result prints them: the delay from the first signal, and from a confirmed positive, to a hold or quarantine action (A176, S065, S058; provisional, graded A), and how many reactors share a seed, media or feed lot (A177, S071, S049; provisional, graded A). Lot withdrawal after a recall decision has only proxy reference points, from UK recall classes (immediate, within 48 h, within 5 days, given as advice) and a 45-day US reporting limit for distributed biologics, and nothing for putting unreleased pools on hold (A187, S107, S108, S109, S071; provisional, graded P).
 
 ### Gaps (provisional)
 
@@ -184,7 +184,7 @@ The current build stays focused on results that lose their process context. Thre
 
 ## Device output formats (planned for S2)
 
-The simulator would write synthetic raw files in the shapes that public documentation describes for lab equipment, then parse them into the canonical schema, so the whole path from raw device output to contextualised data can be shown. The formats are modeled on public documentation; the project does not claim to read any real instrument's files, and no manual text is copied. All lines below are provisional: none of the new sources (S084-S103) is main-reread, and several were seen only as search excerpts.
+The simulator would write synthetic raw files in the shapes that public documentation describes for lab equipment, then parse them into the canonical schema, so the whole path from raw device output to contextualised data can be shown. The formats are modeled on public documentation; the project does not claim to read any real instrument's files, and no manual text is copied. All lines below are provisional: none of the new sources (S084-S109) is main-reread, and several were seen only as search excerpts.
 
 ### Analyzers
 
@@ -198,10 +198,12 @@ The simulator would write synthetic raw files in the shapes that public document
 
 - Vendor-neutral. ISA-88 procedure, unit procedure, operation and phase, with 13 phase states (A170, S093, S094, S051; provisional). Process tags with PV, SP and Out roles (A171, S099, S101; provisional). The ISA-18.2 alarm states and OPC UA alarm fields (A174, S095, S097; provisional), with starting alarm deadbands and delays borrowed from the process industry (A175, S096; provisional). Historian exception and compression defaults (A173, S098; provisional).
 - Bench-scale family. One public controller manual describes five record types, deadband logging with a maximum log interval, and an appendix of logger variables (A172, S099; provisional). Another family's OPC tag list is on request only, so it is not usable (S103; provisional); a third has OPC and CSV but no published tag list (S100, S102; provisional).
+- Controller signal parameters. The one public bench-controller manual gives default logging deadbands for pH (0.05), DO (2 %), temperature (0.2 C) and the pump duties (1 to 2 %), and a default maximum log interval of 60 min whose unit is read from a label (A178, A179, S099; provisional). Gas flow and pump ranges are capability figures from two products of different scale that bracket the 2 to 5 L bench class: about 0.7 mL/min to 10 L/min for gases, and a 50 % auto-mode cap on the base pump (A180, A181, S099, S104; provisional, graded P). The rule for OUT is a two-sided deadband around the set point, default 0.02 pH and 1 % DO (A182, S099; provisional), the same pH deadband as A095. An off-gas CO2 analyzer spans 0 to 25 %, but no typical culture value was found, and the mini cell-culture system has no exhaust analysis (A183, S105, S104; provisional). The bench controller's default alarm limits are absolute (pH 7.10 to 7.30, DO 30 to 70 %, temperature 35 to 39 C) and no source gives an alarm deadband or delay for pH or DO (A184, A185, S099, S096; provisional). An operator needs about 49 s to respond to an alarm in a process-industry simulator study, a proxy and not a measured acknowledgement time (A186, S106; provisional, graded P).
 
 ### Gaps (provisional)
 
 - The analyzer manuals describe screen fields, not the CSV header, so the header spellings come from community test files (A160, A166, S086; provisional).
 - No vendor document shows a titer amount column, and the cell counter's instructions for use were not opened (A168, A166, S084; provisional).
 - Analyzer files carry no time zone; only the OPC side gives UTC and the local offset (A161, S004; provisional).
+- No typical operating gas flow for the 2 to 5 L bench class, no typical exhaust CO2, no alarm deadband or delay for pH or DO, and no acknowledgement-time distribution for a bioprocess laboratory (A180, A183, A185, A186; provisional).
 - The ISA-88 and ISA-18.2 standards are paywalled and OPC UA Part 13 aggregates were not opened, so those models rest on summaries (A170, A174, S093, S095; provisional).
