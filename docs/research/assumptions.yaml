@@ -1789,3 +1789,11 @@ assumptions:
     grade: A
     sources: [S124, S129, S130, S131]
     notes: "Range is a set of design variants, as in A176, not a measured spread. The sources support only that results are reviewed before they are reported (S124 paragraph f; S129 paragraph c gives 'at commencement or completion of significant phases' as an example, not a schedule; S130 refers to review after each significant step and before release, with no interval) and that a routine in-process review can be done by qualified production personnel while the approval of release-relevant records is the quality unit's (S131 6.71); none gives a clock time or a delay, so the shift starts are an assumption on the roster of A201. Unlimited reviewer capacity (the roster size of A098 is not used) and a short wait are favourable assumptions: they shorten every wait and ignore a queue of reviews. Direction of the variants: a later review point lengthens the wait of every released row."
+  - id: A216
+    name: analyzer_export_schedule
+    default: "end of each staffed window"
+    range: ["end of each staffed window", "after each run"]
+    unit: schedule
+    grade: A
+    sources: []
+    notes: "Range is a pair of design variants, as in A176 and A215, not a measured spread. No source gives when an analyzer export reaches the host. The staffed window itself is A098 (shift pattern A201). A159 says an export is an operator action that selects rows, so a file does not map one-to-one to a draw. Research task: find the export trigger and its usual timing in S003 and S038. The scenario setting export_schedule takes window_end (default) or per_run. The two variants change when a file arrives, so the capture-path contrast isolates linkage with per_run, whose arrival equals the manual path's entry time (no entry delay is modelled, spec 2.4.8), and reports window_end as a timing sensitivity (spec section 5, Automatic linkage alone)."
