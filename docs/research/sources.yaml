@@ -1117,3 +1117,95 @@ sources:
     supports: "Short conference paper. Recombinant CHO line (CRL-10052), batch cultures of 400 mL inoculated at 3e5 cells/mL, each at a constant temperature: specific growth rate 0.0136 per h at 37 C, 0.0107 at 35 C, 0.0072 at 33 C and above 0.0002 at 30 C (33 C to 37 C ratio 0.53); stationary-phase density 1.15, 1.09, 0.788 and 0.223e6 cells/mL. One cell line, and a ratio between constant temperatures, not the effect of a shift. A two-stage culture (37 C, then 33 C after 120 h) is also described; its growth rate after the shift is not in the text. Main text read."
     verification: agent-read
     used_in: [A196]
+
+  # ---- review step: outcome and timing of held results (S2 review step, 2026-10-29) ----
+  - id: S123
+    title: "Evaluation of the Patient Sample, Guideline 1: Specimen Management Sample Acceptance and Rejection (F SAP 0007 G1, version 3.1)"
+    publisher: "Northern Health (British Columbia)"
+    url: "https://northernhealth.ca/sites/northern_health/files/services/hospital-services/lab-services/documents/specimen-management-sample-guidelines.pdf"
+    accessed: 2026-10-29
+    type: docs
+    supports: "Cited for two rows only. (1) Label discrepancy: for an unlabelled sample, or one whose label does not match the requisition, the action is 'Call physician, ward or collection site and clarify' and 'Reject if unable to resolve discrepancy within the appropriate test stability time frame' (backs the outcome of VR-009 in A213). (2) A narrow two-stage rule for non-centrifuged chemistry samples from a facility without a centrifuge: processed if received under 8 hours after collection and reported with a statement that a compromised primary sample was accepted; rejected if received over 8 hours after collection. Not cited for any general rule about holding time. Read as text by the executor on the access date."
+    verification: agent-read
+    used_in: [A213]
+  - id: S124
+    title: "42 CFR 493.1256 Standard: Control procedures (CLIA); text read on the Cornell LII copy of the eCFR"
+    publisher: "Legal Information Institute, Cornell Law School (copy of the Electronic Code of Federal Regulations); source text from the US Government"
+    url: "https://www.law.cornell.edu/cfr/text/42/493.1256"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Paragraph (f): results of control materials must meet the laboratory's and, as applicable, the manufacturer's test system criteria for acceptability before reporting patient test results. Backs the order 'control acceptable, then report' for VR-012 (A213). The eCFR page itself redirected to a bot check, so the LII copy was read; the executor saw the opening words of paragraph (f) on the page and the remainder through the tool's summary."
+    verification: agent-read
+    used_in: [A213]
+  - id: S125
+    title: "42 CFR 493.1282 Standard: Corrective actions (CLIA); text read on the Cornell LII copy of the eCFR"
+    publisher: "Legal Information Institute, Cornell Law School (copy of the Electronic Code of Federal Regulations); source text from the US Government"
+    url: "https://www.law.cornell.edu/cfr/text/42/493.1282"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Paragraph (b)(2): when results of control or calibration materials fail to meet the laboratory's established criteria for acceptability, all patient test results in the unacceptable run and since the last acceptable run must be evaluated to determine whether they were adversely affected, and corrective action taken. The text says 'evaluated'; it does not say that re-analysis or non-reporting is required. Paragraph (b)(3) lists specimen storage criteria that are not met as a ground for corrective action."
+    verification: agent-read
+    used_in: [A213]
+  - id: S126
+    title: "QC - the Practice (Westgard Basic QC Practices)"
+    publisher: "Westgard QC (educational site of a laboratory quality consultancy)"
+    url: "https://www.westgard.com/qc-applications/basic-qc-practices/qcapp10.html"
+    accessed: 2026-10-29
+    type: docs
+    supports: "Educational material, not a regulation. When control results are out of control, that is when one of the control rules is violated, 'reject the run and do not report patient test results'; then inspect the process, correct the problem and reanalyze the patients and controls. The same page says that there may be situations where supervisory review is necessary before patient test results can be released. Companion page, the Westgard FAQ on controls and out-of-controls (https://westgard.com/questions/quest9.html), says the same in other words. The page title and the two sentences were confirmed by the executor on the access date."
+    verification: agent-read
+    used_in: [A213]
+  - id: S127
+    title: "WHO TRS 996 Annex 5: Guidance on good data and record management practices (sections 4.8 and 11.12)"
+    publisher: "World Health Organization"
+    url: "https://www.gmp-compliance.org/files/guidemgr/WHO_TRS_996_annex05.pdf"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Same document as S030, other sections. 4.8: suspect results are to be investigated and rejected from the reported results only if they are clearly attributable to an identified cause, and any rejected results are recorded with a documented justification. 11.12: invalid runs, failures, repeats and other atypical data are investigated, and all data are included in the dataset unless there is a documented scientific explanation for their exclusion. The main-reread level of S030 covers its section 4.12 only; these two sections were read by the executor (text extracted from the PDF)."
+    verification: agent-read
+    used_in: [A213, A214]
+  - id: S128
+    title: "MHRA GxP Data Integrity Guidance and Definitions, Revision 1, March 2018 (sections 6.10 and 6.15)"
+    publisher: "UK MHRA"
+    url: "https://assets.publishing.service.gov.uk/media/5aa2b9ede5274a3e391e37f3/MHRA_GxP_data_integrity_guide_March_edited_Final.pdf"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Same document as S029, other sections. 6.10: all data (even if excluded) should be retained with the original data set and be available for review. 6.15: a procedure should describe the actions when data review identifies an error or omission, and should enable data corrections or clarifications to provide visibility of the original record and traceability of the correction. The main-reread level of S029 covers its sections 5.1 and 6.13 only; these two sections were read by the executor (text extracted from the PDF)."
+    verification: agent-read
+    used_in: [A213, A214]
+  - id: S129
+    title: "21 CFR 211.110 Sampling and testing of in-process materials and drug products; text read on the Cornell LII copy of the eCFR"
+    publisher: "Legal Information Institute, Cornell Law School (copy of the Electronic Code of Federal Regulations); source text from the US Government"
+    url: "https://www.law.cornell.edu/cfr/text/21/211.110"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Paragraph (c): in-process materials are tested for identity, strength, quality and purity as appropriate and are approved or rejected by the quality control unit during production, with 'e.g., at commencement or completion of significant phases' as an example, not a review schedule; paragraph (d): rejected in-process materials are identified and controlled under a quarantine system. The text gives no interval for a review."
+    verification: agent-read
+    used_in: [A215]
+  - id: S130
+    title: "Data Integrity and Compliance With Drug CGMP: Questions and Answers, Guidance for Industry, December 2018"
+    publisher: "US FDA"
+    url: "https://www.fda.gov/media/119267/download"
+    accessed: 2026-10-29
+    type: regulation
+    supports: "Question 2: even where test results are legitimately invalidated, the CGMP batch record provided to the quality unit would include the original (invalidated) data along with the investigation report that justifies invalidating the result (backs 'value kept' for a rejected row, A213). The answer to the audit-trail review question refers to the review after each significant step of 211.188(b) and to data review before batch release; it gives no interval (A215)."
+    verification: agent-read
+    used_in: [A213, A215]
+  - id: S131
+    title: "ICH Q7 Good Manufacturing Practice Guide for Active Pharmaceutical Ingredients (section 6.71)"
+    publisher: "ICH"
+    url: "https://database.ich.org/sites/default/files/Q7%20Guideline.pdf"
+    accessed: 2026-10-29
+    type: standard
+    supports: "6.71: batch production and laboratory control records of critical process steps are reviewed and approved by the quality unit(s) before an API batch is released or distributed, while records of non-critical process steps can be reviewed by qualified production personnel or other units following approved procedures. Backs the distinction between a routine in-process review and a release review (A215). It gives no review interval."
+    verification: agent-read
+    used_in: [A215]
+  - id: S132
+    title: "Evaluation of the Patient Sample, B SAP 0007 G1, Guideline 1: Specimen Acceptance and Rejection Criteria (point of care sample acceptance, rejection and stability guidelines)"
+    publisher: "Nisga'a Valley Health Authority, Primary Care Program and Services (British Columbia)"
+    url: "https://nisgaahealth.bc.ca/wp-content/uploads/2025/01/Point-of-Care-Sample-Acceptance-Rejection-and-Stability-Guidelines.pdf"
+    accessed: 2026-10-29
+    type: docs
+    supports: "Clinical proxy for the outcome of VR-010 (A213). The table of rejection criteria lists 'Sample received greater than accepted stability' (see the stability chart of the document) with the action 'Reject.', and the message 'Specimen not processed due to delay in transport. Suggest recollection if clinically indicated'. The revision log of version 3.1 lists a review by the Northern Health Authority, and the identifier scheme is the one of S123, so S123 and this guideline are not two independent policies. The text extraction interleaves the columns of the stability chart, so no stability value is cited from it. Read as text by the executor on the access date."
+    verification: agent-read
+    used_in: [A213]
