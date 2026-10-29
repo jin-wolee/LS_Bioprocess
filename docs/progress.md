@@ -59,3 +59,22 @@ Newest entry last. Each entry: what was done, what is open for the author, what 
 - S2 Step 7 (controller emitters) needs ledger entries first: logging deadband and maximum interval for tags other than agitation, gas-flow/pump/off-gas CO2 signal parameters, alarm acknowledgement time, pH/DO alarm deadbands (`simulation_spec.md` §2.4.8). Without them Step 7 stops and reports.
 - Lot withdrawal schedule for SC12: now A187 (P); the time from a confirmed positive to the recall decision has no source (inside A176).
 - Before any number from a non-re-read source goes on a public page, the orchestrator re-reads it.
+
+## 2026-10-29 — Ready to start development (pre-S1 complete)
+
+**Done**
+- Author decisions recorded: preset A types results by hand (no adapter); a separate `capture_path` setting (manual_transcription / adapter_ingest) lets any preset switch, so automatic linkage can be compared on its own (ADR-0014, spec §5).
+- Controller emitter inputs (A178–A187) and S1b process/logistics inputs (A188–A211) in the ledgers: 117 sources, 211 assumptions.
+- README (English first, Korean summary); vault hub note and two MOC lines (vault left uncommitted for the author).
+- `scripts/check_docs.py` split (structure only, behaviour proven identical).
+- Independent readiness review: GO WITH FIXES; all 5 blockers and 12 fixes applied. S1 split into `prompts/10_S1a_contracts_analyzer.md` and `prompts/11_S1b_process_sampling.md`.
+
+**State**: S1a can start now; S1b inputs exist. All gates pass (`bash scripts/check_all.sh --manual`).
+
+**Open for the author (HITL)**
+- Private backup repository and first push.
+- ADR-0001 to ADR-0014: decide, write the decider's note, commit yourself.
+- Vault: review and commit the new hub note and the two MOC lines.
+- Author track (non-blocking): canonical DDL, three SQL queries, SimPy core loop (`prompts/60_user_track.md`).
+
+**Next**: start a new session inside the repo; S1a Step 0 checks that the hooks fire live, then contracts and the analyzer DES.
