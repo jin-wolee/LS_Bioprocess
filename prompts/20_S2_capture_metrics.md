@@ -7,7 +7,7 @@ Read `prompts/00_master_build.md` first. Start only after the S1b blocking gate 
 Principles: see `prompts/PRINCIPLES.md`. Stage combination (S2): SDD + TDD + EDD + BDD + YAGNI + HITL; always KISS, AHA, SRP, Small Batches. Rails: PRINCIPLES.md section 6.
 Scenarios become Given-When-Then acceptance tests in the format of PRINCIPLES.md section 2, named after the scenario id. The forced-error fixtures, the evaluator's answer key and the hand fixtures are the evals (EDD); goldens are never regenerated.
 You never commit; report structure-only paths and behaviour paths as two lists.
-HITL gates touched: the author's SQL files (acceptance tests only), ADRs (`Proposed` only; ADR-0014 stays `Proposed` and its decider's note stays empty).
+HITL gates touched: the author's SQL files (acceptance tests only), ADRs (new ones `Proposed` only; ADR-0014 is `Accepted` by the author and its status line and decider's note stay as the author left them).
 
 ## Goal
 
@@ -124,7 +124,7 @@ Ledger gate first (Step 5 preamble): the log deadband and maximum interval of ea
 - [ ] R1 public material only: every dialect and controller file lists `modeled_on` ids that resolve in `docs/research/sources.yaml` (a test); no sentence, table or paragraph of a manual appears in code, fixtures, comments or docs (read each new file; column labels are short field names from the ledger field lists A160, A162, A165, A166, A168, A171); no file from the Allotrope or AnIML repositories is present, only concept names; `docs/private/` was not read or copied from.
 - [ ] R2 origin safety: dialect, profile and fixture ids, file-name prefixes and column labels are vendor-neutral (list them in the report); `uv run --frozen python scripts/check_docs.py --all` passes after the last new file is written (banned tokens); the pre-commit scan is the orchestrator's.
 - [ ] R3 no compatibility claims: the banner test of Step 5 is green; every doc or UI string that describes a dialect says "synthetic formats modeled on public documentation"; `grep -rniE "compatible with|supports (the |an |any )?(real |actual )?(instrument|analy[sz]er|controller|device)|certified|conformant|validated against|reads real" docs/ engine/ schemas/ scenarios/ tests/` is run and every hit is read and justified or fixed in the report (design text that denies a claim is fine).
-- [ ] ADR-0014 is still `Proposed` and its decider's note is untouched.
+- [ ] ADR-0014's status line and decider's note are unchanged from the author's own commit (`git diff HEAD -- docs/adr/0014-*.md` is empty).
 
 ## Step 9 — data dictionary, state machines, roles
 

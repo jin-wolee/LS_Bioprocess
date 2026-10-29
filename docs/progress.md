@@ -446,3 +446,12 @@ The peak lactate is 2.6 to 2.9 times the S056 and Ruhl maxima and 1.4 to 1.9 tim
 - S4: the `lactate_consumer` clone of SC13 needs a new difference from the platform, which now turns to net consumption on culture day 7.
 
 **Next**: S2 (`prompts/20_S2_capture_metrics.md`) in a new session; before any recorder exists, a process-value-only sensor stream (adversary F11 note).
+
+## 2026-10-29 — Author decisions and S2 start (orchestrator)
+
+**Author decisions**
+- ADR-0015 (mixed fleets): accepted by the author in chat ("혼합구성 허락."). The decision is recorded verbatim in `docs/adr/review_2026-10-29_adr0015.json` for `scripts/adr_accept.py`; the author applies it and commits it personally (dry run checked: status line and decider note change, exit 0). Implementation stays in S3 or S4.
+- `.nvmrc` stays at 25; the EBADENGINE warning of Vitest 5.0.5 is accepted.
+- Push: run by the author after the ADR commit.
+
+**S2 plan (orchestrator, PDD)**: `prompts/20_S2_capture_metrics.md` runs in five executor batches, each verified and committed before the next: S2a Steps 0-1 plus a process-value-only sensor stream for recorders (S1b adversary note); S2b Steps 2-3; S2c Step 4; S2d Steps 9-12; S2e Steps 5-8 (raw device layer). `sim-adversary` runs once at the end of S2. The brief now states that ADR-0014 is Accepted by the author (it said Proposed).
