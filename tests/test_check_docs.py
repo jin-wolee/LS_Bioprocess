@@ -199,6 +199,105 @@ def test_grade_a_assumption_needs_no_source(repo):
     assert repo.check("--all").returncode == 0
 
 
+# ---------- ledger schema: range / unit / components / range_grade ----------
+def entry(aid, grade="S", sources="[S001]", rng="[1, 2]", unit="min", notes="plain", extra=""):
+    lines = [f"  - id: {aid}", f"    name: thing_{aid.lower()}", "    default: 1", f"    grade: {grade}", f"    sources: {sources}"]
+    if rng is not None:
+        lines.append(f"    range: {rng}")
+    if unit is not None:
+        lines.append(f"    unit: {unit}")
+    if notes is not None:
+        lines.append(f'    notes: "{notes}"')
+    return "\n".join(lines) + "\n" + extra
+
+
+def ledger(*entries):
+    return "assumptions:\n" + "".join(entries)
+
+
+def bundle(bundle_grade, *, member_grades=("S", "D"), components=None):
+    """A001, A002 (...) are the members; A009 is the bundle built from them."""
+    members = [entry(f"A00{i + 1}", grade=g) for i, g in enumerate(member_grades)]
+    ids = components or ", ".join(f"A00{i + 1}" for i in range(len(member_grades)))
+    return ledger(*members, entry("A009", grade=bundle_grade, extra=f"    components: [{ids}]\n"))
+
+
+@pytest.mark.parametrize(
+    "assumptions",
+    [
+        ledger(entry("A001", rng=None)),
+        ledger(entry("A001", unit=None)),
+        ledger(entry("A001", rng="n/a", notes=None)),
+        ledger(entry("A001", rng="null", notes=None)),
+        ledger(entry("A001", unit="n/a", notes="")),
+        ledger(entry("A001", unit="null", notes="  ")),
+    ],
+    ids=["no-range-key", "no-unit-key", "range-na-unexplained", "range-null-unexplained", "unit-na-empty-notes", "unit-null-blank-notes"],
+)
+def test_range_and_unit_are_required(repo, assumptions):
+    ledgers(repo, assumptions=assumptions)
+    r = repo.check("--all")
+    assert r.returncode == 1
+    assert "A001" in r.stdout
+
+
+@pytest.mark.parametrize("empty", ["n/a", "null"])
+def test_na_or_null_range_and_unit_are_allowed_when_notes_explain(repo, empty):
+    ledgers(repo, assumptions=ledger(entry("A001", rng=empty, unit=empty, notes="Rule, so no range or unit applies")))
+    assert repo.check("--all").returncode == 0
+
+
+@pytest.mark.parametrize(
+    "bundle_grade, member_grades",
+    [("D", ("S", "D")), ("A", ("S", "A")), ("P", ("S", "P", "S")), ("S", ("S", "S"))],
+    ids=["S+D->D", "S+A->A", "S+P+S->P", "S+S->S"],
+)
+def test_bundle_grade_equals_weakest_component(repo, bundle_grade, member_grades):
+    ledgers(repo, assumptions=bundle(bundle_grade, member_grades=member_grades))
+    assert repo.check("--all").returncode == 0
+
+
+@pytest.mark.parametrize(
+    "bundle_grade, member_grades",
+    [("S", ("S", "D")), ("P", ("S", "D")), ("D", ("S", "A")), ("S", ("S", "P"))],
+    ids=["S-over-D", "P-over-D", "D-over-A", "S-over-P"],
+)
+def test_bundle_grade_stronger_than_weakest_component_fails(repo, bundle_grade, member_grades):
+    ledgers(repo, assumptions=bundle(bundle_grade, member_grades=member_grades))
+    r = repo.check("--all")
+    assert r.returncode == 1
+    assert "A009" in r.stdout and "weakest" in r.stdout
+
+
+def test_bundle_grade_weaker_than_weakest_component_fails(repo):
+    ledgers(repo, assumptions=bundle("A", member_grades=("S", "D")))
+    assert repo.check("--all").returncode == 1
+
+
+def test_unknown_component_id_fails(repo):
+    ledgers(repo, assumptions=bundle("D", components="A001, A002, A777"))
+    r = repo.check("--all")
+    assert r.returncode == 1
+    assert "A777" in r.stdout
+
+
+def test_component_may_be_defined_after_the_bundle(repo):
+    first = entry("A009", grade="D", extra="    components: [A001, A002]\n")
+    ledgers(repo, assumptions=ledger(first, entry("A001", grade="S"), entry("A002", grade="D")))
+    assert repo.check("--all").returncode == 0
+
+
+@pytest.mark.parametrize("grade, ok", [("S", True), ("P", True), ("D", True), ("A", True), ("X", False), ("s", False)])
+def test_range_grade_is_optional_but_must_be_a_grade(repo, grade, ok):
+    ledgers(repo, assumptions=ledger(entry("A001", extra=f"    range_grade: {grade}\n")))
+    assert (repo.check("--all").returncode == 0) is ok
+
+
+def test_range_grade_may_be_omitted(repo):
+    ledgers(repo, assumptions=ledger(entry("A001")))
+    assert repo.check("--all").returncode == 0
+
+
 # ---------- ID references ----------
 def test_unknown_reference_fails_only_after_bootstrap(repo):
     ledgers(repo)
@@ -218,15 +317,66 @@ def test_known_references_pass_after_bootstrap(repo):
     assert repo.check("--all").returncode == 0
 
 
-def test_public_number_must_cite_main_reread_sources(repo):
-    ledgers(repo)
+GATED = ["README.md", "docs/research/README.md", "infographic/index.html"]
+
+
+def gated(repo, rel, text, assumptions=ASSUMPTIONS):
+    ledgers(repo, assumptions=assumptions)
     repo.write(".claude/.bootstrap-done", "")
-    repo.write("README.md", "a figure (S001)\n")
-    assert repo.check("--all").returncode == 0
-    repo.write("README.md", "a figure (S002)\n")
-    r = repo.check("--all")
+    repo.write(rel, text)
+    return repo.check("--all")
+
+
+@pytest.mark.parametrize("rel", GATED)
+def test_public_number_must_cite_main_reread_sources(repo, rel):
+    assert gated(repo, rel, "a figure (S001)\n").returncode == 0
+    r = gated(repo, rel, "a figure (S002)\n")
     assert r.returncode == 1
-    assert "main-reread" in r.stdout
+    assert rel in r.stdout and "S002" in r.stdout and "main-reread" in r.stdout
+
+
+@pytest.mark.parametrize("label", ["provisional", "Provisional", "PROVISIONAL figure"])
+def test_provisional_on_the_same_line_allows_an_unverified_source(repo, label):
+    assert gated(repo, "README.md", f"about 30 min (S002), {label}\n").returncode == 0
+
+
+def test_provisional_on_another_line_does_not_help(repo):
+    r = gated(repo, "README.md", "provisional\nabout 30 min (S002)\n")
+    assert r.returncode == 1
+    assert "S002" in r.stdout
+
+
+def test_provisional_label_covers_only_its_own_line(repo):
+    r = gated(repo, "README.md", "ok (S002) provisional\nnot ok (S002)\n")
+    assert r.returncode == 1
+    assert r.stdout.count("S002") == 1
+
+
+def test_assumption_citation_follows_its_sources(repo):
+    snippet_backed = ASSUMPTIONS.replace("sources: [S001]", "sources: [S002]")
+    assert gated(repo, "README.md", "turnaround (A001)\n").returncode == 0
+    r = gated(repo, "README.md", "turnaround (A001)\n", assumptions=snippet_backed)
+    assert r.returncode == 1
+    assert "README.md" in r.stdout and "A001" in r.stdout and "S002" in r.stdout and "main-reread" in r.stdout
+
+
+def test_provisional_also_covers_an_assumption_citation(repo):
+    snippet_backed = ASSUMPTIONS.replace("sources: [S001]", "sources: [S002]")
+    assert gated(repo, "README.md", "turnaround (A001), provisional\n", assumptions=snippet_backed).returncode == 0
+
+
+def test_one_unverified_source_of_several_fails_the_assumption(repo):
+    mixed = ASSUMPTIONS.replace("sources: [S001]", "sources: [S001, S002]")
+    assert gated(repo, "README.md", "turnaround (A001)\n", assumptions=mixed).returncode == 1
+
+
+def test_grade_a_assumption_without_sources_is_allowed_in_public_files(repo):
+    unsourced = ASSUMPTIONS.replace("grade: P", "grade: A").replace("sources: [S001]", "sources: []")
+    assert gated(repo, "README.md", "assumed turnaround (A001)\n", assumptions=unsourced).returncode == 0
+
+
+def test_files_outside_the_public_list_may_cite_unverified_sources(repo):
+    assert gated(repo, "docs/design/notes.md", "a figure (S002) and A001\n").returncode == 0
 
 
 def test_tests_directory_may_use_fixture_ids(repo):

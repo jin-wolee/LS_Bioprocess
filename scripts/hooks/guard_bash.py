@@ -61,6 +61,11 @@ def git_subcommand(args: list[str]) -> tuple[str | None, list[str]]:
     return None, []
 
 
+def first_operand(args: list[str]) -> str:
+    """First argument that is not an option, so `npx --yes gh-pages` is seen as running gh-pages."""
+    return next((a for a in args if not a.startswith("-")), "")
+
+
 def newlines_to_semicolons(command: str) -> str:
     """Treat unquoted newlines as command separators (shlex would treat them as spaces)."""
     out, quote, escape = [], None, False
@@ -133,6 +138,8 @@ def check_segment(tokens: list[str], depth: int = 0) -> None:
             block(f"gh repo {args[1]}")
         if len(args) >= 2 and args[0] in {"gist", "pr", "release", "issue"} and args[1] in {"create", "edit", "delete", "merge", "upload"}:
             block(f"gh {args[0]} {args[1]}")
+        if args[:2] == ["workflow", "run"]:
+            block("gh workflow run")
         if args and args[0] == "api":
             method = None
             for j, a in enumerate(args):
@@ -147,7 +154,7 @@ def check_segment(tokens: list[str], depth: int = 0) -> None:
                 block("gh api write request")
     elif prog in {"npm", "pnpm", "yarn", "bun"} and "publish" in args:
         block(f"{prog} publish")
-    elif prog == "gh-pages" or (prog in {"npx", "bunx"} and args and args[0].startswith("gh-pages")):
+    elif prog == "gh-pages" or (prog in {"npx", "bunx"} and first_operand(args).startswith("gh-pages")):
         block("gh-pages deploy")
 
 

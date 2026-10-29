@@ -27,6 +27,14 @@ BLOCKED = [
     "gh api repos/a/b/issues -f title=x",
     "npm publish",
     "npx gh-pages -d dist",
+    "npx --yes gh-pages -d dist",
+    "npx -y gh-pages -d dist",
+    "npx -y gh-pages@latest -d dist",
+    "bunx --yes gh-pages -d dist",
+    "bunx -y gh-pages -d dist",
+    "gh workflow run deploy.yml",
+    "gh workflow run deploy.yml -f env=prod",
+    'bash -c "gh workflow run deploy.yml"',
     'echo "unbalanced',
 ]
 
@@ -37,6 +45,11 @@ ALLOWED = [
     "git remote -v",
     "gh repo view a/b --json visibility",
     "gh api user/emails",
+    "gh workflow list",
+    "gh workflow view deploy.yml",
+    "npx --yes prettier --check .",
+    "npx -y vitest run",
+    "bunx --bun tsc --noEmit",
     "git commit -F - <<'EOF'\nmessage\nEOF",
 ]
 

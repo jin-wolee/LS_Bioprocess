@@ -19,3 +19,4 @@ qa_out/
 
 # OS
 .DS_Store
+.claude/.last-check
