@@ -58,7 +58,7 @@ Three rules keep the ledger honest:
 - pH after sampling: offline pH is commonly used to ensure correct probe signals after sterilisation and to detect drift; when the difference exceeds defined criteria a readjustment is applied with the offline value as the reference, and pH should not be considered stable after sampling at higher cell density (S013).
 - Offline minus vessel pH was measured on cell-free medium in three setups: a 2 L bench vessel with manual sampling, 0.02-0.06 with an average of about 0.04; an Ambr 250 liquid handler, mean about 0.05; a 250 L vessel sampled by syringe, mean 0.021. A single point above 0.1 is called not unusual (A041, S013). The default is 0.04, the case that matches the default scenario, graded P because the medium has no cells (A041).
 - Container matters: in an open thin layer CO2 leaves and pH rises with a time constant of 2-3 h (A042, S014, proxy, provisional); in a closed sample with respiring cells pH falls (A037, S016, provisional). Blood-gas practice gives 0.02-0.03 pH/h at room temperature and a 30 min rule (A043, A046, S015, proxy, provisional).
-- The earlier idea of a +0.1-0.3 pH rise within 15-30 min has no source, and a glucose decay rate in the tube was not found (A041, A045).
+- The earlier idea of a +0.1-0.3 pH rise within 15-30 min has no source (A041). A glucose decay rate in a held tube was not found; the simulator derives one from the bioreactor per-cell rates and an assumed temperature factor, and it is off by default (A045, provisional). Cell settling in an unmixed sample rests on one measurement with Jurkat cells in a tube, 26 % lower after 5 min, applied to CHO cells as an assumption (A044, S117, provisional).
 
 ### Standards status
 
@@ -125,6 +125,24 @@ These parameters were missing when the engine and metrics briefs were written. T
 | Roster, fatigue multiplier, hands-on time | 10 h staffed window with 2 experienced operators, 1.0 (off), 2 min per sample | A098, A099, A101 | assumed, provisional |
 | Sensor cadence, example timeline, minimum seeds | 60 s, draw 08:40 / feed 09:00 / measured 09:25, 20 seeds | A100, A102, A103 | assumed |
 
+## Values added for the S1b inputs
+
+These parameters were missing when the process and logistics inputs of S1b were checked. Clock times, caps and effect sizes are scenario settings (grade A). Sourced values are from open-access CHO fed-batch studies that were opened but not re-read by the orchestrator, so every line is provisional.
+
+| Item | Default | Ids | Status |
+|---|---|---|---|
+| Inoculation stagger, horizon | 4 cohorts of 6 reactors, one cohort per day from a Monday, 15 min between reactors from 08:00; 21 d | A188, A189 | assumed |
+| Initial glucose and glutamine | 8 g/L (medium content of one study; range 4-15) and 4 mM (range 2-8) | A190, A191, S112, S113, S114 | sourced, low glucose end assumed, provisional |
+| Bolus feed | 2.4 % of the volume of a 500 g/L glucose stock, a glucose rise of 11.7 g/L; the nutrient-feed alternative is 10 % of a 60 g/L feed; glutamine 200 mM in the bolus | A192, A193, A208, S110, S112 | derived and sourced, glutamine assumed, provisional |
+| Feed window and decision | window 09:00-11:00, bolus executed at the 10:00 decision | A194, A050, A102 | assumed |
+| Temperature shift | 37 to 33 C on culture day 4 at 10:00 (range day 3-5, 30-35 C) | A195, S110, S111 | sourced range, default a pick inside it, provisional |
+| Shift effect | growth x 0.5, death x 0.5, productivity x 1.5 | A196, S115 | assumed, provisional |
+| Alarms and sensors | no scripted alarms; limits relative to set points; pH 7.00, DO 30 %, 37 C; noise sd 0.005 pH, 0.2 %, 0.02 C; 60 s step | A197, A198, A199, A200, S110 | set points sourced, rest assumed, provisional |
+| Roster, burst remainder, staggered window | shifts 08:00-13:00 and 13:00-18:00 with 2 operators, weekend 08:00-14:00 with 1; 35 % uniform; staggered windows 45 min wide, 45 min apart | A201, A202, A203 | assumed |
+| QC, maintenance, deadline | QC 30 min at 08:00; SC5 maintenance 08:30-12:30 (4 h, A096) on day 8; deadline = next 10:00 | A204, A205, A206 | assumed |
+| Sample-volume cap | 33 % of the initial working volume per reactor | A207, S011, S110 | assumed, provisional |
+| Held-sample effects | settling 0.05 per min up to 0.30; glucose and lactate at the A082 and A084 rates times 0.35 at room temperature; both off by default | A044, A045, S117, S054 | assumed, provisional |
+
 ## Prior art
 
 Among examples surveyed, the closest on method is a browser-based discrete-event simulation lab with seeded trace replay and generic queue scenarios, seen as an excerpt (S033, provisional). A second runs a healthcare SimPy model in the browser through stlite and notes that it does not work in Firefox, also seen as an excerpt (S034, provisional). A third is a penicillin fermentation simulator with a public batch dataset, which has no at-line analyzer or sample-context layer and is not CHO (S035, provisional). None of the examples surveyed combines analyzer-queue contention with context loss and a switch between data architectures on the same seeded run. This survey was shallow and may have missed work.
@@ -139,6 +157,7 @@ Among examples surveyed, the closest on method is a browser-based discrete-event
 - Per-cell kinetics come from a few CHO studies at modest density, one of them a research line with low productivity; the lactate switch and the extension to high density are assumptions (A085, A082, S054, provisional).
 - Second-hand sources not opened: the Processes 8(6) automated-sampling paper (A014, A032, S021), the Bioresources and Bioprocessing sampling paper (A014, S037), the ISA-95 preview (S032) and several vendor blogs (S040-S046). Their claims stay at `snippet`, and all of these lines are provisional.
 - Corrections to earlier notes found while reading: a "typical 110 s" Vi-CELL BLU cycle is not on the vendor page (A025, S005, provisional); the +0.05 pH offset is for cell-free medium and an Ambr 250 handler, not for open cups at bench scale (A041, S013); the A-Mab fed-batch range starts at 13 d, and 12 d comes from a different study (A004, S017, S019, provisional); the viability slope of a neat sample is not a decline (A038, A040, S012); utilisation always states its window (A074); the counting-bead study was regraded from sourced to proxy (A058, A059, A060, S025, provisional).
+- S1b inputs: no source for the inoculation stagger, horizon, roster and QC clock times, the sample-volume cap (searched; no percentage cap found), the alarm schedule or the size of the temperature-shift effect; initial glucose is the medium content of one study and its low range end is a round number (A188, A189, A201, A204, A207, A197, A196, A190; provisional).
 - Eleven sources are main-reread: S001, S002, S009, S011, S012, S013, S017, S022, S027, S029, S030. Before any other number goes on a public page, the orchestrator re-reads its source and sets `main-reread`.
 
 ## Working with the ledgers

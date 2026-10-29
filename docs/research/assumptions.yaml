@@ -131,7 +131,7 @@ assumptions:
     unit: fraction of reactor-days
     grade: A
     sources: []
-    notes: "Share of reactor-days that get a second sample around the feed window. No source."
+    notes: "Share of reactor-days that get a second sample around the feed window. No source. Clock times: feed window A194, second-sample rule A202."
   - id: A016
     name: shift_start_burst
     default: "65% of samples drawn around 08:30, sd 18 min"
@@ -139,7 +139,7 @@ assumptions:
     unit: schedule
     grade: A
     sources: []
-    notes: "Range n/a because this is a schedule. Chosen to produce a start-of-shift burst; no source."
+    notes: "Range n/a because this is a schedule. Chosen to produce a start-of-shift burst; no source. Non-burst part, staffed window and the staggered SC2 variant: A201, A202, A203."
   - id: A017
     name: shift_pattern
     default: "two shifts on weekdays, reduced staffing at weekends"
@@ -147,7 +147,7 @@ assumptions:
     unit: schedule
     grade: A
     sources: []
-    notes: "Range n/a because this is a schedule. No source."
+    notes: "Range n/a because this is a schedule. No source. Numbers for the shifts and weekend: A201."
   - id: A018
     name: transport_and_prep_minutes
     default: "10-25 (uniform)"
@@ -263,7 +263,7 @@ assumptions:
     unit: schedule
     grade: A
     sources: []
-    notes: "Range n/a because this is a schedule. No source for the 30 min. The onboard QC of the all-in-one analyzer can be scheduled (S003) but its duration was not extracted. Failure probability is A087, maintenance length A096."
+    notes: "Range n/a because this is a schedule. No source for the 30 min. The onboard QC of the all-in-one analyzer can be scheduled (S003) but its duration was not extracted. Failure probability is A087, maintenance length A096. Clock time and length of the QC window: A204; SC5 maintenance start: A205."
   - id: A032
     name: inter_analyzer_bias_pct
     default: 0
@@ -365,20 +365,20 @@ assumptions:
     notes: "Blood proxy: pH falls 0.02-0.03 per h at 22 C and less than 0.01 per h at 4 C (S015). Cell-culture samples are not blood; sign (acidification by respiration) is supported by S016."
   - id: A044
     name: cell_settling_vcd_bias
-    default: "VCD bias grows with waiting time in an unmixed cup"
-    range: "n/a"
-    unit: model
+    default: "when switched on, a sample that waits unmixed in an open cup reads low: VCD read = VCD x (1 - min(k x t, cap)) with t the minutes waited since the last mixing, k = 0.05 per min and cap = 0.30; a sample mixed just before the run has no bias; switched off in the base scenarios (same practice as A040)"
+    range: "k 0 to 0.06 per min; cap 0 to 0.30"
+    unit: "fraction of true VCD per min waited; fraction"
     grade: A
-    sources: []
-    notes: "Range n/a because this is a model. No quantified source."
+    sources: [S117]
+    notes: "The only measurement found: 2 mL of Jurkat cells in a 15 mL tube were mixed, then 200 uL was taken from the middle at 0, 1, 5 and 20 min; 5 min of settling alone gave a 26 % lower cell concentration (S117; the other time points are in a figure that the text does not give). k = 0.26 / 5 min = 0.052 per min, rounded to 0.05 (D arithmetic), assumes a linear fall and that CHO cells in an analyzer cup behave like Jurkat cells in a tube; cell type, vessel and sampling depth all differ, so the grade is A. The cap 0.30 is a rounded-up choice, not a measured plateau. Whether the analyzer mixes the cup before it aspirates is a scenario setting (default: a hand-fed sample is mixed, so only a sample waiting in an autosampler cup is affected)."
   - id: A045
     name: in_tube_glucose_lactate_change
-    default: "glucose falls and lactate rises by VCD times an assumed specific rate"
-    range: "n/a"
-    unit: model
+    default: "when switched on, a held sample changes at VCD x specific rate x f: glucose falls at the A082 rate of the sample's culture phase (2.5 pmol/cell/d exponential, 2.1 stationary) and lactate rises at the A084 rate (2.3 pmol/cell/d exponential) or the stationary-phase value of S054 (0.24); f = 1.0 for a sample held at 37 C and f = 0.35 for one held at about 22 C (assumed Q10 of 2: 2^-1.5 = 0.354); switched off in the base scenarios (same practice as A040)"
+    range: "f at 22 C 0.19 to 0.54 (Q10 3 to 1.5); f = 1 at 37 C"
+    unit: "pmol/cell/d x factor (dimensionless)"
     grade: A
-    sources: []
-    notes: "Range n/a because this is a model. Direction is supported qualitatively by blood-gas practice (S015). No cell-culture figure found; the earlier -0.12 g/L/h value has no source and is not used. The specific rates of A082 and A084 describe cells in a bioreactor, not in a held tube."
+    sources: [S015, S054]
+    notes: "Direction is supported qualitatively by blood-gas practice, where glucose falls and lactate rises in a held sample (S015). The magnitude is arithmetic on bioreactor rates (S054 through A082 and A084), not a measurement in a held tube; the temperature factor f rests on the textbook Q10 rule of thumb of 2, for which no source was opened, so the grade is A. Worked at 10e6 cells/mL in the exponential phase: glucose -4.5 g/L/d = -0.19 g/L/h at 37 C and -0.066 g/L/h at 22 C; lactate +2.1 g/L/d = +0.086 g/L/h at 37 C and +0.031 g/L/h at 22 C (D, 180.16 and 90.08 g/mol). Over a 30 min hold at 22 C that is -0.033 g/L glucose and +0.015 g/L lactate, about one within-run SD of the analyzer (0.03 g/L, A077), and it doubles at 20e6 cells/mL, so the effect shows up in aggregate more than in single values. The earlier -0.12 g/L/h value has no source and is not used."
   - id: A046
     name: max_allowed_hold_min
     default: 30
@@ -420,7 +420,7 @@ assumptions:
     unit: rule
     grade: A
     sources: []
-    notes: "Range n/a because this is a rule. The rule is a simulator choice; the 1.0 g/L floor is A010."
+    notes: "Range n/a because this is a rule. The rule is a simulator choice; the 1.0 g/L floor is A010. Bolus size A192, A193, A208; feed window A194; deadline rule for earliest-deadline-first A206."
   - id: A051
     name: ph_probe_recalibration_from_offline
     default: "on"
@@ -1565,3 +1565,198 @@ assumptions:
     grade: P
     sources: [S107, S108, S109, S071]
     notes: "UK finished-medicine recall classes (S107, S108) stand in for the schedule of SC12; they apply to distributed batches after a recall decision, not to pools or intermediates held in the plant, and the timescales are not legal deadlines (S108). Not found in any opened source: the delay from a confirmed positive to the recall decision and class, and how fast unreleased pools are put on hold (the hold delay stays A176). Related limits: a UK licence holder must inform the authority immediately of a defect that could lead to a recall and may be told to quarantine remaining stock during the investigation, with a final report within 12 weeks of the first (S108); for a distributed licensed biological product a deviation report is due as soon as possible and within 45 calendar days of learning of it (S109, a reporting limit, not a hold or withdrawal limit); the US production record review rule widens an investigation to other batches associated with the failure and sets no time limit (S071, text re-opened on the eCFR). Sweep points for tests (0 h, 48 h, 120 h) are a test design choice, not data."
+  # ---------------- S1b inputs: process settings, clock times and caps (added 2026-10-29) ----------------
+  - id: A188
+    name: inoculation_stagger
+    default: "day 0 is a Monday; 24 reactors in 4 cohorts of 6 consecutive reactors; cohort k (k = 0 to 3) is inoculated on day k; within a cohort one reactor every 15 min starting 08:00 (first 08:00, sixth 09:15); the production culture then runs per A004, so cohorts differ in age by whole days"
+    range: "cohort interval 0 to 2 d; in-cohort interval 5 to 60 min; cohort size 1 to 24"
+    unit: "d, min, reactors"
+    grade: A
+    sources: []
+    notes: "Scenario setting, no source. Chosen so that on any day of weeks 2 and 3 the reactors are in different phases (feed trigger, temperature shift, harvest) instead of all reaching the glucose floor (A010) on one day, and so that every inoculation falls on a weekday (A201). Cohort size 6 is half a bay of 12 (A001); which cohort sits in which bay is the engine's choice. Cohort interval 0 gives the simultaneous start. Inoculation density A007, seed train A005."
+  - id: A189
+    name: scenario_horizon_days
+    default: 21
+    range: [14, 42]
+    unit: d
+    grade: A
+    sources: []
+    notes: "Scenario input, printed with every result. Three whole weeks, so the weekend rules (A201) apply twice. The last cohort starts on day 3 (A188) and a 14 d culture (A004) ends on day 17 (D); the remaining 4 d let the harvest-day analyses and the queue clear. Reactors that start on day 0 reach the harvest rule (A013) on day 14. No source."
+  - id: A190
+    name: initial_glucose_g_per_l
+    default: 8
+    range: [4, 15]
+    unit: g/L
+    grade: S
+    range_grade: A
+    sources: [S112, S113]
+    notes: "The chemically defined growth medium of one fed-batch study contains 8 g/L glucose (S112), and the production cultures there start in it; the same study raised the initial glucose of seed-expansion and N-step cultures to 12 and 15 g/L (S112, the high end). Bioreactor glucose targets of 4.5-5.0 g/L in another study are a feed target, not an initial value (S113); the low end 4 is a round number near it and has no source. The inoculum is taken to carry no glucose of its own (assumption). Hand check with A007 (1.0e6 cells/mL), A080 (0.027 per h) and A082 (2.5 pmol/cell/d), pure exponential growth, no lag, no death, no Monod term: 8 g/L falls to the 1.0 g/L floor (A010) after 89 h, about day 3.7, at 11e6 cells/mL, so the first bolus (A050) is due around day 4 (D)."
+  - id: A191
+    name: initial_glutamine_mm
+    default: 4
+    range: [2, 8]
+    unit: mM
+    grade: S
+    sources: [S112, S114, S113]
+    notes: "Standard supplement of 4 mM L-glutamine in two studies (S112, S114); 0, 2, 4 and 8 mM were tested in S112 (the range ends 2 and 8; 0 is left out because it is the no-glutamine case) and 6 mM was used in S113. 4 mM is 0.58 g/L (146.14 g/mol, D). Uptake is A083; ammonium is not modelled. Glutamine in the bolus is A208."
+  - id: A192
+    name: feed_bolus_volume_fraction_pct
+    default: 2.4
+    range: [2, 20]
+    unit: "% of current culture volume per bolus"
+    grade: D
+    sources: [S110, S112, S113, S111]
+    notes: "Default derived from the glucose feed of S110: when glucose fell below 4 g/L, a 500 g/L stock raised it by 12 g/L, which is 12 / 500 = 2.4 % of the volume (D); with the stock concentration of A193 it gives a glucose rise of f x C / (1 + f) = 0.024 x 500 / 1.024 = 11.7 g/L on top of what is left (D). A nutrient feed is a different, larger bolus: 10 % of the volume daily from day 3 in the ambr15 and 2 L runs of S112 (4-16 % tested in flasks, 8 % best), one 20 % feed on day 3 in S110, 5 / 2 / 5 / 2 / 5 % every second day in S111, a fixed 2.5-2.9 % of final volume per day in S113. For those the glucose concentration of the feed is 60 g/L (A193), so the pair (f, C) must be set together; the glucose rise per bolus is what matters. The sourced feeds are daily or on a fixed schedule; here the trigger is the glucose rule (A050), so the number of boluses is an outcome. Each bolus adds f to the volume and dilutes cells and analytes by 1 / (1 + f). Usable glucose of the default bolus above the 1.0 g/L floor: (1 + 12.0) / 1.024 - 1.0 = 11.7 g/L, enough for 1.3 d at 20e6 cells/mL (A008; 9.0 g/L/d from A082, D) and 0.9 d at 30e6, so at the top of the density range a once-daily decision (A050) can leave a short gap near zero."
+  - id: A193
+    name: feed_glucose_concentration_g_per_l
+    default: 500
+    range: [60, 500]
+    unit: g/L
+    grade: S
+    sources: [S110, S112, S113]
+    notes: "500 g/L glucose stock in S110; 450 g/L stock for extra glucose in the ambr15 runs of S112 and 400 g/L in S113; the nutrient feed of S112 contains 60 g/L (the low end). A pure glucose stock (400-500 g/L) goes with a volume fraction of 1-3 % (A192), a 60 g/L nutrient feed with 10 % (5.5 g/L rise to an empty culture, 0.1 x 60 / 1.1, D); mixing 500 g/L with 10 % would add 45 g/L and is not a sourced practice."
+  - id: A194
+    name: feed_window_clock
+    default: "feed window 09:00-11:00 (2 h); the bolus of A050 is executed at 10:00, the decision time, using the newest glucose result available at 10:00; scenario-scripted feeds (A102, example 09:00) fall inside the window; a daily scheduled event (feed decision, temperature shift) runs at 10:00"
+    range: "window 1 to 4 h around 10:00"
+    unit: "clock time, h"
+    grade: A
+    sources: []
+    notes: "Scenario setting, no source. The window contains both the 10:00 decision of A050 and the illustrative 09:00 bolus of the SC3 timeline (A102), so the two do not contradict each other: A102 is a scripted event, A050 the rule. The second sample of A015 is planned uniformly inside this window (A202). Bolus size A192, A193, A208. The decision input depends on the experiment: in experiment 1 (open loop) the truth run decides on the true glucose value, so recording cannot change the process; in experiment 2 (closed loop) it decides on the most recent recorded result (simulation_spec section 6)."
+  - id: A195
+    name: temperature_shift_schedule
+    default: "37 C until culture day 4, then set point 33 C; applied as a step change of the set point at 10:00 on culture day 4 (day counted from the inoculation date, A188), the controller then moves PV with the lag of A199"
+    range: "day 3 to 5 (day 5 assumed); set point 30 to 35 C; pre-shift 37 C"
+    unit: "d, C"
+    grade: S
+    sources: [S110, S111, S113]
+    notes: "Two studies shift on day 3 (to 35 or 33 C, S110) and on day 4 (to 30, 32 or 34 C, S111); a third shifts when a target density is reached, about 8-10e6 cells/mL, with the day and set points not stated (S113). The default day 4 and 33 C is a pick inside the two sourced sets and was not reported as such; the clock time 10:00 is a scenario setting (A194). Other studies of the same kind keep 37 C throughout (S112), so a no-shift scenario is also sourced. The effect on growth is A196. The absolute temperature alarm limits of A184 (low-low 35 C) would trip at 33 C; A197 makes them follow the set point."
+  - id: A196
+    name: temperature_shift_effect_multipliers
+    default: "after the shift: maximum growth rate x 0.5 (A080), death rate x 0.5 (A081), specific productivity x 1.5 (A086); per-cell glucose, glutamine and lactate rates unchanged (A082, A083, A084); multipliers apply from the shift instant"
+    range: "growth x 0.2 to 1.0; death x 0.3 to 1.0; productivity x 1.0 to 2.0"
+    unit: "multiplier (dimensionless)"
+    grade: A
+    sources: [S115, S116]
+    notes: "Scenario knob, assumed. The sources show direction and spread, not rate multipliers: cooling to 32 C arrested growth and prolonged viability, the titer ratio against 37 C ranged 0.30-0.91 for four clones and about 5 for two others, transient cultures had at least 10-fold lower viable density (S115), and one study reports 2.3 times the final antibody at 31 C (S116, snippet, cell-line specific). The defaults are chosen so that the peak viable density falls and viability lasts longer, the common outcome; they are not fitted. A scenario without a shift sets all three to 1."
+  - id: A197
+    name: process_alarm_schedule_default
+    default: "no alarm events scripted in the base scenarios (an alarm event exists only when a scenario adds one); alarm limits are relative to the set point: pH SP -0.10 / -0.05 / +0.05 / +0.10 (low-low, low, high, high-high), DO SP -20 / -10 / +10 / +20 % air saturation, temperature SP -2 / -1 / +1 / +2 C, so the set points of A198 and the scheduled shift (A195) raise no alarm"
+    range: "n/a"
+    unit: "schedule; pH units, % air saturation, C"
+    grade: A
+    sources: [S099]
+    notes: "Range n/a because this is a schedule. The offsets are the windows derived in A184 from the bench controller's default limits, which are absolute and centred on 7.20, 50 % and 37 C; with the set points of A198 (pH 7.00, DO 30 %) or after the shift (33 C) absolute limits would sit on the set point or alarm at once, so they are expressed relative to it here. The simulation spec renders only scheduled alarm events (section 2.4.3); alarm volume and acknowledgement are A186."
+  - id: A198
+    name: online_sensor_signals_and_setpoints
+    default: "three signals on every reactor, each with roles PV, SP and OUT: pH, DO, temperature; tag = unit_tag.signal.role, for example U03.pH.PV, U03.DO.SP, U03.temperature.OUT; set points pH 7.00 (deadband A182), DO 30 % air saturation, temperature 37 C then 33 C (A195); cadence A100 (60 s); other signals (agitation, gas flows, pumps, off-gas CO2) are absent unless a scenario adds them (A178 to A183)"
+    range: "pH 6.8 to 7.4; DO 25 to 100 %; temperature 30 to 37 C"
+    unit: "pH, % air saturation, C"
+    grade: S
+    sources: [S110, S099]
+    notes: "S110 gives, for its microscale vessels, 37 C, DO 30 % of air saturation, base added below pH 6.97 and CO2 sparged above 7.05 towards a target of 7.0. The ranges are the recommended auto set points of the bench controller manual (S099, as in A184) and the shift range of A195. Volume with the raw layer on: 24 units x 3 signals x 3 roles x 1,440 ticks per day = 311,040 values per day, 6.5 million over the 21 d horizon (A189, D), before the deadband logging of A178 thins what a historian keeps. Layer off: PV series only, plain tags without the role (data model, tag naming convention)."
+  - id: A199
+    name: online_sensor_noise_and_lag
+    default: "PV noise, normal and independent per tick: pH sd 0.005, DO sd 0.2 % air saturation, temperature sd 0.02 C; temperature PV follows a changed SP with a first-order lag, time constant 20 min; pH and DO PV follow the truth series without lag"
+    range: "sd up to a third of the log deadband (pH 0.017, DO 0.67 %, temperature 0.07 C); lag 5 to 60 min"
+    unit: "pH units, % air saturation, C, min"
+    grade: A
+    sources: [S099]
+    notes: "No probe accuracy figure was opened. The sd values are one tenth of the default log deadbands of the bench controller (pH 0.05, DO 2 %, temperature 0.2 C; A178, S099), so noise alone, at 3 sd = 0.3 of a deadband, does not trigger deadband logging; the choice is not data. The lag is an assumption for a 2 L vessel with a heating and cooling jacket."
+  - id: A200
+    name: kinetics_integration_step_s
+    default: 60
+    range: [10, 600]
+    unit: s
+    grade: A
+    sources: []
+    notes: "Design setting. Equal to the sensor cadence of A100, which already fixes the step in its notes (DRY: the value is the same fact; this entry gives the engine one named parameter, and if the two are ever split, A100 is the cadence and this entry the step). One explicit Euler step per sensor tick is adequate: the fastest rate in the model, growth 0.027 per h (A080), changes a state by 0.027 / 60 = 0.045 % per step (D). All scheduled events (A188, A194, A195, A204, A205) fall on whole minutes, so no event time is rounded."
+  - id: A201
+    name: shift_roster_clock
+    default: "weekdays: two shifts, 08:00-13:00 and 13:00-18:00 (staffed window 10 h, A098), 2 operators per shift; weekends: one shift 08:00-14:00 (6 h), 1 operator, and no second sample (A015 share 0); sampling and analysis happen only inside the staffed window; no night shift"
+    range: "n/a"
+    unit: "schedule; clock time, operators"
+    grade: A
+    sources: []
+    notes: "Range n/a because this is a schedule. Scenario setting, no source; it turns the 'reduced staffing at weekends' of A017 into numbers. The 10 h window and 2 operators are A098; the burst of A016 at 08:30 sits 30 min after the shift start. State the window wherever utilisation appears (A074: a 6 h weekend window raises it by a factor of 10 / 6 for the same load). Day 0 is a Monday (A188)."
+  - id: A202
+    name: first_sample_nonburst_distribution
+    default: "the burst share of A016 (65 %, 08:30, sd 18 min) applies to the first, daily sample of each reactor; the other 35 % of first samples are planned uniformly over the staffed window of that day (08:00-18:00 weekdays, 08:00-14:00 weekends); the second sample (A015) is planned uniformly inside the feed window (A194); the draw delay spread of A063 is added to every planned time and a draw is clipped to the staffed window"
+    range: "burst share 0 to 1 (A016 sets 0.65); the rest uniform"
+    unit: "schedule; fraction"
+    grade: A
+    sources: []
+    notes: "Scenario setting, no source. A016 says '65% of samples'; this entry reads it as 65 % of the first samples so that the second samples have their own rule. A burst draw before the window start (the normal curve reaches 07:54 at 2 sd) is clipped to 08:00."
+  - id: A203
+    name: staggered_sampling_window
+    default: "SC2 staggered arm: one window per bay of 12 (A001); bay 1 08:00-08:45, bay 2 08:45-09:30 (width 45 min, offset 45 min); the 12 reactors of a bay are planned evenly, reactor j at start + (j + 0.5) x 45 / 12 min (every 3.75 min); replaces the burst of A016 for first samples in that arm; second samples and weekend rules unchanged"
+    range: "width 15 to 240 min; offset 0 to 240 min"
+    unit: min
+    grade: A
+    sources: []
+    notes: "Scenario setting, no source. Both windows end at 09:30 so the last result can still reach the 10:00 decision (A050, A206): 09:30 plus transport of 10-25 min (A018) plus one 4.5 min run (A023) is about 09:59 without queueing. The burst it is compared with has 95 % of its draws within 07:54-09:06 (A016, 2 sd). Even spacing of 3.75 min is below the 4.5 min service time of one analyzer and above the 2.25 min of two, so the comparison is about queueing and holding time, not about capacity."
+  - id: A204
+    name: qc_window_clock_and_length
+    default: "one QC run of 30 min per analyzer per day at 08:00-08:30 (the start of the staffed window), weekdays and weekends; the analyzer is unavailable in that window; the failure probability per QC run is A087"
+    range: "length 15 to 60 min"
+    unit: "clock time, min"
+    grade: A
+    sources: []
+    notes: "Scenario setting, no source for the length or the time (A031). Placed before the first burst arrivals (about 08:40-09:00 after A018) so the QC does not collide with the burst in the base scenarios; SC5 starts its maintenance when the QC window ends (A205)."
+  - id: A205
+    name: sc5_maintenance_start
+    default: "maintenance on analyzer AN-1 starts at 08:30 on one weekday (SC5 default: day 8, a Tuesday), length A096 (4 h), so the window is 08:30-12:30; it begins when the daily QC window ends (A204), so the two never overlap; AN-2 stays up"
+    range: "start 08:00 to 14:00; length per A096 (1 to 8 h)"
+    unit: "clock time, h"
+    grade: A
+    sources: []
+    notes: "Scenario setting, no source (A031, A096). The window covers the burst of A016 and the 10:00 decision of A050, which is what SC5 asks about (availability before the decision deadline). Day 8 is chosen so that all four cohorts (A188) are in production and past the temperature shift (A195)."
+  - id: A206
+    name: edf_deadline_rule
+    default: "deadline of an analysis request = the first 10:00 clock time at or after its draw time, so 10:00 the same day for a draw before 10:00 and 10:00 the next day for a later draw; ties broken by arrival at the analyzer; the SLA variant of A035 uses draw time + A097 (30 min) instead"
+    range: "n/a"
+    unit: "rule; clock time"
+    grade: A
+    sources: []
+    notes: "Range n/a because this is a rule. Ties the earliest-deadline-first policy of A035 to the 10:00 feed decision of A050, which is also the 'decision time' of the availability metric (spec section 8), so the queue rule and the metric use the same clock. Draws in the feed window after 10:00 (A194) therefore get the lowest urgency, which is the intended consequence of the rule and not a source-based choice."
+  - id: A207
+    name: cumulative_sample_volume_cap_pct
+    default: 33
+    range: [10, 50]
+    unit: "% of initial working volume, cumulative per reactor"
+    grade: A
+    sources: [S011, S110]
+    notes: "Scenario setting, not sourced: no page giving a percentage cap on sampling was found in searches of vendor and journal pages. Reference points: the micro-scale class has a recommended working volume of 10-15 mL, and the source says volume in that class can fall because of sampling, with more gas sparging, foaming and harder oxygen control as the effect (S011); a vessel started at 15 mL can lose 5 mL, 33 %, before it leaves the class (D, (15 - 10) / 15; reading the lower bound of the class as a floor is the assumption). A small-scale study took 200-350 uL for the cell count and 900 uL for the offline analyses per sample from 14 mL vessels (S110), 7.9-8.9 % of the vessel per sample set (D; the number of sample sets is not stated). The cap counts sampled volume only, with the shares of A057, and does not net feed additions. Effect on the defaults: bench (0.014 % per sample) never reaches it (about 22 draws = 0.3 %, D), mini (0.31 %) needs about 106 draws, micro (4.8 %) is cut off after 6 draws (6 x 4.8 = 28.8 %; a 7th would reach 33.6 %), so a daily-sampled micro culture loses every draw from about day 7 on."
+  - id: A208
+    name: feed_glutamine_concentration_mm
+    default: 200
+    range: [0, 200]
+    unit: mM
+    grade: A
+    sources: []
+    notes: "Scenario setting, no source. Glutamine at 4 mM (A191) would be used up within about a day at 10e6 cells/mL (11.8 mmol/L/d from A083, D), so a bolus without glutamine leaves the analyte at zero for most of the run. 200 mM is the usual concentration of commercial L-glutamine stock solutions (common knowledge, no source opened); with the default bolus of 2.4 % (A192) it adds 0.024 x 200 / 1.024 = 4.7 mM (D), about the initial level. Glutamine-free feeds (glutamine-synthetase lines) are the 0 end."
+
+  - id: A209
+    name: initial_lactate_g_per_l
+    default: 0.0
+    range: [0.0, 0.5]
+    unit: g/L
+    grade: A
+    sources: []
+    notes: "Scenario setting: fresh medium at inoculation is taken as lactate-free; the inoculum may carry a little lactate over, hence the small range. Used by the L1 process model in S1b."
+  - id: A210
+    name: initial_titer_g_per_l
+    default: 0.0
+    range: [0.0, 0.05]
+    unit: g/L
+    grade: A
+    sources: []
+    notes: "Scenario setting: product concentration at inoculation is taken as zero (carry-over from the seed culture is negligible at the inoculation ratio). Used by the L1 process model in S1b."
+  - id: A211
+    name: initial_viability_pct
+    default: 97
+    range: [90, 99]
+    unit: "%"
+    grade: A
+    sources: []
+    notes: "Scenario setting for viability at inoculation (a healthy seed culture). Not taken from a source; shown as an assumption wherever it appears. Used by the L1 process model in S1b."

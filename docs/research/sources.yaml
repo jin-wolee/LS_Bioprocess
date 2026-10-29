@@ -103,7 +103,7 @@ sources:
     type: paper
     supports: "ambr15 working volume 10-15 mL and ambr250 100-250 mL; sample volume typically 600 uL, a burden for daily sampling of ambr15; analyzing all 48 ambr15 vessels can take up to 3 h; volume in ambr15 can fall because of sampling."
     verification: main-reread
-    used_in: [A027, A057, A065, A066, A110, A112, A114]
+    used_in: [A027, A057, A065, A066, A110, A112, A114, A207]
   # ---- sample stability ----
   - id: S012
     title: "Effects of diluents on cell culture viability measured by automated cell counter (Chen et al.)"
@@ -470,7 +470,7 @@ sources:
     type: paper
     supports: "mAb-producing CHO line (parent) and a lactate-consuming engineered clone. Maximum specific growth rate in shake-flask batch 0.023 per h (parent) and 0.033 per h (engineered), 0.032 per h in fed-batch (engineered). Table 2, parent line in a 2 L bioreactor (0.6 L start): exponential phase glucose 2.49, glutamine 1.18, lactate +2.34 (production), ammonia 1.11 pmol/cell/d; stationary phase glucose 2.06, glutamine 0.56, lactate +0.24, ammonia 0.24. Shake-flask fed-batch parent: glucose 1.65, glutamine 0.53, lactate +1.18 (exponential); stationary lactate -0.03. The engineered clone consumed lactate after day 7 (-0.17 pmol/cell/d in the bioreactor, -0.15 to -0.36 in shake flasks). Specific productivity of this research line was only 1.7-2.7 pg/cell/d."
     verification: agent-read
-    used_in: [A080, A082, A083, A084, A085]
+    used_in: [A080, A082, A083, A084, A085, A045]
   - id: S055
     title: "Evaluation of single-use optical and electrochemical pH sensors in upstream bioprocessing (Fratz-Berilla et al.)"
     publisher: "Heliyon 10(3):e25512 (2024), PMC10873650"
@@ -905,7 +905,7 @@ sources:
     type: vendor-doc
     supports: "Read from a text conversion of the downloaded manual. Five record types (process data, user events, alarms, recipe steps, errors) are stored in a database and exported as CSV; process data has over 300 variables, each logged by deadband with a maximum log interval; alarm acknowledgement records the user and time; Appendix 4 lists logger variables with default deadbands and a source column (calc, sensor, system, user); the manual warns that spreadsheets can mangle CSV timestamps. The column layout of the CSV reports is not in the text read. Also read on 2026-10-29: Appendix 1 process alarm defaults (pH, DO, temperature, pressure, level, main gas) and the system settings Max Data Log Interval (60) and Alarm Snooze Time (300 s); Appendix 4 default deadbands and default-record marks for the pH, DO, temperature, duty and pressure variables; chapter 4 specifications (gas flow range by gas, pump types); the pH and DO controller deadbands and the acknowledge and snooze text. PID gains and the pump speed tables were not read."
     verification: agent-read
-    used_in: [A171, A172, A174, A178, A179, A180, A181, A182, A184, A185, A186]
+    used_in: [A171, A172, A174, A178, A179, A180, A181, A182, A184, A185, A186, A197, A198, A199]
   - id: S100
     title: "DASware control and DASware connect (product pages)"
     publisher: "Eppendorf"
@@ -996,3 +996,76 @@ sources:
     supports: "Read through a page-extraction summary, not word for word. The holder of the biological product licence, or the manufacturer that had control when the deviation occurred, must report a deviation or unexpected event affecting a distributed licensed biological product (safety, purity or potency) as soon as possible and not to exceed 45 calendar days after acquiring information that reasonably suggests a reportable event; reported on Form FDA-3486. The section sets a reporting deadline, not a hold or withdrawal deadline, and applies to distributed product only."
     verification: agent-read
     used_in: [A187]
+  # ---- process settings for the scenario clock (S1b inputs) ----
+  - id: S110
+    title: "Advanced microscale bioreactor system: a representative scale-down model for bench-top bioreactors (Hsu et al.)"
+    publisher: "Cytotechnology 2012;64(6):667-678 (PMC3488368)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3488368"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Read through a page-extraction summary, not word for word. Four recombinant CHO lines in 2 L bench bioreactors, 14 mL microscale vessels and shake flasks, 14-day fed-batch. Temperature 37 C on days 0-3, shifted on day 3 to 35 C (lines 1 and 2) or 33 C (lines 3 and 4). One nutrient feed on day 3 that raised the culture volume by 20 %. Glucose feed when glucose fell below 4 g/L, to raise it by 12 g/L from a 500 g/L stock (2.4 % of volume, derived). Microscale vessel settings from the methods text: 37 C, dissolved oxygen 30 % of air saturation, base added below pH 6.97 towards a target of 7.0, CO2 sparged above pH 7.05. Samples from the 14 mL vessels: 200-350 uL for the cell count and 900 uL for pH, pCO2 and metabolites; sampling frequency not stated. Initial glucose and glutamine are not stated."
+    verification: agent-read
+    used_in: [A192, A193, A195, A198, A207]
+  - id: S111
+    title: "Combination of temperature shift and hydrolysate addition regulates anti-IgE monoclonal antibody charge heterogeneity in Chinese hamster ovary cell fed-batch culture (Zheng et al.)"
+    publisher: "Cytotechnology 2018 (PMC6081921)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6081921/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Read through a page-extraction summary, not word for word. Fed-batch in 500 mL shake flasks with 100 mL of medium. On day 4 the cultures were moved from 37 C to 30, 32 or 34 C. Feeding started on day 4 and was given every 2 days at 5, 2, 5, 2 and 5 % (v/v) of the culture volume. Initial glucose, glutamine and the glucose rule are not stated."
+    verification: agent-read
+    used_in: [A192, A195]
+  - id: S112
+    title: "Enhancing monoclonal antibody production efficiency using CHO-MK cells and specific media in a conventional fed-batch culture (Saeki et al.)"
+    publisher: "Cytotechnology 2024 (online 18 Nov 2024; doi 10.1007/s10616-024-00669-4; PMC11573942)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11573942/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Read through a page-extraction summary, then a second targeted pass for the quoted sentences. The growth medium and the feed contain 8 and 60 g/L glucose; the initial glucose of seed-expansion and N-step cultures was raised to 12 and 15 g/L. The growth medium is supplemented with 4 mM glutamine (standard); 0, 2, 4 and 8 mM were tested. Production at 37 C with no temperature shift, 1.0e6 cells/mL, 7-day fed-batch; 2 L bioreactor with 750 mL initial working volume. Daily bolus feed from day 3: flasks 4, 8, 12 and 16 % of the medium volume (8 % best), 10 % in the ambr15 and the 2 L runs; a 450 g/L glucose stock was added as required to prevent depletion (ambr15). Glucose trigger and sampling not stated."
+    verification: agent-read
+    used_in: [A190, A191, A192, A193]
+  - id: S113
+    title: "Fed-Batch Cell Culture Process Development: Implementing a Novel Nutrient Additive for a Robust, High-Titer, Scalable Process (Liu et al.)"
+    publisher: "BioProcess International, 11 September 2014"
+    url: "https://www.bioprocessintl.com/bioreactors/fed-batch-cell-culture-process-development-implementing-a-novel-nutrient-additive-for-a-robust-high-titer-scalable-process"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Read through a page-extraction summary, not word for word. Basal medium supplemented with 6 mM glutamine for CHO-S and CHO-K1; bioreactor seeding at 0.2e6 cells/mL or more; start at 36.5 C with temperature shifts to new set points once cells reached a target density (about 8e6 cells/mL at 200 L, 10e6 at 1,000 L; day and set points not stated); bioreactor feed at a fixed rate of about 2.5 % or 2.9 % of final volume per day; glucose targeted at 4.5-5.0 g/L in bioreactors with a 400 g/L glucose supplement, and 6-7 g/L (CHO-S) or 7.5-9.0 g/L (CHO-K1) final in shake flasks. Initial glucose not stated."
+    verification: agent-read
+    used_in: [A190, A191, A192, A193, A195]
+  - id: S114
+    title: "Selection of chemically defined media for CHO cell fed-batch culture processes (Pan et al.)"
+    publisher: "Cytotechnology 2017;69(1) (online 2016; PMC5264622)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5264622/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Read through a page-extraction summary, not word for word. All basal media supplemented with 4 mM L-glutamine; 250 mL shake flasks with 25 mL, 2e5 cells/mL, 37 C, no temperature shift; daily bolus feed from day 3, volume from a glucose-based equation; glucose kept at 10 mM as a safety threshold until the next sampling point; daily samples from day 2, 1 mL for the cell count; harvest on day 14 or at viability below 60 %. Initial glucose not stated in the text."
+    verification: agent-read
+    used_in: [A191]
+  - id: S115
+    title: "Reduced Culture Temperature Differentially Affects Expression and Biophysical Properties of Monoclonal Antibody Variants (Mason et al.)"
+    publisher: "Antibodies 2014 (author manuscript PMC7583600)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7583600/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Read through a page-extraction summary, not word for word. Serum-free batch cultures in shake flasks started at 37 C or 32 C (no shift from a higher temperature). Reducing the temperature arrested growth and prolonged viability. Stable clones: the 32 C to 37 C titer ratio was 0.30-0.91 for four Ala clones and about 5 for two Gly clones, the clone that grew slowest at 37 C was the most affected (3.3-fold decrease, the quantity is not named in the extract) and the fastest the least (1.1-fold), with a lag phase extended by up to 3 days; transient cultures had at least 10-fold lower viable density at 32 C and a titer about 1.2-fold higher. No doubling times are given in the text."
+    verification: agent-read
+    used_in: [A196]
+  - id: S116
+    title: "pH condition in temperature shift cultivation enhances cell longevity and specific hMab productivity in CHO culture (Oguchi et al.)"
+    publisher: "Cytotechnology 2007;52(3):199-207 (doi 10.1007/s10616-007-9059-2)"
+    url: "https://doi.org/10.1007/s10616-007-9059-2"
+    accessed: 2026-10-29
+    type: paper
+    supports: "Seen only as a search excerpt of the abstract, not opened. A shift from 37 C to 31 C before the stationary phase at pH 6.8 kept viability high, and the final human monoclonal antibody concentration rose to 2.3 times that of the culture left at 37 C."
+    verification: snippet
+    used_in: [A196]
+  - id: S117
+    title: "Operation Assurance: Cell Counting Method Knowledge Collection (cell settling example)"
+    publisher: "Revvity (vendor knowledge page)"
+    url: "https://www.revvity.com/ask/operation-assurance"
+    accessed: 2026-10-29
+    type: vendor-doc
+    supports: "Read in full. Sample mixing and waiting time cause cell settling: 2 mL of Jurkat cells in a 15 mL tube were mixed by inverting 10 times and pipetting 10 times, then about 200 uL was taken from the middle of the suspension at 0, 1, 5 and 20 min; only 5 min of settling gave a 26 % lower measured cell concentration. The figure with the other time points is not readable in the text. A human T-cell line, not CHO, and a tube, not an analyzer cup."
+    verification: agent-read
+    used_in: [A044]
