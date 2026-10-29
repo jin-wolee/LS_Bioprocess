@@ -470,7 +470,7 @@ sources:
     type: paper
     supports: "mAb-producing CHO line (parent) and a lactate-consuming engineered clone. Maximum specific growth rate in shake-flask batch 0.023 per h (parent) and 0.033 per h (engineered), 0.032 per h in fed-batch (engineered). Table 2, parent line in a 2 L bioreactor (0.6 L start): exponential phase glucose 2.49, glutamine 1.18, lactate +2.34 (production), ammonia 1.11 pmol/cell/d; stationary phase glucose 2.06, glutamine 0.56, lactate +0.24, ammonia 0.24. Shake-flask fed-batch parent: glucose 1.65, glutamine 0.53, lactate +1.18 (exponential); stationary lactate -0.03. The engineered clone consumed lactate after day 7 (-0.17 pmol/cell/d in the bioreactor, -0.15 to -0.36 in shake flasks). Specific productivity of this research line was only 1.7-2.7 pg/cell/d."
     verification: agent-read
-    used_in: [A080, A082, A083, A084, A085, A045]
+    used_in: [A011, A080, A082, A083, A084, A085, A045]
   - id: S055
     title: "Evaluation of single-use optical and electrochemical pH sensors in upstream bioprocessing (Fratz-Berilla et al.)"
     publisher: "Heliyon 10(3):e25512 (2024), PMC10873650"
@@ -486,9 +486,9 @@ sources:
     url: "https://doi.org/10.1007/s10616-015-9889-2"
     accessed: 2026-10-29
     type: paper
-    supports: "Shake-flask batch CHO-S cultures (naive and mAb producer) in diluted commercial medium. Monod fits with a glucose threshold of about 0.6 g/L below which growth stops: maximum specific growth rate 0.043 per h and Ks 0.929 g/L (producer), 0.050 per h and Ks 2.058 g/L (naive). Lactate was produced in exponential growth and consumed once glucose was depleted; the producer line's lactate consumption was about 0.05 ng/cell/day in glucose-depleted cultures. Producer specific productivity 0.58-1.0 pg/cell/day in this low-density setting."
+    supports: "Shake-flask batch CHO-S cultures (naive and mAb producer) in diluted commercial medium. Monod fits with a glucose threshold of about 0.6 g/L below which growth stops: maximum specific growth rate 0.043 per h and Ks 0.929 g/L (producer), 0.050 per h and Ks 2.058 g/L (naive). Lactate was produced during exponential growth and was consumed by the cultures after the maximum cell concentration was achieved (in these batch cultures approximately the point of glucose depletion); the producer line's lactate consumption was about 0.05 ng/cell/day in glucose-depleted cultures. Producer specific productivity 0.58-1.0 pg/cell/day in this low-density setting."
     verification: agent-read
-    used_in: [A080, A085, A109]
+    used_in: [A011, A080, A085, A109]
   # ---- prior art ----
   - id: S033
     title: "CAOS_SIMLAB (README)"
@@ -1041,7 +1041,7 @@ sources:
     type: paper
     supports: "Read through a page-extraction summary, not word for word. All basal media supplemented with 4 mM L-glutamine; 250 mL shake flasks with 25 mL, 2e5 cells/mL, 37 C, no temperature shift; daily bolus feed from day 3, volume from a glucose-based equation; glucose kept at 10 mM as a safety threshold until the next sampling point; daily samples from day 2, 1 mL for the cell count; harvest on day 14 or at viability below 60 %. Initial glucose not stated in the text."
     verification: agent-read
-    used_in: [A191]
+    used_in: [A013, A050, A191]
   - id: S115
     title: "Reduced Culture Temperature Differentially Affects Expression and Biophysical Properties of Monoclonal Antibody Variants (Mason et al.)"
     publisher: "Antibodies 2014 (author manuscript PMC7583600)"
@@ -1069,3 +1069,21 @@ sources:
     supports: "Read in full. Sample mixing and waiting time cause cell settling: 2 mL of Jurkat cells in a 15 mL tube were mixed by inverting 10 times and pipetting 10 times, then about 200 uL was taken from the middle of the suspension at 0, 1, 5 and 20 min; only 5 min of settling gave a 26 % lower measured cell concentration. The figure with the other time points is not readable in the text. A human T-cell line, not CHO, and a tube, not an analyzer cup."
     verification: agent-read
     used_in: [A044]
+  - id: S118
+    title: "Impact of cell lysis on the description of cell growth and death in cell culture (Kroll et al.)"
+    publisher: "Engineering in Life Sciences 2017;17(4):440-447 (doi 10.1002/elsc.201600088; PMC6999402)"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6999402/"
+    accessed: 2026-10-29
+    type: paper
+    supports: "One industrial CHO fed-batch culture (2 L working volume, 37 C, pH 6.8, DO 40 %). The pH set point was chosen so that lysis shows with higher effect strength. Section 3.2: with lysis taken into account the death rate kD was approximately constant up to 180 h at 1.3 +/- 0.3e-3 per h; the highest observed value was 5.5e-3 per h. Section 3.3: the rise of the death rate after 120 h correlated with the declining growth rate; a correlation only, no function, and the lysis-corrected rate of section 3.2 stays flat to 180 h. Average specific lysis rate kDL 0.8 +/- 0.2e-3 per h; about 11 % of the total cells were lysed after 270 h. Read in the main text, figures not seen."
+    verification: agent-read
+    used_in: [A011, A212]
+  - id: S119
+    title: "Exploring the limits of conventional small-scale CHO fed-batch for accelerated on demand monoclonal antibody production (Mahe et al.)"
+    publisher: "Bioprocess and Biosystems Engineering 2022;45:297-307 (doi 10.1007/s00449-021-02657-w)"
+    url: "https://link.springer.com/article/10.1007/s00449-021-02657-w"
+    accessed: 2026-10-29
+    type: paper
+    supports: "ambr15 microscale CHO fed-batch cultures of 14 days; glucose was added based on the daily glucose measurement, to 6 g/L when a trigger of 4 g/L was reached. Viability on day 14 of the standard fed-batch: 90.3 +/- 3.8 %. Read once by the research agent and not re-checked: day-14 viability 82.2 +/- 3.8 % for the high seeding density fed-batch and 86.3 +/- 1.5 % and 80.5 +/- 5.7 % at the end of the fed-batches with standard and medium seeding density (results on increasing the specific productivity); peak viable density of the standard fed-batch 29.6 +/- 3.8e6 cells/mL on day 8 or 9 and 18.9 +/- 2.4e6 cells/mL on day 14. Main text only, figures not seen."
+    verification: agent-read
+    used_in: [A013]

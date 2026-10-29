@@ -73,7 +73,7 @@ assumptions:
     unit: 1e6 cells/mL
     grade: S
     sources: [S053]
-    notes: "S053 gives peak densities of 10-30e6 cells/mL as the typical range of mammalian fed-batch cultures (introduction), and two fitted industrial CHO fed-batch cultures peaked at 13.7e6 and 21.7e6 cells/mL (2 L and 5 L). The default 20 is a pick inside that range. A-Mab gives no peak density (S017), and the model-scenario figures in S020 are a lead that was never seen, so they are not used."
+    notes: "S053 gives peak densities of 10-30e6 cells/mL as the typical range of mammalian fed-batch cultures (introduction), and two fitted industrial CHO fed-batch cultures peaked at 13.7e6 and 21.7e6 cells/mL (2 L and 5 L). The default 20 is a pick inside that range. A-Mab gives no peak density (S017), and the model-scenario figures in S020 are a lead that was never seen, so they are not used. S053 fits logistic curves to viable density, so the engine uses this default as the carrying capacity Xmax of the logistic ceiling on growth (A011); the peak the engine reaches is an outcome and lies below Xmax, because growth slows as the density approaches it and death takes cells at the same time."
   - id: A009
     name: peak_vcd_perfusion_e6_per_ml
     default: 60
@@ -93,28 +93,21 @@ assumptions:
     notes: "A-Mab keeps glucose above 1.0 g/L with discrete feeds and monitors VCC, viability and glucose 'periodically' from the day of inoculation (S017)."
   - id: A011
     name: growth_kinetics_model
-    default: "nutrient-limited growth (Monod on glucose) with first-order death; nutrient consumption proportional to viable cells; product proportional to integrated viable cells; constants from A080-A086 and A109"
+    default: "nutrient-limited growth (Monod on glucose) under a logistic ceiling (carrying capacity A008); death between the rate of a freely growing culture (A212) and the rate when growth is fully limited (A081), by the limitation of growth; nutrient uptake proportional to viable cells and capped by the amount present; lactate production proportional to growth; product proportional to integrated viable cells; constants from A080-A086, A109, A212 and A008"
     range: "n/a"
     unit: model
     grade: A
-    sources: [S053]
-    notes: "Range n/a because this is a structure, not a number. Simulator choice; the aim is plausible shapes for the truth world, not kinetic fidelity. The constants carry their own ledger entries (A080-A086, A109; literature ranges from S053, S054, S056). The cited cultures reached 10-22e6 cells/mL at most, so extending their per-cell rates to higher densities is an assumption."
-  - id: A012
-    name: harvest_viability_observed_range_pct
-    default: "50-80 (process 1), 40-70 (process 2)"
-    range: [40, 80]
-    unit: "% viability"
-    grade: S
-    sources: [S017]
-    notes: "Observed A-Mab viability at harvest (S017, Table 3.11)."
+    sources: [S053, S054, S056, S118]
+    notes: "Range n/a because this is a structure, not a number. Simulator choice; the aim is plausible shapes for the truth world, not kinetic fidelity. With X the viable density, g the glucose, phi = g / (Ks + g) x max(0, 1 - X / Xmax) (no temperature factor), the growth rate is mu_max x m_T x phi and the death rate is (kd_min + (kd_late - kd_min) x (1 - phi)) x m_T,kd, with the temperature multipliers m_T of A196. Logistic ceiling: S053 fits logistic curves to viable density, and the A008 default is used as Xmax. The coupling of death to phi is linear and is a simulator choice, hence grade A, and its form is unsourced: S118 (section 3.3) reports that the rise of the death rate after 120 h correlated with the declining growth rate; it gives no function, and its lysis-corrected rate (section 3.2) stays approximately constant up to 180 h, so that sentence is not support for the coupling. kd_min is A212 (S118 section 3.2); kd_late is A081: S053's fitted parameter a2 is 'analogous to the maximum death (kd max)' rate of a logistic fit to viable cell density, and the engine uses it as the death rate when growth is fully limited, a simulator choice. Mass balance: in one step the glucose and glutamine taken up never exceed what is present. Glucose uptake keeps the exponential-phase value of A082 throughout (one rate in this structure; the stationary values of A082, A083 and A084 stay unused). Lactate production is the rate of A084 x X x phi: S056 reports production practically proportional to growth and S054 reports that net accumulation ceased when growth stopped; with no glucose there is no growth and no production. Lysis of dead cells is not modelled (measured in one culture in S118). The constants carry their own ledger entries (A080-A086, A109, A212; literature ranges from S053, S054, S056, S118). The cited cultures reached 10-22e6 cells/mL at most, so extending their per-cell rates to higher densities is an assumption."
+
   - id: A013
     name: harvest_rule_applied
     default: "harvest when viability < 80% or at day 14, whichever comes first"
     range: "n/a"
     unit: rule
     grade: A
-    sources: []
-    notes: "Range n/a because this is a rule. Simulator rule; the threshold lies at the top of the observed range in A012."
+    sources: [S114, S119]
+    notes: "Range n/a because this is a rule. Simulator rule; the threshold lies at the top of the observed range in A012. Other sources use other cut-offs: S114 harvested on day 14 or when viability dropped below 60 %, and S119 (ambr15 microscale cultures, 14 days) reports 90.3 +/- 3.8 % on day 14 for its standard fed-batch, above the 80 % threshold; the source gives no daily curve before day 14, and its other arms (82.2, 86.3 and 80.5 % on day 14) were read once by the research agent and not re-checked. The value is unchanged."
   # ---------------- sampling and logistics ----------------
   - id: A014
     name: samples_per_reactor_per_day
@@ -415,12 +408,12 @@ assumptions:
     notes: "Frequency has no source; no incidence data found. The +5 h offset is a neutral example, not a claim about any site. That clocks and time zones must be controlled and recorded is stated in MHRA 2018 sections 5.1 and 6.13 (S029), WHO TRS 996 4.12 (S030) and, second-hand, WHO TRS 1033 4.15 (S052)."
   - id: A050
     name: feed_rule
-    default: "bolus feed when glucose < 1.0 g/L; decision due 10:00"
+    default: "daily decision at 10:00: feed the smallest bolus of the feed of A193 and A208 that brings the predicted glucose at the next decision (24 h later) to at least the floor of A010; no feed when the prediction already meets the floor"
     range: "n/a"
     unit: rule
     grade: A
     sources: []
-    notes: "Range n/a because this is a rule. The rule is a simulator choice; the 1.0 g/L floor is A010. Bolus size A192, A193, A208; feed window A194; deadline rule for earliest-deadline-first A206."
+    notes: "Range n/a because this is a rule. The rule is a simulator choice; the floor is A010 (S017). Predictive form after the model of S114 (Eq. 9: the daily feed volume from the glucose at feeding and the anticipated consumption of the next 24 h, so that glucose is kept at 10 mM by the next day's sample point); S114 is cited here and not in the sources field because the public pages that cite A050 may use main-reread sources only. A trigger at the floor with one decision a day lets glucose fall to zero when the 24 h consumption exceeds the floor (A082 gives 4.5 g/L/d at 10e6 cells/mL and 9 g/L/d at 20e6), which is why the rule looks ahead. Derivation (D): with g the true glucose, X the viable density, C the feed glucose (A193), D = A082 x X x 24 h x 180.16 g/mol, and f the bolus as a share of the volume, cells and analytes are diluted by 1 / (1 + f), so the predicted glucose is (g + f C - D) / (1 + f); the smallest f that reaches the floor is (floor + D - g) / (C - floor), and f is 0 when that is not positive. No growth is projected, so in the growth phase glucose can still reach zero before the next decision. The rule reads the true glucose (open loop, spec section 6.1). A scripted feed keeps the fixed bolus of A192. Feed window A194; deadline rule for earliest-deadline-first A206."
   - id: A051
     name: ph_probe_recalibration_from_offline
     default: "on"
@@ -684,7 +677,8 @@ assumptions:
     unit: "1/h"
     grade: S
     sources: [S053]
-    notes: "Maximum (late-phase) death rate of the two industrial CHO fed-batch cultures: 0.07 and 0.16 per day (S053, fitted logistic parameter), i.e. 0.0029 and 0.0067 per h (D: /24). Default 0.0042 per h = 0.10 per day is a pick inside the range. A first-order death term with a constant rate is the model choice (A011); the sources show the rate rising late in the culture."
+    notes: "kd_late of the engine (A011): the death rate when growth is fully limited (phi = 0, no glucose or the density at the ceiling); with growth free the rate falls to the early-phase value of A212. Source: the maximum death rate kd max of the two industrial CHO fed-batch cultures, 0.07 and 0.16 per day (S053, fitted logistic parameter), i.e. 0.0029 and 0.0067 per h (D: /24). In S053 the fitted parameter a2 is 'analogous to the maximum death (kd max)' rate of a logistic fit to viable cell density; it is not a death rate measured on a growing culture. Using it as the death rate when growth is fully limited is a simulator choice (the structure is grade A, A011). Default 0.0042 per h = 0.10 per day is a pick inside the range. The sources show the rate rising late in the culture; the coupling of the rate to the limitation of growth is a simulator choice (A011)."
+
   - id: A082
     name: cho_glucose_uptake_pmol_per_cell_d
     default: "2.5 exponential phase; 2.1 stationary phase"
@@ -708,7 +702,7 @@ assumptions:
     unit: "pmol/cell/d"
     grade: S
     sources: [S054]
-    notes: "Parent line, exponential phase: 2.34 in the 2 L bioreactor and 1.18 in shake-flask fed-batch (S054). Lactate per glucose = 2.34 / 2.49 = 0.94 mol/mol in the bioreactor (D). The default pairs with the glucose default in A082 (same dataset). The stationary-phase value of the parent line is +0.24 (still production)."
+    notes: "Parent line, exponential phase: 2.34 in the 2 L bioreactor and 1.18 in shake-flask fed-batch (S054). Lactate per glucose = 2.34 / 2.49 = 0.94 mol/mol in the bioreactor (D). The default pairs with the glucose default in A082 (same dataset). The stationary-phase value of the parent line is +0.24 (still production). The engine applies the rate as A084 x X x phi, the limitation factor of A011, so production follows growth and is zero without glucose; it uses no stationary value."
   - id: A085
     name: cho_lactate_switch_to_consumption
     default: "off (parent line keeps producing lactate: +0.24 pmol/cell/d in the stationary phase); scenario knob on = net consumption -0.15 pmol/cell/d from day 7"
@@ -716,7 +710,7 @@ assumptions:
     unit: category
     grade: A
     sources: [S054, S056]
-    notes: "Whether and when lactate production turns into consumption depends on the cell line. Observed: an engineered clone consumed lactate after day 7 (-0.17 pmol/cell/d in a 2 L bioreactor, -0.15 to -0.36 in shake flasks; S054), while its parent did not (+0.24, S054). A mAb-producing CHO-S line consumed lactate once glucose was depleted at about 0.05 ng/cell/d (S056), i.e. 0.05e-9 g / 90.08 g/mol = 0.55 pmol/cell/d (D), with simultaneous glucose and lactate use from day 3. The switch is therefore a scenario choice, not a typical behaviour, and the time and size are assumptions anchored on these reports."
+    notes: "Whether and when lactate production turns into consumption depends on the cell line. Observed: an engineered clone consumed lactate after day 7 (-0.17 pmol/cell/d in a 2 L bioreactor, -0.15 to -0.36 in shake flasks; S054), while its parent did not (+0.24, S054). A mAb-producing CHO-S line consumed lactate after the maximum cell concentration was achieved, which in those batch cultures approximately coincided with glucose depletion, at about 0.05 ng/cell/d (S056), i.e. 0.05e-9 g / 90.08 g/mol = 0.55 pmol/cell/d (D), with simultaneous glucose and lactate use from day 3. The switch is therefore a scenario choice, not a typical behaviour, and the time and size are assumptions anchored on these reports."
   - id: A086
     name: cho_specific_productivity_pg_per_cell_d
     default: 35
@@ -732,7 +726,7 @@ assumptions:
     unit: "g/L"
     grade: S
     sources: [S056]
-    notes: "Monod half-saturation constant for glucose from shake-flask batch cultures in diluted commercial medium: 0.929 g/L (mAb-producing CHO-S) and 2.058 g/L (naive CHO-S), with a glucose threshold of about 0.6 g/L below which growth stopped (S056). Values for other temperatures were seen only in a search excerpt and are not used. With the glucose floor of 1.0 g/L (A010) growth would run at 1.0 / (0.93 + 1.0) = 52% of the maximum at the floor (D), which the engine should show. One small study; treat the range as indicative."
+    notes: "Monod half-saturation constant for glucose from shake-flask batch cultures in diluted commercial medium: 0.929 g/L (mAb-producing CHO-S) and 2.058 g/L (naive CHO-S), with a glucose threshold of about 0.6 g/L below which growth stopped (S056). Values for other temperatures were seen only in a search excerpt and are not used. With the glucose floor of 1.0 g/L (A010) growth would run at 1.0 / (0.93 + 1.0) = 52% of the maximum at the floor (D), which the engine should show. One small study; treat the range as indicative. Open question: the figure caption and the text of S056 give different Ks values. The default and range above are the caption's (0.929 and 2.058 g/L); the text gives 1.023 g/L for the naive cultures at 37 C and, for the producer line, a single parameter set with mu max 0.040 per h and Ks 0.664 g/L. Table 2 of S056 was not read, so which values are right is not settled."
   # QC, reruns, dilution, calibration
   - id: A087
     name: qc_failure_probability
@@ -1031,7 +1025,7 @@ assumptions:
     unit: category
     grade: A
     sources: [S056, S074, S054]
-    notes: "Refines A085 (global switch, default off). When net consumption starts: lactate fell as glucose reached zero in eight clones in wells (S074; two clones fell in semi-perfusion but stayed flat in fed-batch); an infliximab-producing CHO-S line consumed lactate once glucose was depleted, with growth stopping near 0.6 g/L glucose (S056); an engineered clone consumed lactate after day 7 in fed-batch while its parent kept producing (S054). In a glucose-controlled fed-batch, A010 keeps glucose above 1.0 g/L, so the first rule never fires; a consumer there needs the late rule. The share of clones that are switchers has no source, hence grade A."
+    notes: "Refines A085 (global switch, default off). When net consumption starts: lactate fell as glucose reached zero in eight clones in wells (S074; two clones fell in semi-perfusion but stayed flat in fed-batch); an infliximab-producing CHO-S line consumed lactate after the maximum cell concentration was achieved, which approximately coincided with glucose depletion, with growth stopping near 0.6 g/L glucose (S056); an engineered clone consumed lactate after day 7 in fed-batch while its parent kept producing (S054). In a glucose-controlled fed-batch, A010 keeps glucose above 1.0 g/L, so the first rule never fires; a consumer there needs the late rule. The share of clones that are switchers has no source, hence grade A."
   - id: A124
     name: operating_mode_set
     default: "batch; fed-batch; intensified fed-batch (high inoculation density from an N-1 perfusion or enriched-batch seed, production in fed-batch); perfusion (cell retention, bleed, cell-free permeate harvest)"
@@ -1260,7 +1254,7 @@ assumptions:
     grade: A
     sources: [S054, S056, S074]
     components: [A080, A084, A085, A123]
-    notes: "Net consumption after the producing phase: an engineered clone consumed lactate at -0.17 pmol/cell/d in a 2 L bioreactor after day 7, while its parent produced +2.34 in the exponential phase (S054); a CHO-S line consumed lactate after glucose depletion (S056). Components: growth (A080), exponential production (A084), the global switch (A085, on for this profile) and the trigger (A123)."
+    notes: "Net consumption after the producing phase: an engineered clone consumed lactate at -0.17 pmol/cell/d in a 2 L bioreactor after day 7, while its parent produced +2.34 in the exponential phase (S054); a CHO-S line consumed lactate after the maximum cell concentration was achieved (S056). Components: growth (A080), exponential production (A084), the global switch (A085, on for this profile) and the trigger (A123)."
   - id: A152
     name: profile_cell_line_high_lactate_producer
     default: "clone at the upper lactate multiplier (1.25 x A084)"
@@ -1606,7 +1600,7 @@ assumptions:
     unit: "% of current culture volume per bolus"
     grade: D
     sources: [S110, S112, S113, S111]
-    notes: "Default derived from the glucose feed of S110: when glucose fell below 4 g/L, a 500 g/L stock raised it by 12 g/L, which is 12 / 500 = 2.4 % of the volume (D); with the stock concentration of A193 it gives a glucose rise of f x C / (1 + f) = 0.024 x 500 / 1.024 = 11.7 g/L on top of what is left (D). A nutrient feed is a different, larger bolus: 10 % of the volume daily from day 3 in the ambr15 and 2 L runs of S112 (4-16 % tested in flasks, 8 % best), one 20 % feed on day 3 in S110, 5 / 2 / 5 / 2 / 5 % every second day in S111, a fixed 2.5-2.9 % of final volume per day in S113. For those the glucose concentration of the feed is 60 g/L (A193), so the pair (f, C) must be set together; the glucose rise per bolus is what matters. The sourced feeds are daily or on a fixed schedule; here the trigger is the glucose rule (A050), so the number of boluses is an outcome. Each bolus adds f to the volume and dilutes cells and analytes by 1 / (1 + f). Usable glucose of the default bolus above the 1.0 g/L floor: (1 + 12.0) / 1.024 - 1.0 = 11.7 g/L, enough for 1.3 d at 20e6 cells/mL (A008; 9.0 g/L/d from A082, D) and 0.9 d at 30e6, so at the top of the density range a once-daily decision (A050) can leave a short gap near zero."
+    notes: "Default derived from the glucose feed of S110: when glucose fell below 4 g/L, a 500 g/L stock raised it by 12 g/L, which is 12 / 500 = 2.4 % of the volume (D); with the stock concentration of A193 it gives a glucose rise of f x C / (1 + f) = 0.024 x 500 / 1.024 = 11.7 g/L on top of what is left (D). A nutrient feed is a different, larger bolus: 10 % of the volume daily from day 3 in the ambr15 and 2 L runs of S112 (4-16 % tested in flasks, 8 % best), one 20 % feed on day 3 in S110, 5 / 2 / 5 / 2 / 5 % every second day in S111, a fixed 2.5-2.9 % of final volume per day in S113. For those the glucose concentration of the feed is 60 g/L (A193), so the pair (f, C) must be set together; the glucose rise per bolus is what matters. The sourced feeds are daily or on a fixed schedule; here the trigger is the glucose rule (A050), so the number of boluses is an outcome. Each bolus adds f to the volume and dilutes cells and analytes by 1 / (1 + f). Usable glucose of the default bolus above the 1.0 g/L floor: (1 + 12.0) / 1.024 - 1.0 = 11.7 g/L, enough for 1.3 d at 20e6 cells/mL (A008; 9.0 g/L/d from A082, D) and 0.9 d at 30e6, so at the top of the density range a once-daily decision can leave a short gap near zero. The 2.4 % is the fixed bolus of a scripted feed (A102); a bolus decided by the rule of A050 is sized by that rule from the glucose, the viable density and the floor (A010), so its volume is an outcome and A192 does not apply to it."
   - id: A193
     name: feed_glucose_concentration_g_per_l
     default: 500
@@ -1760,3 +1754,12 @@ assumptions:
     grade: A
     sources: []
     notes: "Scenario setting for viability at inoculation (a healthy seed culture). Not taken from a source; shown as an assumption wherever it appears. Used by the L1 process model in S1b."
+
+  - id: A212
+    name: cho_early_death_rate_per_h
+    default: 0.0013
+    range: [0.0010, 0.0016]
+    unit: "1/h"
+    grade: S
+    sources: [S118]
+    notes: "kd_min of the engine (A011): the death rate of a culture that grows freely. One industrial CHO fed-batch culture (2 L, 37 C): the death rate was approximately constant up to 180 h at 1.3 +/- 0.3e-3 per h when lysis is taken into account, which is 0.031 per day (S118, D: x 24); the range is that spread. One culture only, and its pH set point was chosen so that lysis shows with higher effect strength (S118, section 2.1), so the value comes from conditions designed to show lysis and is not a typical figure. The value is from section 3.2 of S118 (lysis taken into account, approximately constant up to 180 h); the highest observed value was 5.5e-3 per h. Section 3.3 reports that the rise of the death rate after 120 h correlated with the declining growth rate; it gives no function, and the lysis-corrected rate of section 3.2 stays approximately constant up to 180 h, so the sentence is not support for the coupling, which is unsourced (A011, grade A). The counterpart for fully limited growth is A081."
