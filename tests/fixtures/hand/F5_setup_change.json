@@ -1,0 +1,225 @@
+{
+  "fixture": "F5",
+  "title": "Setup change: sequence-dependent setup from the initial method",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "cases": [
+    {
+      "case": "F5",
+      "derivation": "initial_method T, service 600 s, setup 900 s when the method differs. P (T): no setup, 09:00:00-09:10:00. Q (S): setup 09:10:00-09:25:00, run 09:25:00-09:35:00. R (T): setup 09:35:00-09:50:00, run 09:50:00-10:00:00. Busy = 3 x 600 s + 2 x 900 s = 3600 s; productive = 3 x 600 s = 1800 s.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": "T"
+          }
+        ],
+        "setup": [
+          {
+            "from_method": "T",
+            "to_method": "S",
+            "seconds": 900
+          },
+          {
+            "from_method": "S",
+            "to_method": "T",
+            "seconds": 900
+          }
+        ],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "P",
+            "seq": 1,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "method_id": "T"
+              }
+            ]
+          },
+          {
+            "request_id": "Q",
+            "seq": 2,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "method_id": "S"
+              }
+            ]
+          },
+          {
+            "request_id": "R",
+            "seq": 3,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "method_id": "T"
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "P",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 33000,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "Q",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 900,
+            "start_s": 33900,
+            "end_s": 34500,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 900,
+            "start_s": 35400,
+            "end_s": 36000,
+            "outcome": "qc_passed"
+          }
+        ],
+        "busy_s": {
+          "AN-1": 3600
+        },
+        "productive_s": {
+          "AN-1": 1800
+        }
+      }
+    },
+    {
+      "case": "F5-initial-S",
+      "derivation": "Same input with initial_method S. P (T): setup 09:00:00-09:15:00, run 09:15:00-09:25:00. Q (S): setup 09:25:00-09:40:00, run 09:40:00-09:50:00. R (T): setup 09:50:00-10:05:00, run 10:05:00-10:15:00. Busy = 3 x 600 s + 3 x 900 s = 4500 s; productive 1800 s. The initial method changes the outcome, so the trace must carry it.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": "S"
+          }
+        ],
+        "setup": [
+          {
+            "from_method": "T",
+            "to_method": "S",
+            "seconds": 900
+          },
+          {
+            "from_method": "S",
+            "to_method": "T",
+            "seconds": 900
+          }
+        ],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "P",
+            "seq": 1,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "method_id": "T"
+              }
+            ]
+          },
+          {
+            "request_id": "Q",
+            "seq": 2,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "method_id": "S"
+              }
+            ]
+          },
+          {
+            "request_id": "R",
+            "seq": 3,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "method_id": "T"
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "P",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 900,
+            "start_s": 33300,
+            "end_s": 33900,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "Q",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 900,
+            "start_s": 34800,
+            "end_s": 35400,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 900,
+            "start_s": 36300,
+            "end_s": 36900,
+            "outcome": "qc_passed"
+          }
+        ],
+        "busy_s": {
+          "AN-1": 4500
+        },
+        "productive_s": {
+          "AN-1": 1800
+        }
+      }
+    }
+  ]
+}

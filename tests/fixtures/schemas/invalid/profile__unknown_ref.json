@@ -1,0 +1,1 @@
+{ "schema_version": "1", "profile_id": "fixture_analyzer", "kind": "analyzer", "params": { "service_s": { "value": 270, "unit": "s", "ref": "A999" } } }

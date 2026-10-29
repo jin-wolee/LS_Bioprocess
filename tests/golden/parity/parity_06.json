@@ -1,0 +1,939 @@
+{
+  "analyzers": [
+    {
+      "group": "G1",
+      "id": "AN-1",
+      "initial_method": "M2"
+    },
+    {
+      "group": "G1",
+      "id": "AN-2",
+      "initial_method": null
+    }
+  ],
+  "engine_version": "0.1.0",
+  "expected_result": {
+    "engine_version": "0.1.0",
+    "runs": [
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 1599,
+        "outcome": "qc_passed",
+        "request_id": "R002",
+        "setup_s": 0,
+        "start_s": 1035,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 2560,
+        "outcome": "qc_failed",
+        "request_id": "R003",
+        "setup_s": 0,
+        "start_s": 1812,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 2691,
+        "outcome": "qc_passed",
+        "request_id": "R004",
+        "setup_s": 0,
+        "start_s": 2560,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 3314,
+        "outcome": "qc_passed",
+        "request_id": "R001",
+        "setup_s": 0,
+        "start_s": 2691,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 3756,
+        "outcome": "qc_passed",
+        "request_id": "R005",
+        "setup_s": 0,
+        "start_s": 3314,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 3935,
+        "outcome": "qc_passed",
+        "request_id": "R008",
+        "setup_s": 0,
+        "start_s": 3756,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 4265,
+        "outcome": "qc_passed",
+        "request_id": "R002",
+        "setup_s": 845,
+        "start_s": 3804,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 2,
+        "end_s": 4683,
+        "outcome": "qc_failed",
+        "request_id": "R003",
+        "setup_s": 0,
+        "start_s": 3935,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 5074,
+        "outcome": "qc_passed",
+        "request_id": "R006",
+        "setup_s": 0,
+        "start_s": 4265,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 5356,
+        "outcome": "qc_passed",
+        "request_id": "R007",
+        "setup_s": 0,
+        "start_s": 4683,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 5803,
+        "outcome": "qc_passed",
+        "request_id": "R011",
+        "setup_s": 0,
+        "start_s": 5074,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 5800,
+        "outcome": "qc_passed",
+        "request_id": "R001",
+        "setup_s": 0,
+        "start_s": 5356,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 6247,
+        "outcome": "qc_passed",
+        "request_id": "R010",
+        "setup_s": 0,
+        "start_s": 5800,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 6342,
+        "outcome": "qc_passed",
+        "request_id": "R009",
+        "setup_s": 0,
+        "start_s": 5803,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 7071,
+        "outcome": "qc_passed",
+        "request_id": "R013",
+        "setup_s": 0,
+        "start_s": 6247,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 6527,
+        "outcome": "qc_passed",
+        "request_id": "R014",
+        "setup_s": 0,
+        "start_s": 6342,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 7189,
+        "outcome": "qc_failed",
+        "request_id": "R002",
+        "setup_s": 0,
+        "start_s": 6527,
+        "visit": 3
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 7893,
+        "outcome": "qc_passed",
+        "request_id": "R015",
+        "setup_s": 0,
+        "start_s": 7071,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 8017,
+        "outcome": "qc_passed",
+        "request_id": "R016",
+        "setup_s": 0,
+        "start_s": 7189,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 3,
+        "end_s": 8641,
+        "outcome": "qc_passed",
+        "request_id": "R003",
+        "setup_s": 0,
+        "start_s": 7893,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 8084,
+        "outcome": "qc_passed",
+        "request_id": "R012",
+        "setup_s": 0,
+        "start_s": 8017,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 8779,
+        "outcome": "qc_passed",
+        "request_id": "R021",
+        "setup_s": 0,
+        "start_s": 8084,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 9047,
+        "outcome": "qc_passed",
+        "request_id": "R020",
+        "setup_s": 0,
+        "start_s": 8641,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 9473,
+        "outcome": "qc_passed",
+        "request_id": "R022",
+        "setup_s": 0,
+        "start_s": 9047,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 10156,
+        "outcome": "qc_passed",
+        "request_id": "R017",
+        "setup_s": 517,
+        "start_s": 9296,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 9593,
+        "outcome": "qc_passed",
+        "request_id": "R019",
+        "setup_s": 0,
+        "start_s": 9473,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 9893,
+        "outcome": "qc_passed",
+        "request_id": "R018",
+        "setup_s": 0,
+        "start_s": 9593,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 10617,
+        "outcome": "qc_passed",
+        "request_id": "R023",
+        "setup_s": 0,
+        "start_s": 9893,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 10957,
+        "outcome": "qc_passed",
+        "request_id": "R028",
+        "setup_s": 0,
+        "start_s": 10156,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 10688,
+        "outcome": "qc_passed",
+        "request_id": "R027",
+        "setup_s": 0,
+        "start_s": 10617,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 11799,
+        "outcome": "over_range",
+        "request_id": "R024",
+        "setup_s": 845,
+        "start_s": 11533,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 12462,
+        "outcome": "qc_passed",
+        "request_id": "R030",
+        "setup_s": 0,
+        "start_s": 11799,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 12534,
+        "outcome": "qc_passed",
+        "request_id": "R014",
+        "setup_s": 845,
+        "start_s": 11802,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 12714,
+        "outcome": "qc_passed",
+        "request_id": "R025",
+        "setup_s": 0,
+        "start_s": 12462,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 12797,
+        "outcome": "qc_passed",
+        "request_id": "R026",
+        "setup_s": 0,
+        "start_s": 12534,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 2,
+        "end_s": 13376,
+        "outcome": "qc_passed",
+        "request_id": "R002",
+        "setup_s": 0,
+        "start_s": 12714,
+        "visit": 3
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 13070,
+        "outcome": "qc_passed",
+        "request_id": "R029",
+        "setup_s": 0,
+        "start_s": 12797,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 13445,
+        "outcome": "qc_failed",
+        "request_id": "R027",
+        "setup_s": 0,
+        "start_s": 13070,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 2,
+        "end_s": 13642,
+        "outcome": "qc_passed",
+        "request_id": "R024",
+        "setup_s": 0,
+        "start_s": 13376,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 2,
+        "end_s": 13820,
+        "outcome": "qc_failed",
+        "request_id": "R027",
+        "setup_s": 0,
+        "start_s": 13445,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 3,
+        "end_s": 14195,
+        "outcome": "qc_passed",
+        "request_id": "R027",
+        "setup_s": 0,
+        "start_s": 13820,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 14990,
+        "outcome": "qc_failed",
+        "request_id": "R024",
+        "setup_s": 517,
+        "start_s": 14159,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 2,
+        "end_s": 16338,
+        "outcome": "qc_passed",
+        "request_id": "R024",
+        "setup_s": 517,
+        "start_s": 15507,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 17805,
+        "outcome": "qc_passed",
+        "request_id": "R024",
+        "setup_s": 845,
+        "start_s": 17183,
+        "visit": 3
+      }
+    ],
+    "schema_version": "1",
+    "seed": 6
+  },
+  "forced_outcomes": [
+    {
+      "attempt": 1,
+      "outcome": "qc_failed",
+      "request_id": "R002",
+      "visit": 3
+    },
+    {
+      "attempt": 1,
+      "outcome": "qc_failed",
+      "request_id": "R003",
+      "visit": 1
+    },
+    {
+      "attempt": 2,
+      "outcome": "qc_failed",
+      "request_id": "R003",
+      "visit": 1
+    },
+    {
+      "attempt": 1,
+      "outcome": "over_range",
+      "request_id": "R024",
+      "visit": 1
+    },
+    {
+      "attempt": 1,
+      "outcome": "qc_failed",
+      "request_id": "R024",
+      "visit": 2
+    },
+    {
+      "attempt": 1,
+      "outcome": "qc_failed",
+      "request_id": "R027",
+      "visit": 2
+    },
+    {
+      "attempt": 2,
+      "outcome": "qc_failed",
+      "request_id": "R027",
+      "visit": 2
+    }
+  ],
+  "policy": "fifo",
+  "requests": [
+    {
+      "arrive_s": 1489,
+      "request_id": "R001",
+      "seq": 1,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 623
+        },
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 444
+        }
+      ]
+    },
+    {
+      "arrive_s": 1035,
+      "deadline_s": 4197,
+      "request_id": "R002",
+      "seq": 2,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 564
+        },
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 461
+        },
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 662,
+          "transfer_s": 95
+        }
+      ]
+    },
+    {
+      "arrive_s": 1184,
+      "request_id": "R003",
+      "seq": 3,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 748
+        }
+      ]
+    },
+    {
+      "arrive_s": 1393,
+      "deadline_s": 6145,
+      "request_id": "R004",
+      "seq": 4,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 131
+        }
+      ]
+    },
+    {
+      "arrive_s": 2369,
+      "deadline_s": 6963,
+      "request_id": "R005",
+      "seq": 5,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 442
+        }
+      ]
+    },
+    {
+      "arrive_s": 2594,
+      "deadline_s": 4546,
+      "request_id": "R006",
+      "seq": 6,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 809
+        }
+      ]
+    },
+    {
+      "arrive_s": 3016,
+      "request_id": "R007",
+      "seq": 7,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 673
+        }
+      ]
+    },
+    {
+      "arrive_s": 2459,
+      "deadline_s": 8969,
+      "request_id": "R008",
+      "seq": 8,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 179
+        }
+      ]
+    },
+    {
+      "arrive_s": 3973,
+      "deadline_s": 10559,
+      "request_id": "R009",
+      "seq": 9,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 539
+        }
+      ]
+    },
+    {
+      "arrive_s": 3827,
+      "deadline_s": 6195,
+      "request_id": "R010",
+      "seq": 10,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 447
+        }
+      ]
+    },
+    {
+      "arrive_s": 3259,
+      "deadline_s": 9345,
+      "request_id": "R011",
+      "seq": 11,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 729
+        }
+      ]
+    },
+    {
+      "arrive_s": 4886,
+      "deadline_s": 9361,
+      "request_id": "R012",
+      "seq": 12,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 67
+        }
+      ]
+    },
+    {
+      "arrive_s": 3995,
+      "request_id": "R013",
+      "seq": 13,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 824
+        }
+      ]
+    },
+    {
+      "arrive_s": 4282,
+      "deadline_s": 5179,
+      "request_id": "R014",
+      "seq": 14,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 185
+        },
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 732,
+          "transfer_s": 89
+        }
+      ]
+    },
+    {
+      "arrive_s": 4540,
+      "deadline_s": 10439,
+      "request_id": "R015",
+      "seq": 15,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 822
+        }
+      ]
+    },
+    {
+      "arrive_s": 4637,
+      "request_id": "R016",
+      "seq": 16,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 828
+        }
+      ]
+    },
+    {
+      "arrive_s": 5613,
+      "deadline_s": 6950,
+      "request_id": "R017",
+      "seq": 17,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 860
+        }
+      ]
+    },
+    {
+      "arrive_s": 5928,
+      "deadline_s": 6914,
+      "request_id": "R018",
+      "seq": 18,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 300
+        }
+      ]
+    },
+    {
+      "arrive_s": 5719,
+      "deadline_s": 9062,
+      "request_id": "R019",
+      "seq": 19,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 120
+        }
+      ]
+    },
+    {
+      "arrive_s": 5510,
+      "deadline_s": 7166,
+      "request_id": "R020",
+      "seq": 20,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 406
+        }
+      ]
+    },
+    {
+      "arrive_s": 5216,
+      "request_id": "R021",
+      "seq": 21,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 695
+        }
+      ]
+    },
+    {
+      "arrive_s": 5629,
+      "request_id": "R022",
+      "seq": 22,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 426
+        }
+      ]
+    },
+    {
+      "arrive_s": 5998,
+      "deadline_s": 6652,
+      "request_id": "R023",
+      "seq": 23,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 724
+        }
+      ]
+    },
+    {
+      "arrive_s": 6527,
+      "deadline_s": 10483,
+      "request_id": "R024",
+      "seq": 24,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 266
+        },
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 831
+        },
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 622
+        }
+      ]
+    },
+    {
+      "arrive_s": 7070,
+      "deadline_s": 9760,
+      "request_id": "R025",
+      "seq": 25,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 252
+        }
+      ]
+    },
+    {
+      "arrive_s": 7175,
+      "deadline_s": 12457,
+      "request_id": "R026",
+      "seq": 26,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 263
+        }
+      ]
+    },
+    {
+      "arrive_s": 6479,
+      "deadline_s": 12995,
+      "request_id": "R027",
+      "seq": 27,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 71
+        },
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 375,
+          "transfer_s": 32
+        }
+      ]
+    },
+    {
+      "arrive_s": 6240,
+      "deadline_s": 11243,
+      "request_id": "R028",
+      "seq": 28,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 801
+        }
+      ]
+    },
+    {
+      "arrive_s": 7496,
+      "request_id": "R029",
+      "seq": 29,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 273
+        }
+      ]
+    },
+    {
+      "arrive_s": 6964,
+      "deadline_s": 7771,
+      "request_id": "R030",
+      "seq": 30,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 663
+        }
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "seed": 6,
+  "setup": [
+    {
+      "from_method": "M1",
+      "seconds": 517,
+      "to_method": "M2"
+    },
+    {
+      "from_method": "M2",
+      "seconds": 845,
+      "to_method": "M1"
+    }
+  ],
+  "source": "ts-engine-golden",
+  "windows": [
+    {
+      "analyzer": "AN-1",
+      "end_s": 2959,
+      "start_s": 1927
+    },
+    {
+      "analyzer": "AN-2",
+      "end_s": 1812,
+      "start_s": 380
+    }
+  ]
+}

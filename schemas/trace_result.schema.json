@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trace_result.schema.json",
+  "title": "TraceResult",
+  "description": "What a core loop (TS engine or the author's SimPy model) returns for one trace. engine_version and seed are copied from the trace. runs are sorted by (start_s, analyzer, request_id, attempt); start_s is run_started (after any setup), end_s is run.ended_at, setup_s is the setup applied immediately before the run (0 if none), so the visit began at start_s - setup_s.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "engine_version", "seed", "runs"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "engine_version": { "type": "string", "minLength": 1 },
+    "seed": { "type": "integer", "minimum": 0 },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request_id", "attempt", "visit", "analyzer", "setup_s", "start_s", "end_s", "outcome"],
+        "properties": {
+          "request_id": { "type": "string", "minLength": 1 },
+          "attempt": { "type": "integer", "minimum": 1 },
+          "visit": { "type": "integer", "minimum": 1 },
+          "analyzer": { "type": "string", "minLength": 1 },
+          "setup_s": { "type": "integer", "minimum": 0 },
+          "start_s": { "type": "integer", "minimum": 0 },
+          "end_s": { "type": "integer", "minimum": 1 },
+          "outcome": { "type": "string", "enum": ["qc_passed", "qc_failed", "over_range"] }
+        }
+      }
+    }
+  }
+}

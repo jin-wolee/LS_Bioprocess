@@ -1,0 +1,92 @@
+{
+  "analyzers": [
+    {
+      "group": "G",
+      "id": "AN-1",
+      "initial_method": null
+    }
+  ],
+  "engine_version": "0.1.0",
+  "expected_result": {
+    "engine_version": "0.1.0",
+    "runs": [
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 33000,
+        "outcome": "qc_passed",
+        "request_id": "A",
+        "setup_s": 0,
+        "start_s": 32400,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 33600,
+        "outcome": "qc_passed",
+        "request_id": "B",
+        "setup_s": 0,
+        "start_s": 33000,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 34200,
+        "outcome": "qc_passed",
+        "request_id": "C",
+        "setup_s": 0,
+        "start_s": 33600,
+        "visit": 1
+      }
+    ],
+    "schema_version": "1",
+    "seed": 1
+  },
+  "forced_outcomes": [],
+  "policy": "fifo",
+  "requests": [
+    {
+      "arrive_s": 32400,
+      "deadline_s": 39600,
+      "request_id": "A",
+      "seq": 1,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    },
+    {
+      "arrive_s": 32400,
+      "deadline_s": 36000,
+      "request_id": "B",
+      "seq": 2,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    },
+    {
+      "arrive_s": 32400,
+      "deadline_s": 37800,
+      "request_id": "C",
+      "seq": 3,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "seed": 1,
+  "setup": [],
+  "source": "hand",
+  "windows": []
+}

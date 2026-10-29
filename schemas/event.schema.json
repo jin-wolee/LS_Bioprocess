@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event.schema.json",
+  "title": "Event",
+  "description": "One line of the canonical event log: the L3 event types of docs/design/simulation_spec.md section 2.3 and a log_header that binds schema_version, engine_version and seed to the log. t is an integer second from scenario t0. Fields annotated x-visibility hidden exist in the truth log only and never reach a recorder. S1b adds the L1 and L2 types additively.",
+  "oneOf": [
+    { "$ref": "#/$defs/log_header" },
+    { "$ref": "#/$defs/request_queued" },
+    { "$ref": "#/$defs/visit_started" },
+    { "$ref": "#/$defs/run_started" },
+    { "$ref": "#/$defs/result_measured" },
+    { "$ref": "#/$defs/qc_result" },
+    { "$ref": "#/$defs/visit_finished" },
+    { "$ref": "#/$defs/rerun_requested" },
+    { "$ref": "#/$defs/dilution_applied" },
+    { "$ref": "#/$defs/qc_window_started" },
+    { "$ref": "#/$defs/qc_window_ended" },
+    { "$ref": "#/$defs/maintenance_started" },
+    { "$ref": "#/$defs/maintenance_ended" }
+  ],
+  "$defs": {
+    "time": { "type": "integer", "minimum": 0 },
+    "ident": { "type": "string", "minLength": 1 },
+    "count": { "type": "integer", "minimum": 1 },
+    "log_header": {
+      "title": "LogHeader",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "schema_version", "engine_version", "seed"],
+      "properties": {
+        "type": { "type": "string", "const": "log_header" },
+        "t": { "type": "integer", "const": 0 },
+        "schema_version": { "type": "string", "const": "1" },
+        "engine_version": { "type": "string", "minLength": 1 },
+        "seed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "request_queued": {
+      "title": "RequestQueued",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "request_id", "attempt", "visit", "group", "seq"],
+      "properties": {
+        "type": { "type": "string", "const": "request_queued" },
+        "t": { "$ref": "#/$defs/time" },
+        "request_id": { "$ref": "#/$defs/ident" },
+        "attempt": { "$ref": "#/$defs/count" },
+        "visit": { "$ref": "#/$defs/count" },
+        "group": { "$ref": "#/$defs/ident" },
+        "seq": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "visit_started": {
+      "title": "VisitStarted",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "request_id", "attempt", "visit", "analyzer", "setup_s"],
+      "properties": {
+        "type": { "type": "string", "const": "visit_started" },
+        "t": { "$ref": "#/$defs/time" },
+        "request_id": { "$ref": "#/$defs/ident" },
+        "attempt": { "$ref": "#/$defs/count" },
+        "visit": { "$ref": "#/$defs/count" },
+        "analyzer": { "$ref": "#/$defs/ident" },
+        "setup_s": { "$ref": "#/$defs/time" }
+      }
+    },
+    "run_started": {
+      "title": "RunStarted",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "request_id", "attempt", "visit", "analyzer"],
+      "properties": {
+        "type": { "type": "string", "const": "run_started" },
+        "t": { "$ref": "#/$defs/time" },
+        "request_id": { "$ref": "#/$defs/ident" },
+        "attempt": { "$ref": "#/$defs/count" },
+        "visit": { "$ref": "#/$defs/count" },
+        "analyzer": { "$ref": "#/$defs/ident" }
+      }
+    },
+    "result_measured": {
+      "title": "ResultMeasured",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "request_id", "attempt", "visit", "analyzer", "analyte", "value", "true_value", "noise"],
+      "properties": {
+        "type": { "type": "string", "const": "result_measured" },
+        "t": { "$ref": "#/$defs/time" },
+        "request_id": { "$ref": "#/$defs/ident" },
+        "attempt": { "$ref": "#/$defs/count" },
+        "visit": { "$ref": "#/$defs/count" },
+        "analyzer": { "$ref": "#/$defs/ident" },
+        "analyte": { "$ref": "#/$defs/ident" },
+        "value": { "type": "number" },
+        "true_value": { "type": "number", "x-visibility": "hidden" },
+        "noise": { "type": "number", "x-visibility": "hidden" }
+      }
+    },
+    "qc_result": {
+      "title": "QcResult",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "request_id", "attempt", "visit", "analyzer", "outcome"],
+      "properties": {
+        "type": { "type": "string", "const": "qc_result" },
+        "t": { "$ref": "#/$defs/time" },
+        "request_id": { "$ref": "#/$defs/ident" },
+        "attempt": { "$ref": "#/$defs/count" },
+        "visit": { "$ref": "#/$defs/count" },
+        "analyzer": { "$ref": "#/$defs/ident" },
+        "outcome": { "type": "string", "enum": ["qc_passed", "qc_failed", "over_range"] }
+      }
+    },
+    "visit_finished": {
+      "title": "VisitFinished",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "request_id", "attempt", "visit", "analyzer"],
+      "properties": {
+        "type": { "type": "string", "const": "visit_finished" },
+        "t": { "$ref": "#/$defs/time" },
+        "request_id": { "$ref": "#/$defs/ident" },
+        "attempt": { "$ref": "#/$defs/count" },
+        "visit": { "$ref": "#/$defs/count" },
+        "analyzer": { "$ref": "#/$defs/ident" }
+      }
+    },
+    "rerun_requested": {
+      "title": "RerunRequested",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "request_id", "attempt", "visit", "reason"],
+      "properties": {
+        "type": { "type": "string", "const": "rerun_requested" },
+        "t": { "$ref": "#/$defs/time" },
+        "request_id": { "$ref": "#/$defs/ident" },
+        "attempt": { "$ref": "#/$defs/count" },
+        "visit": { "$ref": "#/$defs/count" },
+        "reason": { "type": "string", "enum": ["qc_failed", "over_range"] }
+      }
+    },
+    "dilution_applied": {
+      "title": "DilutionApplied",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "request_id", "attempt", "visit", "dilution_factor"],
+      "properties": {
+        "type": { "type": "string", "const": "dilution_applied" },
+        "t": { "$ref": "#/$defs/time" },
+        "request_id": { "$ref": "#/$defs/ident" },
+        "attempt": { "$ref": "#/$defs/count" },
+        "visit": { "$ref": "#/$defs/count" },
+        "dilution_factor": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "qc_window_started": {
+      "title": "QcWindowStarted",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "analyzer"],
+      "properties": { "type": { "type": "string", "const": "qc_window_started" }, "t": { "$ref": "#/$defs/time" }, "analyzer": { "$ref": "#/$defs/ident" } }
+    },
+    "qc_window_ended": {
+      "title": "QcWindowEnded",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "analyzer"],
+      "properties": { "type": { "type": "string", "const": "qc_window_ended" }, "t": { "$ref": "#/$defs/time" }, "analyzer": { "$ref": "#/$defs/ident" } }
+    },
+    "maintenance_started": {
+      "title": "MaintenanceStarted",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "analyzer"],
+      "properties": { "type": { "type": "string", "const": "maintenance_started" }, "t": { "$ref": "#/$defs/time" }, "analyzer": { "$ref": "#/$defs/ident" } }
+    },
+    "maintenance_ended": {
+      "title": "MaintenanceEnded",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "analyzer"],
+      "properties": { "type": { "type": "string", "const": "maintenance_ended" }, "t": { "$ref": "#/$defs/time" }, "analyzer": { "$ref": "#/$defs/ident" } }
+    }
+  }
+}

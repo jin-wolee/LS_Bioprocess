@@ -1,0 +1,12 @@
+{
+  "type": "result_measured",
+  "t": 33900,
+  "request_id": "P",
+  "attempt": 1,
+  "visit": 1,
+  "analyzer": "AN-1",
+  "analyte": "G",
+  "value": 0.5,
+  "true_value": 0.25,
+  "noise": 0.25
+}

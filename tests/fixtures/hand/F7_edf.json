@@ -1,0 +1,191 @@
+{
+  "fixture": "F7",
+  "title": "EDF versus FIFO on one input",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "cases": [
+    {
+      "case": "F7",
+      "derivation": "A, B, C arrive 09:00:00, service 600 s, deadlines A 11:00:00, B 10:00:00, C 10:30:00. EDF: B 09:00:00-09:10:00, C 09:10:00-09:20:00, A 09:20:00-09:30:00.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "edf",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "A",
+            "seq": 1,
+            "arrive_s": 32400,
+            "deadline_s": 39600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "B",
+            "seq": 2,
+            "arrive_s": 32400,
+            "deadline_s": 36000,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "C",
+            "seq": 3,
+            "arrive_s": 32400,
+            "deadline_s": 37800,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "B",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 33000,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "C",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33000,
+            "end_s": 33600,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "A",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33600,
+            "end_s": 34200,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    },
+    {
+      "case": "F7-fifo",
+      "derivation": "The same input under FIFO: arrival ties are broken by seq, so A 09:00:00-09:10:00, B 09:10:00-09:20:00, C 09:20:00-09:30:00.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "A",
+            "seq": 1,
+            "arrive_s": 32400,
+            "deadline_s": 39600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "B",
+            "seq": 2,
+            "arrive_s": 32400,
+            "deadline_s": 36000,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "C",
+            "seq": 3,
+            "arrive_s": 32400,
+            "deadline_s": 37800,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "A",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 33000,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "B",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33000,
+            "end_s": 33600,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "C",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33600,
+            "end_s": 34200,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    }
+  ]
+}

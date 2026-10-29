@@ -1,0 +1,103 @@
+{
+  "analyzers": [
+    {
+      "group": "CC",
+      "id": "AN-CC",
+      "initial_method": null
+    },
+    {
+      "group": "MA",
+      "id": "AN-MA",
+      "initial_method": null
+    }
+  ],
+  "engine_version": "0.1.0",
+  "expected_result": {
+    "engine_version": "0.1.0",
+    "runs": [
+      {
+        "analyzer": "AN-CC",
+        "attempt": 1,
+        "end_s": 32520,
+        "outcome": "qc_passed",
+        "request_id": "A",
+        "setup_s": 0,
+        "start_s": 32400,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-CC",
+        "attempt": 1,
+        "end_s": 32640,
+        "outcome": "qc_passed",
+        "request_id": "B",
+        "setup_s": 0,
+        "start_s": 32520,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-MA",
+        "attempt": 1,
+        "end_s": 32820,
+        "outcome": "qc_passed",
+        "request_id": "A",
+        "setup_s": 0,
+        "start_s": 32520,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-MA",
+        "attempt": 1,
+        "end_s": 33120,
+        "outcome": "qc_passed",
+        "request_id": "B",
+        "setup_s": 0,
+        "start_s": 32820,
+        "visit": 2
+      }
+    ],
+    "schema_version": "1",
+    "seed": 1
+  },
+  "forced_outcomes": [],
+  "policy": "fifo",
+  "requests": [
+    {
+      "arrive_s": 32400,
+      "request_id": "A",
+      "seq": 1,
+      "visits": [
+        {
+          "group": "CC",
+          "service_s": 120
+        },
+        {
+          "group": "MA",
+          "service_s": 300,
+          "transfer_s": 0
+        }
+      ]
+    },
+    {
+      "arrive_s": 32430,
+      "request_id": "B",
+      "seq": 2,
+      "visits": [
+        {
+          "group": "CC",
+          "service_s": 120
+        },
+        {
+          "group": "MA",
+          "service_s": 300,
+          "transfer_s": 0
+        }
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "seed": 1,
+  "setup": [],
+  "source": "hand",
+  "windows": []
+}

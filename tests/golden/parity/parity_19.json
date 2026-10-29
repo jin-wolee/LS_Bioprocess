@@ -1,0 +1,425 @@
+{
+  "analyzers": [
+    {
+      "group": "G1",
+      "id": "AN-1",
+      "initial_method": "M1"
+    },
+    {
+      "group": "G1",
+      "id": "AN-2",
+      "initial_method": null
+    },
+    {
+      "group": "G2",
+      "id": "AN-3",
+      "initial_method": "M2"
+    },
+    {
+      "group": "G2",
+      "id": "AN-4",
+      "initial_method": "M1"
+    }
+  ],
+  "engine_version": "0.1.0",
+  "expected_result": {
+    "engine_version": "0.1.0",
+    "runs": [
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 1261,
+        "outcome": "qc_passed",
+        "request_id": "R001",
+        "setup_s": 0,
+        "start_s": 879,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 2491,
+        "outcome": "qc_passed",
+        "request_id": "R002",
+        "setup_s": 552,
+        "start_s": 2001,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-3",
+        "attempt": 1,
+        "end_s": 3146,
+        "outcome": "qc_passed",
+        "request_id": "R003",
+        "setup_s": 0,
+        "start_s": 2751,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 3499,
+        "outcome": "qc_passed",
+        "request_id": "R004",
+        "setup_s": 62,
+        "start_s": 3336,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-3",
+        "attempt": 1,
+        "end_s": 5394,
+        "outcome": "qc_passed",
+        "request_id": "R005",
+        "setup_s": 62,
+        "start_s": 4606,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 5549,
+        "outcome": "qc_passed",
+        "request_id": "R006",
+        "setup_s": 552,
+        "start_s": 4852,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-3",
+        "attempt": 1,
+        "end_s": 6087,
+        "outcome": "qc_failed",
+        "request_id": "R008",
+        "setup_s": 0,
+        "start_s": 5394,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-4",
+        "attempt": 1,
+        "end_s": 6316,
+        "outcome": "qc_passed",
+        "request_id": "R007",
+        "setup_s": 552,
+        "start_s": 5471,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-3",
+        "attempt": 1,
+        "end_s": 6877,
+        "outcome": "over_range",
+        "request_id": "R010",
+        "setup_s": 0,
+        "start_s": 6087,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-4",
+        "attempt": 2,
+        "end_s": 7009,
+        "outcome": "qc_passed",
+        "request_id": "R008",
+        "setup_s": 0,
+        "start_s": 6316,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 6689,
+        "outcome": "qc_passed",
+        "request_id": "R009",
+        "setup_s": 0,
+        "start_s": 6441,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 7186,
+        "outcome": "qc_failed",
+        "request_id": "R009",
+        "setup_s": 0,
+        "start_s": 6726,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-3",
+        "attempt": 2,
+        "end_s": 7667,
+        "outcome": "qc_passed",
+        "request_id": "R010",
+        "setup_s": 0,
+        "start_s": 6877,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-4",
+        "attempt": 1,
+        "end_s": 7852,
+        "outcome": "qc_passed",
+        "request_id": "R012",
+        "setup_s": 62,
+        "start_s": 7071,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 2,
+        "end_s": 7646,
+        "outcome": "qc_passed",
+        "request_id": "R009",
+        "setup_s": 0,
+        "start_s": 7186,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-3",
+        "attempt": 1,
+        "end_s": 7810,
+        "outcome": "qc_failed",
+        "request_id": "R011",
+        "setup_s": 0,
+        "start_s": 7667,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 8644,
+        "outcome": "qc_passed",
+        "request_id": "R009",
+        "setup_s": 62,
+        "start_s": 7768,
+        "visit": 3
+      },
+      {
+        "analyzer": "AN-3",
+        "attempt": 2,
+        "end_s": 7953,
+        "outcome": "qc_passed",
+        "request_id": "R011",
+        "setup_s": 0,
+        "start_s": 7810,
+        "visit": 1
+      }
+    ],
+    "schema_version": "1",
+    "seed": 19
+  },
+  "forced_outcomes": [
+    {
+      "attempt": 1,
+      "outcome": "qc_failed",
+      "request_id": "R008",
+      "visit": 1
+    },
+    {
+      "attempt": 1,
+      "outcome": "qc_failed",
+      "request_id": "R009",
+      "visit": 2
+    },
+    {
+      "attempt": 1,
+      "outcome": "over_range",
+      "request_id": "R010",
+      "visit": 1
+    },
+    {
+      "attempt": 1,
+      "outcome": "qc_failed",
+      "request_id": "R011",
+      "visit": 1
+    }
+  ],
+  "policy": "edf",
+  "requests": [
+    {
+      "arrive_s": 879,
+      "request_id": "R001",
+      "seq": 1,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 382
+        }
+      ]
+    },
+    {
+      "arrive_s": 1449,
+      "deadline_s": 3235,
+      "request_id": "R002",
+      "seq": 2,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 490
+        }
+      ]
+    },
+    {
+      "arrive_s": 2751,
+      "deadline_s": 4393,
+      "request_id": "R003",
+      "seq": 3,
+      "visits": [
+        {
+          "group": "G2",
+          "service_s": 395
+        }
+      ]
+    },
+    {
+      "arrive_s": 3274,
+      "request_id": "R004",
+      "seq": 4,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 163
+        }
+      ]
+    },
+    {
+      "arrive_s": 4544,
+      "deadline_s": 8118,
+      "request_id": "R005",
+      "seq": 5,
+      "visits": [
+        {
+          "group": "G2",
+          "method_id": "M1",
+          "service_s": 788
+        }
+      ]
+    },
+    {
+      "arrive_s": 4300,
+      "deadline_s": 8238,
+      "request_id": "R006",
+      "seq": 6,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 697
+        }
+      ]
+    },
+    {
+      "arrive_s": 4919,
+      "request_id": "R007",
+      "seq": 7,
+      "visits": [
+        {
+          "group": "G2",
+          "method_id": "M2",
+          "service_s": 845
+        }
+      ]
+    },
+    {
+      "arrive_s": 5069,
+      "request_id": "R008",
+      "seq": 8,
+      "visits": [
+        {
+          "group": "G2",
+          "service_s": 693
+        }
+      ]
+    },
+    {
+      "arrive_s": 6441,
+      "deadline_s": 9662,
+      "request_id": "R009",
+      "seq": 9,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 248
+        },
+        {
+          "group": "G1",
+          "service_s": 460,
+          "transfer_s": 37
+        },
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 876,
+          "transfer_s": 60
+        }
+      ]
+    },
+    {
+      "arrive_s": 5983,
+      "deadline_s": 11687,
+      "request_id": "R010",
+      "seq": 10,
+      "visits": [
+        {
+          "group": "G2",
+          "service_s": 790
+        }
+      ]
+    },
+    {
+      "arrive_s": 7302,
+      "request_id": "R011",
+      "seq": 11,
+      "visits": [
+        {
+          "group": "G2",
+          "service_s": 143
+        }
+      ]
+    },
+    {
+      "arrive_s": 6477,
+      "deadline_s": 13531,
+      "request_id": "R012",
+      "seq": 12,
+      "visits": [
+        {
+          "group": "G2",
+          "method_id": "M1",
+          "service_s": 781
+        }
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "seed": 19,
+  "setup": [
+    {
+      "from_method": "M1",
+      "seconds": 552,
+      "to_method": "M2"
+    },
+    {
+      "from_method": "M2",
+      "seconds": 62,
+      "to_method": "M1"
+    }
+  ],
+  "source": "ts-engine-golden",
+  "windows": [
+    {
+      "analyzer": "AN-2",
+      "end_s": 2676,
+      "start_s": 2179
+    },
+    {
+      "analyzer": "AN-2",
+      "end_s": 4613,
+      "start_s": 3693
+    }
+  ]
+}

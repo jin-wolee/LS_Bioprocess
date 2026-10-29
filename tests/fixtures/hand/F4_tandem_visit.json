@@ -1,0 +1,223 @@
+{
+  "fixture": "F4",
+  "title": "Tandem visit: counter then metabolite analyzer, one run per visit",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "cases": [
+    {
+      "case": "F4",
+      "derivation": "Counter service 120 s, metabolite analyzer 300 s, transfer 0. A arrives 09:00:00: counter 09:00:00-09:02:00. B arrives 09:00:30, counter busy: 09:02:00-09:04:00. A reaches the metabolite analyzer at 09:02:00: 09:02:00-09:07:00. B arrives there 09:04:00, analyzer busy until 09:07:00: 09:07:00-09:12:00.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-CC",
+            "group": "CC",
+            "initial_method": null
+          },
+          {
+            "id": "AN-MA",
+            "group": "MA",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "A",
+            "seq": 1,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "CC",
+                "service_s": 120
+              },
+              {
+                "group": "MA",
+                "service_s": 300,
+                "transfer_s": 0
+              }
+            ]
+          },
+          {
+            "request_id": "B",
+            "seq": 2,
+            "arrive_s": 32430,
+            "visits": [
+              {
+                "group": "CC",
+                "service_s": 120
+              },
+              {
+                "group": "MA",
+                "service_s": 300,
+                "transfer_s": 0
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "A",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-CC",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 32520,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "B",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-CC",
+            "setup_s": 0,
+            "start_s": 32520,
+            "end_s": 32640,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "A",
+            "attempt": 1,
+            "visit": 2,
+            "analyzer": "AN-MA",
+            "setup_s": 0,
+            "start_s": 32520,
+            "end_s": 32820,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "B",
+            "attempt": 1,
+            "visit": 2,
+            "analyzer": "AN-MA",
+            "setup_s": 0,
+            "start_s": 32820,
+            "end_s": 33120,
+            "outcome": "qc_passed"
+          }
+        ],
+        "arrivals": {
+          "A#1#1": 32400,
+          "B#1#1": 32430,
+          "A#1#2": 32520,
+          "B#1#2": 32640
+        }
+      }
+    },
+    {
+      "case": "F4-transfer60",
+      "derivation": "Transfer 60 s before the second visit. A leaves the counter 09:02:00 and arrives at the metabolite analyzer 09:03:00: 09:03:00-09:08:00. B leaves 09:04:00, arrives 09:05:00, waits for 09:08:00: 09:08:00-09:13:00. The counter runs are unchanged.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-CC",
+            "group": "CC",
+            "initial_method": null
+          },
+          {
+            "id": "AN-MA",
+            "group": "MA",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "A",
+            "seq": 1,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "CC",
+                "service_s": 120
+              },
+              {
+                "group": "MA",
+                "service_s": 300,
+                "transfer_s": 60
+              }
+            ]
+          },
+          {
+            "request_id": "B",
+            "seq": 2,
+            "arrive_s": 32430,
+            "visits": [
+              {
+                "group": "CC",
+                "service_s": 120
+              },
+              {
+                "group": "MA",
+                "service_s": 300,
+                "transfer_s": 60
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "A",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-CC",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 32520,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "B",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-CC",
+            "setup_s": 0,
+            "start_s": 32520,
+            "end_s": 32640,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "A",
+            "attempt": 1,
+            "visit": 2,
+            "analyzer": "AN-MA",
+            "setup_s": 0,
+            "start_s": 32580,
+            "end_s": 32880,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "B",
+            "attempt": 1,
+            "visit": 2,
+            "analyzer": "AN-MA",
+            "setup_s": 0,
+            "start_s": 32880,
+            "end_s": 33180,
+            "outcome": "qc_passed"
+          }
+        ],
+        "arrivals": {
+          "A#1#2": 32580,
+          "B#1#2": 32700
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schema_version": "1",
+  "engine_version": "0.1.0",
+  "seed": 1,
+  "policy": "fifo",
+  "analyzers": [{ "id": "AN-1", "group": "G" }],
+  "setup": [],
+  "windows": [],
+  "requests": [{ "request_id": "P", "seq": 1, "arrive_s": 0, "visits": [{ "group": "G", "service_s": 600 }] }],
+  "forced_outcomes": []
+}

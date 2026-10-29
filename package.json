@@ -1,0 +1,29 @@
+{
+  "name": "sample-lineage-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Portfolio simulator: shared analyzers, sample lineage, several data architectures compared on one synthetic run.",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint engine",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "gen:types": "json2ts --input schemas --output engine/src/generated --cwd schemas",
+    "check": "npm run lint && npm run typecheck && npm run test"
+  },
+  "dependencies": {
+    "pure-rand": "8.4.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "25.9.9",
+    "ajv": "8.20.0",
+    "eslint": "10.13.0",
+    "json-schema-to-typescript": "16.0.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}

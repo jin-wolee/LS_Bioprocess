@@ -1,0 +1,404 @@
+{
+  "analyzers": [
+    {
+      "group": "G1",
+      "id": "AN-1",
+      "initial_method": null
+    }
+  ],
+  "engine_version": "0.1.0",
+  "expected_result": {
+    "engine_version": "0.1.0",
+    "runs": [
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 1206,
+        "outcome": "qc_passed",
+        "request_id": "R001",
+        "setup_s": 0,
+        "start_s": 1036,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 2247,
+        "outcome": "qc_passed",
+        "request_id": "R003",
+        "setup_s": 0,
+        "start_s": 1812,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 2642,
+        "outcome": "qc_passed",
+        "request_id": "R004",
+        "setup_s": 0,
+        "start_s": 2449,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 3040,
+        "outcome": "qc_passed",
+        "request_id": "R002",
+        "setup_s": 0,
+        "start_s": 2724,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 4497,
+        "outcome": "qc_passed",
+        "request_id": "R005",
+        "setup_s": 539,
+        "start_s": 4045,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 5557,
+        "outcome": "qc_passed",
+        "request_id": "R006",
+        "setup_s": 789,
+        "start_s": 5286,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 6270,
+        "outcome": "qc_passed",
+        "request_id": "R007",
+        "setup_s": 539,
+        "start_s": 6096,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 7720,
+        "outcome": "qc_passed",
+        "request_id": "R008",
+        "setup_s": 789,
+        "start_s": 7059,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 8954,
+        "outcome": "qc_passed",
+        "request_id": "R011",
+        "setup_s": 539,
+        "start_s": 8259,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 9574,
+        "outcome": "qc_passed",
+        "request_id": "R010",
+        "setup_s": 0,
+        "start_s": 8954,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 10079,
+        "outcome": "qc_passed",
+        "request_id": "R012",
+        "setup_s": 0,
+        "start_s": 9574,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 10173,
+        "outcome": "qc_passed",
+        "request_id": "R009",
+        "setup_s": 0,
+        "start_s": 10079,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 10297,
+        "outcome": "qc_passed",
+        "request_id": "R014",
+        "setup_s": 0,
+        "start_s": 10173,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 11266,
+        "outcome": "qc_passed",
+        "request_id": "R013",
+        "setup_s": 789,
+        "start_s": 11086,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 12170,
+        "outcome": "qc_passed",
+        "request_id": "R015",
+        "setup_s": 539,
+        "start_s": 11805,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 13808,
+        "outcome": "qc_passed",
+        "request_id": "R008",
+        "setup_s": 789,
+        "start_s": 12959,
+        "visit": 2
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 14061,
+        "outcome": "qc_passed",
+        "request_id": "R015",
+        "setup_s": 0,
+        "start_s": 13808,
+        "visit": 2
+      }
+    ],
+    "schema_version": "1",
+    "seed": 8
+  },
+  "forced_outcomes": [],
+  "policy": "fifo",
+  "requests": [
+    {
+      "arrive_s": 1036,
+      "request_id": "R001",
+      "seq": 1,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 170
+        }
+      ]
+    },
+    {
+      "arrive_s": 2724,
+      "request_id": "R002",
+      "seq": 2,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 316
+        }
+      ]
+    },
+    {
+      "arrive_s": 1812,
+      "request_id": "R003",
+      "seq": 3,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 435
+        }
+      ]
+    },
+    {
+      "arrive_s": 2449,
+      "request_id": "R004",
+      "seq": 4,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 193
+        }
+      ]
+    },
+    {
+      "arrive_s": 3506,
+      "request_id": "R005",
+      "seq": 5,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 452
+        }
+      ]
+    },
+    {
+      "arrive_s": 3551,
+      "deadline_s": 8732,
+      "request_id": "R006",
+      "seq": 6,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 271
+        }
+      ]
+    },
+    {
+      "arrive_s": 3654,
+      "request_id": "R007",
+      "seq": 7,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 174
+        }
+      ]
+    },
+    {
+      "arrive_s": 4151,
+      "request_id": "R008",
+      "seq": 8,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 661
+        },
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 849,
+          "transfer_s": 116
+        }
+      ]
+    },
+    {
+      "arrive_s": 5878,
+      "deadline_s": 8862,
+      "request_id": "R009",
+      "seq": 9,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 94
+        }
+      ]
+    },
+    {
+      "arrive_s": 5625,
+      "deadline_s": 12741,
+      "request_id": "R010",
+      "seq": 10,
+      "visits": [
+        {
+          "group": "G1",
+          "service_s": 620
+        }
+      ]
+    },
+    {
+      "arrive_s": 4950,
+      "deadline_s": 11149,
+      "request_id": "R011",
+      "seq": 11,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 695
+        }
+      ]
+    },
+    {
+      "arrive_s": 5635,
+      "deadline_s": 10986,
+      "request_id": "R012",
+      "seq": 12,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 505
+        }
+      ]
+    },
+    {
+      "arrive_s": 6594,
+      "deadline_s": 10023,
+      "request_id": "R013",
+      "seq": 13,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M2",
+          "service_s": 180
+        }
+      ]
+    },
+    {
+      "arrive_s": 6031,
+      "deadline_s": 9888,
+      "request_id": "R014",
+      "seq": 14,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 124
+        }
+      ]
+    },
+    {
+      "arrive_s": 6598,
+      "deadline_s": 13463,
+      "request_id": "R015",
+      "seq": 15,
+      "visits": [
+        {
+          "group": "G1",
+          "method_id": "M1",
+          "service_s": 365
+        },
+        {
+          "group": "G1",
+          "service_s": 253,
+          "transfer_s": 96
+        }
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "seed": 8,
+  "setup": [
+    {
+      "from_method": "M1",
+      "seconds": 789,
+      "to_method": "M2"
+    },
+    {
+      "from_method": "M2",
+      "seconds": 539,
+      "to_method": "M1"
+    }
+  ],
+  "source": "ts-engine-golden",
+  "windows": []
+}

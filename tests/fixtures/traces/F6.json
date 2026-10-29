@@ -1,0 +1,157 @@
+{
+  "analyzers": [
+    {
+      "group": "G",
+      "id": "AN-1",
+      "initial_method": null
+    },
+    {
+      "group": "G",
+      "id": "AN-2",
+      "initial_method": null
+    }
+  ],
+  "engine_version": "0.1.0",
+  "expected_result": {
+    "engine_version": "0.1.0",
+    "runs": [
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 31200,
+        "outcome": "qc_passed",
+        "request_id": "V1",
+        "setup_s": 0,
+        "start_s": 30600,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 31200,
+        "outcome": "qc_passed",
+        "request_id": "V2",
+        "setup_s": 0,
+        "start_s": 30600,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 31800,
+        "outcome": "qc_passed",
+        "request_id": "V3",
+        "setup_s": 0,
+        "start_s": 31200,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 31800,
+        "outcome": "qc_passed",
+        "request_id": "V4",
+        "setup_s": 0,
+        "start_s": 31200,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 32400,
+        "outcome": "qc_passed",
+        "request_id": "V5",
+        "setup_s": 0,
+        "start_s": 31800,
+        "visit": 1
+      },
+      {
+        "analyzer": "AN-2",
+        "attempt": 1,
+        "end_s": 32400,
+        "outcome": "qc_passed",
+        "request_id": "V6",
+        "setup_s": 0,
+        "start_s": 31800,
+        "visit": 1
+      }
+    ],
+    "schema_version": "1",
+    "seed": 1
+  },
+  "forced_outcomes": [],
+  "policy": "fifo",
+  "requests": [
+    {
+      "arrive_s": 30600,
+      "request_id": "V1",
+      "seq": 1,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    },
+    {
+      "arrive_s": 30600,
+      "request_id": "V2",
+      "seq": 2,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    },
+    {
+      "arrive_s": 30600,
+      "request_id": "V3",
+      "seq": 3,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    },
+    {
+      "arrive_s": 30600,
+      "request_id": "V4",
+      "seq": 4,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    },
+    {
+      "arrive_s": 30600,
+      "request_id": "V5",
+      "seq": 5,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    },
+    {
+      "arrive_s": 30600,
+      "request_id": "V6",
+      "seq": 6,
+      "visits": [
+        {
+          "group": "G",
+          "service_s": 600
+        }
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "seed": 1,
+  "setup": [],
+  "source": "hand",
+  "windows": []
+}

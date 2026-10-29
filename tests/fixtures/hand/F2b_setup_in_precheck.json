@@ -1,0 +1,137 @@
+{
+  "fixture": "F2b",
+  "title": "Setup counts in the window pre-check",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "cases": [
+    {
+      "case": "F2b-r1",
+      "derivation": "initial_method T, the request needs S: setup 900 s. Arrives 09:00:00: [t, t + setup + service) = [09:00:00, 09:00:00 + 900 s + 600 s) = [09:00:00, 09:25:00) clears the window starting 09:30:00. Setup 09:00:00-09:15:00, run 09:15:00-09:25:00.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": "T"
+          }
+        ],
+        "setup": [
+          {
+            "from_method": "T",
+            "to_method": "S",
+            "seconds": 900
+          },
+          {
+            "from_method": "S",
+            "to_method": "T",
+            "seconds": 900
+          }
+        ],
+        "windows": [
+          {
+            "analyzer": "AN-1",
+            "start_s": 34200,
+            "end_s": 36000
+          }
+        ],
+        "requests": [
+          {
+            "request_id": "R",
+            "seq": 1,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "method_id": "S"
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 900,
+            "start_s": 33300,
+            "end_s": 33900,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    },
+    {
+      "case": "F2b-r2",
+      "derivation": "Arrives 09:10:00: [09:10:00, 09:10:00 + 900 s + 600 s) = [09:10:00, 09:35:00) hits the window starting 09:30:00, so the analyzer idles until 10:00:00. Setup 10:00:00-10:15:00, run 10:15:00-10:25:00. A pre-check over the service alone ([09:10:00, 09:20:00)) would start the setup at 09:10:00 and run 09:25:00-09:35:00 across the window.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": "T"
+          }
+        ],
+        "setup": [
+          {
+            "from_method": "T",
+            "to_method": "S",
+            "seconds": 900
+          },
+          {
+            "from_method": "S",
+            "to_method": "T",
+            "seconds": 900
+          }
+        ],
+        "windows": [
+          {
+            "analyzer": "AN-1",
+            "start_s": 34200,
+            "end_s": 36000
+          }
+        ],
+        "requests": [
+          {
+            "request_id": "R",
+            "seq": 1,
+            "arrive_s": 33000,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "method_id": "S"
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 900,
+            "start_s": 36900,
+            "end_s": 37500,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    }
+  ]
+}

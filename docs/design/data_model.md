@@ -145,6 +145,7 @@ In the truth world both quantities use truth stamps. In recorded data they exist
 | `run_started` | event | the instrument run begins, after any setup; its instant is `run.started_at` |
 | `visit_finished` | event | the run ends at `run.ended_at` and the analyzer is freed |
 | `qc_window_started`, `qc_window_ended` | events | the daily QC window of an analyzer opens and closes; the analyzer is unavailable inside it; windows are half-open, `[start, end)`; maintenance has the same pair, `maintenance_started` and `maintenance_ended` |
+| `log_header` | event | the first line of every event log, at t = 0; carries `schema_version`, `engine_version` and `seed` (spec section 3, rule 4) so the log hash depends on them; not a lab event, and visible to recorders |
 | `setup_s` | trace field, per run | seconds of setup applied immediately before the run (0 if none), so the visit began at `run_started_at` minus `setup_s` |
 | `transfer_s` | trace field, per visit | seconds of transfer between instruments before a visit that is not the first (A106 for the split profile); 0 or absent on the first visit |
 

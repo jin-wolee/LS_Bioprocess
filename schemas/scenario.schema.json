@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scenario.schema.json",
+  "title": "Scenario",
+  "description": "A scenario picks profiles and settings. Seeds are neutral integers, never date-shaped. S1b adds fields additively.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scenario_id", "seed", "profiles"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "scenario_id": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "queue_policy": { "type": "string", "enum": ["fifo", "edf"] },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bioreactor", "analyzer", "staff"],
+      "properties": {
+        "bioreactor": { "type": "string", "minLength": 1 },
+        "analyzer": { "type": "string", "minLength": 1 },
+        "staff": { "type": "string", "minLength": 1 }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": { "$ref": "profile.schema.json#/$defs/param" }
+    }
+  }
+}

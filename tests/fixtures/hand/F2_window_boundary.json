@@ -1,0 +1,272 @@
+{
+  "fixture": "F2",
+  "title": "Window boundary: a run may not straddle a window; windows are half-open",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "cases": [
+    {
+      "case": "F2-r1",
+      "derivation": "Run [09:20:00, 09:30:00) ends exactly at the window start 09:30:00: allowed, starts on arrival. Service 600 s. A check of the start time alone would start rows 2 and 3 at their arrival and let them straddle the window.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [
+          {
+            "analyzer": "AN-1",
+            "start_s": 34200,
+            "end_s": 36000
+          }
+        ],
+        "requests": [
+          {
+            "request_id": "R",
+            "seq": 1,
+            "arrive_s": 33600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33600,
+            "end_s": 34200,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    },
+    {
+      "case": "F2-r2",
+      "derivation": "Arrives 09:20:01: a run from now would end at 09:30:01, one second inside the window [09:30:00, 10:00:00). Waits for the window end: 10:00:00-10:10:00. Service 600 s. A check of the start time alone would start rows 2 and 3 at their arrival and let them straddle the window.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [
+          {
+            "analyzer": "AN-1",
+            "start_s": 34200,
+            "end_s": 36000
+          }
+        ],
+        "requests": [
+          {
+            "request_id": "R",
+            "seq": 1,
+            "arrive_s": 33601,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 36000,
+            "end_s": 36600,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    },
+    {
+      "case": "F2-r3",
+      "derivation": "Arrives 09:25:00: a run from now would end at 09:35:00, inside the window. Waits for the window end: 10:00:00-10:10:00. Service 600 s. A check of the start time alone would start rows 2 and 3 at their arrival and let them straddle the window.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [
+          {
+            "analyzer": "AN-1",
+            "start_s": 34200,
+            "end_s": 36000
+          }
+        ],
+        "requests": [
+          {
+            "request_id": "R",
+            "seq": 1,
+            "arrive_s": 33900,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 36000,
+            "end_s": 36600,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    },
+    {
+      "case": "F2-r4",
+      "derivation": "Arrives 09:45:00, inside the window: the analyzer is unavailable until 10:00:00, then 10:00:00-10:10:00. Service 600 s. A check of the start time alone would start rows 2 and 3 at their arrival and let them straddle the window.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [
+          {
+            "analyzer": "AN-1",
+            "start_s": 34200,
+            "end_s": 36000
+          }
+        ],
+        "requests": [
+          {
+            "request_id": "R",
+            "seq": 1,
+            "arrive_s": 35100,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 36000,
+            "end_s": 36600,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    },
+    {
+      "case": "F2-r5",
+      "derivation": "Arrives exactly at the window end 10:00:00; windows are half-open, so [10:00:00, 10:10:00) is outside: starts on arrival. Service 600 s. A check of the start time alone would start rows 2 and 3 at their arrival and let them straddle the window.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [
+          {
+            "analyzer": "AN-1",
+            "start_s": 34200,
+            "end_s": 36000
+          }
+        ],
+        "requests": [
+          {
+            "request_id": "R",
+            "seq": 1,
+            "arrive_s": 36000,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 36000,
+            "end_s": 36600,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    }
+  ]
+}

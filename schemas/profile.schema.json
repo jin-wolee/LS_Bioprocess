@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "profile.schema.json",
+  "title": "Profile",
+  "description": "A bioreactor, analyzer or staff profile (data, not code). Every numeric parameter is {value, unit, ref}; ref resolves to a ledger id (ADR-0012). profile_id is a free string: ids of profiles are never enumerated in a schema or in generated types.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile_id", "kind", "params"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "profile_id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "enum": ["bioreactor", "analyzer", "staff"] },
+    "description": { "type": "string" },
+    "params": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/param" }
+    }
+  },
+  "$defs": {
+    "param": {
+      "title": "Param",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "ref"],
+      "properties": {
+        "value": { "type": "number" },
+        "unit": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
+      }
+    }
+  }
+}

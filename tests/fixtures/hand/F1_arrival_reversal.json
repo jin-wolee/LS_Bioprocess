@@ -1,0 +1,216 @@
+{
+  "fixture": "F1",
+  "title": "Arrival reversal: transport reverses the order of arrival, FIFO follows arrival at the analyzer",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "cases": [
+    {
+      "case": "F1",
+      "derivation": "X sampled 08:40:00 + 25 min transport arrives 09:05:00; Y 08:50:00 + 10 min arrives 09:00:00; Z 08:55:00 + 10 min arrives 09:05:00. Service 600 s, one analyzer. Y is first to arrive: 09:00:00-09:10:00 (wait 0). X and Z tie at 09:05:00, X has the lower seq: X 09:10:00-09:20:00 (wait 09:10:00-09:05:00 = 300 s), Z 09:20:00-09:30:00 (wait 09:20:00-09:05:00 = 900 s). hold_time = run_started - sampled: Y 09:00:00-08:50:00 = 600 s, X 09:10:00-08:40:00 = 1800 s, Z 09:20:00-08:55:00 = 1500 s. Admission by sampling time would start X at 09:05:00 and Y at 09:15:00.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "X",
+            "seq": 1,
+            "sampled_s": 31200,
+            "arrive_s": 32700,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "Y",
+            "seq": 2,
+            "sampled_s": 31800,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "Z",
+            "seq": 3,
+            "sampled_s": 32100,
+            "arrive_s": 32700,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "Y",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 33000,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "X",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33000,
+            "end_s": 33600,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "Z",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33600,
+            "end_s": 34200,
+            "outcome": "qc_passed"
+          }
+        ],
+        "wait_s": {
+          "Y#1#1": 0,
+          "X#1#1": 300,
+          "Z#1#1": 900
+        },
+        "hold_time_s": {
+          "Y": 600,
+          "X": 1800,
+          "Z": 1500
+        }
+      }
+    },
+    {
+      "case": "F1b",
+      "derivation": "Same samples, two analyzers. Y arrives 09:00:00: AN-1 09:00:00-09:10:00. X arrives 09:05:00 (lower seq than Z): AN-1 is busy, lowest-index idle is AN-2: 09:05:00-09:15:00. Z arrives 09:05:00 and waits for AN-1, free at 09:10:00: 09:10:00-09:20:00 (wait 300 s). hold_time: Y 600 s, X 09:05:00-08:40:00 = 1500 s, Z 09:10:00-08:55:00 = 900 s.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          },
+          {
+            "id": "AN-2",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "X",
+            "seq": 1,
+            "sampled_s": 31200,
+            "arrive_s": 32700,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "Y",
+            "seq": 2,
+            "sampled_s": 31800,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "Z",
+            "seq": 3,
+            "sampled_s": 32100,
+            "arrive_s": 32700,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "Y",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 33000,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "X",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-2",
+            "setup_s": 0,
+            "start_s": 32700,
+            "end_s": 33300,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "Z",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33000,
+            "end_s": 33600,
+            "outcome": "qc_passed"
+          }
+        ],
+        "wait_s": {
+          "Y#1#1": 0,
+          "X#1#1": 0,
+          "Z#1#1": 300
+        },
+        "hold_time_s": {
+          "Y": 600,
+          "X": 1500,
+          "Z": 900
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "fixture": "F6",
+  "title": "Rack burst: automated delivery, high-numbered vessels wait longest",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "cases": [
+    {
+      "case": "F6",
+      "derivation": "Two analyzers, service 600 s, V1..V6 all arrive 08:30:00 with seq 1..6. Pairs start together: V1 AN-1 and V2 AN-2 at 08:30:00, V3 AN-1 and V4 AN-2 at 08:40:00, V5 AN-1 and V6 AN-2 at 08:50:00. Waits 0, 0, 600, 600, 1200, 1200 s.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          },
+          {
+            "id": "AN-2",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "V1",
+            "seq": 1,
+            "arrive_s": 30600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "V2",
+            "seq": 2,
+            "arrive_s": 30600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "V3",
+            "seq": 3,
+            "arrive_s": 30600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "V4",
+            "seq": 4,
+            "arrive_s": 30600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "V5",
+            "seq": 5,
+            "arrive_s": 30600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          },
+          {
+            "request_id": "V6",
+            "seq": 6,
+            "arrive_s": 30600,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "V1",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 30600,
+            "end_s": 31200,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "V2",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-2",
+            "setup_s": 0,
+            "start_s": 30600,
+            "end_s": 31200,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "V3",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 31200,
+            "end_s": 31800,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "V4",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-2",
+            "setup_s": 0,
+            "start_s": 31200,
+            "end_s": 31800,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "V5",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 31800,
+            "end_s": 32400,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "V6",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-2",
+            "setup_s": 0,
+            "start_s": 31800,
+            "end_s": 32400,
+            "outcome": "qc_passed"
+          }
+        ],
+        "wait_s": {
+          "V1#1#1": 0,
+          "V2#1#1": 0,
+          "V3#1#1": 600,
+          "V4#1#1": 600,
+          "V5#1#1": 1200,
+          "V6#1#1": 1200
+        }
+      }
+    }
+  ]
+}

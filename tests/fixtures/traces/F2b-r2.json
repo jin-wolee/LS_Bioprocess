@@ -1,0 +1,65 @@
+{
+  "analyzers": [
+    {
+      "group": "G",
+      "id": "AN-1",
+      "initial_method": "T"
+    }
+  ],
+  "engine_version": "0.1.0",
+  "expected_result": {
+    "engine_version": "0.1.0",
+    "runs": [
+      {
+        "analyzer": "AN-1",
+        "attempt": 1,
+        "end_s": 37500,
+        "outcome": "qc_passed",
+        "request_id": "R",
+        "setup_s": 900,
+        "start_s": 36900,
+        "visit": 1
+      }
+    ],
+    "schema_version": "1",
+    "seed": 1
+  },
+  "forced_outcomes": [],
+  "policy": "fifo",
+  "requests": [
+    {
+      "arrive_s": 33000,
+      "request_id": "R",
+      "seq": 1,
+      "visits": [
+        {
+          "group": "G",
+          "method_id": "S",
+          "service_s": 600
+        }
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "seed": 1,
+  "setup": [
+    {
+      "from_method": "T",
+      "seconds": 900,
+      "to_method": "S"
+    },
+    {
+      "from_method": "S",
+      "seconds": 900,
+      "to_method": "T"
+    }
+  ],
+  "source": "hand",
+  "windows": [
+    {
+      "analyzer": "AN-1",
+      "end_s": 36000,
+      "start_s": 34200
+    }
+  ]
+}

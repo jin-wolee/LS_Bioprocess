@@ -1,0 +1,10 @@
+{
+  "schema_version": "1",
+  "profile_id": "fixture_analyzer",
+  "kind": "analyzer",
+  "description": "Fixture-only profile used to test the schema; the ids exist in the ledgers, the profile is not a design profile.",
+  "params": {
+    "service_s": { "value": 270, "unit": "s", "ref": "A069" },
+    "sample_volume_ul": { "value": 275, "unit": "uL", "ref": "S001" }
+  }
+}

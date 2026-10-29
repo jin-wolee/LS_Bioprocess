@@ -1,0 +1,354 @@
+{
+  "fixture": "F3",
+  "title": "One rerun: a failed attempt re-enters the queue and delays others, other draws stay fixed",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "cases": [
+    {
+      "case": "F3",
+      "derivation": "P arrives 09:00:00, Q 09:05:00, R 09:25:00, service 600 s. P attempt 1 is forced qc_failed: P#1 09:00:00-09:10:00; the rerun (attempt 2) is re-enqueued at 09:10:00 with a new seq above every request seq. Q arrived 09:05:00 and is first in line: 09:10:00-09:20:00. P#2 (arrival 09:10:00) 09:20:00-09:30:00 qc_passed. R arrived 09:25:00 and waits: 09:30:00-09:40:00. Control (no forced failure): P 09:00:00-09:10:00, Q 09:10:00-09:20:00, R 09:25:00-09:35:00, so R starts 300 s later with the rerun.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "P",
+            "seq": 1,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          },
+          {
+            "request_id": "Q",
+            "seq": 2,
+            "arrive_s": 32700,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          },
+          {
+            "request_id": "R",
+            "seq": 3,
+            "arrive_s": 33900,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": [
+          {
+            "request_id": "P",
+            "attempt": 1,
+            "visit": 1,
+            "outcome": "qc_failed"
+          }
+        ]
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "P",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 33000,
+            "outcome": "qc_failed"
+          },
+          {
+            "request_id": "Q",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33000,
+            "end_s": 33600,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "P",
+            "attempt": 2,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33600,
+            "end_s": 34200,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 34200,
+            "end_s": 34800,
+            "outcome": "qc_passed"
+          }
+        ],
+        "noise_checks": {
+          "same_as_case": "F3-control",
+          "same_draws": [
+            "P#1#1",
+            "Q#1#1",
+            "R#1#1"
+          ],
+          "differ_within_case": [
+            [
+              "P#1#1",
+              "P#2#1"
+            ]
+          ],
+          "log_keeps_attempts": {
+            "P": [
+              1,
+              2
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": "F3-control",
+      "derivation": "Same input without the forced failure: P 09:00:00-09:10:00, Q 09:10:00-09:20:00, R arrives 09:25:00 and starts at once: 09:25:00-09:35:00.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "P",
+            "seq": 1,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          },
+          {
+            "request_id": "Q",
+            "seq": 2,
+            "arrive_s": 32700,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          },
+          {
+            "request_id": "R",
+            "seq": 3,
+            "arrive_s": 33900,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": []
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "P",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 33000,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "Q",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33000,
+            "end_s": 33600,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33900,
+            "end_s": 34500,
+            "outcome": "qc_passed"
+          }
+        ]
+      }
+    },
+    {
+      "case": "F3b",
+      "derivation": "Same timeline as F3 with P attempt 1 forced over_range instead: P#1 09:00:00-09:10:00 over_range, Q 09:10:00-09:20:00, P#2 09:20:00-09:30:00, R 09:30:00-09:40:00. The truth log carries the fixture-only dilution_factor (5) on attempt 2.",
+      "inputs": {
+        "schema_version": "1",
+        "engine_version": "0.1.0",
+        "seed": 1,
+        "policy": "fifo",
+        "analyzers": [
+          {
+            "id": "AN-1",
+            "group": "G",
+            "initial_method": null
+          }
+        ],
+        "setup": [],
+        "windows": [],
+        "requests": [
+          {
+            "request_id": "P",
+            "seq": 1,
+            "arrive_s": 32400,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          },
+          {
+            "request_id": "Q",
+            "seq": 2,
+            "arrive_s": 32700,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          },
+          {
+            "request_id": "R",
+            "seq": 3,
+            "arrive_s": 33900,
+            "visits": [
+              {
+                "group": "G",
+                "service_s": 600,
+                "noise_sd": 1,
+                "true_value": 0
+              }
+            ]
+          }
+        ],
+        "forced_outcomes": [
+          {
+            "request_id": "P",
+            "attempt": 1,
+            "visit": 1,
+            "outcome": "over_range"
+          }
+        ],
+        "dilution_factor": 5
+      },
+      "expected": {
+        "runs": [
+          {
+            "request_id": "P",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 32400,
+            "end_s": 33000,
+            "outcome": "over_range"
+          },
+          {
+            "request_id": "Q",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33000,
+            "end_s": 33600,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "P",
+            "attempt": 2,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 33600,
+            "end_s": 34200,
+            "outcome": "qc_passed"
+          },
+          {
+            "request_id": "R",
+            "attempt": 1,
+            "visit": 1,
+            "analyzer": "AN-1",
+            "setup_s": 0,
+            "start_s": 34200,
+            "end_s": 34800,
+            "outcome": "qc_passed"
+          }
+        ],
+        "dilution_applied": [
+          {
+            "request_id": "P",
+            "attempt": 2,
+            "dilution_factor": 5
+          }
+        ]
+      }
+    }
+  ]
+}
