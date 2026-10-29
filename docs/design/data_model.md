@@ -315,6 +315,21 @@ S2b adds the error injector (`engine/src/inject/`), the detection rules (`engine
 | Metrics: reruns | A rerun is traceable when version 1 still holds the value the first attempt reported and each later version supersedes the one before. The reason of a rerun is recorded by no architecture of S2 and is not scored. |
 | Seed aggregate | The table gives, per metric, the median and the 5th and 95th percentile (nearest rank) across seeds with the seed count and whether the minimum seed count of A103 is met. The percentiles are a spread across seeds, not a confidence interval. |
 
+### Recorder inputs and evidence checks decided in S2c1
+
+S2c1 adds the forced-error cells (spec section 6). Two of the matrix rows read facts that the observable event stream does not carry, and the non-rule entries of the "Detected by" column need a named check of the record. The points below were not decided by sections 2 to 8 and are fixed here; they are the reading the S2c1 tests are typed from.
+
+| Rule | Decision |
+|---|---|
+| Plan input | The recorder takes optional plain data `plan` from the assembly: the `control_id` of the bridging requests and the container of each sample. Both come from the sampling plan and the SOP, not from an instrument or a person at the bench, so the event stream has neither. Absent means the plan names none, and the columns are null. |
+| `sample.container` | The container the plan records for the sample (`open` or `closed`, an L2 setting). No flag owns it: every architecture that records the sample stores it when the plan names it (orchestrator ruling, S2c1), so the technique-error row turns on `hold_time`, which needs `two_clocks`. A skipped draw has none. |
+| `analysis_request` | One row per request seen in the event stream (`request_queued`, first occurrence), with `request_id` and `control_id` (null for an ordinary request). No flag owns the `control_id` of the plan or the analyzer name of a run: the eight flags are the only differences between architectures (ADR-0005), so every architecture holds both. The other columns of section 2 are not modelled yet. |
+| Evidence checks | Functions of a recorded dataset that answer "does the record show this error?" for the matrix entries that are not rules (`engine/src/record/evidence.ts`). They set no state and write no finding. `audit_event`: the audit event of a result key with the old and the new value and version. `bridging_study` (an effect between analyzers, author decision of 2026-10-29: ADR-0005 read literally, "only a bridging study (`control_id`) detects it"): two requests that share a `control_id` were measured on different analyzers, told apart by the analyzer name of the run (free text suffices); the offset is the value of the second minus the first. It needs no link to the instrument state. `lot_link` (an effect within one analyzer, a reagent lot step): two requests that share a `control_id` were measured on the same instrument under different reagent lots, and the lot is known only through the link from the run to the instrument state (`instrument_state_snapshot`); without the link the step cannot be attributed. `container_hold`: the container and the hold time (first run start minus `sampled_at`) of a sample are both stored. |
+| Idempotency log and as-of query | These two entries are not functions. The idempotency log is the VR-008 information no-op finding of section 7. The as-of query is `resultsAsOf` at the decision time (section 5). |
+| Cell | The outcome of one forced error in one configuration is `prevented` (the error does not arise), `detected:<evidence>` (it arises and the named rule or evidence check shows it in the record) or `invisible` (it arises and nothing shows it). |
+
+New names introduced by S2c1: `plan`, `container` (a column already listed for `sample` in section 2), `analysis_request` (an entity of section 2), and the evidence names `audit_event`, `bridging_study`, `lot_link` and `container_hold`.
+
 ## 8. Validation rule catalogue (draft)
 
 Actions: **hold** (row stored, not available until reviewed), **quarantine** (row stored in a quarantine state, excluded from released views), **reject** (row not loaded; goes to a dead-letter list with reason and `raw_ref`). A rule never edits a value. The tolerances in VR-003 and VR-004 are scenario settings; this document fixes no value.
