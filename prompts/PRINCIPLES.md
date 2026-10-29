@@ -49,7 +49,7 @@ The one place where the working principles are defined. Every brief and rubric p
 | Stage | Combination |
 |---|---|
 | S0 design | SDD + PDD + HITL |
-| S1-S2 engine, capture, metrics | SDD + TDD + EDD + BDD + YAGNI + HITL |
+| S1a, S1b, S2 engine, capture, metrics | SDD + TDD + EDD + BDD + YAGNI + HITL |
 | S3 UI exploration | YOLO + FAFO + KISS; then lock what stays with TDD + E2E |
 | S4-S5 and maintenance | Tidy First + DRY + SRP + TDD |
 | Always | KISS, AHA, SRP, Small Batches |
@@ -68,7 +68,7 @@ The one place where the working principles are defined. Every brief and rubric p
 Every brief to an executor starts with these four lines, filled in:
 
 ```
-Stage: <S0 | S1 | S2 | S3 | S4 | S5 | maintenance> — <session name>
+Stage: <S0 | S1a | S1b | S2 | S3 | S4 | S5 | maintenance> — <session name>
 Principles: <combination from the stage table>, plus always KISS, AHA, SRP, Small Batches. Rails: prompts/PRINCIPLES.md section 6.
 HITL gates touched: <none | list from section 1>
 Done: <command that must pass, e.g. uv run pytest -q && uv run --frozen python scripts/check_docs.py --all && bash scripts/check_all.sh --manual>

@@ -1,6 +1,6 @@
 # 91 — External third-opinion template (codex and agy)
 
-Used by the orchestrator at a milestone, only when the plan or the author asks: after the S1 gate, after the S2 gate, before the public flip, and in S5. One round per milestone. The same input goes to both tools; raw outputs stay private; only a sanitized disposition table becomes public.
+Used by the orchestrator at a milestone, only when the plan or the author asks: after the S1b gate, after the S2 gate, before the public flip, and in S5. One round per milestone. The same input goes to both tools; raw outputs stay private; only a sanitized disposition table becomes public.
 
 ## Working principles (mandatory)
 

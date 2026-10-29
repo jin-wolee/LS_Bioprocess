@@ -8,7 +8,7 @@ Principles: see `prompts/PRINCIPLES.md` (definitions, stage table, rails, brief 
 
 ## 0. Source of truth
 
-Highest first: `docs/adr/` (decisions) → `docs/design/*` (`simulation_spec.md`, `data_model.md`, `data_dictionary.yaml` once S2 creates it) → `schemas/*` (S1) → `prompts/*`. A prompt carries process, gates, ownership and pointers; it never restates design content. If a prompt disagrees with a design file, the design wins: do not follow the prompt, record the conflict under "Open questions" in `docs/progress.md` and tell the orchestrator, who fixes the prompt. If a design file disagrees with an `Accepted` ADR, the ADR wins.
+Highest first: `docs/adr/` (decisions) → `docs/design/*` (`simulation_spec.md`, `data_model.md`, `data_dictionary.yaml` once S2 creates it) → `schemas/*` (S1a) → `prompts/*`. A prompt carries process, gates, ownership and pointers; it never restates design content. If a prompt disagrees with a design file, the design wins: do not follow the prompt, record the conflict under "Open questions" in `docs/progress.md` and tell the orchestrator, who fixes the prompt. If a design file disagrees with an `Accepted` ADR, the ADR wins.
 
 Domain numbers live in `docs/research/assumptions.yaml` (`A###`) and `docs/research/sources.yaml` (`S###`); every value the design uses cites an `A###` id in the spec, so values come from `docs/research/assumptions.yaml` via the ids cited in the spec. A prompt holds only test-only numbers (fixture times, analytic targets) and says so where it does.
 
@@ -21,7 +21,7 @@ The portfolio centre is not the screen. It is: the single-sample failure trace, 
 ## 2. Invariants (every session, every file)
 
 1. **Truth vs recorded.** The engine emits a `truth_log` and an `observable_events` stream (spec §3). Recorders (L4) consume only `observable_events`. Hidden fields are annotated `"x-visibility": "hidden"` in `schemas/`. Test: perturb hidden-only fields; recorder output is byte-identical. Only the metrics evaluator reads the error answer key; L5 never reads truth, except the oracle arm of experiment 2.
-2. **Determinism.** Same `(scenario, seed, engine_version)` gives a byte-identical event log. Integer seconds for all event times. Randomness only from a keyed integer PRNG with one canonical key tuple `(run_seed, physical_sample_id, analyte, attempt, purpose)`, mapped to a stream seed by splitmix64 over BigInt, synchronously (details in `10_S1_engine.md`, Step 1). A rerun or an added sample must not change any other sample's draws. `Math.random`, `Date.now()` and `new Date()` are banned in `engine/src/**` (lint plus the grep in `scripts/check_all.sh`). Seeds are neutral values, never date-shaped.
+2. **Determinism.** Same `(scenario, seed, engine_version)` gives a byte-identical event log. Integer seconds for all event times. Randomness only from a keyed integer PRNG with one canonical key tuple `(run_seed, physical_sample_id, analyte, attempt, purpose)`, mapped to a stream seed by splitmix64 over BigInt, synchronously (details in `10_S1a_contracts_analyzer.md`, Step 1). A rerun or an added sample must not change any other sample's draws. `Math.random`, `Date.now()` and `new Date()` are banned in `engine/src/**` (lint plus the grep in `scripts/check_all.sh`). Seeds are neutral values, never date-shaped.
 3. **Source ids.** Every number shown publicly, and every parameter default in a profile or scenario, carries an `S###` or `A###` id that exists in the ledgers. Code reads values from profile/scenario JSON; no domain constant is hard-coded. Grade `A` values are labelled assumptions. Public numbers use only `main-reread` sources, and an `A###` is followed to its `S###` sources. `check_docs.py` enforces ids.
 4. **ADRs are Proposed only.** Use the `adr-new` skill. Never write a decider's note, never set `Accepted`.
 5. **Author-owned files are review-only:** everything in `.claude/user_owned.txt`. AI writes specs, fixtures, acceptance tests and reviews; never the implementation. Do not route around the edit guard with `bash`, `cp`, `sed` or heredocs.
@@ -43,7 +43,8 @@ The portfolio centre is not the screen. It is: the single-sample failure trace, 
 
 | Session | AI builds | Author builds | Blocking gate (AI path) | Non-blocking gate (author path) |
 |---|---|---|---|---|
-| S1 engine | contracts, schemas, hand fixtures, TS L1-L3 with profiles, scaffold, acceptance tests for the author's code | SimPy core loop, canonical DDL | engine judged by invariants, hand fixtures and the M/M/c check; lint, typecheck, tests green; `sim-adversary` pass | SimPy parity, DDL acceptance (`pytest -m user_track`) |
+| S1a contracts + L3 core | reproducibility contract, schemas, hand fixtures, scaffold, TS L3 analyzer core, M/M/c mode, trace export, acceptance tests for the author's code | SimPy core loop, canonical DDL | L3 core judged by hand fixtures, invariants I1-I9 and the M/M/c check; lint, typecheck, tests green; live hook check | SimPy parity, DDL acceptance (`pytest -m user_track`) |
+| S1b process + sampling | L1 process, L2 sampling and logistics, profiles, default scenario, SC2 and SC5, golden event logs | - | invariants I1-I12, scenario relations, budget; goldens created once; `sim-adversary` pass | - |
 | S2 capture + metrics | flags and presets, error injector, evaluator, experiments 1 and 2, raw device layer (emitters and adapters, ADR-0014), data dictionary, single-sample trace, datapackage, SQL acceptance tests | three SQL queries | forced-error detection fixtures exact; evaluator and answer-key isolation tests; experiment invariants; raw-layer Gates 5 to 7 and the Step 8 checklist (`20_*`); `sim-adversary` pass | SQL results equal fixture answers |
 | S3 lab UI | UI, presets, lineage view, challenge, E2E, Pages workflow (`30_*` written at session start) | approve the public flip (author changes visibility) | Playwright headless green; full-history banned-token scan 0; size budgets met | - |
 | S4 DSP | genealogy, HPLC contention (`40_*`) | - | many-to-many lineage query test | - |
@@ -51,11 +52,11 @@ The portfolio centre is not the screen. It is: the single-sample failure trace, 
 
 Scenario-to-session assignment: spec §7. Prompts `30_*`, `40_*`, `50_*` are written at the start of their session, not before.
 
-**Budgets (measured, not estimated).** Default scenario, one seed: at most 1 s in a Web Worker (S1 checks a Node median of 5 runs as a proxy; S3 checks the Worker). Infographic at most 150 KB gzip; lab first load at most 300 KB gzip (`gzip -c <file> | wc -c`). A breach is a major finding.
+**Budgets (measured, not estimated).** Default scenario, one seed: the engine run (scenario start to the complete in-memory truth log and observable events, excluding sensor-tick serialisation and log hashing) at most 1 s in a Web Worker (S1b checks a Node median of 5 runs as a proxy; S3 checks the Worker). Infographic at most 150 KB gzip; lab first load at most 300 KB gzip (`gzip -c <file> | wc -c`). A breach is a major finding.
 
 ## 5. Verification ladder
 
-Five rungs (spec §9): invariants, M/M/c-only check, hand-calculated fixtures, SimPy trace-driven parity, scenario sanity. Test details and tolerances live in `10_S1_engine.md`. Scenario sanity states relations (sign, ordering, structural zero), never magnitudes.
+Five rungs (spec §9): invariants, M/M/c-only check, hand-calculated fixtures, SimPy trace-driven parity, scenario sanity. Test details and tolerances live in `10_S1a_contracts_analyzer.md` (contract, fixtures, M/M/c) and `11_S1b_process_sampling.md` (scenarios, invariants I10-I12). Scenario sanity states relations (sign, ordering, structural zero), never magnitudes.
 
 ## 6. Ownership and commits
 
@@ -68,7 +69,7 @@ AI-owned: `engine/`, `src/`, `tests/`, `schemas/`, `scenarios/`, `scripts/`, `do
 ## 7. Definition of done (every session)
 
 - [ ] Every new behaviour has a test seen red, then green; pasted evidence in the report.
-- [ ] `uv run pytest -q` and `uv run --frozen python scripts/check_docs.py --all` both pass. From S1 on, `npm run check` passes too.
+- [ ] `uv run pytest -q` and `uv run --frozen python scripts/check_docs.py --all` both pass. From S1a on, `npm run check` passes too.
 - [ ] `bash scripts/check_all.sh --manual` passes (it runs the same gate as the Stop hook without needing a dirty marker).
 - [ ] Python dependencies only through `uv`; Node packages with exact versions; every browser closed.
 - [ ] Only files in the brief's allowed paths changed: `git status --short -uall` (shows untracked files; plain `git diff` does not).

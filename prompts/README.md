@@ -17,8 +17,9 @@ Highest first: ADRs → `docs/design/*` → `schemas/*` → `prompts/*`. Prompts
 |---|---|---|---|
 | `PRINCIPLES.md` | read with `00` in every session; its header opens every brief | orchestrator, every executor, reviewer | nothing (definitions, stage table, rails, brief header) |
 | `00_master_build.md` | loaded first in every session | orchestrator, every executor | nothing (invariants, terms, gates, budgets, ownership) |
-| `10_S1_engine.md` | session S1 | executor | contracts, schemas, hand fixtures, TS engine L1-L3 with profiles, scaffold, acceptance tests for the author's code |
-| `20_S2_capture_metrics.md` | session S2, after the S1 gate | executor | flags and presets, error injector, evaluator, experiments 1 and 2, device output adapters (synthetic raw files modeled on public documentation → canonical records), data dictionary, single-sample trace, FAIR export, SQL acceptance tests |
+| `10_S1a_contracts_analyzer.md` | session S1a | executor | reproducibility contract, schemas, hand fixtures F1-F7, scaffold, TS L3 analyzer core, M/M/c check, trace export, acceptance tests for the author's code |
+| `11_S1b_process_sampling.md` | session S1b, after the S1a gate and once its ledger inputs exist | executor | L1 process, L2 sampling and logistics, profiles, default scenario, SC2 and SC5, invariants I10-I12, golden event logs |
+| `20_S2_capture_metrics.md` | session S2, after the S1b gate | executor | flags and presets, error injector, evaluator, experiments 1 and 2, device output adapters (synthetic raw files modeled on public documentation → canonical records), data dictionary, single-sample trace, FAIR export, SQL acceptance tests |
 | `60_user_track.md` | whenever the author works, and for any AI reviewing it | author, reviewer | the author's DDL, three SQL queries, SimPy loop; reviews in `docs/user_track/reviews/` |
 | `90_review_rubric.md` | after every executor delivery | orchestrator | PASS or an ordered REWORK list |
 | `91_external_review.md` | at a milestone, when asked | orchestrator | private raw reviews, public disposition table in `docs/reviews/` |
@@ -38,7 +39,7 @@ Highest first: ADRs → `docs/design/*` → `schemas/*` → `prompts/*`. Prompts
 
 Set `model` and `effort` explicitly on every agent call; an unset model inherits the orchestrator's. Every brief starts with the header from `PRINCIPLES.md` section 7.
 
-**When to call `sim-adversary`.** Twice: at the end of S1 and at the end of S2, after the rubric (`90`, sections A-K) leaves no blocker or major and before the verdict is PASS. Give it the engine or deliverable paths and the contract, not the orchestrator's verdict. Its findings join the same single rework round. It is not called mid-session, and not in later sessions unless their brief says so.
+**When to call `sim-adversary`.** Twice: at the end of S1b (the complete S1 engine) and at the end of S2, after the rubric (`90`, sections A-K) leaves no blocker or major and before the verdict is PASS. Give it the engine or deliverable paths and the contract, not the orchestrator's verdict. Its findings join the same single rework round. It is not called mid-session, and not in later sessions unless their brief says so.
 
 ## Handing a prompt to an executor
 
