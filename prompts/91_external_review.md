@@ -13,20 +13,25 @@ Sending text to an external tool is an outward-facing act: whatever is in the pa
 
 1. **Build the packet** `docs/private/reviews/YYYY-MM-DD_<topic>_packet.md` from the template below. Use repo-relative paths only. Do not paste raw files that need a context the tool lacks; name them and let the tool read them (its working directory is the repo root and it is read-only).
 2. **Token check before sending** (the packet is in an ignored folder, so `check_docs` will not see it):
-   `grep -ciFf <(grep -vE '^\s*(#|$)' .guardrails.local.txt) docs/private/reviews/YYYY-MM-DD_<topic>_packet.md` must print `0`. Also read the packet once for fingerprints and absolute paths. If it fails, fix the packet; do not send.
-3. **Snapshot the tree:** `git status --short > <scratchpad>/before.txt`.
+   `grep -ciFf <(grep -vE '^\s*(#|$)' .guardrails.local.txt) docs/private/reviews/YYYY-MM-DD_<topic>_packet.md` must print `0`. Also read the packet once for absolute paths and private details. If it fails, fix the packet; do not send.
+3. **Snapshot the tree by content, not by status.** `git status --short` cannot see an edit to a file that was already modified, untracked or ignored. Hash every tracked and untracked file, plus the ignored private folders (the review folder itself is excluded because the redirects below write there):
+   ```bash
+   snap() { { git ls-files -co --exclude-standard; find docs/private .guardrails.local.txt -type f -not -path 'docs/private/reviews/*' 2>/dev/null; } | sort -u | tr '\n' '\0' | xargs -0 shasum -a 256; }
+   snap > <scratchpad>/before.txt
+   ```
+   Prefer to run the tools from a scratch copy of the repo (`rsync -a --exclude node_modules --exclude .venv ./ <scratchpad>/copy/`), so that an edit cannot reach the real tree; the hash comparison below is then a second check, not the only one. Set `REPO="$(pwd)"` first, `cd` into the copy for step 4, and write the outputs to `$REPO/docs/private/reviews/` (the copy is deleted afterwards).
 4. **Run both tools on the identical packet text**, in parallel as two background jobs, 900 s limit each:
 
 ```bash
-PROMPT="$(cat docs/private/reviews/YYYY-MM-DD_<topic>_packet.md)"
+PROMPT="$(cat "$REPO/docs/private/reviews/YYYY-MM-DD_<topic>_packet.md")"
 
-codex exec --skip-git-repo-check -m gpt-6.1-sol -c model_reasoning_effort='"xhigh"' -s read-only "$PROMPT" </dev/null 2>/dev/null > docs/private/reviews/YYYY-MM-DD_<topic>_codex.md
+codex exec --skip-git-repo-check -m gpt-6.1-sol -c model_reasoning_effort='"xhigh"' -s read-only "$PROMPT" </dev/null 2>/dev/null > "$REPO/docs/private/reviews/YYYY-MM-DD_<topic>_codex.md"
 
-agy --model gemini-4-argon-high --print-timeout 900s --disable-slash-commands -p="$PROMPT" </dev/null > docs/private/reviews/YYYY-MM-DD_<topic>_agy.md
+agy --model gemini-4-argon-high --print-timeout 900s --disable-slash-commands -p="$PROMPT" </dev/null > "$REPO/docs/private/reviews/YYYY-MM-DD_<topic>_agy.md"
 ```
 
 5. **Validate each output.** Non-empty; contains findings in the required format or an explicit `NO FINDINGS` line per question; no quota, model-not-found or timeout text (agy can exit 0 on failure). A failed run is recorded as "tool failed, no review obtained", never as "clean". Retry once; if it fails again, say so in the disposition table.
-6. **Check nothing changed:** `git status --short | diff - <scratchpad>/before.txt` must be empty. If a tool edited files, revert those files from your own knowledge of the diff, stop, and tell the author.
+6. **Check nothing changed:** `snap > <scratchpad>/after.txt; diff <scratchpad>/before.txt <scratchpad>/after.txt` must be empty (a deleted file also shows up as a difference). Also run `git status --short -uall` and compare it with its value before step 4. If a tool edited files, restore them from your own knowledge of the diff, stop, and tell the author. Apply the read-only option each tool supports (`-s read-only` for codex); where a tool has none, the scratch copy and the hash comparison are the only controls.
 7. **Triage.** Merge duplicates across tools (a finding raised by both gets one row, source `both`, higher priority). An external finding is a hypothesis: re-read the code or the source yourself before accepting any blocker or major. Domain claims go to `fact-checker`; the orchestrator judges.
 8. **Write the public disposition table** `docs/reviews/YYYY-MM-DD_<topic>.md` (below), run `check_docs --all`, and apply accepted fixes through an executor brief, not by hand.
 9. Raw outputs stay in `docs/private/reviews/`. Never quote them in a public file.
@@ -39,7 +44,7 @@ agy --model gemini-4-argon-high --print-timeout 900s --disable-slash-commands -p
 You are an independent reviewer. Read-only: do not edit, create, or delete any file and do not run commands that write. Output findings only: no praise, no summary, no restating of the code.
 
 ## Context
-A public portfolio simulator (generic synthetic scenario based on public sources): N bench-scale bioreactors send samples to 2 shared at-line analyzers; the same synthetic truth run is recorded under several data architectures to show how analysis results lose process context. Read `prompts/00_master_build.md` for invariants and `docs/design/` for the model.
+A public portfolio simulator (synthetic scenario, public sources only): N bench-scale bioreactors send samples to 2 shared at-line analyzers; the same synthetic truth run is recorded under several data architectures to show how analysis results lose process context. Read `prompts/00_master_build.md` for invariants and `docs/design/` for the model.
 
 ## Artifacts to review
 - <repo-relative path> : <what to look at>
@@ -81,4 +86,4 @@ Two independent tools reviewed the same packet. Raw outputs are private. Each fi
 | 3 | tool B | major | ADR-00NN | ... | keep | author decision stands, reason |
 ```
 
-Rules: one row per finding; `Disposition` is exactly `accept`, `partial` or `keep`; `keep` states why (author decision, out of scope, finding re-checked and wrong); a failed tool run gets its own row; no quotes from raw output, no private paths, no tool-specific phrasing, no mention of how the scenario began; counts at the bottom (`accepted n, partial n, kept n`).
+Rules: one row per finding; `Disposition` is exactly `accept`, `partial` or `keep`; `keep` states why (author decision, out of scope, finding re-checked and wrong); a failed tool run gets its own row; no quotes from raw output, no private paths, no tool-specific phrasing; counts at the bottom (`accepted n, partial n, kept n`).

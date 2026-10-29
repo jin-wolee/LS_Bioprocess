@@ -14,11 +14,11 @@ The one place where the working principles are defined. Every brief and rubric p
 ## 2. The -DD methods
 
 - **SDD** (spec) — the spec is the single source of truth; spec changes first, then code.
-  In this repo: `docs/design/*`, `schemas/*.schema.json` and `prompts/00_master_build.md`.
+  In this repo, highest first: ADRs, `docs/design/*`, `schemas/*.schema.json`. Prompts point to them and never restate them; on a conflict the design wins.
 - **TDD** (test) — failing test first, see it fail for the stated reason, then the smallest code that passes. The test is the contract.
   In this repo: expected values come from the brief or hand arithmetic, never from the code under test. Report red, then green.
 - **BDD** (behaviour) — behaviour is written as Given-When-Then acceptance tests.
-  In this repo: scenarios SC1-SC11 each get a Given-When-Then test named after the scenario id.
+  In this repo: scenarios SC1-SC11 each get a Given-When-Then test named after the scenario id. Format: a Vitest `describe("SC2 shift-start burst", ...)` whose `it` blocks are titled `Given ...`, `When ...`, `Then ...` (one behaviour per `it`, shared setup in `beforeAll`). No Gherkin files and no Gherkin runner.
 - **PDD** (prompt) — prompts are versioned assets.
   In this repo: `prompts/` and `CLAUDE.md` are changed like code and logged in `docs/progress.md`.
 - **EDD** (eval) — answers that exist before the code are the evals.
@@ -40,7 +40,7 @@ The one place where the working principles are defined. Every brief and rubric p
 ## 4. Change management
 
 - **Tidy First** — structure-only changes and behaviour changes never share a commit.
-  In this repo: renames, moves and reformatting land first and alone, tests green before and after; then the behaviour commit.
+  In this repo: renames, moves and reformatting land first and alone, tests green before and after; then the behaviour commit. The orchestrator makes the commits, one `git add <paths>` per kind; an executor reports its structure-only paths and behaviour paths as two lists.
 - **Small Batches** — every step ends in something testable and committable.
   In this repo: a brief covers one increment whose done-criteria command passes by itself.
 
@@ -56,10 +56,10 @@ The one place where the working principles are defined. Every brief and rubric p
 
 ## 6. Rails (the boundary of YOLO, never relaxed)
 
-1. No `git commit`, `git push`, remotes, `gh`, `npm publish`, Pages, shared links or any other publishing. Leave changes uncommitted.
+1. Executors never run `git commit`, `git push`, remote commands, `gh`, `npm publish`, Pages, shared links or any other publishing; leave changes uncommitted. The orchestrator commits locally; push, remotes and visibility belong to the author.
 2. Touch only paths the brief allows. Author-owned files (`.claude/user_owned.txt`) are review-only. ADRs stay `Proposed` with an empty decider's note. Do not read or write `docs/private/` unless the brief says so.
 3. Read `.guardrails.local.txt` once at the start; never write any token it lists, in any file, report or commit message.
-4. Synthetic data only. The scenario is a generic synthetic scenario based on public sources; never say or hint where it came from. A private prior prototype exists; do not port or imitate it.
+4. Synthetic data only. Public sources only (ADR-0001); do not port code from any earlier implementation.
 5. Headless only: no visible browser window (`playwright-headless`; never `mcp__playwright__*`).
 6. Verify before you report: run the commands, paste the last lines, list files with line counts.
 
@@ -71,5 +71,5 @@ Every brief to an executor starts with these four lines, filled in:
 Stage: <S0 | S1 | S2 | S3 | S4 | S5 | maintenance> — <session name>
 Principles: <combination from the stage table>, plus always KISS, AHA, SRP, Small Batches. Rails: prompts/PRINCIPLES.md section 6.
 HITL gates touched: <none | list from section 1>
-Done: <command that must pass, e.g. uv run pytest -q && uv run --frozen python scripts/check_docs.py --all>
+Done: <command that must pass, e.g. uv run pytest -q && uv run --frozen python scripts/check_docs.py --all && bash scripts/check_all.sh --manual>
 ```
