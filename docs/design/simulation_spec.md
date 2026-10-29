@@ -32,7 +32,7 @@ flowchart LR
   L3 -->|run, QC, calibration, maintenance| OE
   OE --> L4["L4 recorders: A, B, C"]
   OE -. "raw_layer on: section 2.4" .-> RAW["raw device layer: emitters, synthetic files, adapters"]
-  RAW -. "adapter output to B and C" .-> L4
+  RAW -. "adapter output on adapter_ingest" .-> L4
   L4 --> L5["L5 use: queries, decisions"]
   L5 -. "experiment 2 only" .-> L1
   TL --> EV["metrics evaluator + error answer key"]
@@ -74,16 +74,16 @@ flowchart LR
   EM --> RF[("raw file: synthetic device file")]
   EM --> RK[("raw quirk key: evaluator only")]
   RF --> AD["adapter per dialect: parser"]
-  AD -->|"canonical records with envelope"| L4["L4 recorders B and C"]
+  AD -->|"canonical records with envelope"| L4["L4 recorders on adapter_ingest"]
   AD -->|"unreadable lines"| PE[("parse_error dead letter")]
-  OE -->|"typed or pasted by hand"| LA["L4 recorder A"]
+  OE -->|"manual_transcription: typed from screen or printout"| LA["L4 recorders on manual_transcription"]
 ```
 
 1. **Emitters read observable data only.** They consume `observable_events` and plain data supplied by the assembly (an instrument's clock offset, its date order, quirk opportunities). They never read truth. The calendar anchor (a synthetic start date) and each instrument's zone offset are scenario data; the engine's integer seconds become wall-clock text only inside an emitter.
 2. **Belief and actual are separate.** What the device writes (its date order, units, zone) is scenario data used by the emitter. What the parser assumes is the adapter entry (`data_model.md` section 16.1). A mismatch between them is an injected error, not a parser fault.
 3. **Round trip.** With every quirk switch off, parsing an emitted file returns the events it was rendered from, on the mapped fields and within the dialect's time resolution. This is an EDD fixture typed by hand.
 4. **Fair by construction.** Quirk opportunities are drawn once per row or file with the canonical key tuple of section 3 and purpose `raw:<quirk id>` (a file-level draw uses the export id in place of the sample). They do not depend on the architecture or on detection. The same raw files reach every architecture; detection only raises flags.
-5. **Capture path by preset.** B and C parse the files with the adapters. A is proposed to ingest by hand (typed or pasted values, where the existing transcription errors apply) and has no adapter; its raw-layer metrics read "not applicable". This is an open point for the decider (ADR-0014).
+5. **Capture path.** What happens to a file is the `capture_path` setting (section 5, "Capture path"), not a property of a preset. On `adapter_ingest` (the default of B and C) the adapters parse the files. On `manual_transcription` (the default of A) a person types the result from the instrument screen or printout, no adapter runs, and the raw-layer metrics read "not applicable". Any preset may take either path. The files are emitted either way, from the same draws.
 6. **Raw quirk key.** The emitters return the realised quirks as plain data (file, row, quirk id, intended value or instant); the assembly writes them to the answer-key file, and only the evaluator reads it (section 3, rule 2).
 7. **ADR-0014 rules.** Every emitted file starts with the line "synthetic, modeled on public documentation; not a real instrument file". A dialect lists the `S###` ids it is modeled on, uses its own short field names, and copies no manual text. Dialect, profile and file-name prefixes are vendor-neutral.
 
@@ -162,7 +162,7 @@ Every file becomes a `raw_file`, every data line a `raw_record`, every unreadabl
 
 | Existing error class (section 5 matrix) | Raw-level origin |
 |---|---|
-| label or transcription error | the sample-id text the operator typed at the analyzer; the file carries it unchanged and the adapter passes it through (VR-014 still applies) |
+| label or transcription error | the sample-id text the operator typed at the analyzer; the file carries it unchanged and the adapter passes it through (VR-014 still applies). This holds on both capture paths; the copy step of `manual_transcription` adds result transcription errors (section 5, "Capture path") |
 | clock or time-zone error (A049) | the instrument's clock offset in every stamp (RQ1), plus the unpinned or wrong date order (RQ2) |
 | duplicate or replayed file | repeated rows and replayed files (RQ4) |
 | lost rerun or silent overwrite | reanalysis rows (RQ5): with `append_only_versions` off, version n+1 overwrites version n |
@@ -171,7 +171,7 @@ Two classes are new and appear as rows of the section 5 matrix: timestamp misrea
 
 #### 2.4.7 Metrics
 
-Same rules as section 8: reported with the seed count and spread, never gated, no composite score. They read the raw quirk key and are reported for the architectures that parse (B, C and the ablations of C). Preset A shows "not applicable". Denominators are fixed.
+Same rules as section 8: reported with the seed count and spread, never gated, no composite score. They read the raw quirk key and are reported for every run whose capture path is `adapter_ingest` (by default B, C and the ablations of C). A run on `manual_transcription` shows "not applicable", never zero. Denominators are fixed.
 
 | Metric | Definition | Denominator |
 |---|---|---|
@@ -190,10 +190,12 @@ The research role adds these ledger entries (graded A where unsourced) before th
 - The meaning of an analyzer row stamp (start or end of the run) is not in the ledger; the dialect declares it and the default, end of run, is an assumption (A161, A166, S003).
 - The CSV form of the over-range note (A163), the titer amount column (A168), the column layout of the bench controller (S099) and the zone convention of the data system (A168) are assumed and printed as assumed.
 - Summer-time changes in device stamps and any random reanalysis rate have no source and are not modelled.
+- Manual-path entry errors: a typed result value, a unit slip and the delay between a result and its entry have no ledger entry of their own. A047 and A061 are labelling entries (a clinical proxy), and whether A047 may also stand for a typed value is a judgement for the research role; A048 covers the manual dilution factor. Until entries exist, a manual-path run reports these classes as "not modelled" and builds the sample-id, clock and dilution classes only.
+- Whether a dialect's dilution field carries a manual pre-dilution factor (A165, A090, A048) is not settled. Until it is, that factor is typed by hand on both capture paths, and the limit "dilution factor typed by hand" of preset B stands.
 
 #### 2.4.9 Where it sits in S2
 
-It is built after the flags, the injector, the evaluator and the structural gate (Steps 1 to 4 of `prompts/20_S2_capture_metrics.md`), as Steps 5 to 8 of that brief. Its gate is structural: the round-trip fixture, one Given-When-Then test per quirk (RQ1 to RQ11), idempotent re-ingest, the forced-error cells of the two new matrix rows, and the three-rules checklist. No scenario id is added; SC1 and SC6 are re-run with the layer on, and SC6's clock offset then lives in the file stamps. Stochastic raw-layer metrics are reported over at least 20 seeds (A103) and are never gated.
+It is built after the flags, the injector, the evaluator and the structural gate (Steps 1 to 4 of `prompts/20_S2_capture_metrics.md`), as Steps 5 to 8 of that brief. Its gate is structural: the round-trip fixture, one Given-When-Then test per quirk (RQ1 to RQ11), idempotent re-ingest, the forced-error cells of the matrix rows that depend on the raw layer or on the capture path, one cell per path, and the three-rules checklist. No scenario id is added; SC1 and SC6 are re-run with the layer on, each preset on its default capture path, and SC6's clock offset then lives in the file stamps (on `manual_transcription`, in the stamp read from the printout). The capture-path contrast of section 5 runs on SC1 with the layer on. Stochastic raw-layer metrics are reported over at least 20 seeds (A103) and are never gated.
 
 ## 3. Truth, recorded world and the observation contract
 
@@ -204,7 +206,7 @@ The engine emits two streams.
 
 Rules (invariants, tested):
 
-1. Recorders (L4) consume `observable_events` only (with the raw layer on, B and C consume the adapter output, which is `observable_events` rendered through a synthetic device file, section 2.4) and never read truth. Hidden fields are annotated `"x-visibility": "hidden"` in the schemas. Test: change hidden-only fields and the recorder output must be byte-identical.
+1. Recorders (L4) consume `observable_events` only (with the raw layer on, a run on `adapter_ingest` consumes the adapter output, which is `observable_events` rendered through a synthetic device file, section 2.4, and a run on `manual_transcription` consumes the typed results, which are `observable_events` after the transcription step of section 5) and never read truth. Hidden fields are annotated `"x-visibility": "hidden"` in the schemas. Test: change hidden-only fields and the recorder output must be byte-identical.
 2. Who may read truth. The metrics evaluator reads truth, because it must in order to score, and it is the only reader of the error answer key (the record of which errors the injector materialised where). Experiment assembly (drawing the shared truth run and the error opportunities) and the oracle arm of experiment 2 may also read truth. Recorders and L5 (analyst queries and decisions) never do.
 3. Same `(scenario, seed, engine_version)` gives a byte-identical event log. Randomness comes from a keyed integer generator with key (physical sample, analyte, attempt, purpose); experiment 2 adds `seed` and `reactor`. A rerun or an added sample never changes another sample's draws.
 4. Every export and shareable URL carries `schema_version`, `engine_version` and `seed`.
@@ -264,13 +266,14 @@ The flag definitions and the expected outcome per flag are owned by ADR-0005; th
 
 Planned time is separate from `two_clocks`. A sampling plan that issues the label (`system_issued_id`) gives the sample a `planned_at`; keeping it, and not the actual draw time, is a limit of preset B that comes from the L2 labelling setting and the L4 recorder, not from the definition of `two_clocks` off. With `two_clocks` off the single stored time is always the measured time.
 
-| Preset | Flags on | Labelling default | Realistic limits kept |
-|---|---|---|---|
-| A manual/Excel | none | handwritten | transcription, one stored time (the measured time), overwrite, no instrument id |
-| B LIMS-lite | `system_issued_id`, `ingest_idempotency`, `audit_trail` | pre-printed barcode | records the planned time (from the plan that issues the label), not the actual draw time; reagent lot and calibration not linked; dilution factor typed by hand; joined to the historian by the one stored time, the measured time. B is not a straw man: barcodes, automatic capture and an audit trail exist |
-| C context-preserving | all eight | issued at draw | keys fixed at write time; process context as a versioned as-of projection joined with `AS OF`; residual error remains, such as a correct barcode stuck on the wrong tube |
+| Preset | Flags on | Labelling default | Capture path default (layer on) | Realistic limits kept |
+|---|---|---|---|---|
+| A manual/Excel | none | handwritten | `manual_transcription` | transcription, one stored time (the measured time), overwrite, no instrument id |
+| B LIMS-lite | `system_issued_id`, `ingest_idempotency`, `audit_trail` | pre-printed barcode | `adapter_ingest` | records the planned time (from the plan that issues the label), not the actual draw time; reagent lot and calibration not linked; dilution factor typed by hand; joined to the historian by the one stored time, the measured time. B is not a straw man: barcodes, automatic capture and an audit trail exist |
+| C context-preserving | all eight | issued at draw | `adapter_ingest` | keys fixed at write time; process context as a versioned as-of projection joined with `AS OF`; residual error remains, such as a correct barcode stuck on the wrong tube |
 
 - Labelling method is set independently of the flags; scenarios may cross them.
+- Capture path is a second setting, also independent of the flags and the labelling method: any preset may override its default (A with `adapter_ingest`, C with `manual_transcription`). It is defined under "Capture path" below.
 - Ablation: C with exactly one flag off, for each flag (eight runs). The expected outcome per flag is stated in ADR-0005.
 - The system of record for routine in-process results (MES/EBR or LIMS) differs by site and is a setting (A056, SC11); only release-relevant tests get state-machine and Part 11-grade control.
 
@@ -290,8 +293,9 @@ Hypothesis matrix (a design hypothesis to be tested in session S2 by forced-erro
 | sampling technique error (A064) | none | recorded container and hold context | context not recorded |
 | timestamp misread (date order or 12/24 h, RQ2; minute-truncated stamp, RQ3) (raw) | none; the adapter entry's setting is not an architecture flag | VR-024 when the order cannot be pinned; VR-003 when the misread instant lies later than receipt; VR-002 with `two_clocks` when it lies before `sampled_at` | the misread instant still lies between the draw and receipt; it then shows only as alignment error |
 | unit implied by instrument settings, changed (RQ7) (raw) | none | VR-005 on a dimension mismatch; VR-006 on an implausible value | same dimension and a plausible magnitude |
+| result transcription error: a wrong digit, unit or dilution factor typed from the screen or printout (manual) | none among the flags; `adapter_ingest` removes the copy step, which is a path and not a flag | VR-005 on a dimension mismatch; VR-006 on an impossible value; VR-013 on a missing or implausible dilution factor | the typed value is plausible, in the right dimension, with a plausible dilution factor |
 
-Rows marked (raw) exist only with `raw_layer` on and need an adapter, so they do not apply to preset A. The origin of four earlier rows moves into the raw file with the layer on (section 2.4.6).
+Rows marked (raw) exist only with `raw_layer` on and `capture_path` `adapter_ingest`, because they arise in a file. Rows marked (manual) exist only with the layer on and `manual_transcription`. On the other path such a row reads "not applicable", never zero. The origin of four earlier rows moves into the raw file with the layer on (section 2.4.6), and "duplicate or replayed file" then also needs a file to parse, so it arises only on `adapter_ingest`.
 
 ### Detection rules and the flags they need
 
@@ -310,12 +314,44 @@ A rule can only fire on fields that are stored. For every detection mechanism na
 | As-of query (section 3, rule 5) | `available_at`, `append_only_versions` | `available_at` of each result version; `ingested_at` of historian rows | `available_at` off: queries see rows as of now; `append_only_versions` off: the earlier version no longer exists | late correction leaking into an earlier decision |
 | VR-015 qualification check | `audit_trail` | `operator_id`, qualification validity dates | the operator is free text or absent | unattributable record |
 | Container and hold context check | `two_clocks` (for the hold part) | recorded container (L2 setting), `hold_time` | the container is not recorded; one time stored | sampling technique error |
-| VR-023 (raw) line or file cannot be read into the canonical fields | none; adapter stage, every parsing architecture | the dialect and the adapter entry (template map, unit map); the raw text | the architecture has no adapter (preset A) | not in the matrix (a load failure; the line goes to `parse_error`) |
+| VR-023 (raw) line or file cannot be read into the canonical fields | none; adapter stage, every parsing architecture | the dialect and the adapter entry (template map, unit map); the raw text | the run is on `manual_transcription` (no adapter) | not in the matrix (a load failure; the line goes to `parse_error`) |
 | VR-024 (raw) stamp ambiguous and not resolvable | none; adapter stage | the entry's date-order setting (unknown) or a 12 h clock without a day-part marker; the other rows of the file | the entry pins an order, right or wrong: the stamp is then never ambiguous to the adapter (a wrong pin is the invisible case of the matrix row) | timestamp misread |
 | VR-025 (raw) alarm or phase transition not allowed by the state model | none; adapter stage | the previous `alarm_event` or `batch_phase_record` of the same instance | the log starts mid-instance (the first row seen is accepted); a skipped intermediate state in a truncated log looks like an illegal transition | not in the matrix |
 | VR-026 (raw) blank value with no range or error note | none; adapter stage | the method's list of required analytes; the note column | the method lists the analyte as optional | not in the matrix (feeds the exact reconstruction rate) |
+| VR-005, VR-006, VR-013 (manual) on a typed entry | none; recorder stage, every architecture on `manual_transcription` | the method's expected unit and dimension, the plausible range of the analyte, the dilution rule (data_model section 8) | the typed value is plausible, in the right dimension, with a plausible dilution factor | result transcription error |
 | VR-021 (ext) lot recorded as used, no consumption edge | `write_time_keys` | `process_event` lot reference against `lineage_edge` relation `consumed_in` | the lot is free text only (subset schemas) | not in the matrix |
 | VR-022 (ext) result still released under an open hold | `available_at`, `append_only_versions`, `audit_trail` | `quality_hold` target and placement time, lineage from the target to the result | no lineage edge from the held target to the result; it fires late by design, after the release | not in the matrix |
+
+### Capture path (a setting, not a flag)
+
+`capture_path` says how a result that an instrument has produced becomes a record in the architecture's store. It is a scenario setting like the labelling method: independent of the eight flags, never a ninth flag (ADR-0005 stays at eight), with a default per preset (preset table above). It records the author's decision of 2026-10-29 (ADR-0014, Proposed): start from the primitive method, results copied by hand, and offer automatic linkage as an option.
+
+| Value | What happens |
+|---|---|
+| `manual_transcription` | A person reads the instrument's screen or printout and types the result into a spreadsheet or form. No adapter runs and nothing parses the raw file. |
+| `adapter_ingest` | The raw file of the device dialect (section 2.4.2) is parsed into canonical records with the ingestion envelope (section 2.4.5). |
+
+1. **Scope.** The setting is read only with `raw_layer` on. With the layer off no device file exists, neither path is modelled, recorders consume `observable_events` as before and every earlier scenario keeps a byte-identical event log. A scenario that sets `capture_path` with the layer off fails validation, because a silent no-op would mislead.
+2. **Independence.** The path decides which error classes can arise at capture (table below). The flags decide what the recorder keeps and what it can detect, as in the flag table; for example `ingest_idempotency` acts on a source event id of a parsed file, and a typed row has none (`data_model.md` section 16.3). Runs of C minus one flag keep C's default path.
+3. **Analyzer results only.** A person can copy a result but not a tag log. Controller logs are machine files: on `adapter_ingest` they are parsed (RQ9 to RQ11); on `manual_transcription` the historian values reach the recorder as observable events, as with the layer off, and no alarm or phase records exist.
+4. **The transcription step.** On `manual_transcription` the typed value is the observable result after the error injector has materialised the entry-error opportunities (S2 Step 2). No emitter or adapter is involved, and the raw files are still emitted from the same draws, as what the person reads.
+5. **Fair by construction.** Entry-error opportunities (purpose `error:<type>`) and raw quirk opportunities (purpose `raw:<quirk id>`) are drawn once per sample or row from the canonical key tuple of section 3, independent of the path, the architecture and detection. The path only decides which of them materialise, with the monotone coupling of S2 Step 2. The truth-log hash is identical across paths.
+
+| Item | `manual_transcription` | `adapter_ingest` |
+|---|---|---|
+| Result value, unit, dilution factor and sample id as copied | typed from the screen or printout: result transcription error, unit slip, dilution slip, wrong row or sample (rates and gaps: section 2.4.8) | read by the parser; there is no copy step, so none of these |
+| Late entry | the row is typed after the result was produced; `ingested_at` is the entry time, and so is `available_at` where that flag is on | `ingested_at` is the file's `received_at` |
+| Sample-id text typed at the analyzer (section 2.4.6) | present | present, passed through |
+| Instrument clock offset (A049) | present: the printout carries the wrong stamp | present: in the file stamps (RQ1) |
+| File quirks RQ1 to RQ8 | none; no file is parsed | present |
+| Controller quirks RQ9 to RQ11, alarm and phase records | none; no log is parsed | present |
+| Ingest metrics of section 2.4.7 | "not applicable" | reported |
+| Raw tables of `data_model.md` section 16 | not stored | stored for any architecture on this path; the flags still decide what the recorder keeps |
+| Provenance of a result | `capture_path`, `entered_by`, entry time as `ingested_at` | `capture_path`, `raw_file_id` and line, adapter id and version through the raw file |
+
+**Automatic linkage alone (capture-path contrast).** For one scenario and one seed list, run a preset on each path with the truth run, the flags and the labelling method unchanged. A on `manual_transcription` against A on `adapter_ingest` shows what automatic linkage does by itself, ablation-style: one setting changes, as in the runs of C minus one flag. C on `manual_transcription` against C shows what the flags cannot repair when capture is by hand; B likewise. Pair by seed (common random numbers), and report per section 8 metric the median and interval of the paired difference with the seed count (at least 20, A103) and the section 8 denominators. The ingest metrics of section 2.4.7 exist on one side only, so they are shown as "not applicable" on the other and never as a difference. The contrast is a stochastic comparison: it is reported and never gated, and no test asserts a sign, a size or an ordering of the two paths.
+
+**What is gated is structural.** For each matrix row and rule that depends on the path ("(raw)" and "(manual)" above), one forced-error cell per path with the expected outcome (prevented, detected, invisible or "not applicable") typed by hand, and one hand-built sample taken through both paths with the expected record under each typed by hand. The fixtures and tests are in `prompts/20_S2_capture_metrics.md`.
 
 ## 6. Experiments
 
@@ -323,7 +359,7 @@ A rule can only fire on fields that are stored. For every detection mechanism na
 
 ### 6.1 Experiment 1 (primary, open loop)
 
-One truth run per `(scenario, seed)` is shared by every architecture. Step durations are identical across architectures. Error opportunities (label error, dilution transcription, clock misconfiguration, technique error and similar) are drawn once per sample, independent of architecture, then materialised per architecture. Detection only raises flags; it never triggers a re-draw or a re-measure. The truth-log hash is identical across architectures.
+One truth run per `(scenario, seed)` is shared by every architecture. Step durations are identical across architectures. Error opportunities (label error, dilution transcription, clock misconfiguration, technique error and similar) are drawn once per sample, independent of architecture, then materialised per architecture. Detection only raises flags; it never triggers a re-draw or a re-measure. The truth-log hash is identical across architectures. With the raw layer on, the entry-error opportunities of the manual path are drawn the same way, once per sample, and materialise only on `manual_transcription`; the capture-path contrast is defined in section 5.
 
 **Flagship 1: feed in the gap (SC3).** Illustrative times (A102): a sample is drawn at 08:40 (`sampled_at`), a bolus feed happens at 09:00 (feed rule A050), and the sample is measured at 09:25 (`measured_at`). The draw-to-measurement span is 45 min (A102, derived). `hold_time` ends when the run starts, so it is the span minus the run itself: if the run takes the full panel cycle of 4.5 min (A023), it is 40.5 min, which still exceeds the 30 min blood-gas rule (A046, proxy; SLA threshold A097). Joining to the historian by `measured_at` pairs a pre-feed value with post-feed process state, which contaminates anything trained on it. Joining by `sampled_at` pairs it correctly.
 

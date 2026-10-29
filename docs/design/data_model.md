@@ -337,9 +337,8 @@ Acceptance tests (`tests/user_track/`, run with `pytest -m user_track`) are spec
 6. How `from_item_id` and `to_item_id` identify the kind of item they point to (a prefix in the id, or a kind column). The target of a `quality_hold` (section 15.1) has the same question.
 7. Do architectures A and B store a row-creation stamp (`ingested_at`)? VR-003, VR-004 and the rule table of the simulation spec section 5 read it, and no flag provides it today. With the raw layer on, B and C store the envelope's `received_at` as `ingested_at` (section 16.3); the question stays open for A and for the layer-off case.
 8. Lot and derivation links (section 15): do the eight flags cover them, or do A and B keep lots as free text and only C stores the edges, or is a ninth flag needed (an amendment to ADR-0005, see ADR-0013)?
-9. Does preset A parse files (ADR-0014 proposes: no, A ingests by hand)? If it does, A stores the section 16 tables with a subset of columns.
-10. What an analyzer row stamp means (start or end of the run) is not in the ledger; the adapter entry declares it (`stamp_means`) and the default, end of run, is an assumption (A161, A166, S003).
-11. With the raw layer on the canonical tag carries a role (`U03.pH.PV`); with it off the L1 series keeps the plain form (`U03.pH`). Whether the plain form is renamed everywhere is deferred until the layer is built.
+9. What an analyzer row stamp means (start or end of the run) is not in the ledger; the adapter entry declares it (`stamp_means`) and the default, end of run, is an assumption (A161, A166, S003).
+10. With the raw layer on the canonical tag carries a role (`U03.pH.PV`); with it off the L1 series keeps the plain form (`U03.pH`). Whether the plain form is renamed everywhere is deferred until the layer is built.
 
 ## 15. Extensions: material lots, holds, confirming tests and retro-flags (designed, not built)
 
@@ -440,7 +439,7 @@ VR-022 fires late by design: the hold is placed after the release, and the findi
 
 ## 16. Raw device layer: raw files, adapters and controller records (designed for S2)
 
-Status: designed under ADR-0014 (Proposed) as a scope extension of S2. The entities below exist only when the scenario setting `raw_layer` is on; with it off the earlier schema is unchanged. The files are synthetic formats modeled on public documentation, not real instrument files. The ledger ids cited are provisional (none of S084 to S103 is `main-reread`). The emitters, quirks (RQ1 to RQ11) and metrics are in `docs/design/simulation_spec.md` section 2.4. Names here are canonical for prompts and schemas; the DDL stays the author's task (ADR-0010).
+Status: designed under ADR-0014 (Proposed) as a scope extension of S2. The entities below exist only when the scenario setting `raw_layer` is on; with it off the earlier schema is unchanged. The raw-side entities of section 16.1 and the controller records of section 16.4 are stored only by an architecture whose capture path is `adapter_ingest` (`docs/design/simulation_spec.md` section 5, "Capture path"); an architecture on `manual_transcription` stores none of them and records its provenance on the `result` row (section 16.2). The files are synthetic formats modeled on public documentation, not real instrument files. The ledger ids cited are provisional (none of S084 to S103 is `main-reread`). The emitters, quirks (RQ1 to RQ11) and metrics are in `docs/design/simulation_spec.md` section 2.4. Names here are canonical for prompts and schemas; the DDL stays the author's task (ADR-0010).
 
 ### 16.1 Raw-side entities
 
@@ -472,7 +471,7 @@ erDiagram
 | `instrument` | `adapter_id` and `adapter_version`; the configured time zone (section 2) is the zone the adapter applies |
 | `unit` | `controller_adapter_id` and version (the controller family of the vessel) |
 | `run` | `started_at_derived` (true when the file gave one stamp and the start was computed from the nominal service time of the analyzer profile, A023, A025, A028) |
-| `result` | `range_flag` (nullable; `above_analytical`, `below_analytical`, `above_process`, `below_process`; `value` is null for the two analytical values, A163) and `time_resolution_s` (nullable; one minute for the counter dialect, A166); the existing raw reference is `raw_file_id` and `line_no` |
+| `result` | `range_flag` (nullable; `above_analytical`, `below_analytical`, `above_process`, `below_process`; `value` is null for the two analytical values, A163) and `time_resolution_s` (nullable; one minute for the counter dialect, A166); the existing raw reference is `raw_file_id` and `line_no`. Two columns record the capture path: `capture_path` (`manual_transcription` or `adapter_ingest`; null when the layer is off) and `entered_by` (nullable; set only on `manual_transcription`: the operator who typed the result, with the qualification reference while `audit_trail` is on and free text or absent otherwise, as in section 9). The entry time of a typed result is its `ingested_at`, so no second time column exists. The adapter that produced a parsed result is reached through its `raw_file` (`adapter_id`, `adapter_version`, `file_name`), not copied onto the row |
 | `historian_value` | `raw_ref` (nullable) |
 
 ### 16.3 From raw roles to canonical targets
@@ -497,6 +496,8 @@ The role-level skeleton of section 7 stays; this table adds the dialect specific
 | phase transition | `batch_phase_record` | section 16.4 | VR-025 |
 
 Envelope (section 7) for a parsed line: `source_system` is the instrument or controller; `source_event_id` is the dialect's natural key (analyzers: instrument, row stamp text and sample id; data system: injection id and result id; tag log: tag and stamp text; alarm: alarm instance, new state and stamp; phase: batch, phase instance, new state and stamp); `idempotency_key` is derived from source, event id and content version as in section 7; `raw_ref` is file and line; `event_time` is the stamp text as sent with the format used; `received_at` is the file's `received_at` and becomes `ingested_at`.
+
+Envelope for a typed row (`manual_transcription`): `source_system` is the entry form or spreadsheet, not an instrument; `raw_ref` and `source_event_id` are null, because no file is parsed and the printout is not kept; `idempotency_key` is null, because a typed row has no source event id for `ingest_idempotency` to compare (entering a result twice is not modelled); `event_time` and `received_at` are both the entry time. Provenance therefore reads off the `result` row: `capture_path` says which path produced it, `entered_by` and `ingested_at` say who typed it and when, and a parsed row instead points to its `raw_file` and line, whose `adapter_id` and `adapter_version` name the parser.
 
 ### 16.4 Controller-side entities and tag naming
 
@@ -565,6 +566,7 @@ stateDiagram-v2
 | K20 | Every row loaded from a file has a `raw_ref` to an existing `raw_record`, and every `raw_record` in state rejected has exactly one `parse_error`. |
 | K21 | An `adapter` version is immutable once a file was parsed with it. |
 | K22 | An alarm or phase instance changes state only along the transitions of section 16.5, and its log is append-only. In recorded data a violation is the finding VR-025. |
+| K23 | With the raw layer on, every `result` has a `capture_path`. A row on `adapter_ingest` has a `raw_ref` to an existing `raw_record` and no `entered_by`; a row on `manual_transcription` has no `raw_ref` and, while `audit_trail` is on, an `entered_by`. A scenario sets one path for all analyzer results of an architecture. |
 
 | Id | Check | Severity | Action |
 |---|---|---|---|
@@ -573,4 +575,4 @@ stateDiagram-v2
 | VR-025 | an `alarm_event` or `batch_phase_record` transition is not allowed by the state models of section 16.5, and the instance has an earlier record | warning | hold |
 | VR-026 | a blank value for an analyte the method requires, with no range or error note | warning | hold |
 
-These rules read what the adapter stage knows, so they fire in every architecture that parses files (B and C). Like every rule they change a state and never a value. Acceptance hooks follow section 13: K19 to K22 and the four rules are test queries that return no row on good data and at least one on a bad-data fixture (a file replayed with a changed row, a stamp read under the wrong order, a transition from `held` straight to `running`, a blank cell without a note).
+These rules read what the adapter stage knows, so they fire in every architecture whose capture path is `adapter_ingest` (B and C by default; on `manual_transcription` they read "not applicable"). Like every rule they change a state and never a value. Acceptance hooks follow section 13: K19 to K23 and the four rules are test queries that return no row on good data and at least one on a bad-data fixture (a file replayed with a changed row, a stamp read under the wrong order, a transition from `held` straight to `running`, a blank cell without a note).

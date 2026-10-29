@@ -41,6 +41,7 @@ Proposed: option 2.
 
 - **B is not a straw man.** Barcodes, automatic capture and an audit trail are real features of simple laboratory systems; B's limits are the ones that remain after those exist.
 - **Labelling method is an L2 setting** (handwritten, pre-printed barcode, issued at draw), independent of the L4 flags; scenarios may cross them.
+- **Capture path is a second setting, not a ninth flag.** How a result becomes a record (`manual_transcription` or `adapter_ingest`) is a scenario setting like the labelling method, with a default per preset; any preset may override it (ADR-0014; spec section 5, "Capture path").
 - **Ablation:** C with exactly one flag off, for each flag. The last column of the flag table is the expectation for each ablation: prevented, detected or invisible.
 - **Evaluation:** the gate is structural. In session S2 each flag has a forced-error fixture whose expected outcome is typed by hand before any run. Stochastic comparisons across at least 20 seeds (A103) are reported with intervals, never gated, and no test requires that C win.
 - Operator id and qualification reference ride on `audit_trail`; a ninth flag would need its own proposed ADR.

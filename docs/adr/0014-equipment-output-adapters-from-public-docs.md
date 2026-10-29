@@ -35,7 +35,8 @@ Proposed: option 3.
 - A raw device layer sits between L3 and L4 (`docs/design/simulation_spec.md` section 2.4). Its entities and the mapping to `result`, `historian_value`, `alarm_event` and `batch_phase_record` are in `docs/design/data_model.md` section 16.
 - Dialects are data under `scenarios/profiles/dialect/` and `scenarios/profiles/controller/`, validated like the ADR-0012 profiles. The engine has one generic emitter and one generic parser and never branches on a dialect id.
 - With every quirk switched off, parsing an emitted file returns the observable events it was rendered from (round-trip fixture). The raw layer adds distortion only where a switch asks for it.
-- The layer is a scenario setting (`raw_layer`, off by default), not a ninth flag, so ADR-0005 is unchanged. With the layer off every earlier scenario keeps a byte-identical event log. With it on, the same raw files reach every architecture; presets B and C parse them, and preset A is proposed to ingest by hand, where the existing transcription errors apply and no adapter exists. This capture-path choice is the decider's to confirm or change.
+- The layer is a scenario setting (`raw_layer`, off by default), not a ninth flag, so ADR-0005 is unchanged. With the layer off every earlier scenario keeps a byte-identical event log. With it on, the same raw files exist for every architecture.
+- How a result becomes a record is a second independent setting, `capture_path`, with the values `manual_transcription` and `adapter_ingest`. It is a scenario setting like the labelling method of ADR-0005, not a ninth flag. Under `manual_transcription` a person reads the instrument screen or printout and types the result into a spreadsheet, and no adapter runs; transcription errors, unit and dilution mistakes and late entry live here. Under `adapter_ingest` the raw file of the device dialect is parsed into canonical records. Defaults: preset A `manual_transcription`, presets B and C `adapter_ingest`. Any preset may override the default, so a scenario can show the effect of automatic linkage alone (for example A with `adapter_ingest`, compared with A as it is). The setting is read only when `raw_layer` is on. Definition and effects: `docs/design/simulation_spec.md` section 5 ("Capture path"); where the path is recorded: `docs/design/data_model.md` section 16.2. This follows the author's statement below.
 - Built in S2, as its own steps with gates in `prompts/20_S2_capture_metrics.md`. S1 is not touched.
 - Not built: real instrument files, vendor OPC servers, SiLA 2 or OPC UA LADS interfaces, summer-time changes, any Allotrope schema file.
 
@@ -48,7 +49,7 @@ Proposed: option 3.
   1. **R1 Public material only.** No manual text, table or paragraph is stored in the repo; quotes and links live only in the ledgers. Dialect labels are short field names taken from ledger field lists.
   2. **R2 Origin safety.** Profile ids, dialect ids, file-name prefixes and column labels are vendor-neutral; where sources name products, several vendors are treated evenly; no banned token (`check_docs`) appears.
   3. **R3 No compatibility claims.** Every emitted file starts with the line "synthetic, modeled on public documentation; not a real instrument file", and every page that describes a dialect says "synthetic formats modeled on public documentation". The words "supports", "compatible" and "certified" never refer to a real instrument.
-- Open question for the decider: should preset A parse files too? If yes, the hand-transcription path of A would shrink to the label and dilution fields.
+- Capture path: the primitive baseline (results copied by hand) stays in the comparison and automatic linkage is an option, as the author asked. The cost is that every architecture can run both paths, so a path contrast doubles the raw-layer runs of a scenario; it is reported over at least 20 seeds and never gated. The earlier open question (should preset A parse files?) is closed by the setting: A does not by default, and a scenario can make it.
 
 ## Evidence
 
@@ -61,7 +62,11 @@ Proposed: option 3.
 
 > "S2에 공개 매뉴얼 기반 장비 출력 어댑터 추가" (chat, 2026-10-29)
 
-The author's three cautions in the same message, summarised in English by Claude (not verbatim; the author's, not Claude's): (1) use public material only, with no manual text in the repo, only ledger quotes and links; (2) keep origin safety, with vendor-neutral formats or several vendors treated evenly; (3) make no compatibility claim, and call the formats "synthetic formats modeled on public documentation".
+> "장비 어댑터 없이 결과를 손으로 옮겨 적는다고 가정...일단 원시적인 방법이니까 그렇게 하고, 자동으로 연계되는 옵션도 해야할듯?" (chat, 2026-10-29)
+
+Taken as (summarised in English by Claude, not verbatim): without an equipment adapter, results are assumed to be copied by hand; that primitive method is the starting point, and an automatically linked option should be offered too.
+
+The author's three cautions in the earlier message, summarised in English by Claude (not verbatim; the author's, not Claude's): (1) use public material only, with no manual text in the repo, only ledger quotes and links; (2) keep origin safety, with vendor-neutral formats or several vendors treated evenly; (3) make no compatibility claim, and call the formats "synthetic formats modeled on public documentation".
 
 ## Decider's note
 
