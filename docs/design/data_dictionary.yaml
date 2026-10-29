@@ -1,0 +1,316 @@
+# Data dictionary (data_model.md section 9; S2d, Step 9). One entry per column that the recorders, the validation rules, the review step and the export emit today, the hidden truth-side fields
+# that no recorder may see, the state machines of data_model section 6 with the role allowed to cause each transition, and the roles. Synthetic data only.
+#
+# Column attributes: name, type (string, integer, number, boolean, array, object), nullable, unit (a UCUM code, or null; `unit_by` names the column or master data that decides the unit),
+# values (the allowed values as a list, a {min, max} range, or null), time (valid, transaction or neither: data_model section 5), visibility (observable, or hidden truth that no recorder
+# or export may carry), default (null, or {value, ledger}), description. A time column holds integer seconds of the scenario (the engine has no calendar before the raw layer), unit `s`.
+# A column an architecture cannot know is null (data_model principle 7): `nullable: true` says it may be null in some architecture, the description says which.
+#
+# Tests: tests/test_data_dictionary.py reads this file and the output of engine/tests/support/dictionary_cli.ts (the recorders run on hand-built streams under every architecture and on the
+# default scenario at the small size): every emitted column is here with its type and nullability, every state emitted belongs to its machine, every transition performed is listed with a
+# role that may cause it, the transition table equals the one in engine/src/record/transitions.ts, and no hidden column appears in any recorded or exported output.
+# The raw-layer entities of data_model section 16 come with S2e (the raw device layer); `raw_layer` below is a marked placeholder, not an entry.
+
+dictionary_version: "1"
+data_model: docs/design/data_model.md
+schema_version: "1"
+
+# ---- roles (data_model section 6) ----------------------------------------------------------------------------------------------------------------------------------------------------
+roles:
+  sampler: {kind: person, description: "draws the sample from the process (data_model section 6, planned -> drawn)"}
+  analyst: {kind: person, description: "receives the sample at the analyzer bench and works on it (in_transit -> received)"}
+  reviewer: {kind: person, description: "resolves a held or quarantined row and rejects (value kept) or discards"}
+  approver: {kind: person, description: "releases a result (under_review -> released)"}
+  administrator: {kind: person, description: "master data only; causes no transition of a sample or a result"}
+  rule: {kind: automatic, description: "an actor that no person causes: the import of an instrument result, a validation rule (data_model section 8) or the volume budget (VR-016). Not one of the five roles of section 6; added by S2d for the steps the diagram draws without a person"}
+
+# ---- master data: analytes and their canonical UCUM units (data_model section 9) -----------------------------------------------------------------------------------------------------
+analytes:
+  vcd: {unit: "10*6/mL", ledger: A007, description: "viable cell density, 1e6 cells per mL"}
+  viability: {unit: "%", ledger: A211, description: "viability in percent"}
+  glucose: {unit: "g/L", ledger: A190, description: "glucose"}
+  glutamine: {unit: "mmol/L", ledger: A191, description: "glutamine, mM in the profile settings"}
+  lactate: {unit: "g/L", ledger: A209, description: "lactate"}
+  titer: {unit: "g/L", ledger: A210, description: "product titer"}
+  ph: {unit: "[pH]", ledger: A198, description: "pH on its scale"}
+
+# ---- the recorded dataset (engine/src/record/types.ts) -----------------------------------------------------------------------------------------------------------------------------
+dataset:
+  tables: [sample, analysis_request, run, instrument_state, result, audit_event, qualification, source_event, validation_finding, ingest_conflict, batch, process_event]
+  other: {architecture: "id, flags and labelling of the architecture that recorded the dataset", historian: "series (entity historian_series) and late rows (entity historian_value)"}
+
+entities:
+  sample:
+    emitted: true
+    description: "one physical draw (data_model section 2); recorder rows, with the keys of write_time_keys and the times of two_clocks"
+    columns:
+      - {name: sample_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key of the sample; stored by every architecture"}
+      - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit (vessel) as carried by the label in the stream; stored at write by every architecture"}
+      - {name: batch_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "write_time_keys only: fixed at write; null otherwise and derived at read by a time join (data_model section 7, Keys)"}
+      - {name: keys_fixed_at_write, type: boolean, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "true when write_time_keys fixed the keys at write time"}
+      - {name: state, type: string, nullable: true, unit: null, values: [planned, drawn, in_transit, received, aliquoted, closed, quarantined, discarded, skipped], time: neither, visibility: observable, default: null, description: "state of the sample machine (state_machines.sample). The recorder emits only skipped (a draw the volume budget refused, VR-016); null means the recorder does not model the state (data_model section 7, S2a)"}
+      - {name: sampled_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "two_clocks only (K3): the instant the sample left the process; null otherwise and for a skipped draw"}
+      - {name: planned_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "system_issued_id only: the time the sampling plan gave the sample"}
+      - {name: operator_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only: the sampler (pseudonymous id)"}
+      - {name: qualification_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only: the qualification record of the sampler valid at the draw; null when none was (VR-015)"}
+      - {name: label_method, type: string, nullable: true, unit: null, values: [handwritten, preprinted_barcode, issued_at_draw], time: neither, visibility: observable, default: null, description: "the labelling method the label_bound event reports; null for a skipped draw"}
+      - {name: container, type: string, nullable: true, unit: null, values: [open, closed], time: neither, visibility: observable, default: null, description: "the container the plan records (an L2 setting); null when the plan names none (data_model section 7, S2c1)"}
+  analysis_request:
+    emitted: true
+    description: "one analysis request as the plan records it; the other columns of data_model section 2 are not modelled yet"
+    columns:
+      - {name: request_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key; equal to the sample id in this engine (one request per sample)"}
+      - {name: control_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "shared by the requests that measure one bridging material; null for an ordinary request"}
+  run:
+    emitted: true
+    description: "one pass of a sample through an instrument (data_model section 2)"
+    columns:
+      - {name: run_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key: request, attempt and visit"}
+      - {name: request_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the request the run served"}
+      - {name: attempt, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "1 for the first run, higher for a rerun"}
+      - {name: visit, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the visit on the route of the request (one per analyzer of a split profile)"}
+      - {name: analyzer_name, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the analyzer as free text, as seen on the event; stored whatever instrument_state_snapshot says"}
+      - {name: instrument_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "instrument_state_snapshot only"}
+      - {name: instrument_state_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "instrument_state_snapshot only: the state valid at the run start"}
+      - {name: started_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the instant the run began, after any setup (run_started_at, data_model section 5)"}
+      - {name: ended_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the instant the run ended; null while no visit_finished has been seen"}
+      - {name: qc_outcome, type: string, nullable: true, unit: null, values: [qc_passed, qc_failed, over_range], time: neither, visibility: observable, default: null, description: "the outcome of the qc_result event of the run; held by every architecture (no flag owns it); null while none has been seen"}
+  instrument_state:
+    emitted: true
+    description: "one versioned state of an instrument (a calibration record opens it); instrument_state_snapshot only"
+    columns:
+      - {name: instrument_state_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key: analyzer and calibration instant"}
+      - {name: instrument_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the analyzer"}
+      - {name: calibration_ref, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "reference of the calibration record that opened the state"}
+      - {name: reagent_lot, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the reagent lot of the calibration record"}
+      - {name: valid_from, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the calibration instant"}
+      - {name: valid_to, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the next calibration of the same analyzer; null while the state is the latest"}
+  result:
+    emitted: true
+    description: "one analyte value of a request, one version (data_model section 2, K1); recorder rows, then the validation rules and the review step set state, reviewed_at and available_at"
+    columns:
+      - {name: result_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key of the row"}
+      - {name: request_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the request, under the id the record holds its results by (a label error moves it)"}
+      - {name: analyte, type: string, nullable: false, unit: null, values: [vcd, viability, glucose, glutamine, lactate, titer, ph], time: neither, visibility: observable, default: null, description: "analyte code; its unit is in the master data `analytes`"}
+      - {name: version, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "rank of the attempt among the attempts recorded for (request, analyte); an overwrite in place keeps 1"}
+      - {name: run_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "K2: a result cannot exist without a run"}
+      - {name: value, type: number, nullable: false, unit: null, unit_by: analyte, values: null, time: neither, visibility: observable, default: null, description: "the value in the canonical unit of its analyte (the engine works in the canonical units until the raw layer keeps an original unit)"}
+      - {name: measured_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "K2: the instant the measurement ended; a wrong instrument clock makes it wrong in the record (A049)"}
+      - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only: when this version became knowable; a released row has the review point; a rejected row has none"}
+      - {name: supersedes, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "append_only_versions only: the result_id this version replaces"}
+      - {name: ingested_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the instant the system wrote the row; null in architecture A, where no system writes the rows (data_model section 7)"}
+      - {name: reviewed_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the instant a reviewer acted (review point); null for a row that was never held. Time class chosen by S2d: the section 5 table leaves it open"}
+      - {name: state, type: string, nullable: true, unit: null, values: [measured, held, quarantined, rejected, under_review, released, superseded], time: neither, visibility: observable, default: null, description: "state of the result machine (state_machines.result). Null is the initial state measured: no transition has acted. The recorder and the review emit held, quarantined, rejected and released"}
+  audit_event:
+    emitted: true
+    description: "audit_trail only: one row per change of a result (a rerun that replaces an earlier attempt); data_model section 2, supporting entities"
+    columns:
+      - {name: audit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
+      - {name: request_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the request of the changed result"}
+      - {name: analyte, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the analyte of the changed result"}
+      - {name: at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "when the change was recorded (the stamp of the event of the new attempt). Time class chosen by S2d"}
+      - {name: old_value, type: number, nullable: false, unit: null, unit_by: analyte, values: null, time: neither, visibility: observable, default: null, description: "the value before the change"}
+      - {name: new_value, type: number, nullable: false, unit: null, unit_by: analyte, values: null, time: neither, visibility: observable, default: null, description: "the value after the change"}
+      - {name: old_version, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "version before"}
+      - {name: new_version, type: integer, nullable: false, unit: null, values: {min: 2}, time: neither, visibility: observable, default: null, description: "version after"}
+  qualification:
+    emitted: true
+    description: "audit_trail only: the qualification records given to the recorder (plain data from the assembly)"
+    columns:
+      - {name: qualification_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
+      - {name: operator_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the operator the record attests"}
+      - {name: qualified, type: boolean, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the recorded training status (the level of A072 and A073 as a boolean); the truth-side counterpart is truth_operator.qualified"}
+      - {name: valid_from, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "start of validity"}
+      - {name: valid_to, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "end of validity; null while the qualification has no end"}
+  source_event:
+    emitted: true
+    description: "ingest_idempotency only: one row per distinct idempotency key (K9); the ingestion envelope of data_model section 7"
+    columns:
+      - {name: source_system, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the instrument that produced the record"}
+      - {name: source_event_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the source's own id: analyzer, request, attempt, visit and analyte"}
+      - {name: idempotency_key, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "source, event id and content version"}
+      - {name: received_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the envelope received_at; becomes ingested_at"}
+  validation_finding:
+    emitted: true
+    description: "one finding of a validation rule (data_model section 8); a rule changes a state and never a value"
+    columns:
+      - {name: rule, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "rule id (VR-002 ... VR-020, VR-008b)"}
+      - {name: target, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "result:<result_id>, sample:<sample_id> or source_event:<source_event_id>"}
+      - {name: severity, type: string, nullable: false, unit: null, values: [info, warning, error], time: neither, visibility: observable, default: null, description: "severity of the rule"}
+      - {name: action, type: string, nullable: false, unit: null, values: [no-op, hold, quarantine, reject], time: neither, visibility: observable, default: null, description: "the action of the rule; a no-op is the harmless replay (VR-008)"}
+      - {name: status, type: string, nullable: false, unit: null, values: [open, resolved], time: neither, visibility: observable, default: null, description: "state of the finding itself: open until the review resolves it; a no-op is resolved at once"}
+  ingest_conflict:
+    emitted: true
+    description: "ingest_idempotency only: an incoming row with a known idempotency key and other content; not loaded, the original stays (VR-008b)"
+    columns:
+      - {name: source_system, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "as source_event"}
+      - {name: source_event_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "as source_event"}
+      - {name: idempotency_key, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "as source_event"}
+      - {name: received_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "as source_event"}
+      - {name: request_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the request of the incoming row"}
+      - {name: analyte, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the analyte of the incoming row"}
+      - {name: run_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the run of the incoming row"}
+      - {name: value, type: number, nullable: false, unit: null, unit_by: analyte, values: null, time: neither, visibility: observable, default: null, description: "the conflicting value"}
+      - {name: measured_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the measurement instant of the incoming row"}
+  batch:
+    emitted: true
+    description: "one culture run on a unit (data_model section 2)"
+    columns:
+      - {name: batch_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
+      - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit that hosts the batch"}
+      - {name: inoculated_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the instant of the inoculation event"}
+      - {name: harvested_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the instant of the harvest event; null while the batch is open"}
+  process_event:
+    emitted: true
+    description: "one event in a batch (data_model section 2); ingested at its own stamp"
+    columns:
+      - {name: event_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
+      - {name: batch_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch"}
+      - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit"}
+      - {name: kind, type: string, nullable: false, unit: null, values: [feed, temperature_shift, alarm, harvest], time: neither, visibility: observable, default: null, description: "type of the event; feeds are discrete (A010)"}
+      - {name: occurred_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the event"}
+      - {name: amount, type: number, nullable: true, unit: null, unit_by: kind, unit_map: {feed: L, temperature_shift: Cel}, values: null, time: neither, visibility: observable, default: null, description: "a bolus in litres, a set point in degrees Celsius; null when the event carries none"}
+      - {name: source, type: string, nullable: false, unit: null, values: [rule, scheduled, scripted], time: neither, visibility: observable, default: null, description: "what caused the event: a rule, the schedule, or a scripted scenario event"}
+      - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "equal to occurred_at: no ingestion delay is modelled before the raw layer"}
+  historian_series:
+    emitted: true
+    description: "the online sensor series kept columnar (about a million values for the default scenario); a tick is the row `<unit>.<signal>`, ts, value, with ingested_at equal to ts"
+    columns:
+      - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit whose sensor the series is"}
+      - {name: signal, type: string, nullable: false, unit: null, values: [pH, DO, temperature], time: neither, visibility: observable, default: null, description: "the signal; a historian tag is `unit_id.signal` (data_model section 2)"}
+      - {name: t0_s, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the stamp of the first value"}
+      - {name: cadence_s, type: integer, nullable: false, unit: s, values: {min: 1}, time: neither, visibility: observable, default: {value: 60, ledger: A100}, description: "seconds between values"}
+      - {name: n, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "number of values"}
+      - {name: pv, type: array, nullable: false, unit: null, unit_by: signal, unit_map: {pH: "[pH]", DO: "%", temperature: Cel}, values: null, time: neither, visibility: observable, default: null, description: "the process values at t0_s + j * cadence_s (process value only; no truth array)"}
+  historian_value:
+    emitted: false
+    description: "a historian row that arrived later than its valid time (data_model section 5); empty from the recorder, the ingest layers of S2e add rows"
+    columns:
+      - {name: tag, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "`unit_tag.signal` (with the raw layer on the signal ends in a role, data_model section 16.4)"}
+      - {name: ts, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the value"}
+      - {name: value, type: number, nullable: false, unit: null, unit_by: tag, values: null, time: neither, visibility: observable, default: null, description: "the value; the unit follows the signal of the tag"}
+      - {name: quality, type: string, nullable: false, unit: null, values: [good], time: neither, visibility: observable, default: null, description: "quality flag"}
+      - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "when the system received the row"}
+  process_context:
+    emitted: true
+    kind: view
+    description: "the process context of a result at an as-of time (data_model sections 2 and 5); the output of the as-of read, not a stored table"
+    columns:
+      - {name: join_basis, type: string, nullable: false, unit: null, values: [sampled_at, measured_at], time: neither, visibility: observable, default: null, description: "the stored time that the join used: sampled_at whenever the architecture stores it"}
+      - {name: join_time, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the value of the stored time"}
+      - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit of the sample"}
+      - {name: batch_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch, fixed at write or derived by the time join"}
+      - {name: feed_epoch, type: integer, nullable: false, unit: null, values: {min: 0}, time: neither, visibility: observable, default: null, description: "feeds of the batch at or before the join time, known at the as-of time"}
+      - {name: batch_phase, type: string, nullable: false, unit: null, values: [before_shift, after_shift, harvested], time: neither, visibility: observable, default: null, description: "harvested after a harvest event, else after_shift after a temperature shift, else before_shift"}
+      - {name: pv, type: object, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the last historian value of each signal of the unit at or before the join time; a signal with no visible row is absent"}
+  export_result:
+    emitted: true
+    description: "the AI-ready export (data_model section 10): one row per sample x analyte x released version, written as results.csv; the table schema of datapackage.json is this list (engine/src/export/columns.ts, compared by a test)"
+    columns:
+      - {name: sample_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the sample (the request id the record holds the result under)"}
+      - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit, from the sample row"}
+      - {name: batch_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "fixed at write or derived by the time join; null when no batch is open at the stored time"}
+      - {name: analyte, type: string, nullable: false, unit: null, values: [vcd, viability, glucose, glutamine, lactate, titer, ph], time: neither, visibility: observable, default: null, description: "analyte code"}
+      - {name: version, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the released version of the result"}
+      - {name: value, type: number, nullable: false, unit: null, unit_by: canonical_unit, values: null, time: neither, visibility: observable, default: null, description: "the value in the canonical unit"}
+      - {name: canonical_unit, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the UCUM code of the analyte (master data `analytes`)"}
+      - {name: sampled_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "two_clocks only"}
+      - {name: measured_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the measurement instant as recorded"}
+      - {name: hold_time, type: integer, nullable: true, unit: s, values: null, time: neither, visibility: observable, default: null, description: "run.started_at of the run of this version minus sampled_at (data_model section 5, as VR-010 reads it); null without two_clocks"}
+      - {name: turnaround, type: integer, nullable: true, unit: s, values: null, time: neither, visibility: observable, default: null, description: "available_at minus sampled_at; null without two_clocks or available_at"}
+      - {name: calibration_ref, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "instrument_state_snapshot only: the calibration of the instrument state of the run"}
+      - {name: reagent_lot, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "instrument_state_snapshot only: the reagent lot of the instrument state of the run"}
+      - {name: method_version, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "not modelled in S2 (no method entity is recorded): always null"}
+      - {name: operator_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only: the sampler"}
+      - {name: qualification_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only: the qualification record valid at the draw"}
+      - {name: ctx_join_basis, type: string, nullable: true, unit: null, values: [sampled_at, measured_at], time: neither, visibility: observable, default: null, description: "process_context.join_basis"}
+      - {name: ctx_join_time, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "process_context.join_time"}
+      - {name: ctx_feed_epoch, type: integer, nullable: true, unit: null, values: {min: 0}, time: neither, visibility: observable, default: null, description: "process_context.feed_epoch"}
+      - {name: ctx_batch_phase, type: string, nullable: true, unit: null, values: [before_shift, after_shift, harvested], time: neither, visibility: observable, default: null, description: "process_context.batch_phase"}
+      - {name: ctx_pv_pH, type: number, nullable: true, unit: "[pH]", values: null, time: neither, visibility: observable, default: null, description: "process_context.pv for pH; null when the unit has no such series or no row is visible"}
+      - {name: ctx_pv_DO, type: number, nullable: true, unit: "%", values: null, time: neither, visibility: observable, default: null, description: "process_context.pv for dissolved oxygen, percent air saturation (A198)"}
+      - {name: ctx_pv_temperature, type: number, nullable: true, unit: Cel, values: null, time: neither, visibility: observable, default: null, description: "process_context.pv for temperature"}
+      - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only: when this version became knowable"}
+      - {name: context_as_of, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the stated time of the process context: what was known at this second; the same on every row of an export. Chosen by the caller of the export; the default is the end of the horizon, and the package metadata (`context_as_of_basis`) says which"}
+
+  # ---- hidden truth: never given to a recorder, never in a recorded or exported output (spec section 3, rule 1). The names are the fields annotated "x-visibility": "hidden" in schemas/event.schema.json (a test compares).
+  truth_result_measured:
+    emitted: false
+    description: "hidden fields of the truth event result_measured"
+    columns:
+      - {name: true_value, type: number, nullable: false, unit: null, unit_by: analyte, values: null, time: neither, visibility: hidden, default: null, description: "the true analyte value in the culture at the draw, before noise and the stability effect"}
+      - {name: noise, type: number, nullable: false, unit: null, unit_by: analyte, values: null, time: neither, visibility: hidden, default: null, description: "the analyzer noise applied to the reading"}
+      - {name: stability_kind, type: string, nullable: true, unit: null, values: [linear_rate, first_order_offset], time: neither, visibility: hidden, default: null, description: "the stability effect applied between sampled_at and run_started_at; absent when no effect moved the value"}
+      - {name: stability_delta, type: number, nullable: true, unit: null, unit_by: analyte, values: null, time: neither, visibility: hidden, default: null, description: "the change that effect caused"}
+      - {name: extrapolated, type: boolean, nullable: true, unit: null, values: null, time: neither, visibility: hidden, default: null, description: "set when the hold exceeds the range its source covers (A039, A046)"}
+  truth_sample_drawn:
+    emitted: false
+    description: "hidden field of the truth event sample_drawn"
+    columns:
+      - {name: true_state, type: object, nullable: false, unit: null, values: null, time: neither, visibility: hidden, default: null, description: "the culture's true values at the draw"}
+  truth_sensor_tick:
+    emitted: false
+    description: "hidden field of the truth event sensor_tick"
+    columns:
+      - {name: true_value, type: number, nullable: false, unit: null, unit_by: signal, values: null, time: neither, visibility: hidden, default: null, description: "the true value of the signal before sensor noise and probe offset"}
+  truth_calibration_recorded:
+    emitted: false
+    description: "hidden field of the truth event calibration_recorded"
+    columns:
+      - {name: drift_before_pct, type: number, nullable: false, unit: "%", values: null, time: neither, visibility: hidden, default: null, description: "the drift the reset removed (A091)"}
+  truth_operator:
+    emitted: false
+    description: "truth-side attribute of an operator (data_model section 2); the engine returns the operators beside the log, not as events"
+    columns:
+      - {name: qualified, type: boolean, nullable: false, unit: null, values: null, time: neither, visibility: hidden, default: null, description: "the training status in the truth world, true for the experienced staff profile and false for trainee (A072, A073); the recorded counterpart is qualification.qualified"}
+
+# ---- documents of the evaluator and the experiments (their own schemas; not tables) ------------------------------------------------------------------------------------------------
+documents:
+  answer_key: {schema: schemas/answer_key.schema.json, visibility: hidden, description: "which errors the injector materialised where; written by the assembly, read only by the evaluator (spec section 3, rule 2)"}
+  metrics: {schema: schemas/metrics.schema.json, visibility: observable, description: "the metrics of one (scenario, seed, architecture) cell, computed by the evaluator from recorded datasets, truth and the key; a result, not a record: no recorder reads it"}
+  experiment_report: {schema: schemas/experiment_report.schema.json, visibility: observable, description: "the stochastic report of experiment 1"}
+  closed_loop_report: {schema: schemas/closed_loop_report.schema.json, visibility: observable, description: "the report of experiment 2"}
+
+# ---- state machines (data_model section 6) -------------------------------------------------------------------------------------------------------------------------------------------
+# `by` lists the roles allowed to cause the transition. `basis`: diagram = the role is the label in the state diagram of section 6; default = the diagram draws the step without a person (a validation
+# rule, the budget) or without a label, and S2d gives it a role (see the roles above): the neighbouring labelled step's role, or `rule`. `emitted_states` are the states the recorder writes today.
+state_machines:
+  sample:
+    initial: planned
+    terminal: [closed, discarded, skipped]
+    emitted_states: [skipped]
+    null_means: "the recorder does not model the state (data_model section 7, S2a: null until the state machines)"
+    transitions:
+      - {from: planned, to: drawn, by: [sampler], basis: diagram}
+      - {from: planned, to: skipped, by: [rule], basis: default}
+      - {from: drawn, to: in_transit, by: [sampler], basis: default}
+      - {from: in_transit, to: received, by: [analyst], basis: diagram}
+      - {from: received, to: aliquoted, by: [analyst], basis: default}
+      - {from: aliquoted, to: closed, by: [analyst], basis: default}
+      - {from: drawn, to: quarantined, by: [rule], basis: default}
+      - {from: received, to: quarantined, by: [rule], basis: default}
+      - {from: quarantined, to: received, by: [reviewer], basis: diagram}
+      - {from: quarantined, to: discarded, by: [reviewer], basis: diagram}
+  result:
+    initial: measured
+    terminal: [rejected, superseded]
+    emitted_states: [held, quarantined, rejected, released]
+    null_means: "measured: the initial state, no transition has acted (data_model section 7, S2b)"
+    transitions:
+      - {from: measured, to: held, by: [rule], basis: default}
+      - {from: measured, to: quarantined, by: [rule], basis: default}
+      - {from: measured, to: rejected, by: [rule], basis: default}
+      - {from: measured, to: under_review, by: [reviewer], basis: default}
+      - {from: held, to: under_review, by: [reviewer], basis: default}
+      - {from: quarantined, to: under_review, by: [reviewer], basis: diagram}
+      - {from: under_review, to: released, by: [approver], basis: diagram}
+      - {from: under_review, to: rejected, by: [reviewer], basis: diagram}
+      - {from: released, to: superseded, by: [approver], basis: default}
+
+# ---- placeholder: the raw device layer (data_model section 16; ADR-0014) ------------------------------------------------------------------------------------------------------------
+# Not entries. These entities, the new columns of section 16.2 and the state models of alarm_event and batch_phase_record (section 16.5) are described here when S2e builds the layer.
+raw_layer:
+  status: placeholder
+  entities: [adapter, raw_file, raw_record, parse_error, alarm_event, batch_phase_record]
+  state_machines: [alarm_event, batch_phase_record]
+  new_columns: [result.range_flag, result.time_resolution_s, result.capture_path, result.entered_by, run.started_at_derived, instrument.adapter_id, unit.controller_adapter_id, historian_value.raw_ref]

@@ -231,6 +231,8 @@ stateDiagram-v2
 
 In the simulator `under_review` has no duration: a held or quarantined row is reviewed at a review point and is `released` or `rejected` there (section 7, "Review step and VR-012 decided in the S2 review step").
 
+The recorder also performs `measured` to `rejected`, caused by a rule: VR-014 rejects a row at ingest and the row is final and not reviewed (section 7, "Result state"). The diagram reaches `rejected` only from `under_review`; this edge is a clarification of S2d (orchestrator ruling 2), listed in the data dictionary with the actor `rule`. The same section 7 table, "State machines, roles, the dictionary, the export and the trace decided in S2d", gives the roles of the steps the diagram draws without a person.
+
 ## 7. Ingestion contract
 
 Every record entering the system arrives in an envelope.
@@ -297,7 +299,7 @@ New names introduced by the recorder (the table and column names follow section 
 | `feed_epoch`, `batch_phase` | Of a process context: the feed count and the phase defined above; values of `batch_phase`: `before_shift`, `after_shift`, `harvested`. |
 | `pv` | The process value of an online sensor series in the observable stream (the series carries no truth array); in a process context, the map of the last value per signal. |
 | `ingest_conflict` | Table of the dataset: incoming rows kept aside by the idempotency rule (columns of `source_event` plus request, analyte, run, value and `measured_at`). |
-| `state` of `sample` | `skipped` for a refused draw, null otherwise until the state machines of S2d. |
+| `state` of `sample` | `skipped` for a refused draw, null otherwise (S2d put the sample machine in the dictionary and the guard; the recorder still emits only `skipped`, see "State machines, roles, the dictionary, the export and the trace decided in S2d"). |
 | `source_of_record` | Optional setting of the architecture config, `lims` or `mes_ebr` (spec section 5, A056); nothing reads it in S2a. |
 
 ### Rules, injector and evaluator decided in S2b
@@ -390,6 +392,25 @@ Sections 2 to 8 and spec section 6.2 did not decide how the closed loop is stepp
 
 New names introduced by experiment 2: the settings `ph_probe_drift_per_d`, `ph_controller_deadband`, `ph_probe_readjust_on`, `ph_probe_readjust_interval_h` and `technique_error_probability` (A094, A095, A051, A108, A064) of the scenario SC8; the purposes `probe_drift` and `error:technique_error`; the report `schemas/closed_loop_report.schema.json`.
 
+### State machines, roles, the dictionary, the export and the trace decided in S2d
+
+S2d writes the data dictionary (`docs/design/data_dictionary.yaml`), the state-machine guard (`engine/src/record/transitions.ts`), the single-sample trace (`docs/design/single_sample_trace.md`) and the FAIR export (`engine/src/export/`). Sections 2 to 10 did not decide the points below; they are fixed here and are the reading the S2d tests are typed from. Nothing in this table states a result.
+
+| Point | Decision |
+|---|---|
+| Roles | The five roles of section 6, plus one actor kind, `rule`, for a step that no person causes: the import of an instrument result, a validation rule (section 8) and the volume budget (VR-016). The diagram's own labels give the role of: planned to drawn (sampler), in_transit to received (analyst), quarantined to received, to discarded and to under_review (reviewer), under_review to released (approver) and to rejected (reviewer); the dictionary marks them `basis: diagram`. The other steps (validation hold and quarantine, the budget skip, and the edges drawn without a label) take `rule` or the role of the neighbouring labelled step and are marked `basis: default`. Orchestrator ruling 1 of S2d. |
+| `measured` to `rejected` | The recorder performs it (VR-014 rejects at ingest, "Result state" in S2b above), so the table lists it with the actor `rule`. The diagram of section 6 reaches `rejected` only from `under_review`; S2d adds the edge (orchestrator ruling 2), also stated under the state diagram of section 6. |
+| The review passes through `under_review` | `under_review` has no duration (section 6), but the review performs both steps of the diagram: held or quarantined to `under_review` (reviewer), then to `released` (approver) or `rejected` (reviewer). A transition is performed only through the guard, which refuses one that the table does not list and a role that may not cause it; the dictionary holds the same table and a test compares the two. Both steps are performed at the review point, and the outputs of the review are the same as before the explicit step (orchestrator ruling 3; `engine/tests/record/review.test.ts` and `engine/tests/assembly/review_pipeline.test.ts` are unchanged and green, and `engine/tests/record/transitions.test.ts` shows the datasets equal with and without the transition log). |
+| State null | A result row with `state` null is in `measured`, the initial state: no transition has acted. A sample row with `state` null is a state that the recorder does not model: only `skipped` is emitted, and the other states of the sample machine are in the dictionary and in the guard, not yet in any recorded row. Provisional (question 4). |
+| Time class of three columns | `reviewed_at`, the `at` of an `audit_event` and `context_as_of` are transaction time (when the system knew that a reviewer acted, that a change was recorded, and the as-of bound of a read). Section 5 does not classify them; this is the reading of S2d. |
+| Released version (export) | A result row whose `state` is null or `released`, all versions of it: the rows that the as-of read treats as available (`record/asof.ts`). Held, quarantined and rejected rows are not exported. |
+| Export columns | The columns of section 10, flat: `hold_time` is `run.started_at` of the run of that version minus `sampled_at` (as VR-010 reads it) and `turnaround` is `available_at` minus `sampled_at`, both null without the clocks they need; the process context is `ctx_join_basis`, `ctx_join_time`, `ctx_feed_epoch`, `ctx_batch_phase` and one `ctx_pv_<signal>` column per online signal; `method_version` is null in every row (no method entity is recorded in S2). Times are integer seconds of the scenario. |
+| `context_as_of` | The stated time of the process context, an option of the export (default: the end of the horizon), the same value on every row; the context is what the as-of read of section 5 knows at that second. The data package metadata names how the time was chosen: `context_as_of_basis` is `stated`, or `end_of_horizon` for the default. |
+| Canonical unit | The master data `analytes` of the dictionary: the UCUM code of each analyte, from the units of the profile settings. An analyte without an entry is an error, not a guess (section 9). The engine works in the canonical units, so original and canonical value are the same until the raw layer keeps an original unit (K11). |
+| Licence | ADR-0008 (Accepted, option 1: MIT for code, CC BY 4.0 for documents and exported synthetic data): the data package carries CC BY 4.0. |
+| Single-sample trace | The sample is the lowest `sample_id` of SC3 whose interval from `sampled_at` to the first `run.started_at`, both ends counting, contains a feed of its own unit and batch. The three questions are answered as the evaluator's analyst query reads the record after the end of the run, and judged against the truth. The fixture is created once by a recorded command and its checksum is in `tests/fixtures/trace/CHECKSUMS.txt`; the S1b goldens and their checksums are not touched. |
+| Integration checks of the author's SQL | The wide export has no historian rows or aliquots, so the checks of Card B1 and B3 on engine data load a test-only dump of the canonical tables (`engine/tests/support/sql_tables_cli.ts`), anchored at the synthetic Monday of the fixtures, with released rows only, one aliquot per sample (the link from the `aliquot_created` events), and no claim about the handling of a held row. |
+
 ## 8. Validation rule catalogue (draft)
 
 Actions: **hold** (row stored, not available until reviewed), **quarantine** (row stored in a quarantine state, excluded from released views), **reject** (row not loaded; goes to a dead-letter list with reason and `raw_ref`). A rule never edits a value. The tolerances in VR-003 and VR-004 are scenario settings; this document fixes no value.
@@ -422,7 +443,7 @@ Resolution is by a named reviewer with a reason; the finding keeps its history. 
 
 ## 9. Data dictionary outline
 
-`data_dictionary.yaml` has one entry per column:
+`data_dictionary.yaml` (S2d, `docs/design/data_dictionary.yaml`) has one entry per column:
 
 - name, entity, type, nullable;
 - unit as a UCUM code, for example `g/L`, `mmol/L`, `10*6/mL`, `%`, `[pH]`, `min`, `s`, `uL`;
@@ -442,7 +463,7 @@ Resolution is by a named reviewer with a reason; the finding keeps its history. 
 
 One row per (sample x analyte x released version). Columns: sample, unit, batch, analyte, value, canonical unit, `sampled_at`, `measured_at`, `hold_time`, `turnaround`, instrument state (calibration, lot), method version, operator and qualification references, process context as of the stated time, `available_at`, `context_as_of`. Because both clocks and `available_at` are present, a consumer can build features that use only what was knowable at a decision time, and avoid the leakage in section 5.
 
-Each export ships as CSV plus a Frictionless-style `datapackage.json` carrying the table schema, units, the data dictionary, `schema_version`, `engine_version`, `seed`, the architecture preset and flags, and the ledger ids behind the defaults. The `licenses` field stays unset until the licence decision is accepted (ADR-0008).
+Each export ships as CSV plus a Frictionless-style `datapackage.json` carrying the table schema, units, the data dictionary, `schema_version`, `engine_version`, `seed`, the architecture preset and flags, and the ledger ids behind the defaults. The `licenses` field carries CC BY 4.0 now that ADR-0008 is Accepted (option 1: exported synthetic data is under CC BY 4.0).
 
 ## 11. System boundary note
 
