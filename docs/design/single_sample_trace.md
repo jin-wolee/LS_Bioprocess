@@ -53,7 +53,7 @@ Rows are the real rows of the recorders for the sample (tables and columns of da
 
 ## Regenerating and drift
 
-- The fixture `tests/fixtures/trace/single_sample_trace.json` was created once by `node engine/tests/support/trace_cli.ts`, which refuses to overwrite it. Its checksum is in `tests/fixtures/trace/CHECKSUMS.txt` (not in `tests/golden/CHECKSUMS.txt`, which belongs to the S1b goldens). A test compares the fixture with a fresh run of the recorders; a recorder change that moves these rows fails there and needs the author's approval, recorded in `docs/progress.md`.
-- The block between the markers is written by `node engine/tests/support/trace_table_cli.ts --write` from the fixture. A test regenerates it and fails when the page differs.
+- The fixture `tests/fixtures/trace/single_sample_trace.json` was created once by `node --no-maglev-escape-analysis engine/tests/support/trace_cli.ts`, which refuses to overwrite it. Its checksum is in `tests/fixtures/trace/CHECKSUMS.txt` (not in `tests/golden/CHECKSUMS.txt`, which belongs to the S1b goldens). A test compares the fixture with a fresh run of the recorders; a recorder change that moves these rows fails there and needs the author's approval, recorded in `docs/progress.md`.
+- The block between the markers is written by `node --no-maglev-escape-analysis engine/tests/support/trace_table_cli.ts --write` from the fixture. A test regenerates it and fails when the page differs.
 
 Links: [data_model](data_model.md), [simulation_spec](simulation_spec.md), [data_dictionary](data_dictionary.yaml).
