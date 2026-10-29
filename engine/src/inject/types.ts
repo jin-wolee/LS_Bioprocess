@@ -12,6 +12,8 @@ export type ErrorType = (typeof ERROR_TYPES)[number];
 /** The types with a random opportunity per sample: a keyed draw `u`, materialised when u < rate. The others follow from the stream and the flags. */
 export const DRAWN_TYPES = ["label_error", "unit_rekey", "duplicate_replay"] as const;
 export type DrawnType = (typeof DRAWN_TYPES)[number];
+/** The types that can have no ledger rate: a drawn type other than the label error, and the clock error (A049 gives an example offset, no frequency). */
+export type NotModelled = Exclude<DrawnType, "label_error"> | "clock_offset";
 
 /** Matrix rows that are not injected, with the reason: the effect sits in the truth world or has no source in the layer-off stream. */
 export const NOT_INJECTED = {
@@ -62,6 +64,6 @@ export interface InjectResult {
   /** The host's receipt time of each result whose instrument stamp was moved, by source event id. */
   received_at: Record<string, number>;
   materialised: MaterialisedError[];
-  /** Production only: drawn types that have no ledger rate and were therefore not materialised. */
-  not_modelled: DrawnType[];
+  /** Production only: types that have no ledger rate and were therefore not materialised (a clock error only where the scenario names no offset). */
+  not_modelled: NotModelled[];
 }

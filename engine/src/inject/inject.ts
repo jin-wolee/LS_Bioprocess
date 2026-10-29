@@ -2,7 +2,7 @@ import type { ObservableEvent } from "../observe.ts";
 import { prevented } from "./catalogue.ts";
 import { rekey, relabel, replay, skewClocks } from "./edits.ts";
 import { drawOpportunities } from "./opportunities.ts";
-import { RATE_GAPS } from "./rates.ts";
+import { notModelled } from "./rates.ts";
 import { structural } from "./structural.ts";
 import { ERROR_TYPES } from "./types.ts";
 import type { DrawnType, ForcedError, InjectInput, InjectResult, MaterialisedError } from "./types.ts";
@@ -61,5 +61,5 @@ export const inject = (input: InjectInput): InjectResult => {
   const skewed = skewClocks(events, offsets);
 
   const materialised = [...chosen, ...clock, ...structural(input.events, flags)].sort((a, b) => ERROR_TYPES.indexOf(a.type) - ERROR_TYPES.indexOf(b.type));
-  return { events: skewed.events, received_at: skewed.received_at, materialised, not_modelled: input.forced ? [] : (Object.keys(RATE_GAPS) as DrawnType[]) };
+  return { events: skewed.events, received_at: skewed.received_at, materialised, not_modelled: input.forced ? [] : notModelled(input.clock_offsets) };
 };

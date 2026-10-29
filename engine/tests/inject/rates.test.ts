@@ -3,6 +3,7 @@ import { inject } from "../../src/inject/inject.ts";
 import { RATE_GAPS, labelErrorRate } from "../../src/inject/rates.ts";
 import { loadProfile } from "../../src/profiles.ts";
 import { arch } from "../support/record_fixture.ts";
+import { BASE, byTime, sampleWithRun } from "../support/cell_stream.ts";
 import { bulk } from "../support/inject_fixture.ts";
 import { lookup } from "../support/scenarios.ts";
 
@@ -33,11 +34,20 @@ describe("Staff multipliers on the label-error rate", () => {
 });
 
 describe("Types without a ledger rate are not modelled in production", () => {
-  it("Given a production run (no forced list) Then unit re-keys and replayed files are reported as not modelled, never given a number", () => {
+  const measured = byTime([...BASE, ...sampleWithRun("S1", "U1", 1000, 500, 5.1)]); // one sample measured on AN-1 (test-only values)
+  it("Given a production run (no forced list, no clock offset named) Then unit re-keys, clock errors and replayed files are reported as not modelled, never given a number", () => {
     const out = inject({ seed: 7, architecture: { id: "t", flags: arch().flags }, events: bulk(50), label_rate_by_operator: { "OP-1": 1 } });
-    expect(out.not_modelled).toEqual(["unit_rekey", "duplicate_replay"]);
-    expect(out.materialised.map((m) => m.type)).not.toContain("unit_rekey");
-    expect(out.materialised.map((m) => m.type)).not.toContain("duplicate_replay");
+    expect(out.not_modelled).toEqual(["unit_rekey", "clock_offset", "duplicate_replay"]); // the order of the hypothesis matrix
+    for (const t of ["unit_rekey", "clock_offset", "duplicate_replay"]) expect(out.materialised.map((m) => m.type)).not.toContain(t);
     expect(Object.keys(RATE_GAPS).sort()).toEqual(["duplicate_replay", "unit_rekey"]);
+  });
+  it("Given a production run whose scenario names an offset for an analyzer (A049 is an example, not a rate) Then the clock error is injected where that analyzer measured, and is no longer not modelled", () => {
+    const out = inject({ seed: 7, architecture: { id: "t", flags: arch().flags }, events: measured, label_rate_by_operator: { "OP-1": 0 }, clock_offsets: { "AN-1": 18000 } });
+    expect(out.not_modelled).toEqual(["unit_rekey", "duplicate_replay"]);
+    expect(out.materialised.filter((m) => m.type === "clock_offset").length).toBeGreaterThan(0);
+  });
+  it("Given an offset of zero seconds Then nothing is named: the clock error stays not modelled", () => {
+    const out = inject({ seed: 7, architecture: { id: "t", flags: arch().flags }, events: measured, label_rate_by_operator: { "OP-1": 0 }, clock_offsets: { "AN-1": 0 } });
+    expect(out.not_modelled).toContain("clock_offset");
   });
 });

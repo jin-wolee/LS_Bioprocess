@@ -34,7 +34,7 @@ describe("Guard 1: every denominator is all analysis requests or the stated subs
     it(`${cell.architecture}: each ratio has a named denominator of the expected size`, () => {
       const ds = out.datasets[cell.architecture] as RecordedDataset;
       const found = ratiosOf(cell.metrics);
-      expect(found.length).toBeGreaterThan(40);
+      expect(found.length).toBeGreaterThan(38); // 39 shares: the precision and the false-alarm rate of the lost rerun (an evidence detector) read "not applicable", not a share
       for (const [path, ratio] of found) {
         expect(ratio.denominator.length, path).toBeGreaterThan(10);
         const type = /^detection\.by_type\.(\w+)\.(recall|precision|false_alarm)$/.exec(path);
@@ -139,11 +139,11 @@ describe("Guard 5: the output carries the seed count and the spread, in the aggr
 });
 
 describe("Guard 6: the metrics are computed from recorded datasets, the truth and the key, not from recorder internals", () => {
-  it("Then no module of engine/src/evaluate imports the recorder or the result builder, only the as-of reads, the types and the rule helper", () => {
+  it("Then no module of engine/src/evaluate imports the recorder or the result builder, only the as-of reads, the evidence checks, the types and the rule helper", () => {
     const dir = join(ROOT, "engine", "src", "evaluate");
     const imports = readdirSync(dir).flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(/from "(\.\.\/record\/[^"]+)"/g)].map((m) => m[1] as string));
     expect(imports.length).toBeGreaterThan(3);
-    expect([...new Set(imports)].sort()).toEqual(["../record/asof.ts", "../record/types.ts", "../record/validate.ts"]);
+    expect([...new Set(imports)].sort()).toEqual(["../record/asof.ts", "../record/evidence.ts", "../record/types.ts", "../record/validate.ts"]);
   });
   it("Then the evaluator runs on a dataset typed by hand that no recorder produced (the 10-request fixture of metrics.test.ts does the same)", () => {
     const m = evaluate({ truth: WORLD, dataset: emptyDataset(), not_evaluable: [], key_text: out.key_text, architecture: "A", config: CONFIG }).metrics;

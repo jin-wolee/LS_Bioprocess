@@ -1,4 +1,5 @@
 import type { Metrics } from "../generated/metrics.schema";
+import { NOT_APPLICABLE } from "./ratio.ts";
 import { quantile } from "./stats.ts";
 
 // The seed-aggregate table: per metric, the median and the spread across seeds of one (scenario, architecture), with the seed count.
@@ -28,14 +29,38 @@ export interface AggregateTable {
   rows: AggregateRow[];
 }
 
+/** What lo and hi are: a spread across seeds. */
+export const INTERVAL_TEXT = "spread across seeds: the 5th to the 95th percentile, nearest rank; not a confidence interval";
+
 const isRatio = (v: unknown): v is { value: number | null } => !!v && typeof v === "object" && "num" in v && "den" in v && "value" in v;
 
 /** Every number of a cell's metrics by path; a ratio contributes its value (null when undefined), never its counts. */
 export const flatten = (node: unknown, path = ""): [string, number | null][] => {
   if (isRatio(node)) return [[path, node.value]];
   if (typeof node === "number") return [[path, node]];
+  if (node === NOT_APPLICABLE) return [[path, null]]; // a row with no number: the report names it
   if (node && typeof node === "object" && !Array.isArray(node)) return Object.entries(node).flatMap(([k, v]) => flatten(v, path === "" ? k : `${path}.${k}`));
   return [];
+};
+
+type Share = { den: number; denominator: string };
+const shares = (node: unknown, path = ""): [string, Share][] => {
+  if (isRatio(node)) return [[path, node as unknown as Share]];
+  if (node && typeof node === "object" && !Array.isArray(node)) return Object.entries(node).flatMap(([k, v]) => shares(v, path === "" ? k : `${path}.${k}`));
+  return [];
+};
+
+/** The denominator of every share by path: its wording (read from the first cell) and its count in each cell, in cell order (spec section 8: no metric without one). */
+export const denominatorsOf = (cells: readonly Metrics[]): Map<string, { text: string; counts: number[] }> => {
+  const out = new Map<string, { text: string; counts: number[] }>();
+  for (const c of cells) {
+    for (const [path, s] of shares(c.metrics)) {
+      const entry = out.get(path) ?? { text: s.denominator, counts: [] };
+      entry.counts.push(s.den);
+      out.set(path, entry);
+    }
+  }
+  return out;
 };
 
 export const aggregate = (cells: readonly Metrics[], minSeeds: number): AggregateTable => {
@@ -51,7 +76,7 @@ export const aggregate = (cells: readonly Metrics[], minSeeds: number): Aggregat
     n_seeds: cells.length,
     min_seeds: minSeeds,
     meets_min_seeds: cells.length >= minSeeds,
-    interval: "spread across seeds: the 5th to the 95th percentile, nearest rank; not a confidence interval",
+    interval: INTERVAL_TEXT,
     rows: [...byPath].map(([metric, vals]) => {
       const defined = vals.filter((v): v is number => v !== null);
       return { metric, n_seeds: cells.length, n_defined: defined.length, median: quantile(defined, 0.5), lo: quantile(defined, 0.05), hi: quantile(defined, 0.95) };

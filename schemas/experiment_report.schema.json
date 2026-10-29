@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "experiment_report.schema.json",
+  "title": "ExperimentReport",
+  "description": "The stochastic report of an experiment (docs/design/simulation_spec.md sections 6 and 8): per metric and architecture the median and the spread across seeds, with the seed count and the denominators. Reported, never gated: no test requires an ordering, a sign or an interval that includes or excludes zero. The spread is a percentile range across seeds, not a confidence interval. A type with no ledger rate is 'not_modelled', never zero.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine_version",
+    "experiment_id",
+    "scenario_id",
+    "seeds",
+    "n_seeds",
+    "min_seeds",
+    "meets_min_seeds",
+    "interval",
+    "truth_log_hashes",
+    "notes",
+    "architectures",
+    "ranks"
+  ],
+  "$defs": {
+    "number_or_null": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric",
+        "status",
+        "n_seeds",
+        "n_defined",
+        "median",
+        "lo",
+        "hi",
+        "denominator",
+        "den",
+        "reason"
+      ],
+      "properties": {
+        "metric": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path in the metrics document (schemas/metrics.schema.json); a share contributes its value."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "reported",
+            "none_occurred",
+            "not_evaluable",
+            "not_modelled",
+            "not_applicable"
+          ],
+          "description": "reported: at least one seed defines the value. none_occurred: the denominator was zero in every seed (no opportunity), which is not a perfect score. not_evaluable: no rule or evidence of the type could run on the architecture, so a value would not mean 'looked and found nothing'. not_modelled: the type has no ledger rate in production runs; no number is given, never zero. not_applicable: the metric does not exist for the detector (an evidence check raises no alarm, so it has no precision and no false-alarm rate); no number, no denominator."
+        },
+        "n_seeds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seeds of the report."
+        },
+        "n_defined": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seeds for which the value is defined; zero unless status is reported."
+        },
+        "median": {
+          "$ref": "#/$defs/number_or_null"
+        },
+        "lo": {
+          "$ref": "#/$defs/number_or_null",
+          "description": "Lower end of the spread across seeds (see the report's interval)."
+        },
+        "hi": {
+          "$ref": "#/$defs/number_or_null",
+          "description": "Upper end of the spread across seeds (see the report's interval)."
+        },
+        "denominator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What the denominator counts, in words; null for a value that is itself a setting-free count with no denominator."
+        },
+        "den": {
+          "description": "The denominator count per seed (min, median, max over the seeds); null when the row has no denominator.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "min",
+                "median",
+                "max"
+              ],
+              "properties": {
+                "min": {
+                  "type": "number"
+                },
+                "median": {
+                  "type": "number"
+                },
+                "max": {
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Why the row carries no number: null for a reported row; otherwise the reason of its status (for not_applicable the text of the case, for example no contrast in this scenario)."
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "engine_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scenario_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seeds": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "description": "The seed list of the run, in config order."
+    },
+    "n_seeds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "min_seeds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The seed minimum of the report (A103)."
+    },
+    "meets_min_seeds": {
+      "type": "boolean"
+    },
+    "interval": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What lo and hi are."
+    },
+    "truth_log_hashes": {
+      "type": "array",
+      "description": "The hash of the truth log of each seed; the same truth was shared by every architecture of the seed.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "seed",
+          "truth_log_hash"
+        ],
+        "properties": {
+          "seed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "truth_log_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "architectures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "role",
+          "ablated_flag",
+          "n_seeds",
+          "not_modelled",
+          "not_evaluable",
+          "rows"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "preset",
+              "ablation"
+            ]
+          },
+          "ablated_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "n_seeds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "not_modelled": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Error types with no ledger rate in this run (union over the seeds)."
+          },
+          "not_evaluable": {
+            "type": "array",
+            "description": "Rules the validation could not run on this architecture, with the reason (union over the seeds).",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "rule",
+                "reason"
+              ],
+              "properties": {
+                "rule": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/row"
+            }
+          }
+        }
+      }
+    },
+    "ranks": {
+      "type": "array",
+      "description": "Data only. Per metric, the architectures with a reported median ordered by that median (rank 1 is the smallest; equal medians share the lowest rank). A smaller or larger value is not better or worse for every metric, and no test asserts an order.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "metric",
+          "order"
+        ],
+        "properties": {
+          "metric": {
+            "type": "string",
+            "minLength": 1
+          },
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "architecture",
+                "rank",
+                "median"
+              ],
+              "properties": {
+                "architecture": {
+                  "type": "string"
+                },
+                "rank": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "median": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -37,9 +37,9 @@ export interface AnswerKey {
         };
       }[];
       /**
-       * Drawn types that have no ledger rate and were not materialised in a production run.
+       * Types that have no ledger rate and were not materialised in a production run: a drawn type without a rate, and the clock error where the scenario names no offset (A049 is an example, not a rate).
        */
-      not_modelled: ("label_error" | "unit_rekey" | "duplicate_replay")[];
+      not_modelled: ("label_error" | "unit_rekey" | "clock_offset" | "duplicate_replay")[];
     };
   };
 }

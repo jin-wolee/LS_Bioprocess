@@ -55,7 +55,7 @@ describe("One truth run, three architectures", () => {
     expect([key.seed, key.scenario_id]).toEqual([1, "default-small"]);
     expect(Object.keys(key.architectures)).toEqual(["a_manual", "b_lims_lite", "c_context"]);
     for (const a of Object.values(key.architectures)) {
-      expect(a.not_modelled).toEqual(["unit_rekey", "duplicate_replay"]);
+      expect(a.not_modelled).toEqual(["unit_rekey", "clock_offset", "duplicate_replay"]);
       expect(a.errors.map((e) => e.type)).not.toContain("unit_rekey");
     }
   });

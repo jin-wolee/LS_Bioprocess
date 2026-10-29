@@ -86,7 +86,8 @@
         "realised",
         "recall",
         "precision",
-        "false_alarm"
+        "false_alarm",
+        "by_detector"
       ],
       "properties": {
         "evaluable": {
@@ -115,8 +116,69 @@
         },
         "false_alarm": {
           "$ref": "#/$defs/ratio"
+        },
+        "by_detector": {
+          "type": "object",
+          "description": "Flags raised by each detector of the type that could run, by rule id or evidence name (docs/design/data_model.md section 7, 'Evidence checks'). A detector that could not run on the architecture is not listed, so a zero here means it looked and raised nothing.",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       }
+    },
+    "evidence_detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluable",
+        "reason",
+        "realised",
+        "recall",
+        "precision",
+        "false_alarm",
+        "by_detector"
+      ],
+      "properties": {
+        "evaluable": {
+          "type": "boolean",
+          "description": "False when no rule of the catalogue that detects this type could run on the architecture, or none exists: a recall of 0 then does not mean 'looked and found nothing'."
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "realised": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recall": {
+          "$ref": "#/$defs/ratio"
+        },
+        "precision": {
+          "type": "string",
+          "const": "not applicable"
+        },
+        "false_alarm": {
+          "type": "string",
+          "const": "not applicable"
+        },
+        "by_detector": {
+          "type": "object",
+          "description": "Flags raised by each detector of the type that could run, by rule id or evidence name (docs/design/data_model.md section 7, 'Evidence checks'). A detector that could not run on the architecture is not listed, so a zero here means it looked and raised nothing.",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "description": "Detection of a type whose detector is an evidence check, not a rule (docs/design/data_model.md section 7, 'Evidence checks'). Evidence raises no alarm: recall is the share of realised errors whose request carries the evidence, and there is no precision and no false-alarm rate, which read 'not applicable' and never a number."
     }
   },
   "properties": {
@@ -317,7 +379,7 @@
                   "$ref": "#/$defs/type_detection"
                 },
                 "lost_rerun": {
-                  "$ref": "#/$defs/type_detection"
+                  "$ref": "#/$defs/evidence_detection"
                 },
                 "unattributable_record": {
                   "$ref": "#/$defs/type_detection"

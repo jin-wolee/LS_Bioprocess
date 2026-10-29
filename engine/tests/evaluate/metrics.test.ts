@@ -166,7 +166,7 @@ describe("Detection per error type: recall, precision and false-alarm rate, with
     expect(mA.detection.by_type.feed_in_gap).toMatchObject({ evaluable: false, realised: 1, recall: r(0, 1), precision: r(0, 0), false_alarm: r(0, 3) });
     expect(mA.detection.by_type.unattributable_record).toMatchObject({ evaluable: false, realised: 3, recall: r(0, 3) });
     expect(mA.detection.by_type.lost_rerun).toMatchObject({ evaluable: false, realised: 1 });
-    expect(mA.detection.by_type.lost_rerun.reason).toMatch(/no rule/);
+    expect(mA.detection.by_type.lost_rerun.reason).toMatch(/audit_event: needs audit_trail/); // 2026-10-29 S2c2: the audit event is the evidence of a lost rerun (it was "no rule")
     expect(mA.detection.not_evaluable.map((n) => n.rule)).toContain("VR-010");
   });
   it("Given C Then nothing is realised, VR-010 is evaluable and flags the S2 rerun: recall has no denominator, precision 0 of 1, false alarm 1 of 4", () => {

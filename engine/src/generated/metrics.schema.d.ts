@@ -59,7 +59,7 @@ export interface Metrics {
         unit_rekey: TypeDetection;
         clock_offset: TypeDetection;
         duplicate_replay: TypeDetection;
-        lost_rerun: TypeDetection;
+        lost_rerun: EvidenceDetection;
         unattributable_record: TypeDetection;
         planned_vs_actual: TypeDetection;
       };
@@ -121,4 +121,30 @@ export interface TypeDetection {
   recall: Ratio;
   precision: Ratio;
   false_alarm: Ratio;
+  /**
+   * Flags raised by each detector of the type that could run, by rule id or evidence name (docs/design/data_model.md section 7, 'Evidence checks'). A detector that could not run on the architecture is not listed, so a zero here means it looked and raised nothing.
+   */
+  by_detector: {
+    [k: string]: number;
+  };
+}
+/**
+ * Detection of a type whose detector is an evidence check, not a rule (docs/design/data_model.md section 7, 'Evidence checks'). Evidence raises no alarm: recall is the share of realised errors whose request carries the evidence, and there is no precision and no false-alarm rate, which read 'not applicable' and never a number.
+ */
+export interface EvidenceDetection {
+  /**
+   * False when no rule of the catalogue that detects this type could run on the architecture, or none exists: a recall of 0 then does not mean 'looked and found nothing'.
+   */
+  evaluable: boolean;
+  reason: string | null;
+  realised: number;
+  recall: Ratio;
+  precision: "not applicable";
+  false_alarm: "not applicable";
+  /**
+   * Flags raised by each detector of the type that could run, by rule id or evidence name (docs/design/data_model.md section 7, 'Evidence checks'). A detector that could not run on the architecture is not listed, so a zero here means it looked and raised nothing.
+   */
+  by_detector: {
+    [k: string]: number;
+  };
 }
