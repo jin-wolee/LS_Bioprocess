@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clipping fixture</title>
+<style>
+body { margin: 0 auto; max-width: 60rem; padding: 0 16px; font: 16px system-ui, sans-serif; }
+section { padding: 8px 0; }
+svg { display: block; }
+</style>
+</head>
+<body>
+<!-- offender at 390 only: a 600px SVG inside an overflow:hidden wrapper of 358px -->
+<section id="premise"><div class="wrap" style="overflow:hidden"><svg id="wide" width="600" height="80" viewBox="0 0 600 80"><rect width="600" height="80" fill="#ccd"/><text x="10" y="40">timeline</text></svg></div></section>
+<!-- offender at both widths: the label starts at x=150 of a 200px-wide viewBox, so it runs past the SVG box -->
+<section id="capacity"><svg id="label-out" width="200" height="60" viewBox="0 0 200 60"><text x="150" y="35" font-size="14">measured_at 09:25</text></svg></section>
+<!-- offender at 390 only: a diagram div wider than the viewport, no clipping ancestor -->
+<section id="timeline"><div class="diagram" style="width:500px;height:40px;background:#dde">wide diagram</div></section>
+<!-- allowed: scrollable wrapper -->
+<section id="lineage"><div class="scroller" style="overflow-x:auto"><svg id="scrolled" width="600" height="80" viewBox="0 0 600 80"><text x="10" y="40">scrolls</text></svg></div></section>
+<!-- allowed: fits -->
+<section id="systems"><svg id="fits" width="300" height="60" viewBox="0 0 300 60" style="max-width:100%;height:auto"><text x="10" y="30">fits</text></svg></section>
+</body>
+</html>

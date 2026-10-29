@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture page</title>
+<style>
+:root { --bg: #ffffff; --fg: #1a1a1a; --muted: #4a4a4a; --accent: #0b5cad; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #101418; --fg: #e8eaed; --muted: #b6bcc4; --accent: #7db7ff; } }
+:root[data-theme="dark"] { --bg: #101418; --fg: #e8eaed; --muted: #b6bcc4; --accent: #7db7ff; }
+:root[data-skin="neon"] { --bg: #0b0b1a; --fg: #e8f7ff; --muted: #b8c4ff; --accent: #00f0ff; }
+body { margin: 0 auto; max-width: 60rem; padding: 0 16px; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+.muted { color: var(--muted); }
+section { padding: 1rem 0; }
+table { border-collapse: collapse; }
+td, th { border: 1px solid var(--muted); padding: 2px 8px; }
+button, select, input { font: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <select id="theme-select" aria-label="Theme">
+    <option value="auto">auto</option><option value="light">light</option>
+    <option value="dark">dark</option><option value="neon">neon</option>
+  </select>
+  <button id="lang-toggle" type="button">EN / KO</button>
+  <button id="story-toggle" type="button" aria-pressed="false">Story</button>
+</header>
+<section id="premise"><h1 data-i18n="premise.title">Where does the context go?</h1><p class="muted" data-i18n="premise.body">Bioreactors share two analyzers.</p></section>
+<section id="capacity"><h2 data-i18n="capacity.title">Capacity</h2><p data-i18n="capacity.body">Two analyzers serve many reactors.</p></section>
+<section id="timeline">
+  <h2 data-i18n="timeline.title">One sample timeline</h2>
+  <label for="timeline-slider" data-i18n="timeline.label">Measured at</label>
+  <input id="timeline-slider" type="range" min="0" max="60" step="5" value="0">
+  <output id="slider-out">0 min</output>
+  <p id="join-result" data-i18n-dynamic>Joined to the pre-feed state.</p>
+</section>
+<section id="architectures">
+  <h2 data-i18n="arch.title">Architectures</h2>
+  <div id="flag-toggles">
+    <label><input type="checkbox" id="flag-barcode"> barcode</label>
+    <label><input type="checkbox" id="flag-timestamp"> timestamp</label>
+    <label><input type="checkbox" id="flag-noop"> noop</label>
+  </div>
+  <table id="outcome-matrix"></table>
+</section>
+<section id="lineage"><h2 data-i18n="lineage.title">Lineage</h2><p class="muted" data-i18n="lineage.body">Batches merge many to many.</p>
+  <svg id="dag" viewBox="0 0 300 60" role="img" aria-label="lineage" style="max-width:100%;height:auto"><text x="10" y="35">batch A</text><text x="120" y="35">batch B</text></svg>
+  <div style="overflow-x:auto"><svg id="wide" width="600" height="60" viewBox="0 0 600 60" role="img" aria-label="wide, scrolls"><text x="10" y="35">scrolls inside its wrapper</text></svg></div>
+</section>
+<section id="systems"><h2 data-i18n="systems.title">Systems</h2><p data-i18n="systems.body">CSV drop versus standards.</p></section>
+<section id="method"><h2 data-i18n="method.title">Method</h2><p data-i18n="method.body">Sources and assumptions.</p></section>
+<script>
+const KO = {
+  "premise.title": "컨텍스트는 어디로 가는가?", "premise.body": "바이오리액터가 분석기 두 대를 공유한다.",
+  "capacity.title": "용량", "capacity.body": "분석기 두 대가 여러 반응기를 맡는다.",
+  "timeline.title": "한 샘플의 타임라인", "timeline.label": "측정 시각",
+  "arch.title": "아키텍처", "lineage.title": "계보", "lineage.body": "배치가 다대다로 합쳐진다.",
+  "systems.title": "시스템", "systems.body": "CSV 드롭과 표준의 비교.", "method.title": "방법", "method.body": "출처와 가정."
+};
+const doc = document.documentElement;
+function applyLang() {
+  const ko = doc.lang === "ko";
+  document.querySelectorAll("[data-i18n]").forEach(e => { e.dataset.en ??= e.textContent; e.textContent = ko ? KO[e.dataset.i18n] : e.dataset.en; });
+  render();
+}
+function render() {
+  const v = +document.getElementById("timeline-slider").value;
+  document.getElementById("slider-out").textContent = v + " min";
+  const ko = doc.lang === "ko";
+  document.getElementById("join-result").textContent = v < 30 ? (ko ? "feed 이전 상태에 결합됨." : "Joined to the pre-feed state.") : (ko ? "feed 이후 상태에 결합됨." : "Joined to the post-feed state.");
+  const on = id => document.getElementById("flag-" + id).checked;
+  document.getElementById("outcome-matrix").innerHTML =
+    "<tr><th>failure</th><th>outcome</th></tr><tr><td>swap</td><td>" + (on("barcode") ? "prevented" : "invisible") + "</td></tr>" +
+    "<tr><td>late</td><td>" + (on("timestamp") ? "detected" : "invisible") + "</td></tr>";
+}
+document.getElementById("theme-select").onchange = e => {
+  const v = e.target.value;
+  delete doc.dataset.theme; delete doc.dataset.skin;
+  if (v === "light" || v === "dark") doc.dataset.theme = v;
+  if (v === "neon") doc.dataset.skin = "neon";
+};
+document.getElementById("lang-toggle").onclick = () => { doc.lang = doc.lang === "en" ? "ko" : "en"; applyLang(); };
+document.getElementById("story-toggle").onclick = e => e.target.setAttribute("aria-pressed", e.target.getAttribute("aria-pressed") !== "true");
+document.getElementById("timeline-slider").oninput = render;
+document.querySelectorAll("#flag-toggles input").forEach(i => i.onchange = render);
+render();
+</script>
+</body>
+</html>
