@@ -8,6 +8,16 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "duckdb>=2.0.0",
+    "jsonschema>=4.26.0",
     "playwright>=1.64.1",
     "pytest>=9.2.0",
+    "simpy==4.1.2",
 ]
+
+[tool.pytest.ini_options]
+# The author-track acceptance tests (tests/user_track/) are non-blocking: run them with `uv run pytest -m user_track`.
+markers = [
+    "user_track: acceptance tests for the author's own files (reference/sim_core.py, sql/schema.sql); skipped while those files are absent",
+]
+addopts = "-m 'not user_track'"
