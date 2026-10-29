@@ -1,0 +1,1325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sample Lineage Lab</title>
+<meta name="description" content="A design-phase explainer: N bioreactors send samples to two shared analyzers, and results lose their process context in transit. Synthetic data, no simulation results yet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* Sample Lineage Lab infographic. Tokens first; components use tokens only. */
+:root {
+  --bg: #f2f5f4; --surface: #ffffff; --surface-2: #e6ecea;
+  --fg: #101c1b; --fg-2: #3b4d4b; --line: #c3cfcc; --line-2: #7d918e; --grid: #dde6e3;
+  --pen1: #0a5aa8; --pen1-bg: #dbe9f8; --pen2: #b03a10; --pen2-bg: #fae4d9;
+  --ok: #16703d; --ok-bg: #dff1e6; --warn: #7e4f00; --warn-bg: #f9ecc9; --dev: #b0231a; --dev-bg: #fadfdb;
+  --focus: #0a5aa8; --glow: none; --glow-text: none; --on-pen: #ffffff;
+  --font-text: "Archivo", "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, "Apple SD Gothic Neo", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1416; --surface: #131c1f; --surface-2: #1b282b;
+    --fg: #e3ecea; --fg-2: #b3c3c1; --line: #2b3b3e; --line-2: #62797c; --grid: #1a2629;
+    --pen1: #6db4ff; --pen1-bg: #12304d; --pen2: #ff9467; --pen2-bg: #43241a;
+    --ok: #5dd08a; --ok-bg: #123222; --warn: #e8b948; --warn-bg: #3a2d0c; --dev: #ff8d84; --dev-bg: #3d1a18;
+    --focus: #6db4ff; --on-pen: #0d1416;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1416; --surface: #131c1f; --surface-2: #1b282b;
+  --fg: #e3ecea; --fg-2: #b3c3c1; --line: #2b3b3e; --line-2: #62797c; --grid: #1a2629;
+  --pen1: #6db4ff; --pen1-bg: #12304d; --pen2: #ff9467; --pen2-bg: #43241a;
+  --ok: #5dd08a; --ok-bg: #123222; --warn: #e8b948; --warn-bg: #3a2d0c; --dev: #ff8d84; --dev-bg: #3d1a18;
+  --focus: #6db4ff; --on-pen: #0d1416;
+  color-scheme: dark;
+}
+:root[data-skin="neon"] {
+  --bg: #060a12; --surface: #0b1220; --surface-2: #121c30;
+  --fg: #e9f4ff; --fg-2: #a9bfd8; --line: #1d3252; --line-2: #4a78b0; --grid: #0f1b30;
+  --pen1: #22e5ff; --pen1-bg: #08303d; --pen2: #ff58ac; --pen2-bg: #3a1030;
+  --ok: #35f0a0; --ok-bg: #0a3322; --warn: #ffd23f; --warn-bg: #3a3008; --dev: #ff6b7e; --dev-bg: #3c1019;
+  --focus: #22e5ff; --on-pen: #060a12;
+  --glow: 0 0 0 1px rgba(34, 229, 255, .28), 0 0 22px rgba(34, 229, 255, .14);
+  --glow-text: 0 0 14px rgba(34, 229, 255, .45);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 100%; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 1.0625rem/1.6 var(--font-text); font-variant-numeric: tabular-nums; overflow-wrap: break-word; }
+:lang(ko) { word-break: keep-all; }
+h1, h2, h3 { font-family: var(--font-text); line-height: 1.12; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2rem, 1.2rem + 3.6vw, 3.7rem); font-weight: 760; font-stretch: 118%; letter-spacing: -.01em; text-shadow: var(--glow-text); }
+h2 { font-size: clamp(1.55rem, 1.2rem + 1.4vw, 2.2rem); font-weight: 700; font-stretch: 108%; margin-bottom: 1rem; }
+h3 { font-size: 1.2rem; font-weight: 650; margin: 2.25rem 0 .6rem; }
+p { margin: 0 0 1rem; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: .86em; }
+code { background: var(--surface-2); padding: .06em .32em; border-radius: 2px; }
+a { color: var(--pen1); text-underline-offset: .18em; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.skip { position: absolute; left: -999px; top: 0; background: var(--surface); padding: .5rem 1rem; z-index: 10; }
+.skip:focus { left: 8px; top: 8px; }
+
+.page { max-width: 76rem; margin-inline: auto; padding-block: 1.25rem 5rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* top bar and controls */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding-bottom: .9rem; }
+.brand { margin: 0; font: 600 .95rem var(--font-mono); letter-spacing: .02em; display: flex; align-items: center; gap: .6rem; }
+.brand svg { width: 2.2rem; height: 1.1rem; }
+.controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.controls select, .controls button, .btn { font: 500 .85rem var(--font-mono); color: var(--fg); background: var(--surface); border: 1px solid var(--line-2); border-radius: 2px; padding: .42rem .7rem; min-height: 2.25rem; cursor: pointer; box-shadow: var(--glow); }
+.controls label { font: 500 .78rem var(--font-mono); color: var(--fg-2); display: flex; align-items: center; gap: .45rem; }
+.controls button[aria-pressed="true"] { background: var(--pen1); color: var(--on-pen); border-color: var(--pen1); }
+.controls button:disabled { opacity: .55; cursor: not-allowed; }
+#story-toggle .st-on, #story-toggle[aria-pressed="true"] .st-off { display: none; }
+#story-toggle[aria-pressed="true"] .st-on { display: inline; }
+.lg-en, .lg-ko { opacity: .6; }
+html:not([lang="ko"]) .lg-en, html[lang="ko"] .lg-ko { opacity: 1; font-weight: 700; text-decoration: underline; text-underline-offset: .2em; }
+.toc { flex-basis: 100%; overflow-x: auto; border-block: 1px solid var(--line); }
+.toc ol { display: flex; gap: 1.4rem; margin: 0; padding: .55rem 0; list-style: none; white-space: nowrap; font: 500 .8rem var(--font-mono); }
+.toc a { color: var(--fg-2); text-decoration: none; }
+.toc a:hover { color: var(--fg); text-decoration: underline; }
+
+/* sections: a narrow rail with the section id, then the content column */
+.sec { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: .5rem; padding-block: 3.25rem 1rem; border-top: 1px solid var(--line); scroll-margin-top: .5rem; }
+#premise { border-top: 0; padding-top: 1.75rem; }
+.rail { margin: 0; font: 500 .78rem var(--font-mono); color: var(--fg-2); letter-spacing: .04em; }
+.rail::before { content: ""; display: block; width: 2.4rem; height: 3px; background: var(--pen1); margin-bottom: .55rem; box-shadow: var(--glow); }
+@media (min-width: 60rem) {
+  .sec { grid-template-columns: 8rem minmax(0, 1fr); column-gap: 1.5rem; }
+  .rail { position: sticky; top: 1rem; align-self: start; }
+}
+.eyebrow { font: 500 .8rem var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-2); margin-bottom: .8rem; }
+.lede { font-size: 1.18rem; max-width: 62ch; margin-top: 1.25rem; }
+.ruler { height: 12px; margin: 1.5rem 0 1rem; background: repeating-linear-gradient(90deg, var(--line-2) 0 1px, transparent 1px 10px); border-bottom: 1px solid var(--line-2); }
+.notice, .hyp { display: flex; gap: .7rem; align-items: flex-start; padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--line-2); border-left: 4px solid var(--pen1); max-width: 68ch; margin: 1.25rem 0; box-shadow: var(--glow); }
+.notice p, .hyp p { margin: 0; }
+.hyp { border-style: dashed; border-left-style: solid; border-left-color: var(--warn); }
+.ico { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; margin-top: .22em; }
+.ico-inline { margin: 0 .25em 0 0; vertical-align: -.2em; }
+
+/* ledger chips: id and grade come from data attributes written by build.py */
+[data-src]:not(.nochip)::after { content: attr(data-src) attr(data-gl); display: inline-block; margin-left: .55em; padding: .05em .45em; border: 1px solid var(--line-2); border-radius: 2px; background: var(--surface-2); color: var(--fg-2); font: 500 .68rem/1.55 var(--font-mono); letter-spacing: .01em; white-space: nowrap; vertical-align: .1em; text-transform: none; font-style: normal; text-shadow: none; }
+html[lang="ko"] [data-src]:not(.nochip)::after { content: attr(data-src) attr(data-gl-ko); }
+[data-grade="A"]:not(.nochip)::after { border-style: dashed; }
+[data-grade="D"]:not(.nochip)::after { border-style: dotted; border-width: 2px; }
+[data-status="provisional"]:not(.nochip)::after { border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+[data-status="provisional"] { border-left: 3px solid var(--warn); padding-left: .6rem; }
+td[data-status="provisional"], th[data-status="provisional"] { border-left: 0; padding-left: .6rem; }
+
+/* tables, figures */
+.tablewrap { overflow-x: auto; margin: 1rem 0 1.5rem; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+caption { text-align: left; font: 500 .8rem var(--font-mono); color: var(--fg-2); padding-bottom: .5rem; }
+th, td { text-align: left; vertical-align: top; padding: .5rem .7rem; border-bottom: 1px solid var(--line); }
+thead th { font: 600 .74rem var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-2); border-bottom: 2px solid var(--line-2); background: var(--surface); }
+tbody th { font-weight: 600; }
+.rec td, .rec th { min-width: 11rem; }
+.rec td { font: 400 .82rem/1.45 var(--font-mono); }
+.rec tbody th { font: 600 .78rem var(--font-mono); color: var(--fg-2); min-width: 8rem; }
+.fig { margin: 1.5rem 0 1.75rem; background: var(--surface); border: 1px solid var(--line); padding: .9rem; box-shadow: var(--glow); }
+.fig figcaption { font-size: .88rem; color: var(--fg-2); margin-top: .7rem; max-width: 80ch; }
+.fig-scroll { overflow-x: auto; }
+.fig-scroll svg { display: block; width: 100%; height: auto; min-width: 640px; }
+.fig-scroll.wide svg { min-width: 1000px; }
+.fig-scroll svg.fit { min-width: 0; max-width: 680px; }
+.fig-scroll svg#tl-svg { min-width: 600px; }
+.fig-scroll svg.narrow-only { display: none; min-width: 0; }
+@media (max-width: 40rem) { .fig-scroll svg.wide-only { display: none; } .fig-scroll svg.narrow-only { display: block; } }
+.scroll-hint { display: none; margin: 0 0 .4rem; max-width: none; text-align: right; font: 500 .74rem var(--font-mono); color: var(--fg-2); }
+.scroll-hint[data-on] { display: block; }
+@media (max-width: 40rem) { .scroll-hint { display: block; } }
+svg .lg { font-size: 13px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 1.25rem 0; }
+.facts > div { background: var(--surface); padding: .7rem .9rem; }
+.facts dt { font: 500 .74rem var(--font-mono); color: var(--fg-2); text-transform: uppercase; letter-spacing: .05em; }
+.facts dd { margin: .15rem 0 0; font: 600 1.15rem var(--font-mono); }
+.facts dd small { font: 400 .8rem var(--font-text); color: var(--fg-2); display: block; }
+
+/* svg palette */
+svg { font-family: var(--font-text); }
+svg text { fill: var(--fg); font-size: 12px; }
+svg .t2 { fill: var(--fg-2); }
+svg .m { font-family: var(--font-mono); }
+svg .b { font-weight: 700; }
+svg .sm { font-size: 11px; }
+svg .ax { stroke: var(--line-2); stroke-width: 1; fill: none; }
+svg .gr { stroke: var(--grid); stroke-width: 1; }
+svg .node { fill: var(--surface); stroke: var(--line-2); stroke-width: 1.2; }
+svg .node.alt { fill: var(--surface-2); stroke-dasharray: 5 3; }
+svg .edge { stroke: var(--fg-2); stroke-width: 1.4; fill: none; }
+svg .edge.dash { stroke-dasharray: 5 4; }
+svg .head { fill: var(--fg-2); stroke: none; }
+svg .p1 { stroke: var(--pen1); fill: none; stroke-width: 2; }
+svg .p1f { fill: var(--pen1); stroke: none; }
+svg .p1t { fill: var(--pen1); font-weight: 700; }
+svg .p2 { stroke: var(--pen2); fill: none; stroke-width: 2; }
+svg .p2f { fill: var(--pen2); stroke: none; }
+svg .p2t { fill: var(--pen2); font-weight: 700; }
+svg .reg1 { fill: var(--pen1-bg); }
+svg .reg2 { fill: var(--pen2-bg); }
+svg .track { fill: var(--surface-2); }
+svg .okf { fill: var(--ok); } svg .warnf { fill: var(--warn); } svg .devf { fill: var(--dev); }
+svg .devs { stroke: var(--dev); fill: none; stroke-width: 2; }
+svg .hatch-line { stroke: var(--pen1); stroke-width: 1.4; }
+svg .box-ok { fill: var(--ok-bg); stroke: var(--ok); }
+svg .box-dev { fill: var(--dev-bg); stroke: var(--dev); }
+svg .halo { stroke: var(--surface); stroke-width: 3; paint-order: stroke; }
+
+/* timeline controls and readout */
+.tl-control { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .8rem; align-items: center; margin: 1rem 0 .5rem; }
+.tl-control label { font: 600 .82rem var(--font-mono); }
+.tl-control output { font: 700 1.25rem var(--font-mono); color: var(--pen2); min-width: 4.5ch; text-align: right; }
+input[type="range"] { width: 100%; min-height: 2rem; accent-color: var(--pen2); background: transparent; }
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .75rem; margin: 1rem 0; }
+.readout > div { border: 1px solid var(--line); background: var(--surface); padding: .6rem .8rem; }
+.readout dt { font: 500 .74rem var(--font-mono); color: var(--fg-2); text-transform: uppercase; letter-spacing: .04em; }
+.readout dd { margin: .2rem 0 0; font: 600 1.05rem var(--font-mono); }
+.state { display: flex; gap: .5rem; align-items: flex-start; padding: .55rem .75rem; margin: .5rem 0; border: 1px solid; font-size: .95rem; max-width: 72ch; }
+.state p { margin: 0; }
+.state .ico { margin-top: .2em; }
+.state.ok { color: var(--ok); background: var(--ok-bg); border-color: var(--ok); }
+.state.warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn); }
+.state.dev { color: var(--dev); background: var(--dev-bg); border-color: var(--dev); }
+.state b, .state span.txt { color: var(--fg); }
+#preset-readout [data-pr] { display: none; }
+#preset-readout[data-now="A"] [data-pr="A"], #preset-readout[data-now="B"] [data-pr="B"], #preset-readout[data-now="C"] [data-pr="C"], #preset-readout[data-now="custom"] [data-pr="custom"] { display: inline; }
+#tl-svg .j2 { display: none; }
+#tl-svg[data-state="gap"] .j2-gap, #tl-svg[data-state="agree"] .j2-ok { display: inline; }
+[data-show] { display: none !important; }
+[data-state="agree"] [data-show~="agree"], [data-state="gap"] [data-show~="gap"],
+[data-hold="within"] [data-show~="within"], [data-hold="over30"] [data-show~="over30"], [data-hold="over55"] [data-show~="over55"] { display: flex !important; }
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; margin: 1rem 0; }
+.defs > div { border-top: 3px solid var(--line-2); padding-top: .5rem; }
+.defs h4 { margin: 0 0 .3rem; font: 600 .95rem var(--font-mono); }
+.defs p { font-size: .93rem; margin: 0; }
+
+/* story mode steps */
+.steps { list-style: none; counter-reset: st; margin: 1rem 0; padding: 0; display: grid; gap: .5rem; }
+.steps li { counter-increment: st; padding: .55rem .8rem .55rem 2.6rem; position: relative; border-left: 3px solid var(--line); background: var(--surface); font-size: .95rem; }
+.steps li::before { content: counter(st); position: absolute; left: .75rem; top: .55rem; font: 700 .85rem var(--font-mono); color: var(--fg-2); }
+html[data-story="on"] .steps li.is-active { border-left-color: var(--pen2); background: var(--pen2-bg); }
+html[data-story="on"] .steps li { min-height: 5.5rem; }
+html[data-story="on"] [data-step] { opacity: .35; }
+html[data-story="on"] [data-step].is-active { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) { html[data-story="on"] [data-step], .steps li { transition: opacity .25s, background-color .25s; } }
+@media (min-width: 60rem) { html[data-story="on"] .story-fig { position: sticky; top: .5rem; z-index: 2; } }
+
+/* architectures */
+.presets { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 1rem 0 .5rem; }
+.presets .btn[aria-pressed="true"] { background: var(--pen1); color: var(--on-pen); border-color: var(--pen1); }
+.flags { border: 1px solid var(--line); background: var(--surface); padding: .8rem 1rem 1rem; margin: .5rem 0 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: .4rem 1.25rem; }
+.flags legend { font: 600 .8rem var(--font-mono); padding: 0 .4rem; }
+.flag { display: grid; grid-template-columns: auto 1fr; gap: 0 .6rem; align-items: start; padding: .35rem 0; cursor: pointer; }
+.flag input { width: 1.15rem; height: 1.15rem; margin: .25rem 0 0; accent-color: var(--pen1); }
+.flag .fn { font: 600 .84rem var(--font-mono); }
+.flag .fd { grid-column: 2; font-size: .85rem; color: var(--fg-2); }
+#preset-readout { font: 500 .85rem var(--font-mono); margin: .25rem 0 1rem; }
+#outcome-matrix td { font-size: .85rem; border-left: 1px solid var(--line); min-width: 10.5rem; }
+#outcome-matrix th[scope="row"] { min-width: 12rem; }
+#outcome-matrix th small { display: block; font: 400 .74rem var(--font-mono); color: var(--fg-2); margin-top: .15rem; }
+#outcome-matrix td .col { display: block; font: 600 .7rem var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-2); margin-bottom: .2rem; }
+#outcome-matrix td .now { display: none; font: 700 .74rem var(--font-mono); margin-top: .35rem; }
+#outcome-matrix td.is-now .now { display: block; }
+#outcome-matrix td.is-now { border: 2px solid; font-weight: 600; }
+#outcome-matrix td[data-col="prevented"].is-now { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+#outcome-matrix td[data-col="detected"].is-now { border-color: var(--warn); background: var(--warn-bg); color: var(--warn); }
+#outcome-matrix td[data-col="invisible"].is-now { border-color: var(--dev); background: var(--dev-bg); color: var(--dev); }
+#outcome-matrix td.is-now .col, #outcome-matrix td.is-now .txt { color: var(--fg); }
+#outcome-matrix td:not(.is-now) { color: var(--fg-2); }
+.legend { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; font-size: .85rem; margin: .25rem 0 1rem; }
+.legend span { display: inline-flex; gap: .3rem; align-items: center; }
+.ok-t { color: var(--ok); } .warn-t { color: var(--warn); } .dev-t { color: var(--dev); }
+.cell-ok, .cell-dev { font-weight: 600; }
+.cell-ok { color: var(--ok); } .cell-dev { color: var(--dev); }
+
+/* systems, method */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin: 1rem 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--line-2); padding: .8rem 1rem; }
+.card h4 { margin: 0 0 .4rem; font: 600 .9rem var(--font-mono); }
+.card p { font-size: .93rem; margin: 0; }
+.cols { columns: 2 22rem; column-gap: 2rem; }
+.cols li { break-inside: avoid; }
+ul.plain, ol.plain { padding-left: 1.1rem; max-width: 70ch; }
+ul.plain li, ol.plain li { margin-bottom: .45rem; }
+.sc td:first-child { font: 600 .82rem var(--font-mono); white-space: nowrap; }
+.sources { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: .35rem; font-size: .9rem; }
+.sources li { display: grid; grid-template-columns: 4.2rem 1fr; gap: .6rem; border-bottom: 1px solid var(--line); padding-bottom: .35rem; }
+.sources .sid { font: 600 .8rem var(--font-mono); }
+.sources .pub { color: var(--fg-2); }
+footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(--line-2); display: grid; gap: 1rem; font-size: .93rem; }
+.road { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: 0; font: 500 .8rem var(--font-mono); }
+.road li { border: 1px solid var(--line-2); padding: .3rem .6rem; background: var(--surface); }
+.placeholder { font: 500 .85rem var(--font-mono); color: var(--fg-2); border: 1px dashed var(--line-2); padding: .2rem .5rem; }
+@media (max-width: 40rem) {
+  body { font-size: 1rem; }
+  .tl-control { grid-template-columns: 1fr auto; }
+  .tl-control label { grid-column: 1 / -1; }
+  .fig { padding: .6rem; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></symbol>
+<symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.01"/></symbol>
+<symbol id="i-dev" viewBox="0 0 24 24"><path d="M7 3h10l4 4v10l-4 4H7l-4-4V7z"/><path d="M9 9l6 6M15 9l-6 6"/></symbol>
+<symbol id="i-prev" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 5-5"/></symbol>
+<symbol id="i-det" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-inv" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></symbol>
+<symbol id="i-hyp" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></symbol>
+<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path class="hatch-line" d="M0 0V6"/></pattern>
+</defs>
+</svg>
+<a class="skip" href="#premise" data-i18n="ui.skip">Skip to content</a>
+<div class="page">
+<header class="top">
+<p class="brand"><svg viewBox="0 0 44 22" aria-hidden="true"><path class="ax" d="M2 20h40"/><path class="p1" d="M4 16l10-9 8 5"/><path class="p2" d="M22 12l8 2 10-9"/><circle class="p1f" cx="14" cy="7" r="2.6"/><circle class="p2f" cx="30" cy="14" r="2.6"/></svg>Sample Lineage Lab</p>
+<div class="controls" role="group" aria-label="Display options" data-i18n-aria="ui.opts">
+<label><span data-i18n="ui.theme">Theme</span> <select id="theme-select"><option value="auto" data-i18n="ui.t.auto">Auto</option><option value="light" data-i18n="ui.t.light">Light</option><option value="dark" data-i18n="ui.t.dark">Dark</option><option value="neon" data-i18n="ui.t.neon">Neon</option></select></label>
+<button id="lang-toggle" type="button" aria-label="Switch language" data-i18n-aria="ui.lang"><span class="lg-en">EN</span> &#8644; <span class="lg-ko">KO</span></button>
+<button id="story-toggle" type="button" aria-pressed="false"><span data-i18n="ui.story">Story mode</span>: <span class="st-off" data-i18n="ui.off">off</span><span class="st-on" data-i18n="ui.on">on</span></button>
+</div>
+<nav class="toc" aria-label="Sections" data-i18n-aria="ui.nav"><ol>
+<li><a href="#premise">premise</a></li><li><a href="#capacity">capacity</a></li><li><a href="#timeline">timeline</a></li><li><a href="#architectures">architectures</a></li><li><a href="#lineage">lineage</a></li><li><a href="#systems">systems</a></li><li><a href="#method">method</a></li>
+</ol></nav>
+</header>
+<main>
+
+<section id="premise" class="sec" aria-labelledby="h-premise">
+<p class="rail" aria-hidden="true">premise</p>
+<div>
+<p class="eyebrow" data-i18n="p.eyebrow">Technical explainer &middot; design phase</p>
+<h1 id="h-premise" class="nochip" data-i18n="p.h1" data-src="A022" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">N bioreactors, 2 shared analyzers: where does the context go?</h1>
+<div class="ruler" aria-hidden="true"></div>
+<div class="notice" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">Design phase. All data is synthetic, built from public sources and labelled assumptions. No simulation result exists yet, and nothing on this page predicts a real laboratory.</p></div>
+<p class="lede" data-i18n="p.thesis">A process-development lab runs many small bioreactors but only a couple of at-line analyzers. Every sample travels from a vessel to an instrument, and on the way a bare number can lose its context: which reactor, which moment, which instrument state. The problem is context preservation, not throughput.</p>
+<figure class="fig" data-src="A102" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
+<div tabindex="0" class="fig-scroll"><svg class="wide-only" viewBox="0 0 760 130" role="img" aria-labelledby="hero-t" aria-describedby="hero-d">
+<title id="hero-t">One sample, three moments</title>
+<desc id="hero-d">A ruler from 08:30 to 09:40. The sample is drawn at 08:40, a bolus feed happens at 09:00, and the analyzer measures the sample at 09:25, 45 minutes after the draw.</desc>
+<rect class="reg1" x="30" y="56" width="300" height="28"/>
+<rect class="reg2" x="330" y="56" width="400" height="28"/>
+<text class="t2 sm" x="36" y="20" data-i18n="p.f.pre">pre-feed state</text>
+<text class="t2 sm" x="336" y="20" data-i18n="p.f.post">post-feed state</text>
+<path class="ax" d="M30 70H730"/>
+<path class="ax" d="M30 64v12M330 64v12M630 64v12"/>
+<text class="t2 sm m" x="30" y="100" text-anchor="middle">08:30</text>
+<text class="t2 sm m" x="330" y="100" text-anchor="middle">09:00</text>
+<text class="t2 sm m" x="630" y="100" text-anchor="middle">09:30</text>
+<circle class="p1f" cx="130" cy="70" r="7"/>
+<text class="p1t m" x="130" y="40" text-anchor="middle">sampled_at</text>
+<text class="p1t m" x="130" y="54" text-anchor="middle">08:40</text>
+<path class="edge" d="M330 60l9 10-9 10-9-10z"/>
+<text class="m b" x="330" y="40" text-anchor="middle">feed</text>
+<text class="m b" x="330" y="54" text-anchor="middle">09:00</text>
+<circle class="p2f" cx="580" cy="70" r="7"/>
+<text class="p2t m" x="580" y="40" text-anchor="middle">measured_at</text>
+<text class="p2t m" x="580" y="54" text-anchor="middle">09:25</text>
+<path class="edge" d="M130 116H580M130 111v10M580 111v10"/>
+<text class="m b halo" x="355" y="126" text-anchor="middle">45 min</text>
+</svg>
+<svg class="narrow-only" viewBox="0 0 400 164" role="img" aria-labelledby="hero-t2" aria-describedby="hero-d2">
+<title id="hero-t2">One sample, three moments</title>
+<desc id="hero-d2">A ruler from 08:30 to 09:40. The sample is drawn at 08:40, a bolus feed happens at 09:00, and the analyzer measures the sample at 09:25, 45 minutes after the draw.</desc>
+<rect class="reg1" x="28" y="76" width="147.4" height="24"/>
+<rect class="reg2" x="175.4" y="76" width="196.6" height="24"/>
+<text class="t2 sm" x="30" y="22" data-i18n="p.f.pre">pre-feed state</text>
+<text class="t2 sm" x="180" y="22" data-i18n="p.f.post">post-feed state</text>
+<path class="ax" d="M28 88H372M28 82v12M175.4 82v12M322.9 82v12"/>
+<text class="t2 sm m" x="28" y="118" text-anchor="middle">08:30</text>
+<text class="t2 sm m" x="175.4" y="118" text-anchor="middle">09:00</text>
+<text class="t2 sm m" x="322.9" y="118" text-anchor="middle">09:30</text>
+<circle class="p1f" cx="77.1" cy="88" r="7"/>
+<text class="p1t m" x="77.1" y="44" text-anchor="middle">sampled_at</text>
+<text class="p1t m" x="77.1" y="60" text-anchor="middle">08:40</text>
+<path class="edge" d="M175.4 78l9 10-9 10-9-10z"/>
+<text class="m b" x="175.4" y="44" text-anchor="middle">feed</text>
+<text class="m b" x="175.4" y="60" text-anchor="middle">09:00</text>
+<circle class="p2f" cx="298.3" cy="88" r="7"/>
+<text class="p2t m" x="298.3" y="44" text-anchor="middle">measured_at</text>
+<text class="p2t m" x="298.3" y="60" text-anchor="middle">09:25</text>
+<path class="edge" d="M77.1 138H298.3M77.1 132v12M298.3 132v12"/>
+<text class="m b halo" x="187.7" y="158" text-anchor="middle">45 min</text>
+</svg>
+</div>
+<figcaption data-i18n="p.f.cap">The case this page is built around: a result measured at 09:25 describes a sample drawn at 08:40, before the 09:00 feed. Example times, not data.</figcaption>
+</figure>
+<div data-src="A001 A022" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정"><dl class="facts">
+<div><dt data-i18n="p.k.def">Reactors</dt><dd>24 <small data-i18n="p.k.defd">in two bays of 12</small></dd></div>
+<div><dt data-i18n="p.k.an">Analyzers</dt><dd>2 <small data-i18n="p.k.and">shared at-line instruments</small></dd></div>
+<div><dt data-i18n="p.k.range">Scenario range</dt><dd>N 5&ndash;100, M 1&ndash;6 <small data-i18n="p.k.ranged">reactors N and analyzers M; settings, not measurements</small></dd></div>
+<div><dt data-i18n="p.k.read">How to read a figure</dt><dd class="mono" style="font-size:.95rem">id &middot; grade <small data-i18n="p.k.readd">every figure carries a ledger id and a grade: sourced, proxy, derived or assumed. A dashed amber chip marks a provisional figure.</small></dd></div>
+</dl></div>
+</div>
+</section>
+
+<section id="capacity" class="sec" aria-labelledby="h-capacity">
+<p class="rail" aria-hidden="true">capacity</p>
+<div>
+<h2 id="h-capacity" data-i18n="c.h2">The capacity paradox: a light average load, and still a queue?</h2>
+<p data-i18n="c.lead">An all-in-one at-line analyzer is fast, and two of them keep the average load light. The question is whether samples can still wait.</p>
+<div data-src="S001" data-gl="" data-gl-ko=""><dl class="facts">
+<div><dt data-i18n="c.k.panel">Panel</dt><dd>16 <small data-i18n="c.k.paneld">analytes in one run</small></dd></div>
+<div><dt data-i18n="c.k.cycle">Cycle</dt><dd>4.5 min <small data-i18n="c.k.cycled">270 s for the full panel</small></dd></div>
+<div><dt data-i18n="c.k.vol">Sample</dt><dd>275 &micro;L <small data-i18n="c.k.vold">for the full panel</small></dd></div>
+</dl></div>
+<p data-i18n="c.ceiling" data-src="S001" data-gl="" data-gl-ko="">Derived ceiling: 60 min &divide; 4.5 min is about 13.3 samples per hour per analyzer, before QC, calibration and maintenance.</p>
+<p data-i18n="c.load" data-src="A074 A001" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">The default lab asks for 24 reactors &times; 1.4 to 1.6 samples per reactor-day, which is 33.6 to 38.4 samples a day. At 4.5 min each that is 151 to 173 min of analyzer time. The sample counts and the window are assumptions.</p>
+<figure class="fig" data-src="A074 A098" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
+<div tabindex="0" class="fig-scroll"><svg class="fit" viewBox="0 0 520 170" role="img" aria-labelledby="cap-t" aria-describedby="cap-d">
+<title id="cap-t">Analyzer utilisation of the default lab, two windows</title>
+<desc id="cap-d">Two horizontal bars on a 0 to 100 percent scale. Over a 10 hour staffed window the two analyzers are busy 12.6 to 14.4 percent of the time. Over a 24 hour clock the same load is 5.2 to 6.0 percent.</desc>
+<g class="m sm"><path class="gr" d="M20 8V132M140 8V132M260 8V132M380 8V132M500 8V132"/>
+<text class="t2" x="20" y="152" text-anchor="middle">0 %</text><text class="t2" x="140" y="152" text-anchor="middle">25 %</text><text class="t2" x="260" y="152" text-anchor="middle">50 %</text><text class="t2" x="380" y="152" text-anchor="middle">75 %</text><text class="t2" x="500" y="152" text-anchor="middle">100 %</text></g>
+<text class="b lg" x="20" y="24" data-i18n="c.b1">Per 10 h staffed window</text>
+<text class="t2 sm" x="500" y="24" text-anchor="end" data-i18n="c.b1s">2 analyzers = 1200 analyzer-min</text>
+<rect class="track" x="20" y="32" width="480" height="26" rx="2"/>
+<rect class="p1f" x="20" y="32" width="60.5" height="26" rx="2"/>
+<rect x="80.5" y="32" width="8.6" height="26" fill="url(#hatch)"/>
+<text class="m b lg" x="98" y="50">12.6&ndash;14.4 %</text>
+<text class="b lg" x="20" y="88" data-i18n="c.b2">Per 24 h clock</text>
+<text class="t2 sm" x="500" y="88" text-anchor="end" data-i18n="c.b2s">2 analyzers = 2880 analyzer-min</text>
+<rect class="track" x="20" y="96" width="480" height="26" rx="2"/>
+<rect class="p1f" x="20" y="96" width="25" height="26" rx="2"/>
+<rect x="45" y="96" width="3.8" height="26" fill="url(#hatch)"/>
+<text class="m b lg" x="58" y="114">5.2&ndash;6.0 %</text>
+</svg></div>
+<figcaption data-i18n="c.cap">Same load, two denominators. Solid is the low end of the range, hatched the high end. Always state the window next to a utilisation figure.</figcaption>
+</figure>
+<div tabindex="0" class="tablewrap" data-src="A074 A098" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정"><table>
+<caption data-i18n="c.t.cap">The arithmetic behind the bars (table view)</caption>
+<thead><tr><th data-i18n="c.t.w">Window</th><th data-i18n="c.t.a">Analyzer-minutes available</th><th data-i18n="c.t.l">Load per day</th><th data-i18n="c.t.u">Utilisation</th></tr></thead>
+<tbody>
+<tr><th scope="row" data-i18n="c.t.r1">10 h staffed window, 2 analyzers</th><td>1200 min</td><td>151&ndash;173 min</td><td>12.6&ndash;14.4 %</td></tr>
+<tr><th scope="row" data-i18n="c.t.r2">24 h clock, 2 analyzers</th><td>2880 min</td><td>151&ndash;173 min</td><td>5.2&ndash;6.0 %</td></tr>
+</tbody></table></div>
+<div class="hyp"><svg class="ico" aria-hidden="true"><use href="#i-hyp"/></svg><p data-i18n="c.hyp" data-src="A016" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정"><b>Hypothesis, not a result.</b> If 65 % of samples are drawn around 08:30 with a spread of 18 min (an assumed shift-start burst), arrivals may outrun what two analyzers can start in that hour even though the daily average stays low. The simulator tests this in scenario SC2.</p></div>
+</div>
+</section>
+
+<section id="timeline" class="sec" aria-labelledby="h-timeline">
+<p class="rail" aria-hidden="true">timeline</p>
+<div data-story-root="tl">
+<h2 id="h-timeline" data-i18n="t.h2">Feed in the gap: which timestamp does the join use?</h2>
+<p data-i18n="t.lead" data-src="A102 A050" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">A sample is drawn at 08:40 (<code>sampled_at</code>). A bolus feed follows at 09:00. The analyzer finishes the measurement at 09:25 (<code>measured_at</code>). The times are an illustrative example. Move the measurement time and watch which process state each join attaches.</p>
+<figure class="fig story-fig" data-src="A102" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
+<p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
+<div tabindex="0" class="fig-scroll"><svg id="tl-svg" data-state="gap" viewBox="0 0 780 270" role="img" aria-labelledby="tl-t" aria-describedby="tl-d">
+<title id="tl-t">Timeline of one sample against a feed</title>
+<desc id="tl-d">Three lanes on a time axis from 08:30 to 10:30. Process lane: pre-feed state until the 09:00 feed, post-feed state after. Sample lane: draw at 08:40, wait, a 4.5 minute run ending at the measurement time you choose. Join lane: the sampled_at join always lands in the pre-feed state; the measured_at join lands where the measurement lies.</desc>
+<g class="m sm" id="tl-axis"><path class="ax" d="M150 246H750"/>
+<path class="ax" d="M150 241v10M300 241v10M450 241v10M600 241v10M750 241v10"/>
+<text class="t2" x="150" y="264" text-anchor="middle">08:30</text><text class="t2" x="300" y="264" text-anchor="middle">09:00</text><text class="t2" x="450" y="264" text-anchor="middle">09:30</text><text class="t2" x="600" y="264" text-anchor="middle">10:00</text><text class="t2" x="750" y="264" text-anchor="middle">10:30</text></g>
+<text class="b" x="4" y="58" data-i18n="t.s.proc">Process U03</text>
+<text class="t2 m sm" x="4" y="74">U03.pH, feed</text>
+<rect class="reg1" x="150" y="36" width="150" height="48"/>
+<rect class="reg2" x="300" y="36" width="450" height="48"/>
+<text class="t2 sm" x="156" y="52" data-i18n="p.f.pre">pre-feed state</text>
+<text class="t2 sm" x="306" y="52" data-i18n="p.f.post">post-feed state</text>
+<g data-step="2"><path class="edge dash" d="M300 30V230"/><path class="edge" d="M300 20l8 10-8 10-8-10z"/><text class="m b sm" x="316" y="28">feed 09:00</text></g>
+<text class="b" x="4" y="128" data-i18n="t.s.samp">Sample</text>
+<text class="t2 m sm" x="4" y="144">hold_time</text>
+<rect class="track" x="150" y="108" width="600" height="46"/>
+<g data-step="4"><path class="p1" d="M200 216V92"/><path class="p1f" d="M194 96l6-12 6 12z"/>
+<text class="p1t sm" x="208" y="212" data-i18n="t.j1">join on sampled_at: always pre-feed</text>
+<g id="tl-join2"><path id="tl-j2line" class="p2" d="M425 236V92"/><path class="p2f" d="M419 96l6-12 6 12z"/><text class="p2t sm j2 j2-gap" x="431" y="232" data-i18n="t.j2a">join on measured_at: post-feed</text><text class="p2t sm j2 j2-ok" x="431" y="232" data-i18n="t.j2b">join on measured_at: pre-feed</text></g></g>
+<g data-step="1"><circle class="p1f" cx="200" cy="131" r="7"/><text class="p1t m sm halo" x="192" y="94" text-anchor="end">sampled_at<tspan x="192" dy="11">08:40</tspan></text></g>
+<rect id="tl-wait" x="200" y="127" width="202.5" height="8" fill="url(#hatch)"/>
+<path class="edge dash" d="M600 100V230"/><text class="t2 m sm" x="604" y="176">decision due 10:00</text>
+<g data-step="3"><rect id="tl-run" class="p2f" x="402.5" y="120" width="22.5" height="22"/><g id="tl-meas" transform="translate(0 0)"><circle class="p2f" cx="425" cy="131" r="7"/><text id="tl-meas-lbl" class="p2t m sm halo" x="433" y="94" text-anchor="start">measured_at<tspan id="tl-meas-t" x="433" dy="11">09:25</tspan></text></g></g>
+<text class="b" x="4" y="198" data-i18n="t.s.join">Joins</text>
+</svg></div>
+<figcaption data-i18n="t.cap">Blue follows the draw time, vermilion follows the measurement time. A result measured after 09:00 joined by <code>measured_at</code> lands in a state the sample never saw.</figcaption>
+</figure>
+<div class="tl-control">
+<label for="timeline-slider" data-i18n="t.slider">Measurement time (measured_at)</label>
+<input id="timeline-slider" type="range" min="525" max="615" step="1" value="565" aria-valuetext="09:25">
+<output id="tl-out" for="timeline-slider">09:25</output>
+</div>
+<div id="join-result" data-state="gap" data-hold="over30" aria-live="polite" data-src="A102 A097 S001" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
+<dl class="readout">
+<div><dt>measured_at</dt><dd id="r-meas">09:25</dd></div>
+<div><dt>run_started_at</dt><dd id="r-run">09:20:30</dd></div>
+<div><dt data-i18n="t.r.span">draw to measurement</dt><dd id="r-span">45 min</dd></div>
+<div><dt>hold_time</dt><dd id="r-hold">40.5 min</dd></div>
+</dl>
+<div class="state ok" data-show="agree"><svg class="ico" aria-hidden="true"><use href="#i-ok"/></svg><p><b data-i18n="t.v.okh">Joins agree.</b> <span data-i18n="t.v.ok">Both joins attach the pre-feed state, so no context mismatch arises at this measurement time.</span></p></div>
+<div class="state dev" data-show="gap"><svg class="ico" aria-hidden="true"><use href="#i-dev"/></svg><p><b data-i18n="t.v.devh">Feed in the gap.</b> <span data-i18n="t.v.dev">The measured_at join attaches post-feed state to a sample that was drawn before the feed. The sampled_at join still attaches the pre-feed state.</span></p></div>
+<div class="state ok" data-show="within"><svg class="ico" aria-hidden="true"><use href="#i-ok"/></svg><p><b data-i18n="t.h.okh">Hold within threshold.</b> <span data-i18n="t.h.ok">hold_time does not exceed the 30 min SLA threshold (assumed).</span></p></div>
+<div class="state warn" data-show="over30"><svg class="ico" aria-hidden="true"><use href="#i-warn"/></svg><p><b data-i18n="t.h.w1h">Hold above 30 min.</b> <span data-i18n="t.h.w1">hold_time exceeds the 30 min SLA threshold (assumed). A rule on hold_time can flag it, but only when both clocks are stored.</span></p></div>
+<div class="state warn" data-show="over55"><svg class="ico" aria-hidden="true"><use href="#i-warn"/></svg><p><b data-i18n="t.h.w2h">Hold beyond 55 min.</b> <span data-i18n="t.h.w2">The viability study behind the sample-stability numbers tested holds only up to 55 min, so anything longer is extrapolation.</span></p></div>
+</div>
+<ol class="steps" aria-label="Story steps" data-i18n-aria="t.steps">
+<li data-step-li="1" data-i18n="t.st1" data-src="A102" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">Draw at 08:40. <code>sampled_at</code> is the instant the sample leaves the process.</li>
+<li data-step-li="2" data-i18n="t.st2" data-src="A102" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">Bolus feed at 09:00. The reactor's state changes while the sample waits.</li>
+<li data-step-li="3" data-i18n="t.st3" data-src="A102" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">Measurement at 09:25. <code>measured_at</code> is the end of the run, not the draw.</li>
+<li data-step-li="4" data-i18n="t.st4">Two joins. One keeps the draw time and sees the state the sample came from; the other keeps the measurement time and may not.</li>
+</ol>
+<div class="defs">
+<div><h4>hold_time</h4><p data-i18n="t.d1" data-src="A102 S001" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정"><code>run_started_at</code> minus <code>sampled_at</code>, truth stamps. It ends when the run starts, so it is the 45 min span minus the 4.5 min run: 40.5 min. It is not the queue wait alone.</p></div>
+<div><h4>turnaround</h4><p data-i18n="t.d2"><code>available_at</code> minus <code>sampled_at</code>. It includes measurement, ingestion and review, and tells whether a result could inform a decision.</p></div>
+<div><h4 data-i18n="t.d3h">Why two clocks</h4><p data-i18n="t.d3">With one stored time (the measured time) the draw time cannot be reconstructed, and neither rule above can run.</p></div>
+</div>
+<h3 data-i18n="t.h3a">What held time does to the sample</h3>
+<p data-i18n="t.stab" data-src="S012 A038 A039 A040" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">In the cited study, CHO samples held neat for up to 55 min at room temperature showed no decrease in viability according to the authors; they attribute the decline they measured to the diluent. The reported neat slope of &minus;0.03 percentage points per minute carries no significance test and is valid to 55 min. The simulator applies a slope of 0 to neat samples, and a diluent or handling slope (down to &minus;7.2 percentage points per hour) is a scenario knob.</p>
+<p data-i18n="t.proxy" data-src="A046" data-grade="P" data-gl=" · proxy · provisional" data-gl-ko=" · 대리지표 · 잠정" data-status="provisional">The 30 min hold limit used elsewhere in the design is a blood-gas rule borrowed from another domain.</p>
+<h3 data-i18n="t.h3b">Second case: an offline pH that re-standardises the online probe</h3>
+<p data-i18n="t.ph" data-src="S013" data-gl="" data-gl-ko="">A common practice treats the offline pH value as the source of truth and readjusts the online probe onto it when the two differ by more than a set criterion. Sampling procedure, equipment, hold time, temperature shift and CO2 degassing all add offsets to the offline value, and at higher cell density pH should not be considered stable after sampling. An offset that is wrong in the record can therefore propagate into the controller.</p>
+<figure class="fig">
+<p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
+<div tabindex="0" class="fig-scroll"><svg viewBox="0 0 760 300" role="img" aria-labelledby="ph-t" aria-describedby="ph-d">
+<title id="ph-t">How a sampling offset reaches pH control</title>
+<desc id="ph-d">Process pH is sampled into an open or closed container, producing an offline pH value that includes offsets. The offline value is treated as truth and the online probe is readjusted onto it. The pH controller acts on the probe reading and changes the process pH. A dashed alternative keeps the sampling context and raises a delta-probe alarm or excludes the value instead.</desc>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0l10 5-10 5z"/></marker></defs>
+<rect class="node" x="20" y="24" width="150" height="48" rx="2"/><text class="b" x="95" y="45" text-anchor="middle">Process pH</text><text class="t2 sm" x="95" y="61" text-anchor="middle" data-i18n="ph.truth">(truth)</text>
+<rect class="node" x="270" y="24" width="150" height="48" rx="2"/><text class="b" x="345" y="45" text-anchor="middle" data-i18n="ph.draw">Sample drawn</text><text class="t2 sm" x="345" y="61" text-anchor="middle" data-i18n="ph.cont">open or closed container</text>
+<rect class="node" x="520" y="24" width="150" height="48" rx="2"/><text class="b" x="595" y="45" text-anchor="middle" data-i18n="ph.off">Offline pH value</text><text class="t2 sm" x="595" y="61" text-anchor="middle" data-i18n="ph.offs">includes the offsets</text>
+<path class="edge" d="M170 48H268" marker-end="url(#ar)"/><text class="t2 sm" x="219" y="20" text-anchor="middle" data-i18n="ph.e1">hold, CO2, technique</text>
+<path class="edge" d="M420 48H518" marker-end="url(#ar)"/>
+<rect class="node" x="520" y="130" width="150" height="48" rx="2"/><text class="b" x="595" y="151" text-anchor="middle" data-i18n="ph.probe">Online probe offset</text><text class="t2 sm" x="595" y="167" text-anchor="middle" data-i18n="ph.probes">readjusted</text>
+<path class="edge" d="M595 72V128" marker-end="url(#ar)"/><text class="p2t sm halo" x="603" y="106" data-i18n="ph.e2">treated as truth</text>
+<rect class="node" x="270" y="130" width="150" height="48" rx="2"/><text class="b" x="345" y="151" text-anchor="middle" data-i18n="ph.ctrl">pH controller</text><text class="t2 sm" x="345" y="167" text-anchor="middle" data-i18n="ph.ctrls">acts on the probe</text>
+<path class="edge" d="M520 154H422" marker-end="url(#ar)"/>
+<path class="edge" d="M270 154H95V74" marker-end="url(#ar)"/><text class="t2 sm" x="103" y="118" data-i18n="ph.e3">changes the process</text>
+<rect class="node alt" x="520" y="236" width="150" height="48" rx="2"/><text class="b" x="595" y="257" text-anchor="middle" data-i18n="ph.alt">Delta-probe alarm</text><text class="t2 sm" x="595" y="273" text-anchor="middle" data-i18n="ph.alts">or exclusion</text>
+<path class="edge dash" d="M670 48H720V260H672" marker-end="url(#ar)"/><text class="t2 sm" x="440" y="270" text-anchor="end" data-i18n="ph.e4">alternative: keep container, hold time, who and when</text>
+</svg></div>
+<figcaption data-i18n="ph.cap" data-src="S013" data-gl="" data-gl-ko="">Solid path: the offline value becomes the reference. Dashed path: the record keeps how the sample was taken and held, so the offset can be modelled or the value excluded.</figcaption>
+</figure>
+<div tabindex="0" class="tablewrap" data-src="S013 A041" data-grade="P" data-gl=" · proxy" data-gl-ko=" · 대리지표"><table>
+<caption data-i18n="ph.t.cap">Offline minus vessel pH, measured on cell-free medium before inoculation (proxy: no cell respiration)</caption>
+<thead><tr><th data-i18n="ph.t.h1">Setup</th><th data-i18n="ph.t.h2">Offset (pH units)</th></tr></thead>
+<tbody>
+<tr><th scope="row" data-i18n="ph.t.r1">2 L bench vessels, manual sampling</th><td>0.02&ndash;0.06, average about 0.04</td></tr>
+<tr><th scope="row" data-i18n="ph.t.r2">Mini-scale liquid handler</th><td>mean about 0.05</td></tr>
+<tr><th scope="row" data-i18n="ph.t.r3">250 L single-use vessels, syringe sampling</th><td>mean 0.021</td></tr>
+</tbody></table></div>
+<p data-i18n="ph.note">The size of the offset depends on equipment and local procedure, so the simulator sweeps this range and reports sensitivity. No single offset is presented as general, and the effect on control is a model-internal result under stated assumptions, not a prediction.</p>
+</div>
+</section>
+
+<section id="architectures" class="sec" aria-labelledby="h-arch">
+<p class="rail" aria-hidden="true">architectures</p>
+<div>
+<h2 id="h-arch" data-i18n="a.h2">One sample, three ways to record it</h2>
+<p data-i18n="a.lead">Three hard-coded architectures would hide which mechanism makes the difference. The design uses eight independent feature flags instead. A, B and C are presets of those flags (ADR-0005), and the ablation is C with exactly one flag switched off. B is not a straw man: barcodes, automatic capture and an audit trail are real features of simple laboratory systems.</p>
+<div class="presets" id="flag-presets" role="group" aria-label="Presets" data-i18n-aria="a.presets">
+<button type="button" class="btn" data-preset="A" aria-pressed="false"><span data-i18n="a.pA">A manual / Excel</span></button>
+<button type="button" class="btn" data-preset="B" aria-pressed="false"><span data-i18n="a.pB">B LIMS-lite</span></button>
+<button type="button" class="btn" data-preset="C" aria-pressed="true"><span data-i18n="a.pC">C context-preserving</span></button>
+</div>
+<fieldset id="flag-toggles" class="flags"><legend data-i18n="a.flags">Feature flags</legend>
+<label class="flag"><input type="checkbox" id="flag-system_issued_id" checked><span class="fn">system_issued_id</span><span class="fd" data-i18n="a.f1">key issued by the system at label creation</span></label>
+<label class="flag"><input type="checkbox" id="flag-two_clocks" checked><span class="fn">two_clocks</span><span class="fd" data-i18n="a.f2">sampled_at and measured_at stored separately</span></label>
+<label class="flag"><input type="checkbox" id="flag-available_at" checked><span class="fn">available_at</span><span class="fd" data-i18n="a.f3">each row carries when it became knowable</span></label>
+<label class="flag"><input type="checkbox" id="flag-instrument_state_snapshot" checked><span class="fn">instrument_state_snapshot</span><span class="fd" data-i18n="a.f4">run links instrument, calibration and reagent lot</span></label>
+<label class="flag"><input type="checkbox" id="flag-append_only_versions" checked><span class="fn">append_only_versions</span><span class="fd" data-i18n="a.f5">corrections and reruns create versions</span></label>
+<label class="flag"><input type="checkbox" id="flag-write_time_keys" checked><span class="fn">write_time_keys</span><span class="fd" data-i18n="a.f6">sample, unit and batch keys fixed at write time</span></label>
+<label class="flag"><input type="checkbox" id="flag-ingest_idempotency" checked><span class="fn">ingest_idempotency</span><span class="fd" data-i18n="a.f7">duplicates and replays are no-ops</span></label>
+<label class="flag"><input type="checkbox" id="flag-audit_trail" checked><span class="fn">audit_trail</span><span class="fd" data-i18n="a.f8">who, when, what changed; operator and qualification</span></label>
+</fieldset>
+<p id="preset-readout" aria-live="polite" data-now="C"><span data-pr="A" data-i18n="a.rA">Flags match preset A.</span><span data-pr="B" data-i18n="a.rB">Flags match preset B.</span><span data-pr="C" data-i18n="a.rC">Flags match preset C.</span><span data-pr="custom" data-i18n="a.rX">Custom flag set: not one of the presets.</span></p>
+<h3 data-i18n="a.h3a">The same sample under each preset</h3>
+<p data-i18n="a.recintro">Synthetic example record for the sample of the timeline above. A dash means the architecture cannot store that field.</p>
+<p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
+<div tabindex="0" class="tablewrap" data-src="A102 A016 S001" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정"><table class="rec">
+<caption data-i18n="a.rec.cap">One sample, recorded three ways (synthetic example)</caption>
+<thead><tr><th data-i18n="a.rec.field">Field</th><th>A</th><th>B</th><th>C</th></tr></thead>
+<tbody>
+<tr><th scope="row">sample id</th><td>"U3 d4 am", <span data-i18n="a.rec.idA">handwritten</span></td><td>SMP-0412, <span data-i18n="a.rec.idB">pre-printed barcode</span></td><td>SMP-0412, <span data-i18n="a.rec.idC">issued at draw</span></td></tr>
+<tr><th scope="row">sampled_at</th><td>&mdash;</td><td>&mdash; (planned_at 08:30)</td><td>2026-03-12T08:40</td></tr>
+<tr><th scope="row">measured_at</th><td>09:25</td><td>2026-03-12T09:25</td><td>2026-03-12T09:25</td></tr>
+<tr><th scope="row">unit, batch</th><td>"U3", <span data-i18n="a.rec.uA">batch attached later by a time join</span></td><td data-i18n="a.rec.uB">attached later by a time join on 09:25</td><td data-i18n="a.rec.uC">U03, B-2603-03, fixed at write time</td></tr>
+<tr><th scope="row">hold_time</th><td>&mdash;</td><td>&mdash;</td><td data-i18n="a.rec.hC">40.5 min, flagged by the hold rule</td></tr>
+<tr><th scope="row" data-i18n="a.rec.inst">instrument</th><td data-i18n="a.rec.iA">"FLEX", free text</td><td data-i18n="a.rec.iB">"AN-1", free text; lot and calibration not linked</td><td data-i18n="a.rec.iC">IS-AN1-0117: calibration and reagent lot</td></tr>
+<tr><th scope="row" data-i18n="a.rec.ver">result versions</th><td data-i18n="a.rec.vA">overwritten in place</td><td data-i18n="a.rec.vB">overwritten; the change is logged</td><td data-i18n="a.rec.vC">v1 kept, v2 supersedes it</td></tr>
+<tr><th scope="row" data-i18n="a.rec.who">operator</th><td data-i18n="a.rec.wA">initials, free text</td><td data-i18n="a.rec.wB">OP-07, audit trail</td><td data-i18n="a.rec.wC">OP-07 with the qualification in force</td></tr>
+<tr><th scope="row" data-i18n="a.rec.join">context joined by</th><td class="cell-dev"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-dev"/></svg><code>measured_at</code>: <span data-i18n="a.rec.jp">post-feed state, mismatch</span></td><td class="cell-dev"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-dev"/></svg><code>measured_at</code>: <span data-i18n="a.rec.jp">post-feed state, mismatch</span></td><td class="cell-ok"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-ok"/></svg><code>sampled_at</code>: <span data-i18n="a.rec.jc">pre-feed state, correct</span></td></tr>
+</tbody></table></div>
+<h3 data-i18n="a.h3b">What the flags prevent, detect or leave invisible</h3>
+<div class="hyp"><svg class="ico" aria-hidden="true"><use href="#i-hyp"/></svg><p data-i18n="a.hyp"><b>Design hypothesis, to be tested by the simulator.</b> The matrix below is the expected outcome from the design documents, not a result. The simulator checks each cell with a hand-built forced-error fixture before any stochastic run.</p></div>
+<div class="legend" aria-label="Legend" data-i18n-aria="a.legend"><span class="ok-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><b data-i18n="a.lg1">prevented</b></span><span class="warn-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><b data-i18n="a.lg2">detected</b></span><span class="dev-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><b data-i18n="a.lg3">invisible</b></span></div>
+<p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
+<div tabindex="0" class="tablewrap"><table id="outcome-matrix">
+<caption data-i18n="a.m.cap">Outcome per error class for the flags ticked above (design hypothesis)</caption>
+<thead><tr><th data-i18n="a.m.h0">Error class</th><th><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.lg1">prevented</span></th><th><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.lg2">detected</span></th><th><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.lg3">invisible</span></th></tr></thead>
+<tbody>
+<tr data-err="label"><th scope="row"><span data-i18n="a.e1">Label or transcription error</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e1p">system-issued key</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e1d">duplicate and plausibility rules catch some (VR-009, VR-014)</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e1i">handwritten, no checks</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="feed"><th scope="row"><span data-i18n="a.e2">Feed in the gap (wrong time for the join)</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e2p">the join uses sampled_at</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e2d">hold-time rule (VR-010), which needs both clocks</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e2i">one time stored, joined by measured time</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="rekey"><th scope="row"><span data-i18n="a.e3">Unit or batch re-keyed or mis-joined after write</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e3p">keys fixed at write time</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e3d">no-open-batch rule, gross cases only (VR-020)</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e3i">keys attached later by a time join</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="clock"><th scope="row"><span data-i18n="a.e4">Clock or time-zone error</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e4p">no flag prevents it</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e4d">two clocks plus the clock rule (VR-004)</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e4i">one time stored</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="dup"><th scope="row"><span data-i18n="a.e5">Duplicate or replayed file</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e5p">replays are no-ops</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e5d">idempotency log</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e5i">no keys, duplicates double count</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="rerun"><th scope="row"><span data-i18n="a.e6">Lost rerun or silent overwrite</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e6p">append-only versions</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e6d">the audit trail shows a change happened</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e6i">overwrite in place, no history</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="instr"><th scope="row"><span data-i18n="a.e7">Instrument or lot effect read as a process effect</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e7p">no flag prevents it</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e7d">instrument state snapshot, with a bridging study</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e7i">no instrument link</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="late"><th scope="row"><span data-i18n="a.e8">Late correction leaking into an earlier decision</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e8p">as-of queries honour available_at</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e8d">as-of query shows it</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e8i">queries see rows as of now</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="attr"><th scope="row"><span data-i18n="a.e9">Unattributable record</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e9p">operator and qualification recorded</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e9d">qualification check (VR-015)</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e9i">operator is free text or absent</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+<tr data-err="tech"><th scope="row"><span data-i18n="a.e10">Sampling technique error</span></th>
+<td data-col="prevented"><span class="txt" data-i18n="a.e10p">no flag prevents it</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.nowp">current: prevented</span></span></td>
+<td data-col="detected"><span class="txt" data-i18n="a.e10d">recorded container and hold context</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
+<td data-col="invisible"><span class="txt" data-i18n="a.e10i">context not recorded</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
+</tbody></table></div>
+<p data-i18n="a.mnote">Where the design names a rule rather than a flag, the matrix assumes the flag that rule needs (for example, the hold-time rule needs two_clocks). Preset C still has residual errors, such as a correct barcode stuck on the wrong tube, and they are reported, not hidden.</p>
+</div>
+</section>
+
+<section id="lineage" class="sec" aria-labelledby="h-lineage">
+<p class="rail" aria-hidden="true">lineage</p>
+<div data-story-root="ln">
+<h2 id="h-lineage" data-i18n="l.h2">Lineage is a graph, and the hard part is the merge</h2>
+<p data-i18n="l.lead">Each step from a reactor to a result is an edge. Following the edges backwards from any result finds its origin batches. One batch gives a tree; a pool built from several batches makes the relation many-to-many.</p>
+<figure class="fig story-fig" data-src="A102" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
+<p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
+<div tabindex="0" class="fig-scroll wide"><svg viewBox="0 0 1120 510" role="img" aria-labelledby="ln-t" aria-describedby="ln-d">
+<title id="ln-t">Lineage graph: one in-process sample, and a cross-batch pool</title>
+<desc id="ln-d">Top: batch B-2603-03 yields sample SMP-0412, which is split into an aliquot. The aliquot is measured in a run whose QC failed; a rerun produces a second run linked to an instrument state snapshot. Result version 1 is superseded by version 2. Bottom: two batches are harvested and split into Protein A cycles that are pooled into pool P1, from which a sample and an aliquot are drawn.</desc>
+<defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0l10 5-10 5z"/></marker></defs>
+<text class="t2 b sm m" x="10" y="16" data-i18n="l.p1">ONE IN-PROCESS SAMPLE</text>
+<g data-step="1"><rect class="node" x="10" y="64" width="130" height="52" rx="2"/><text class="b" x="75" y="86" text-anchor="middle">Batch B-2603-03</text><text class="t2 sm m" x="75" y="102" text-anchor="middle">unit U03</text>
+<path class="edge" d="M140 90H208" marker-end="url(#ar2)"/><text class="t2 sm m" x="174" y="82" text-anchor="middle">drawn_as</text>
+<rect class="node" x="210" y="64" width="140" height="52" rx="2"/><text class="b" x="280" y="86" text-anchor="middle">Sample SMP-0412</text><text class="t2 sm m" x="280" y="102" text-anchor="middle">sampled_at 08:40</text></g>
+<g data-step="2"><path class="edge" d="M350 90H432" marker-end="url(#ar2)"/><text class="t2 sm m" x="391" y="82" text-anchor="middle">aliquot_of</text>
+<rect class="node" x="434" y="64" width="140" height="52" rx="2"/><text class="b" x="504" y="86" text-anchor="middle">Aliquot AL-0412a</text><text class="t2 sm m" x="504" y="102" text-anchor="middle">room temperature</text></g>
+<g data-step="3"><path class="edge" d="M574 80C610 80 616 44 656 44" marker-end="url(#ar2)"/><path class="edge" d="M574 100C610 100 616 132 656 132" marker-end="url(#ar2)"/><text class="t2 sm m" x="615" y="94" text-anchor="middle">measured_in</text>
+<rect class="node box-dev" x="658" y="20" width="160" height="48" rx="2"/><text class="b" x="738" y="40" text-anchor="middle">Run RUN-3318</text><text class="sm m" x="738" y="56" text-anchor="middle">QC failed, held</text>
+<rect class="node" x="658" y="108" width="160" height="48" rx="2"/><text class="b" x="738" y="128" text-anchor="middle">Run RUN-3319</text><text class="t2 sm m" x="738" y="144" text-anchor="middle">rerun, QC passed</text>
+<path class="edge" d="M738 68V106" marker-end="url(#ar2)"/><text class="t2 sm m" x="746" y="92">rerun_of</text>
+<rect class="node alt" x="658" y="182" width="160" height="48" rx="2"/><text class="b" x="738" y="202" text-anchor="middle">Instrument state</text><text class="t2 sm m" x="738" y="218" text-anchor="middle">calibration, lot</text>
+<path class="edge dash" d="M738 182V158" marker-end="url(#ar2)"/><text class="t2 sm m" x="746" y="174">snapshot for</text></g>
+<g data-step="4"><path class="edge" d="M818 44H902" marker-end="url(#ar2)"/><path class="edge" d="M818 132H902" marker-end="url(#ar2)"/>
+<rect class="node alt" x="904" y="20" width="160" height="48" rx="2"/><text class="b" x="984" y="40" text-anchor="middle">Result R-3318 v1</text><text class="t2 sm m" x="984" y="56" text-anchor="middle">superseded, kept</text>
+<rect class="node" x="904" y="108" width="160" height="48" rx="2"/><text class="b" x="984" y="128" text-anchor="middle">Result R-3318 v2</text><text class="t2 sm m" x="984" y="144" text-anchor="middle">available_at: ingest</text>
+<path class="edge" d="M984 68V106" marker-end="url(#ar2)"/><text class="t2 sm m" x="992" y="92">superseded_by</text></g>
+<path class="gr" d="M10 252H1110"/>
+<text class="t2 b sm m" x="10" y="276" data-i18n="l.p2">CROSS-BATCH POOL (MANY-TO-MANY)</text>
+<g data-step="5"><rect class="node" x="10" y="318" width="120" height="48" rx="2"/><text class="b" x="70" y="338" text-anchor="middle">Batch B1</text><text class="t2 sm m" x="70" y="354" text-anchor="middle">unit U03</text>
+<rect class="node" x="10" y="410" width="120" height="48" rx="2"/><text class="b" x="70" y="430" text-anchor="middle">Batch B2</text><text class="t2 sm m" x="70" y="446" text-anchor="middle">unit U07</text>
+<path class="edge" d="M130 342H228" marker-end="url(#ar2)"/><path class="edge" d="M130 434H228" marker-end="url(#ar2)"/><text class="t2 sm m" x="179" y="330" text-anchor="middle">harvested_from</text>
+<rect class="node" x="230" y="318" width="100" height="48" rx="2"/><text class="b" x="280" y="347" text-anchor="middle">Harvest H1</text>
+<rect class="node" x="230" y="410" width="100" height="48" rx="2"/><text class="b" x="280" y="439" text-anchor="middle">Harvest H2</text>
+<path class="edge" d="M330 335C360 335 366 306 408 306" marker-end="url(#ar2)"/><path class="edge" d="M330 349C360 349 366 372 408 372" marker-end="url(#ar2)"/><path class="edge" d="M330 434H408" marker-end="url(#ar2)"/><text class="t2 sm m" x="369" y="296" text-anchor="middle">split_into</text>
+<rect class="node" x="410" y="286" width="140" height="40" rx="2"/><text class="b sm" x="480" y="310" text-anchor="middle">Protein A cycle 1a</text>
+<rect class="node" x="410" y="352" width="140" height="40" rx="2"/><text class="b sm" x="480" y="376" text-anchor="middle">Protein A cycle 1b</text>
+<rect class="node" x="410" y="414" width="140" height="40" rx="2"/><text class="b sm" x="480" y="438" text-anchor="middle">Protein A cycle 2a</text>
+<path class="edge" d="M550 306C584 306 584 370 604 370" marker-end="url(#ar2)"/><path class="edge" d="M550 372H604" marker-end="url(#ar2)"/><path class="edge" d="M550 434C584 434 584 382 604 382" marker-end="url(#ar2)"/><text class="t2 sm m" x="580" y="476" text-anchor="middle">pooled_into</text>
+<circle class="node box-ok" cx="640" cy="376" r="34"/><text class="b" x="640" y="372" text-anchor="middle">Pool P1</text><text class="t2 sm m" x="640" y="388" text-anchor="middle">B1 + B2</text>
+<path class="edge" d="M674 376H740" marker-end="url(#ar2)"/><text class="t2 sm m" x="707" y="368" text-anchor="middle">drawn_as</text>
+<rect class="node" x="742" y="352" width="130" height="48" rx="2"/><text class="b" x="807" y="372" text-anchor="middle">Sample SMP-0900</text><text class="t2 sm m" x="807" y="388" text-anchor="middle">two origin batches</text>
+<path class="edge" d="M872 376H954" marker-end="url(#ar2)"/><text class="t2 sm m" x="913" y="368" text-anchor="middle">aliquot_of</text>
+<rect class="node" x="956" y="352" width="150" height="48" rx="2"/><text class="b" x="1031" y="372" text-anchor="middle">Aliquot AL-0900a</text><text class="t2 sm m" x="1031" y="388" text-anchor="middle">then as above</text></g>
+</svg></div>
+<figcaption data-i18n="l.cap">Reading the figure in provenance terms: samples, aliquots and results are entities; drawing, splitting, running and pooling are activities; each edge says which item was derived from which. Edges point in the direction of derivation, and the graph is acyclic.</figcaption>
+</figure>
+<ol class="steps" aria-label="Story steps" data-i18n-aria="t.steps">
+<li data-step-li="1" data-i18n="l.st1">Draw. The sample keeps its unit and batch keys from the moment of writing; they are never re-keyed afterwards.</li>
+<li data-step-li="2" data-i18n="l.st2">Aliquot. Portions of one sample go to different analyses; their volumes sum to at most the sample.</li>
+<li data-step-li="3" data-i18n="l.st3">Run. Each pass through an analyzer is a run that links to an instrument state. A failed QC holds the results and requests a rerun.</li>
+<li data-step-li="4" data-i18n="l.st4">Results. A correction is a new version that supersedes the old one. A query as of time t sees the latest version available by t.</li>
+<li data-step-li="5" data-i18n="l.st5">Pool. Merging material from two batches makes the lineage many-to-many; walking the edges backwards from the sample finds both origin batches.</li>
+</ol>
+<p data-i18n="l.note">One harvest split over several cycles and re-pooled still has a single origin batch. Many-to-many appears only when batches merge.</p>
+</div>
+</section>
+
+<section id="systems" class="sec" aria-labelledby="h-systems">
+<p class="rail" aria-hidden="true">systems</p>
+<div>
+<h2 id="h-systems" data-i18n="s.h2">Where the record lives: system boundaries and integration reality</h2>
+<p data-i18n="s.lead" data-src="A056" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">Several systems each hold part of the story: the historian holds process tags such as <code>U03.pH</code>, the batch record holds events, and some system holds the in-process test result. Which one owns routine in-process results is site-dependent, so the model treats it as a setting, not a norm.</p>
+<figure class="fig" data-src="A001" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
+<p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
+<div tabindex="0" class="fig-scroll"><svg viewBox="0 0 760 320" role="img" aria-labelledby="sy-t" aria-describedby="sy-d">
+<title id="sy-t">System boundary of a process-development lab</title>
+<desc id="sy-d">Bioreactors feed a historian. At-line analyzers drop CSV files into a shared folder that feeds the system of record for in-process results, which is either MES or EBR, or LIMS, depending on the site. A chromatography data system and an electronic lab notebook also feed it.</desc>
+<defs><marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0l10 5-10 5z"/></marker></defs>
+<rect class="node" x="10" y="20" width="150" height="56" rx="2"/><text class="b" x="85" y="44" text-anchor="middle" data-i18n="sy.bio">Bioreactors</text><text class="t2 sm m" x="85" y="62" text-anchor="middle">U01 ... U24</text>
+<rect class="node" x="10" y="140" width="150" height="56" rx="2"/><text class="b" x="85" y="164" text-anchor="middle" data-i18n="sy.hist">Historian</text><text class="t2 sm m" x="85" y="182" text-anchor="middle">tags, event frames</text>
+<path class="edge" d="M85 76V138" marker-end="url(#ar3)"/><text class="t2 sm m" x="93" y="112">U03.pH</text>
+<rect class="node" x="10" y="250" width="150" height="56" rx="2"/><text class="b" x="85" y="274" text-anchor="middle" data-i18n="sy.an">At-line analyzers</text><text class="t2 sm" x="85" y="292" text-anchor="middle" data-i18n="sy.ans">cells, metabolites, titer</text>
+<rect class="node alt" x="220" y="250" width="140" height="56" rx="2"/><text class="b" x="290" y="274" text-anchor="middle" data-i18n="sy.fold">Shared folder</text><text class="t2 sm m" x="290" y="292" text-anchor="middle">CSV file drop</text>
+<path class="edge" d="M160 278H218" marker-end="url(#ar3)"/>
+<rect class="node alt" x="400" y="40" width="350" height="170" rx="2"/><text class="t2 sm" x="414" y="62" data-i18n="sy.sor">System of record for routine in-process results: depends on the site</text>
+<rect class="node" x="420" y="84" width="150" height="56" rx="2"/><text class="b" x="495" y="108" text-anchor="middle">MES / EBR</text><text class="t2 sm" x="495" y="126" text-anchor="middle" data-i18n="sy.mes">batch record, events</text>
+<rect class="node" x="580" y="84" width="150" height="56" rx="2"/><text class="b" x="655" y="108" text-anchor="middle">LIMS</text><text class="t2 sm" x="655" y="126" text-anchor="middle" data-i18n="sy.lims">samples, tests, results</text>
+<text class="t2 sm" x="575" y="176" text-anchor="middle" data-i18n="sy.or">either one, or both with a hand-off</text>
+<path class="edge" d="M360 278H450V212" marker-end="url(#ar3)"/>
+<path class="edge" d="M160 168H398" marker-end="url(#ar3)"/><text class="t2 sm" x="280" y="160" text-anchor="middle" data-i18n="sy.join">process context joined by time</text>
+<rect class="node" x="500" y="250" width="120" height="48" rx="2"/><text class="b" x="560" y="271" text-anchor="middle">CDS</text><text class="t2 sm" x="560" y="287" text-anchor="middle" data-i18n="sy.cds">chromatography data</text>
+<rect class="node" x="630" y="250" width="120" height="48" rx="2"/><text class="b" x="690" y="271" text-anchor="middle">ELN</text><text class="t2 sm" x="690" y="287" text-anchor="middle" data-i18n="sy.eln">experiment notes</text>
+<path class="edge" d="M560 250V212" marker-end="url(#ar3)"/><path class="edge dash" d="M690 250V212" marker-end="url(#ar3)"/>
+</svg></div>
+<figcaption data-i18n="s.cap">Boundary sketch with the integration points that matter here: the file drop, the time-based join to the historian, and the site-dependent owner of in-process results.</figcaption>
+</figure>
+<p data-i18n="s.vend" data-src="S042 S043" data-gl=" · provisional" data-gl-ko=" · 잠정" data-status="provisional">Vendor material disagrees on which system should own in-process checks, which is why the design leaves it as a setting.</p>
+<h3 data-i18n="s.h3a">Getting results out of an instrument</h3>
+<div class="cards">
+<div class="card" data-src="A036 S003" data-grade="S" data-gl=" · sourced · provisional" data-gl-ko=" · 출처 확인 · 잠정" data-status="provisional"><h4 data-i18n="s.c1h">CSV file drop (baseline)</h4><p data-i18n="s.c1">The all-in-one analyzer exports a CSV file to a shared folder on its bridge computer. The simulator models this path first. The file carries a local time, often without a stated zone.</p></div>
+<div class="card" data-src="S004" data-gl=" · provisional" data-gl-ko=" · 잠정" data-status="provisional"><h4 data-i18n="s.c2h">Vendor OPC server</h4><p data-i18n="s.c2">A vendor OPC server exists as a separately licensed add-on. It is described here, not modelled as the default.</p></div>
+<div class="card" data-src="S040" data-gl=" · provisional" data-gl-ko=" · 잠정" data-status="provisional"><h4 data-i18n="s.c3h">SiLA 2, OPC UA LADS (future)</h4><p data-i18n="s.c3">One vendor map describes SiLA 2 adoption as slow and OPC UA LADS as early on installed fleets. A future direction, not the installed base.</p></div>
+</div>
+<h3 data-i18n="s.h3b">Clocks and time zones are a data-integrity control</h3>
+<p data-i18n="s.clock" data-src="S029 S030" data-gl="" data-gl-ko="">UK MHRA guidance asks for access to controlled or synchronised clocks for recording timed events and for specifying the time zone (section 5.1). The WHO guidance lists restricting the ability to change any clock used for recording timed events, including clocks in process instrumentation (section 4.12). The design stores every instant in UTC with the source's own offset beside it.</p>
+<p data-i18n="s.clock2" data-src="A049" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">How often a clock is wrong has no source. The wrong-clock scenario (SC6) uses a +5 h offset on one analyzer as a neutral stress case, not an estimate.</p>
+<h3 data-i18n="s.h3c">EU Annex 11</h3>
+<p data-i18n="s.a11" data-src="S027" data-gl="" data-gl-ko="">The European Commission lists Annex 11 on computerised systems as the January 2011 revision. That is the text this page treats as current.</p>
+<p data-i18n="s.a11b" data-src="S028" data-gl=" · provisional" data-gl-ko=" · 잠정" data-status="provisional">A revised Annex 11, a revised Chapter 4 and a new draft Annex 22 on AI went to consultation from 7 July to 7 October 2025. The revision is a draft and not final.</p>
+<p data-i18n="s.a11c">The model describes controls. It does not claim compliance with either text.</p>
+</div>
+</section>
+
+<section id="method" class="sec" aria-labelledby="h-method">
+<p class="rail" aria-hidden="true">method</p>
+<div>
+<h2 id="h-method" data-i18n="m.h2">Method: five layers, one observation contract</h2>
+<p data-i18n="m.lead">The engine runs a hidden truth world and an observable recorded world side by side. Recorders see only what a person or an instrument could see, and the evaluator alone compares the two.</p>
+<figure class="fig" data-src="A100" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
+<p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
+<div tabindex="0" class="fig-scroll"><svg viewBox="0 0 760 270" role="img" aria-labelledby="ly-t" aria-describedby="ly-d">
+<title id="ly-t">Five layers and the observation contract</title>
+<desc id="ly-d">Layers L1 process, L2 sampling and logistics, and L3 analysis form the truth world and write a truth log. They also emit observable events. Recorders A, B and C in layer L4 read only the observable events. Layer L5 uses the records for queries and decisions. The evaluator reads the truth log and the recorded results to score them.</desc>
+<defs><marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0l10 5-10 5z"/></marker></defs>
+<rect class="node alt" x="6" y="8" width="520" height="86" rx="2"/><text class="t2 sm" x="16" y="26" data-i18n="ly.truth">TRUTH WORLD (hidden state, true times)</text>
+<rect class="node" x="20" y="40" width="150" height="44" rx="2"/><text class="b" x="95" y="60" text-anchor="middle">L1 process</text><text class="t2 sm m" x="95" y="75" text-anchor="middle">60 s sensor ticks</text>
+<rect class="node" x="190" y="40" width="150" height="44" rx="2"/><text class="b" x="265" y="60" text-anchor="middle">L2 sampling</text><text class="t2 sm" x="265" y="75" text-anchor="middle" data-i18n="ly.l2">draw, label, transport</text>
+<rect class="node" x="360" y="40" width="150" height="44" rx="2"/><text class="b" x="435" y="60" text-anchor="middle">L3 analysis</text><text class="t2 sm" x="435" y="75" text-anchor="middle" data-i18n="ly.l3">queue, QC, runs</text>
+<path class="edge" d="M170 62H188M340 62H358" marker-end="url(#ar4)"/>
+<rect class="node" x="6" y="120" width="520" height="34" rx="2"/><text class="b m sm" x="266" y="141" text-anchor="middle">observable_events</text>
+<path class="edge" d="M95 84V118M265 84V118M435 84V118" marker-end="url(#ar4)"/>
+<rect class="node" x="20" y="184" width="100" height="44" rx="2"/><text class="b" x="70" y="204" text-anchor="middle">L4 A</text><text class="t2 sm" x="70" y="219" text-anchor="middle">manual</text>
+<rect class="node" x="136" y="184" width="100" height="44" rx="2"/><text class="b" x="186" y="204" text-anchor="middle">L4 B</text><text class="t2 sm" x="186" y="219" text-anchor="middle">LIMS-lite</text>
+<rect class="node" x="252" y="184" width="100" height="44" rx="2"/><text class="b" x="302" y="204" text-anchor="middle">L4 C</text><text class="t2 sm" x="302" y="219" text-anchor="middle">context</text>
+<path class="edge" d="M70 154V182M186 154V182M302 154V182" marker-end="url(#ar4)"/>
+<rect class="node" x="390" y="184" width="136" height="44" rx="2"/><text class="b" x="458" y="204" text-anchor="middle">L5 use</text><text class="t2 sm" x="458" y="219" text-anchor="middle" data-i18n="ly.l5">queries, decisions</text>
+<path class="edge" d="M352 206H388" marker-end="url(#ar4)"/>
+<rect class="node box-ok" x="580" y="90" width="170" height="64" rx="2"/><text class="b" x="665" y="116" text-anchor="middle" data-i18n="ly.eval">Evaluator</text><text class="t2 sm" x="665" y="134" text-anchor="middle" data-i18n="ly.evals">scores records against truth</text>
+<path class="edge dash" d="M526 62H640V88" marker-end="url(#ar4)"/><path class="edge dash" d="M526 206H665V156" marker-end="url(#ar4)"/>
+<text class="t2 sm" x="6" y="256" data-i18n="ly.rule">Recorders and L5 never read the truth world.</text>
+</svg></div>
+<figcaption data-i18n="ly.cap">The layered design keeps the comparison fair: every architecture records the same truth run, and only the recording differs.</figcaption>
+</figure>
+<ul class="plain">
+<li data-i18n="m.o1">Recorders consume observable events only. A test changes hidden-only fields and requires the recorder output to stay byte-identical.</li>
+<li data-i18n="m.o2">The same scenario, seed and engine version give a byte-identical event log. Randomness is keyed by sample, analyte, attempt and purpose, so adding a sample never changes another sample's draws.</li>
+<li data-i18n="m.o3" data-src="A103" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">Stochastic comparisons run over at least 20 seeds and are reported with intervals. They are never gated, and no test requires that one architecture wins.</li>
+<li data-i18n="m.o4" data-src="A100" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">Online sensor series are recorded at a 60 s cadence in the truth world.</li>
+</ul>
+<h3 data-i18n="m.h3a">Profiles: bundles with an honest grade</h3>
+<p data-i18n="m.pr.lead">Bioreactor type, analyzer type and staff proficiency each change how data is recorded. Each is a named bundle of sourced and assumed parts, and a bundle takes the grade of its weakest component.</p>
+<p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
+<div tabindex="0" class="tablewrap"><table>
+<caption data-i18n="m.pr.cap">Profiles (default first)</caption>
+<thead><tr><th data-i18n="m.pr.h1">Profile</th><th data-i18n="m.pr.h2">What it changes</th><th data-i18n="m.pr.h3">Bundle grade</th></tr></thead>
+<tbody>
+<tr><th scope="row">bench_manual</th><td data-i18n="m.pr.b1">operator draws into a closed container or syringe; the sample is a negligible share of the culture</td><td data-src="A067" data-grade="D" data-gl=" · derived · provisional" data-gl-ko=" · 유도 · 잠정" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row">micro_mini_parallel</th><td data-i18n="m.pr.b2" data-src="A112 A114" data-grade="S" data-gl=" · sourced" data-gl-ko=" · 출처 확인">a liquid handler draws into a cup; a 600 &micro;L sample is a burden for daily sampling of micro-scale vessels, mini-scale vessels hold 100 to 250 mL</td><td data-src="A065 A066" data-grade="D" data-gl=" · derived · provisional" data-gl-ko=" · 유도 · 잠정" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row">pilot</th><td data-i18n="m.pr.b3">sterile syringe from a sampling line; the size class boundary and purge volumes are assumptions</td><td data-src="A068" data-grade="A" data-gl=" · assumed · provisional" data-gl-ko=" · 가정 · 잠정" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row">allinone_atline</th><td data-i18n="m.pr.a1" data-src="S001" data-gl="" data-gl-ko="">one queue, one file, one clock: 16 analytes in 4.5 min from 275 &micro;L</td><td data-src="A069" data-grade="D" data-gl=" · derived · provisional" data-gl-ko=" · 유도 · 잠정" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row">split_cellcounter_metabolite</th><td data-i18n="m.pr.a2">two queues and two visits; the two results can be measured at different times and carry different clocks</td><td data-src="A070" data-grade="A" data-gl=" · assumed · provisional" data-gl-ko=" · 가정 · 잠정" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row">hplc</th><td data-i18n="m.pr.a3">titer by HPLC; the shared column is the contested resource</td><td data-src="A071" data-grade="A" data-gl=" · assumed · provisional" data-gl-ko=" · 가정 · 잠정" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row">experienced</th><td data-i18n="m.pr.s1">label and count error rates borrowed from clinical and bead studies</td><td data-src="A072" data-grade="A" data-gl=" · assumed · provisional" data-gl-ko=" · 가정 · 잠정" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row">trainee</th><td data-i18n="m.pr.s2">every multiplier is an assumption; evidence on the effect of training could not be established</td><td data-src="A073" data-grade="A" data-gl=" · assumed · provisional" data-gl-ko=" · 가정 · 잠정" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+</tbody></table></div>
+<h3 data-i18n="m.h3b">Scenario catalogue</h3>
+<div tabindex="0" class="tablewrap"><table class="sc">
+<caption data-i18n="m.sc.cap">Each scenario asks one question; no result is stated for any of them yet</caption>
+<thead><tr><th>ID</th><th data-i18n="m.sc.q">Question</th><th data-i18n="m.sc.s">Session</th></tr></thead>
+<tbody>
+<tr><td>SC1</td><td data-i18n="m.sc1">What disappears on an ordinary day?</td><td>S2</td></tr>
+<tr><td>SC2</td><td data-i18n="m.sc2">Why wait when mean utilisation is low?</td><td>S1</td></tr>
+<tr><td>SC3</td><td data-i18n="m.sc3">Which timestamp should the join use?</td><td>S2</td></tr>
+<tr><td>SC4</td><td data-i18n="m.sc4">When does an instrument effect look like a process effect?</td><td>S2</td></tr>
+<tr><td>SC5</td><td data-i18n="m.sc5">Whom does the priority rule hand the cost when one analyzer is down?</td><td>S1</td></tr>
+<tr><td>SC6</td><td data-i18n="m.sc6">What if one clock is wrong?</td><td>S2</td></tr>
+<tr><td>SC7</td><td data-i18n="m.sc7">How are reruns and dilutions recorded?</td><td>S2</td></tr>
+<tr><td>SC8</td><td data-i18n="m.sc8">How does a record error reach control?</td><td>S2</td></tr>
+<tr><td>SC9</td><td data-i18n="m.sc9">What if the context unit is not the batch?</td><td>S4</td></tr>
+<tr><td>SC10</td><td data-i18n="m.sc10">What happens at merges across batch boundaries?</td><td>S4</td></tr>
+<tr><td>SC11</td><td data-i18n="m.sc11">Same model, different control strength?</td><td>S3</td></tr>
+</tbody></table></div>
+<h3 data-i18n="m.h3c">How numbers are graded and verified</h3>
+<div tabindex="0" class="tablewrap"><table>
+<thead><tr><th data-i18n="m.g.h1">Grade</th><th data-i18n="m.g.h2">Meaning</th></tr></thead>
+<tbody>
+<tr><th scope="row" data-i18n="m.g.s">S, sourced</th><td data-i18n="m.g.sd">Bioprocess primary source: paper, vendor specification or case study.</td></tr>
+<tr><th scope="row" data-i18n="m.g.p">P, proxy</th><td data-i18n="m.g.pd">Borrowed from another domain (clinical laboratory, blood gas, cell-free medium) or from a source too weak to count as primary.</td></tr>
+<tr><th scope="row" data-i18n="m.g.d">D, derived</th><td data-i18n="m.g.dd">Arithmetic on sourced numbers, with the arithmetic written down.</td></tr>
+<tr><th scope="row" data-i18n="m.g.a">A, assumed</th><td data-i18n="m.g.ad">No source found. Shown as an assumption wherever it appears.</td></tr>
+</tbody></table></div>
+<ul class="plain">
+<li data-i18n="m.v1">Every figure on this page carries a ledger id. A repository check follows each assumption id to its sources.</li>
+<li data-i18n="m.v2">A source is verified at one of three levels: seen as an excerpt, read by the research executor, or re-read by the orchestrator. This page cites only the re-read sources without a label. Anything else is marked <b>provisional</b>.</li>
+<li data-i18n="m.v3">The engine gate is structural: hand-calculated fixtures, a queueing check against analytic waiting times, and a forced-error fixture for every flag. Orderings between architectures are reported, never asserted.</li>
+</ul>
+<h3 data-i18n="m.h3d">Sources cited without a provisional label</h3>
+<ul class="sources">
+<li data-src="S001" class="nochip"><span class="sid">S001</span><span><a href="https://technology-products.dksh.com/product/nova-bioprofile-flex2-analyzer/" rel="noopener">Nova BioProfile FLEX2 Analyzer (product page with module analysis-time table)</a> <span class="pub">DKSH (distributor, reproduces Nova Biomedical specification text)</span></span></li>
+<li data-src="S002" class="nochip"><span class="sid">S002</span><span><a href="https://rs1.chemie.de/images/135080.pdf" rel="noopener">BioProfile FLEX2 On-Line Autosampler (brochure)</a> <span class="pub">Nova Biomedical (file hosted by chemie.de)</span></span></li>
+<li data-src="S009" class="nochip"><span class="sid">S009</span><span><a href="https://www.sartorius.com/en/products/fermentation-bioreactors/ambr-multi-parallel-bioreactors/ambr-250-high-throughput" rel="noopener">Ambr 250 High Throughput (product page)</a> <span class="pub">Sartorius</span></span></li>
+<li data-src="S011" class="nochip"><span class="sid">S011</span><span><a href="https://fujifilmbiotechnologies.fujifilm.com/assets/Scale-Down-Model-Development-in-ambr-systems-An-industrial-Perspective.pdf" rel="noopener">Scale-Down Model Development in ambr systems: An Industrial Perspective (Sandner et al.)</a> <span class="pub">Biotechnology Journal 2019;14:1700766 (Wiley-VCH); PDF hosted by Fujifilm</span></span></li>
+<li data-src="S012" class="nochip"><span class="sid">S012</span><span><a href="https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0173375" rel="noopener">Effects of diluents on cell culture viability measured by automated cell counter (Chen et al.)</a> <span class="pub">PLoS ONE 12(3): e0173375</span></span></li>
+<li data-src="S013" class="nochip"><span class="sid">S013</span><span><a href="https://www.mdpi.com/2227-9717/8/5/520" rel="noopener">Novel Carbon Dioxide-Based Method for Accurate Determination of pH and pCO2 in Mammalian Cell Culture Processes (Klinger et al.)</a> <span class="pub">Processes 2020, 8(5), 520 (MDPI)</span></span></li>
+<li data-src="S017" class="nochip"><span class="sid">S017</span><span><a href="https://ems.ispe.org/sites/default/files/attachments/public/a-mab-case-study-version.pdf" rel="noopener">Product Development and Realisation Case Study A-Mab</a> <span class="pub">CMC Biotech Working Group (hosted by ISPE)</span></span></li>
+<li data-src="S022" class="nochip"><span class="sid">S022</span><span><a href="https://experts.mcmaster.ca/scholarly-works/1748245" rel="noopener">An international study of the performance of sample collection from patients (Dzik et al.)</a> <span class="pub">Vox Sanguinis 85(1):40-47 (2003)</span></span></li>
+<li data-src="S027" class="nochip"><span class="sid">S027</span><span><a href="https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en" rel="noopener">EudraLex Volume 4 - Good Manufacturing Practice guidelines (Annex list)</a> <span class="pub">European Commission, DG SANTE</span></span></li>
+<li data-src="S029" class="nochip"><span class="sid">S029</span><span><a href="https://assets.publishing.service.gov.uk/media/5aa2b9ede5274a3e391e37f3/MHRA_GxP_data_integrity_guide_March_edited_Final.pdf" rel="noopener">MHRA GxP Data Integrity Guidance and Definitions, Revision 1, March 2018</a> <span class="pub">UK MHRA</span></span></li>
+<li data-src="S030" class="nochip"><span class="sid">S030</span><span><a href="https://www.gmp-compliance.org/files/guidemgr/WHO_TRS_996_annex05.pdf" rel="noopener">WHO TRS 996 Annex 5: Guidance on good data and record management practices</a> <span class="pub">World Health Organization</span></span></li>
+</ul>
+<footer class="foot">
+<p data-i18n="m.ai">Built with AI coding tools. Design decisions are recorded as ADRs by the author.</p>
+<ol class="road" aria-label="Roadmap" data-i18n-aria="m.road">
+<li><b>S0</b> <span data-i18n="m.r0">foundations, design, this page</span></li>
+<li><b>S1</b> <span data-i18n="m.r1">engine, layers L1 to L3, profiles</span></li>
+<li><b>S2</b> <span data-i18n="m.r2">flags, recorders, metrics, experiments</span></li>
+<li><b>S3</b> <span data-i18n="m.r3">lab UI in the browser</span></li>
+<li><b>S4</b> <span data-i18n="m.r4">downstream genealogy, HPLC contention</span></li>
+<li><b>S5</b> <span data-i18n="m.r5">release and write-up</span></li>
+</ol>
+<p data-i18n="m.ext">Planned extensions (designed, not built yet): per-reactor cell-line profiles, operating-mode changes (batch, fed-batch, perfusion), and break-out events such as a contamination or sterility failure with the investigation walk-back through the lineage.</p>
+<p><span class="placeholder" id="repo-link" data-i18n="m.repo">repository link: added at publication</span></p>
+</footer>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* Korean dictionary. English lives in the HTML, so the page reads without JS. Keys match data-i18n. */
+window.I18N_KO = {
+"ui.skip": "본문으로 건너뛰기",
+"ui.theme": "테마",
+"ui.t.auto": "자동",
+"ui.t.light": "라이트",
+"ui.t.dark": "다크",
+"ui.t.neon": "네온",
+"ui.story": "스토리 모드",
+"ui.off": "꺼짐",
+"ui.on": "켜짐",
+"ui.opts": "표시 옵션",
+"ui.lang": "언어 전환 (영어/한국어)",
+"ui.nav": "섹션",
+"ui.scroll": "옆으로 스크롤 →",
+"p.eyebrow": "기술 해설 · 설계 단계",
+"p.h1": "바이오리액터 N대, 공유 분석기 2대: 맥락은 어디로 사라지는가?",
+"p.notice": "설계 단계입니다. 모든 데이터는 합성 데이터이며, 공개 자료와 명시한 가정으로 만들었습니다. 아직 시뮬레이션 결과는 없고, 이 페이지는 실제 실험실을 예측하지 않습니다.",
+"p.thesis": "공정개발 실험실에는 소형 바이오리액터가 많지만 at-line 분석기는 두어 대뿐입니다. 시료는 용기에서 기기로 옮겨지고, 그 과정에서 숫자 하나만 남으면 맥락을 잃을 수 있습니다. 어느 리액터인지, 어느 시점인지, 기기가 어떤 상태였는지. 문제는 처리량이 아니라 맥락 보존입니다.",
+"p.f.pre": "피드 이전 상태",
+"p.f.post": "피드 이후 상태",
+"p.f.cap": "이 페이지가 다루는 사례: 09:25에 측정된 결과는 09:00 피드 이전인 08:40에 채취한 시료를 설명합니다. 예시 시각이며 실제 데이터가 아닙니다.",
+"p.k.def": "리액터",
+"p.k.defd": "12대씩 2개 베이",
+"p.k.an": "분석기",
+"p.k.and": "공유하는 at-line 기기",
+"p.k.range": "시나리오 범위",
+"p.k.ranged": "리액터 N대, 분석기 M대. 측정값이 아니라 설정값입니다.",
+"p.k.read": "수치 읽는 법",
+"p.k.readd": "모든 수치에는 원장 id와 등급(출처 확인, 대리지표, 유도, 가정)이 붙습니다. 노란 점선 칩은 잠정 수치입니다.",
+"c.h2": "처리 능력의 역설: 평균 부하는 낮은데도 대기열이 생길까?",
+"c.lead": "올인원 at-line 분석기는 빠릅니다. 두 대가 있으면 평균 부하는 가볍습니다. 그래도 시료가 기다릴 수 있는지가 질문입니다.",
+"c.k.panel": "패널",
+"c.k.paneld": "한 번의 측정으로 분석하는 항목",
+"c.k.cycle": "주기",
+"c.k.cycled": "전체 패널 기준 270초",
+"c.k.vol": "시료량",
+"c.k.vold": "전체 패널 기준",
+"c.ceiling": "유도한 상한: 60분 ÷ 4.5분 ≈ 분석기 1대당 시간당 13.3개. QC, 교정, 유지보수는 제외한 값입니다.",
+"c.load": "기본 실험실은 리액터 24대 × 리액터-일당 시료 1.4~1.6개, 즉 하루 33.6~38.4개를 요구합니다. 시료당 4.5분이면 분석기 시간 151~173분입니다. 시료 수와 운영 시간대는 가정입니다.",
+"c.b1": "10시간 근무 시간대 기준",
+"c.b1s": "분석기 2대 = 1200 분석기-분",
+"c.b2": "24시간 기준",
+"c.b2s": "분석기 2대 = 2880 분석기-분",
+"c.cap": "같은 부하, 서로 다른 분모. 실선은 범위의 하한, 빗금은 상한입니다. 가동률을 말할 때는 항상 시간대를 함께 적습니다.",
+"c.t.cap": "막대 그래프의 계산 과정(표 보기)",
+"c.t.w": "시간대",
+"c.t.a": "가용 분석기-분",
+"c.t.l": "일일 부하",
+"c.t.u": "가동률",
+"c.t.r1": "10시간 근무 시간대, 분석기 2대",
+"c.t.r2": "24시간, 분석기 2대",
+"c.hyp": "<b>가설이며 결과가 아닙니다.</b> 시료의 65%가 08:30 전후로 18분 편차 안에 채취된다면(가정한 교대 시작 집중), 일평균이 낮아도 그 한 시간 동안은 도착이 분석기 두 대의 시작 능력을 넘을 수 있습니다. 시뮬레이터가 시나리오 SC2에서 이를 검증합니다.",
+"t.h2": "피드 사이의 공백: 조인은 어느 타임스탬프를 쓰는가?",
+"t.lead": "시료를 08:40에 채취합니다(<code>sampled_at</code>). 09:00에 볼루스 피드가 들어가고, 분석기는 09:25에 측정을 마칩니다(<code>measured_at</code>). 시각은 설명용 예시입니다. 측정 시각을 움직여 각 조인이 어느 공정 상태를 붙이는지 확인하세요.",
+"t.s.proc": "공정 U03",
+"t.s.samp": "시료",
+"t.s.join": "조인",
+"t.j1": "sampled_at 조인: 항상 피드 이전",
+"t.j2a": "measured_at 조인: 피드 이후",
+"t.j2b": "measured_at 조인: 피드 이전",
+"t.cap": "파란색은 채취 시각을, 주황색은 측정 시각을 따릅니다. 09:00 이후에 측정된 결과를 <code>measured_at</code>으로 조인하면, 시료가 겪지 않은 상태에 붙습니다.",
+"t.slider": "측정 시각 (measured_at)",
+"t.r.span": "채취부터 측정까지",
+"t.v.okh": "두 조인이 일치합니다.",
+"t.v.ok": "두 조인 모두 피드 이전 상태를 붙이므로, 이 측정 시각에서는 맥락 불일치가 생기지 않습니다.",
+"t.v.devh": "피드 사이의 공백.",
+"t.v.dev": "measured_at 조인은 피드 이전에 채취한 시료에 피드 이후 상태를 붙입니다. sampled_at 조인은 여전히 피드 이전 상태를 붙입니다.",
+"t.h.okh": "보관 시간이 기준 이내입니다.",
+"t.h.ok": "hold_time이 30분 SLA 기준(가정)을 넘지 않습니다.",
+"t.h.w1h": "보관 시간이 30분을 넘었습니다.",
+"t.h.w1": "hold_time이 30분 SLA 기준(가정)을 넘습니다. hold_time 규칙이 이를 표시할 수 있지만, 두 시계가 모두 저장된 경우에만 가능합니다.",
+"t.h.w2h": "보관 시간이 55분을 넘었습니다.",
+"t.h.w2": "시료 안정성 수치의 근거가 된 생존율 연구는 최대 55분까지만 시험했으므로, 그보다 긴 구간은 외삽입니다.",
+"t.steps": "스토리 단계",
+"t.st1": "08:40 채취. <code>sampled_at</code>은 시료가 공정을 떠난 순간입니다.",
+"t.st2": "09:00 볼루스 피드. 시료가 기다리는 동안 리액터 상태가 바뀝니다.",
+"t.st3": "09:25 측정. <code>measured_at</code>은 채취가 아니라 측정 실행이 끝난 시각입니다.",
+"t.st4": "조인 두 가지. 하나는 채취 시각을 유지해 시료가 온 상태를 보고, 다른 하나는 측정 시각을 유지해 그러지 못할 수 있습니다.",
+"t.d1": "<code>run_started_at</code>에서 <code>sampled_at</code>을 뺀 값이며, 실제(truth) 타임스탬프를 씁니다. 실행이 시작되면 끝나므로, 45분 구간에서 4.5분 실행을 뺀 40.5분입니다. 대기열 대기 시간만을 뜻하지 않습니다.",
+"t.d2": "<code>available_at</code>에서 <code>sampled_at</code>을 뺀 값입니다. 측정, 수집, 검토를 포함하며, 결과가 의사결정에 쓰일 수 있었는지를 알려줍니다.",
+"t.d3h": "시계가 두 개인 이유",
+"t.d3": "저장된 시각이 하나(측정 시각)뿐이면 채취 시각을 복원할 수 없고, 위의 두 규칙도 실행할 수 없습니다.",
+"t.h3a": "보관 시간이 시료에 미치는 영향",
+"t.stab": "인용한 연구에서 CHO 시료를 실온에서 최대 55분 동안 희석 없이 보관했을 때 생존율 감소가 나타나지 않았다고 저자들은 밝혔고, 측정된 감소는 희석액 탓으로 돌렸습니다. 보고된 무희석 기울기는 분당 −0.03 퍼센트포인트이며 유의성 검정이 없고 55분까지만 유효합니다. 시뮬레이터는 무희석 시료에 기울기 0을 적용하며, 희석액 또는 취급 기울기(시간당 최대 −7.2 퍼센트포인트)는 시나리오 조절값입니다.",
+"t.proxy": "설계 다른 곳에서 쓰는 30분 보관 한도는 다른 분야(혈액가스)에서 빌린 규칙입니다.",
+"t.h3b": "두 번째 사례: 온라인 프로브를 재표준화하는 오프라인 pH",
+"t.ph": "흔한 관행은 오프라인 pH 값을 기준(source of truth)으로 삼아, 둘의 차이가 정해진 기준을 넘으면 온라인 프로브를 그 값에 맞춰 다시 조정합니다. 채취 절차, 장비, 보관 시간, 온도 변화, CO2 탈기가 모두 오프라인 값에 오프셋을 더하며, 세포 밀도가 높으면 채취 후 pH가 안정적이라고 볼 수 없습니다. 기록에 잘못 남은 오프셋은 이렇게 제어기로 전파될 수 있습니다.",
+"ph.truth": "(실제 값)",
+"ph.draw": "시료 채취",
+"ph.cont": "개방 또는 밀폐 용기",
+"ph.off": "오프라인 pH 값",
+"ph.offs": "오프셋 포함",
+"ph.e1": "보관, CO2, 기술",
+"ph.probe": "온라인 프로브 오프셋",
+"ph.probes": "재조정됨",
+"ph.e2": "기준으로 취급",
+"ph.ctrl": "pH 제어기",
+"ph.ctrls": "프로브 값으로 동작",
+"ph.e3": "공정을 바꿈",
+"ph.alt": "델타 프로브 경보",
+"ph.alts": "또는 값 제외",
+"ph.e4": "대안: 용기, 보관 시간, 담당자, 시각을 기록으로 남김",
+"ph.cap": "실선 경로: 오프라인 값이 기준이 됩니다. 점선 경로: 기록이 시료를 어떻게 채취하고 보관했는지 남기므로, 오프셋을 모델링하거나 값을 제외할 수 있습니다.",
+"ph.t.cap": "세포 접종 전 무세포 배지에서 측정한 오프라인 pH 빼기 용기 pH (대리지표: 세포 호흡 없음)",
+"ph.t.h1": "구성",
+"ph.t.h2": "오프셋 (pH 단위)",
+"ph.t.r1": "2 L 벤치 용기, 수동 채취",
+"ph.t.r2": "소형 병렬 시스템의 액체 핸들러",
+"ph.t.r3": "250 L 일회용 용기, 주사기 채취",
+"ph.note": "오프셋의 크기는 장비와 현장 절차에 따라 달라지므로, 시뮬레이터는 이 범위를 훑으며 민감도를 보고합니다. 어떤 단일 오프셋도 일반값으로 제시하지 않으며, 제어에 미치는 영향은 명시한 가정 아래의 모델 내부 결과이지 예측이 아닙니다.",
+"a.h2": "하나의 시료를 세 가지 방식으로 기록하기",
+"a.lead": "아키텍처 세 개를 통째로 고정하면 어떤 메커니즘이 차이를 만드는지 가려집니다. 이 설계는 대신 독립적인 기능 플래그 여덟 개를 씁니다. A, B, C는 그 플래그의 프리셋(ADR-0005)이고, 절제(ablation)는 C에서 플래그를 정확히 하나만 끈 상태입니다. B는 허수아비가 아닙니다. 바코드, 자동 수집, 감사 추적은 단순한 실험실 시스템에도 실제로 있는 기능입니다.",
+"a.presets": "프리셋",
+"a.pA": "A 수기 / 엑셀",
+"a.pB": "B LIMS-lite",
+"a.pC": "C 맥락 보존",
+"a.flags": "기능 플래그",
+"a.f1": "라벨 생성 시 시스템이 키를 발급",
+"a.f2": "sampled_at과 measured_at을 따로 저장",
+"a.f3": "각 행이 언제부터 알 수 있었는지를 가짐",
+"a.f4": "실행이 기기, 교정, 시약 로트에 연결됨",
+"a.f5": "수정과 재실행이 새 버전을 만듦",
+"a.f6": "시료, 유닛, 배치 키를 기록 시점에 고정",
+"a.f7": "중복과 재전송은 아무 일도 하지 않음",
+"a.f8": "누가, 언제, 무엇을 바꿨는지, 작업자와 자격",
+"a.rA": "플래그가 프리셋 A와 일치합니다.",
+"a.rB": "플래그가 프리셋 B와 일치합니다.",
+"a.rC": "플래그가 프리셋 C와 일치합니다.",
+"a.rX": "사용자 지정 조합입니다. 어떤 프리셋과도 일치하지 않습니다.",
+"a.h3a": "프리셋별로 본 같은 시료",
+"a.recintro": "위 타임라인의 시료에 대한 합성 예시 기록입니다. 대시는 그 아키텍처가 해당 필드를 저장할 수 없음을 뜻합니다.",
+"a.rec.cap": "하나의 시료를 세 가지로 기록한 예 (합성 예시)",
+"a.rec.field": "필드",
+"a.rec.idA": "손글씨",
+"a.rec.idB": "사전 인쇄 바코드",
+"a.rec.idC": "채취 시점에 발급",
+"a.rec.uA": "배치는 나중에 시간 조인으로 붙임",
+"a.rec.uB": "나중에 09:25 기준 시간 조인으로 붙임",
+"a.rec.uC": "U03, B-2603-03, 기록 시점에 고정",
+"a.rec.hC": "40.5분, 보관 시간 규칙이 표시",
+"a.rec.inst": "기기",
+"a.rec.iA": "\"FLEX\", 자유 텍스트",
+"a.rec.iB": "\"AN-1\", 자유 텍스트. 로트와 교정은 연결되지 않음",
+"a.rec.iC": "IS-AN1-0117: 교정과 시약 로트",
+"a.rec.ver": "결과 버전",
+"a.rec.vA": "제자리에서 덮어씀",
+"a.rec.vB": "덮어쓰되 변경은 기록됨",
+"a.rec.vC": "v1 보존, v2가 대체",
+"a.rec.who": "작업자",
+"a.rec.wA": "이니셜, 자유 텍스트",
+"a.rec.wB": "OP-07, 감사 추적",
+"a.rec.wC": "OP-07과 당시 유효한 자격",
+"a.rec.join": "맥락 조인 기준",
+"a.rec.jp": "피드 이후 상태, 불일치",
+"a.rec.jc": "피드 이전 상태, 정확",
+"a.h3b": "플래그가 막는 것, 발견하는 것, 보이지 않게 두는 것",
+"a.hyp": "<b>설계 가설이며, 시뮬레이터가 검증할 대상입니다.</b> 아래 행렬은 설계 문서가 기대하는 결과이지 실제 결과가 아닙니다. 시뮬레이터는 확률적 실행 전에 손으로 만든 강제 오류 픽스처로 각 칸을 먼저 확인합니다.",
+"a.legend": "범례",
+"a.lg1": "예방",
+"a.lg2": "탐지",
+"a.lg3": "보이지 않음",
+"a.m.cap": "위에서 선택한 플래그에 따른 오류 유형별 결과 (설계 가설)",
+"a.m.h0": "오류 유형",
+"a.e1": "라벨 또는 전사 오류",
+"a.e1p": "시스템이 발급한 키",
+"a.nowp": "현재: 예방",
+"a.e1d": "중복 및 타당성 규칙이 일부를 잡음 (VR-009, VR-014)",
+"a.nowd": "현재: 탐지",
+"a.e1i": "손글씨, 점검 없음",
+"a.nowi": "현재: 보이지 않음",
+"a.e2": "피드 사이의 공백 (조인에 잘못된 시각 사용)",
+"a.e2p": "조인이 sampled_at을 사용",
+"a.e2d": "보관 시간 규칙(VR-010), 두 시계가 필요",
+"a.e2i": "시각이 하나뿐이어서 측정 시각으로 조인",
+"a.e3": "기록 후 유닛 또는 배치가 재키잉되거나 잘못 조인됨",
+"a.e3p": "키를 기록 시점에 고정",
+"a.e3d": "열린 배치 없음 규칙, 심한 경우만 (VR-020)",
+"a.e3i": "키를 나중에 시간 조인으로 붙임",
+"a.e4": "시계 또는 시간대 오류",
+"a.e4p": "이를 막는 플래그는 없음",
+"a.e4d": "두 시계와 시계 규칙 (VR-004)",
+"a.e4i": "시각이 하나뿐",
+"a.e5": "중복 또는 재전송된 파일",
+"a.e5p": "재전송은 무시됨",
+"a.e5d": "멱등성 로그",
+"a.e5i": "키가 없어 중복이 이중 집계됨",
+"a.e6": "재실행 유실 또는 조용한 덮어쓰기",
+"a.e6p": "추가 전용 버전",
+"a.e6d": "감사 추적이 변경 사실을 보여줌",
+"a.e6i": "제자리 덮어쓰기, 이력 없음",
+"a.e7": "공정 효과로 오인되는 기기 또는 로트 효과",
+"a.e7p": "이를 막는 플래그는 없음",
+"a.e7d": "기기 상태 스냅숏과 브리징 시험",
+"a.e7i": "기기 연결 없음",
+"a.e8": "이전 의사결정으로 새어드는 사후 정정",
+"a.e8p": "as-of 조회가 available_at을 존중",
+"a.e8d": "as-of 조회가 이를 보여줌",
+"a.e8i": "조회가 현재 시점의 행을 봄",
+"a.e9": "귀속 불가능한 기록",
+"a.e9p": "작업자와 자격을 기록",
+"a.e9d": "자격 확인 (VR-015)",
+"a.e9i": "작업자가 자유 텍스트이거나 없음",
+"a.e10": "채취 기술 오류",
+"a.e10p": "이를 막는 플래그는 없음",
+"a.e10d": "기록된 용기와 보관 맥락",
+"a.e10i": "맥락이 기록되지 않음",
+"a.mnote": "설계가 플래그 대신 규칙을 지목하는 곳에서는, 그 규칙에 필요한 플래그를 행렬이 가정합니다(예: 보관 시간 규칙에는 two_clocks가 필요). 프리셋 C에도 올바른 바코드가 엉뚱한 튜브에 붙는 것 같은 잔여 오류가 남으며, 이는 숨기지 않고 보고합니다.",
+"l.h2": "계보는 그래프이고, 어려운 부분은 병합이다",
+"l.lead": "리액터에서 결과까지의 각 단계가 하나의 엣지입니다. 어떤 결과에서든 엣지를 거슬러 올라가면 기원 배치를 찾습니다. 배치 하나는 트리를 만들지만, 여러 배치로 만든 풀은 다대다 관계를 만듭니다.",
+"l.p1": "공정 중 시료 하나",
+"l.p2": "배치 간 풀 (다대다)",
+"l.cap": "출처(provenance) 용어로 읽으면, 시료, 분취액, 결과는 엔티티이고 채취, 분할, 실행, 풀링은 액티비티입니다. 각 엣지는 어떤 항목이 어떤 항목에서 파생됐는지를 말합니다. 엣지는 파생 방향을 가리키며 그래프는 비순환입니다.",
+"l.st1": "채취. 시료는 기록하는 순간부터 유닛과 배치 키를 유지하며, 이후 재키잉되지 않습니다.",
+"l.st2": "분취. 한 시료의 일부가 서로 다른 분석으로 갑니다. 분취액 부피의 합은 시료를 넘지 않습니다.",
+"l.st3": "실행. 분석기를 한 번 거칠 때마다 기기 상태에 연결된 실행이 생깁니다. QC가 실패하면 결과를 보류하고 재실행을 요청합니다.",
+"l.st4": "결과. 정정은 이전 결과를 대체하는 새 버전입니다. 시각 t 기준 조회는 t까지 사용 가능했던 최신 버전을 봅니다.",
+"l.st5": "풀. 두 배치의 물질을 합치면 계보가 다대다가 되며, 시료에서 엣지를 거슬러 가면 두 기원 배치를 모두 찾습니다.",
+"l.note": "수확물 하나를 여러 사이클로 나눠 다시 풀링해도 기원 배치는 하나입니다. 다대다는 배치가 합쳐질 때만 나타납니다.",
+"s.h2": "기록은 어디에 있는가: 시스템 경계와 연동의 현실",
+"s.lead": "여러 시스템이 이야기의 일부씩을 가지고 있습니다. 히스토리언은 <code>U03.pH</code> 같은 공정 태그를, 배치 기록은 이벤트를, 또 다른 시스템은 공정 중 시험 결과를 보관합니다. 일상적인 공정 중 결과를 어느 시스템이 소유하는지는 사이트마다 다르므로, 모델은 이를 표준이 아닌 설정으로 다룹니다.",
+"sy.bio": "바이오리액터",
+"sy.hist": "히스토리언",
+"sy.an": "At-line 분석기",
+"sy.ans": "세포, 대사체, 역가",
+"sy.fold": "공유 폴더",
+"sy.sor": "일상적 공정 중 결과의 기록 시스템: 사이트에 따라 다름",
+"sy.mes": "배치 기록, 이벤트",
+"sy.lims": "시료, 시험, 결과",
+"sy.or": "둘 중 하나, 또는 인계로 둘 다",
+"sy.join": "공정 맥락은 시간으로 조인",
+"sy.cds": "크로마토그래피 데이터",
+"sy.eln": "실험 노트",
+"s.cap": "여기서 중요한 연동 지점을 담은 경계 스케치: 파일 드롭, 히스토리언과의 시간 기반 조인, 그리고 사이트마다 다른 공정 중 결과의 소유 시스템.",
+"s.vend": "공정 중 점검을 어느 시스템이 소유해야 하는지에 대해 벤더 자료의 의견이 갈리며, 그래서 설계는 이를 설정으로 남겨 둡니다.",
+"s.h3a": "기기에서 결과를 꺼내는 방법",
+"s.c1h": "CSV 파일 드롭 (기본)",
+"s.c1": "올인원 분석기는 브리지 컴퓨터의 공유 폴더로 CSV 파일을 내보냅니다. 시뮬레이터는 이 경로를 먼저 모델링합니다. 파일에는 현지 시각이 들어 있고, 시간대가 명시되지 않는 경우가 많습니다.",
+"s.c2h": "벤더 OPC 서버",
+"s.c2": "벤더 OPC 서버는 별도 라이선스의 추가 기능으로 존재합니다. 여기서는 설명만 하고 기본값으로 모델링하지 않습니다.",
+"s.c3h": "SiLA 2, OPC UA LADS (미래)",
+"s.c3": "한 벤더의 지도는 SiLA 2 도입이 더디고 OPC UA LADS는 설치된 장비군에서 초기 단계라고 설명합니다. 미래 방향이지 현재의 설치 기반이 아닙니다.",
+"s.h3b": "시계와 시간대는 데이터 무결성 통제다",
+"s.clock": "영국 MHRA 지침은 시각 기록 사건에 통제되거나 동기화된 시계를 쓰고 시간대를 명시하라고 요구합니다(5.1절). WHO 지침은 공정 계측기의 시계를 포함해 시각 기록에 쓰는 모든 시계를 변경하는 권한을 제한하라고 예시합니다(4.12절). 이 설계는 모든 시각을 UTC로 저장하고 원천의 오프셋을 옆에 함께 둡니다.",
+"s.clock2": "시계가 얼마나 자주 틀리는지는 출처가 없습니다. 잘못된 시계 시나리오(SC6)는 분석기 한 대에 +5시간 오프셋을 주는 중립적인 스트레스 사례이며 추정치가 아닙니다.",
+"s.h3c": "EU Annex 11",
+"s.a11": "유럽연합 집행위원회는 전산화 시스템에 관한 Annex 11을 2011년 1월 개정본으로 게시합니다. 이 페이지는 이를 현행 문서로 취급합니다.",
+"s.a11b": "개정 Annex 11, 개정 Chapter 4, AI에 관한 새 Annex 22 초안이 2025년 7월 7일부터 10월 7일까지 의견 수렴에 부쳐졌습니다. 개정안은 초안이며 확정되지 않았습니다.",
+"s.a11c": "모델은 통제 수단을 기술할 뿐, 어느 쪽 문서에 대해서도 준수를 주장하지 않습니다.",
+"m.h2": "방법: 다섯 개 층과 하나의 관측 계약",
+"m.lead": "엔진은 숨겨진 진실 세계와 관측 가능한 기록 세계를 나란히 실행합니다. 기록기는 사람이나 기기가 볼 수 있는 것만 보고, 두 세계를 비교하는 것은 평가기뿐입니다.",
+"ly.truth": "진실 세계 (숨은 상태, 실제 시각)",
+"ly.l2": "채취, 라벨, 이송",
+"ly.l3": "대기열, QC, 실행",
+"ly.l5": "조회, 의사결정",
+"ly.eval": "평가기",
+"ly.evals": "기록을 진실과 대조해 채점",
+"ly.rule": "기록기와 L5는 진실 세계를 읽지 않습니다.",
+"ly.cap": "층 구조가 비교를 공정하게 만듭니다. 모든 아키텍처가 같은 진실 실행을 기록하고, 달라지는 것은 기록 방식뿐입니다.",
+"m.o1": "기록기는 관측 가능한 이벤트만 소비합니다. 테스트는 숨은 필드만 바꾸고 기록기 출력이 바이트 단위로 같아야 함을 요구합니다.",
+"m.o2": "같은 시나리오, 시드, 엔진 버전은 바이트 단위로 같은 이벤트 로그를 냅니다. 난수는 시료, 분석 항목, 시도, 목적으로 키가 정해지므로 시료를 추가해도 다른 시료의 난수는 바뀌지 않습니다.",
+"m.o3": "확률적 비교는 최소 20개 시드로 실행하고 구간과 함께 보고합니다. 게이트로 쓰지 않으며, 어느 아키텍처가 이겨야 한다고 요구하는 테스트도 없습니다.",
+"m.o4": "온라인 센서 시계열은 진실 세계에서 60초 간격으로 기록됩니다.",
+"m.h3a": "프로파일: 정직한 등급이 붙은 묶음",
+"m.pr.lead": "바이오리액터 유형, 분석기 유형, 작업자 숙련도는 각각 데이터가 기록되는 방식을 바꿉니다. 각각은 출처가 있는 부분과 가정인 부분으로 이루어진 이름 붙은 묶음이며, 묶음의 등급은 가장 약한 구성요소를 따릅니다.",
+"m.pr.cap": "프로파일 (기본값 먼저)",
+"m.pr.h1": "프로파일",
+"m.pr.h2": "달라지는 것",
+"m.pr.h3": "묶음 등급",
+"m.pr.b1": "작업자가 밀폐 용기나 주사기로 채취하며, 시료는 배양액에서 무시할 수 있는 비율입니다",
+"m.pr.bg": "묶음",
+"m.pr.b2": "액체 핸들러가 컵으로 채취합니다. 600 µL 시료는 마이크로 규모 용기의 매일 채취에 부담이며, 미니 규모 용기는 100~250 mL입니다",
+"m.pr.b3": "샘플링 라인에서 멸균 주사기로 채취합니다. 규모 구분 경계와 퍼지 부피는 가정입니다",
+"m.pr.a1": "대기열, 파일, 시계가 각각 하나: 16개 항목을 4.5분에, 275 µL로",
+"m.pr.a2": "대기열 둘, 방문 둘. 두 결과가 서로 다른 시각에 측정되고 서로 다른 시계를 가질 수 있습니다",
+"m.pr.a3": "HPLC로 역가 측정. 공유 컬럼이 경합 자원입니다",
+"m.pr.s1": "라벨 및 계수 오류율은 임상 및 비드 연구에서 빌려 왔습니다",
+"m.pr.s2": "모든 배수는 가정입니다. 교육 효과에 대한 근거는 확립하지 못했습니다",
+"m.h3b": "시나리오 목록",
+"m.sc.cap": "각 시나리오는 질문 하나를 던집니다. 아직 어느 시나리오에도 결과는 없습니다",
+"m.sc.q": "질문",
+"m.sc.s": "세션",
+"m.sc1": "평범한 하루에 무엇이 사라지는가?",
+"m.sc2": "평균 가동률이 낮은데 왜 기다리는가?",
+"m.sc3": "조인은 어느 타임스탬프를 써야 하는가?",
+"m.sc4": "기기 효과는 언제 공정 효과처럼 보이는가?",
+"m.sc5": "분석기 한 대가 멈추면 우선순위 규칙은 비용을 누구에게 넘기는가?",
+"m.sc6": "시계 하나가 틀리면 어떻게 되는가?",
+"m.sc7": "재실행과 희석은 어떻게 기록되는가?",
+"m.sc8": "기록 오류는 어떻게 제어에 닿는가?",
+"m.sc9": "맥락 단위가 배치가 아니라면?",
+"m.sc10": "배치 경계를 넘는 병합에서는 무슨 일이 생기는가?",
+"m.sc11": "같은 모델에 통제 강도만 다르면?",
+"m.h3c": "수치를 어떻게 등급화하고 검증하는가",
+"m.g.h1": "등급",
+"m.g.h2": "의미",
+"m.g.s": "S, 출처 확인",
+"m.g.sd": "바이오공정 1차 출처: 논문, 벤더 사양서 또는 사례 연구.",
+"m.g.p": "P, 대리지표",
+"m.g.pd": "다른 분야(임상 검사실, 혈액가스, 무세포 배지)에서 빌렸거나 1차 출처로 보기엔 약한 출처.",
+"m.g.d": "D, 유도",
+"m.g.dd": "출처가 있는 수치에 산술을 적용한 값이며, 산술 과정을 적어 둡니다.",
+"m.g.a": "A, 가정",
+"m.g.ad": "출처를 찾지 못했습니다. 나타나는 모든 곳에서 가정으로 표시합니다.",
+"m.v1": "이 페이지의 모든 수치에는 원장 id가 붙습니다. 저장소 점검이 각 가정 id를 그 출처까지 따라갑니다.",
+"m.v2": "출처는 세 단계로 검증합니다. 발췌문으로만 본 것, 연구 실행자가 읽은 것, 오케스트레이터가 다시 읽은 것. 이 페이지는 다시 읽은 출처만 표시 없이 인용하며, 나머지는 <b>잠정</b>으로 표시합니다.",
+"m.v3": "엔진의 게이트는 구조적입니다. 손으로 계산한 픽스처, 해석적 대기 시간과 맞춰 보는 대기행렬 점검, 플래그마다 하나씩 있는 강제 오류 픽스처. 아키텍처 간 우열은 보고할 뿐 단언하지 않습니다.",
+"m.h3d": "잠정 표시 없이 인용한 출처",
+"m.ai": "AI 코딩 도구로 만들었습니다. 설계 결정은 저자가 ADR로 기록합니다.",
+"m.road": "로드맵",
+"m.r0": "기반, 설계, 이 페이지",
+"m.r1": "엔진, L1~L3 층, 프로파일",
+"m.r2": "플래그, 기록기, 지표, 실험",
+"m.r3": "브라우저 실험실 UI",
+"m.r4": "하류 계보, HPLC 경합",
+"m.r5": "릴리스와 정리 글",
+"m.ext": "예정된 확장(설계만 했고 아직 구현하지 않음): 리액터별 세포주 프로파일, 운전 모드 전환(배치, 페드배치, 관류), 그리고 오염이나 무균성 실패 같은 이탈 이벤트와 계보를 거슬러 올라가는 조사 추적.",
+"m.repo": "저장소 링크: 공개 시점에 추가"
+};
+
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  var $ = function (s, c) { return (c || document).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+  var store = {
+    get: function (k) { try { return window.localStorage.getItem('sll.' + k); } catch (e) { return null; } },
+    set: function (k, v) { try { window.localStorage.setItem('sll.' + k, v); } catch (e) { /* storage may be blocked */ } }
+  };
+  var reduced = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  var KO = window.I18N_KO || {};
+
+  /* theme: auto = no attribute, light/dark = data-theme, neon = data-skin */
+  var themeSel = $('#theme-select');
+  function applyTheme(v) {
+    root.removeAttribute('data-theme');
+    root.removeAttribute('data-skin');
+    if (v === 'light' || v === 'dark') root.setAttribute('data-theme', v);
+    else if (v === 'neon') root.setAttribute('data-skin', 'neon');
+    else v = 'auto';
+    themeSel.value = v;
+  }
+  themeSel.addEventListener('change', function () { applyTheme(themeSel.value); store.set('theme', themeSel.value); });
+
+  /* language: English is in the markup; Korean comes from the dictionary */
+  function applyLang(l) {
+    l = l === 'ko' ? 'ko' : 'en';
+    root.setAttribute('lang', l);
+    $$('[data-i18n]').forEach(function (el) {
+      if (el.getAttribute('data-en') === null) el.setAttribute('data-en', el.innerHTML);
+      var k = el.getAttribute('data-i18n');
+      el.innerHTML = (l === 'ko' && KO[k] != null) ? KO[k] : el.getAttribute('data-en');
+    });
+    $$('[data-i18n-aria]').forEach(function (el) {
+      if (el.getAttribute('data-en-aria') === null) el.setAttribute('data-en-aria', el.getAttribute('aria-label') || '');
+      var k = el.getAttribute('data-i18n-aria');
+      el.setAttribute('aria-label', (l === 'ko' && KO[k] != null) ? KO[k] : el.getAttribute('data-en-aria'));
+    });
+    store.set('lang', l);
+  }
+  $('#lang-toggle').addEventListener('click', function () { applyLang(root.getAttribute('lang') === 'ko' ? 'en' : 'ko'); });
+
+  /* story mode: highlights the active step of the timeline and lineage figures while scrolling */
+  var storyBtn = $('#story-toggle');
+  var io = null;
+  function activate(li) {
+    var scope = li.closest('[data-story-root]');
+    if (!scope) return;
+    var n = li.getAttribute('data-step-li');
+    $$('[data-step-li]', scope).forEach(function (x) { x.classList.toggle('is-active', x === li); });
+    $$('[data-step]', scope).forEach(function (x) { x.classList.toggle('is-active', x.getAttribute('data-step') === n); });
+  }
+  function stopStory() {
+    if (io) { io.disconnect(); io = null; }
+    $$('.is-active').forEach(function (x) { if (x.hasAttribute('data-step') || x.hasAttribute('data-step-li')) x.classList.remove('is-active'); });
+  }
+  function setStory(on) {
+    if (reduced.matches || !('IntersectionObserver' in window)) on = false;
+    storyBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    stopStory();
+    if (on) {
+      root.setAttribute('data-story', 'on');
+      $$('[data-story-root]').forEach(function (s) { var first = $('[data-step-li]', s); if (first) activate(first); });
+      io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) activate(e.target); });
+      }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+      $$('[data-step-li]').forEach(function (li) { io.observe(li); });
+    } else {
+      root.removeAttribute('data-story');
+    }
+    store.set('story', on ? 'on' : 'off');
+  }
+  function syncMotion() {
+    storyBtn.disabled = !!reduced.matches;
+    if (reduced.matches) { storyBtn.title = 'Disabled: reduced motion is on'; setStory(false); } else { storyBtn.removeAttribute('title'); }
+  }
+  storyBtn.addEventListener('click', function () { setStory(storyBtn.getAttribute('aria-pressed') !== 'true'); });
+  if (reduced.addEventListener) reduced.addEventListener('change', syncMotion);
+
+  /* timeline: move measured_at, see which state each join attaches */
+  var slider = $('#timeline-slider');
+  var DRAW = 520, FEED = 540, RUN = 4.5, SLA = 30, TESTED = 55; /* minutes since midnight and minutes */
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function clock(m) { return pad(Math.floor(m / 60)) + ':' + pad(Math.floor(m % 60)); }
+  function clockS(m) { var s = Math.round(m * 60); return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor((s % 3600) / 60)) + ':' + pad(s % 60); }
+  function xOf(m) { return 150 + (m - 510) * 5; }
+  function updateTimeline() {
+    var m = +slider.value, runStart = m - RUN, hold = runStart - DRAW;
+    var gap = m >= FEED, xm = xOf(m);
+    var state = gap ? 'gap' : 'agree';
+    var holdState = hold > TESTED ? 'over55' : (hold > SLA ? 'over30' : 'within');
+    $('#tl-out').textContent = clock(m);
+    slider.setAttribute('aria-valuetext', clock(m));
+    $('#r-meas').textContent = clock(m);
+    $('#r-run').textContent = clockS(runStart);
+    $('#r-span').textContent = Math.round(m - DRAW) + ' min';
+    $('#r-hold').textContent = hold.toFixed(1) + ' min';
+    var jr = $('#join-result'), svg = $('#tl-svg');
+    jr.setAttribute('data-state', state); jr.setAttribute('data-hold', holdState); svg.setAttribute('data-state', state);
+    $('#tl-meas').setAttribute('transform', 'translate(' + (xm - 425) + ' 0)');
+    $('#tl-join2').setAttribute('transform', 'translate(' + (xm - 425) + ' 0)');
+    var lbl = $('#tl-meas-lbl'), lt = $('#tl-meas-t'), lx = xm > 600 ? 417 : 433;
+    lt.textContent = clock(m);
+    lbl.setAttribute('x', lx); lt.setAttribute('x', lx);
+    lbl.setAttribute('text-anchor', xm > 600 ? 'end' : 'start');
+    $('#tl-run').setAttribute('x', xm - RUN * 5);
+    var wait = $('#tl-wait');
+    wait.setAttribute('width', Math.max(0, xm - RUN * 5 - xOf(DRAW)));
+    var flip = xm > 230; /* label sits left of the line so it stays inside the scrolled view */
+    $$('#tl-svg .j2').forEach(function (t) { t.setAttribute('text-anchor', flip ? 'end' : 'start'); t.setAttribute('x', flip ? 419 : 431); });
+  }
+  function followMarker() { /* on narrow screens keep the moving measured_at marker and its label inside the scrolled view */
+    var fs = $('#tl-svg').closest('.fig-scroll');
+    if (!fs || fs.scrollWidth <= fs.clientWidth + 1) return;
+    var k = fs.scrollWidth / 780, viewW = fs.clientWidth / k, xm = xOf(+slider.value);
+    fs.scrollLeft = Math.max(0, xm + 120 - viewW) * k;
+  }
+  slider.addEventListener('input', function () { updateTimeline(); followMarker(); });
+
+  /* architectures: eight flags drive the outcome matrix (a design hypothesis, not a result) */
+  var FLAGS = ['system_issued_id', 'two_clocks', 'available_at', 'instrument_state_snapshot', 'append_only_versions', 'write_time_keys', 'ingest_idempotency', 'audit_trail'];
+  var PRESETS = { A: [], B: ['system_issued_id', 'ingest_idempotency', 'audit_trail'], C: FLAGS };
+  var ROWS = { /* p = flags that prevent, d = flags that let a rule detect (design hypothesis) */
+    label: { p: ['system_issued_id'], d: ['two_clocks'] },
+    feed: { p: ['two_clocks'], d: [] },
+    rekey: { p: ['write_time_keys'], d: ['two_clocks'] },
+    clock: { p: [], d: ['two_clocks'] },
+    dup: { p: ['ingest_idempotency'], d: [] },
+    rerun: { p: ['append_only_versions'], d: ['audit_trail'] },
+    instr: { p: [], d: ['instrument_state_snapshot'] },
+    late: { p: ['available_at'], d: [] },
+    attr: { p: ['audit_trail'], d: [] },
+    tech: { p: [], d: ['two_clocks'] }
+  };
+  function flagOn(name) { var el = $('#flag-' + name); return !!(el && el.checked); }
+  function any(list) { return list.some(flagOn); }
+  function updateMatrix() {
+    Object.keys(ROWS).forEach(function (key) {
+      var tr = $('#outcome-matrix tr[data-err="' + key + '"]');
+      if (!tr) return;
+      var out = any(ROWS[key].p) ? 'prevented' : (any(ROWS[key].d) ? 'detected' : 'invisible');
+      tr.setAttribute('data-outcome', out);
+      $$('td[data-col]', tr).forEach(function (td) {
+        var now = td.getAttribute('data-col') === out;
+        td.classList.toggle('is-now', now);
+        if (now) td.setAttribute('aria-current', 'true'); else td.removeAttribute('aria-current');
+      });
+    });
+    var current = FLAGS.filter(flagOn).sort().join(',');
+    var match = 'custom';
+    Object.keys(PRESETS).forEach(function (p) { if (PRESETS[p].slice().sort().join(',') === current) match = p; });
+    $('#preset-readout').setAttribute('data-now', match);
+    $$('#flag-presets [data-preset]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-preset') === match ? 'true' : 'false'); });
+  }
+  $$('#flag-toggles input[type=checkbox]').forEach(function (cb) { cb.addEventListener('change', updateMatrix); });
+  $$('#flag-presets [data-preset]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var on = PRESETS[b.getAttribute('data-preset')];
+      FLAGS.forEach(function (f) { $('#flag-' + f).checked = on.indexOf(f) >= 0; });
+      updateMatrix();
+    });
+  });
+
+  /* scroll hint: shown above wide diagrams and tables only when they overflow */
+  function checkOverflow() {
+    $$('.scroll-hint').forEach(function (h) {
+      var s = h.nextElementSibling;
+      if (s && s.scrollWidth > s.clientWidth + 1) h.setAttribute('data-on', ''); else h.removeAttribute('data-on');
+    });
+  }
+  window.addEventListener('resize', checkOverflow);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(checkOverflow);
+
+  /* start-up: saved preferences, then the first paint of the interactive parts */
+  applyTheme(store.get('theme') || 'auto');
+  if (store.get('lang') === 'ko') applyLang('ko');
+  syncMotion();
+  if (!reduced.matches && store.get('story') === 'on') setStory(true);
+  updateTimeline();
+  updateMatrix();
+  checkOverflow();
+  followMarker();
+})();
+</script>
+</body>
+</html>
