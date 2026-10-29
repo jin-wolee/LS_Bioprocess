@@ -1113,3 +1113,63 @@ Planted truth import (scratch copy; `eslint`): `engine/src/raw/controller_emit.t
 - Process: the Step 8 R3 grep of prompts/20 now uses `git grep --untracked`, because the plain `grep -r` also scanned the gitignored private folder and printed one line of it to an executor's terminal (nothing reached a tracked file).
 
 **Open (held by the orchestrator)**: VR-025 joins the review-outcome list for the author (with VR-005, VR-006, VR-013, VR-024, VR-026); Blocked for the research role: the L1 signals beyond A100, the OUT rule, the acknowledge and return-to-normal times; maintenance next: the runtime flag on every Node entry point, a guard that the flag is present, a non-gated canary that measures the miscompile without it, and ADR-0016.
+
+## 2026-10-30 — Maintenance: Node flag on every entry point, ADR-0016 option 2 (executor, uncommitted)
+
+**Result**: every Node process that runs engine code now carries `--no-maglev-escape-analysis` (Vitest workers, the 3 spawning tests, the 2 Python spawns), the 10 CLI scripts refuse to start without it, guard tests fail when any of them lacks it, and the canary is in. Base commit c10d8b4, nothing committed; no ADR, golden, ledger, prompt, `engine/src`, `package.json` or `.nvmrc` touched; with the flag on, the S1 goldens and every other test pass unchanged. Done line: `uv run pytest -q` -> `213 passed, 76 deselected`; `check_docs --all` -> `532 files, 0 failure(s), 0 warning(s)`; `check_all --manual` -> PASS (its `npm run check`: lint and typecheck clean, `Test Files 90 passed (90)`, `Tests 3913 passed | 1 todo (3914)`, +14 tests and +1 file on the base). Two rulings of the orchestrator shaped the build (chat, 2026-10-30): the two Python spawn files joined the allowed paths (argv lists only, plus a drift check), and the Vitest setting goes into the existing `vite.config.ts` instead of a new file.
+
+**What exists** (no new dependency, no version change)
+- `engine/tests/support/node_flags.ts`: the one list, `ENGINE_NODE_FLAGS = ["--no-maglev-escape-analysis"]`, with a comment pointing to ADR-0016.
+- `vite.config.ts`: `test.execArgv: [...ENGINE_NODE_FLAGS]` next to the existing `include` and `environment`, both unchanged. Vitest 5.0.5 takes `test.execArgv` (its own type docs: "Pass additional arguments to `node` process when spawning the worker") and its default pool is `forks`, so the flag lands on the command line of each worker; the pool is left at the default. The brief assumed there was no Vitest config; there was this one. A first build with a separate `vitest.config.ts` merging it was dropped on the ruling above (`tsconfig.json` is back to the base).
+- `engine/tests/support/require_node_flags.ts`: a module with one effect. If a flag of the list is missing from `process.execArgv` it prints the flag, ADR-0016 and the full command to stderr and exits 2. Each of the 10 `*_cli.ts` files imports it as its first import, so it runs before any engine module is evaluated. No `v8.setFlagsFromString`. The match is the exact dashed form.
+- Spawn sites: `engine/tests/assembly/two_process_determinism.test.ts`, `engine/tests/invariants.test.ts`, `engine/tests/invariants_s1b.test.ts` pass `...ENGINE_NODE_FLAGS` (import and the spawn argument list only). `tests/test_data_dictionary.py` and `tests/user_track/test_queries.py` pass the literal flag in their argv list with a one-line comment (Python cannot import the TS list). `git grep` finds no other place that starts Node; the others are `git` (`raw/schemas.test.ts`) and `node_modules/.bin/json2ts` (`schemas.test.ts`, a Node script that runs no engine code, left as is by ruling).
+- `engine/tests/node_flags.test.ts` (14 tests): the list holds the literal flag of the brief; the Vitest worker's `process.execArgv` holds it and every flag of the list; a child spawned with the shared flags prints it in its `execArgv`; every `*_cli.ts` found in `engine/tests/support/` (10, listed at run time, so a new CLI is covered) exits 2 and names the flag and ADR-0016 when started bare (plus a sanity test that the CLI list is not empty).
+- `tests/test_node_flags.py` (3 tests): reads the list out of the text of `node_flags.ts` and checks, with the `ast` module, that every `["node", ...]` argument list in `tests/` has exactly those flags right after `"node"`; it also checks that both Python spawns are found. About 25 lines of logic, so it is in.
+- `engine/tests/support/v8_canary.ts`: the canary, outside the gate (no test and not `check_all` runs it). `node engine/tests/support/v8_canary.ts [runs per flag set = 160] [concurrency = 4]`. Parent and child are the same file (`--child`); the parent loads no engine code; the child repeats the experiment2 branch of `determinism_cli.ts` (second copy of 5 lines, AHA) and does not import `require_node_flags.ts`, since it must run without the flag. Exit 1 when the flagged set differs or fails.
+
+**Red, then green** (`npx vitest run engine/tests/node_flags.test.ts`, in order)
+| Step | State | Result |
+|---|---|---|
+| 1 | list file exists but is empty, no config, no CLI check | `13 failed, 1 passed (14)`; reasons: the list lacks the flag, the worker's `execArgv` is `--experimental-import-meta-resolve --require .../suppress-warnings.cjs --conditions node --conditions development` with no flag, the child has none, the 10 CLIs run or print their usage instead of refusing |
+| 2 | list filled | `11 failed, 3 passed`: list and child tests green |
+| 3 | `execArgv` added to the Vitest config (first in a separate file, then in `vite.config.ts`; same result) | `10 failed, 4 passed`: worker test green; `tsc --noEmit` clean |
+| 4 | CLI check added, spawn sites not yet changed | the 10 CLI tests green; the 8 spawn tests fail with the refusal text (2 in `two_process_determinism`, 3 in `invariants`, 3 in `invariants_s1b`) |
+| 5 | flags added to the 3 spawn sites | the 4 files: `Test Files 4 passed (4)`, `Tests 2039 passed (2039)` |
+| 6 | Python: `tests/test_node_flags.py` written, spawns untouched | `1 failed, 2 passed`: `test_data_dictionary.py:32 passes []; user_track/test_queries.py:90 passes []`. Before it, with the CLI check in, `pytest -q` read `197 passed, 76 deselected, 13 errors` (the dictionary tests: the CLI refused) |
+| 7 | the two Python argv lists carry the flag | `3 passed`; `pytest -q` -> `213 passed, 76 deselected`; `node --no-maglev-escape-analysis engine/tests/support/sql_tables_cli.ts <dir> scenario` exits 0; `pytest -m user_track tests/user_track/test_queries.py` -> `14 skipped` (the author's `sql/queries` are absent, so that path is proven only by the manual run) |
+
+**Mutations** (scratch copy outside the repository, restored, `diff -r` against the tree it was copied from clean after each; Vitest mutations run the 4 files above (2039 tests), Python mutations run `tests/test_node_flags.py` and `tests/test_data_dictionary.py`)
+| # | Mutation | Failures |
+|---|---|---|
+| M1 | `execArgv: []` in `vite.config.ts` | 1 failed (the worker test) |
+| M2 | `...ENGINE_NODE_FLAGS` removed from the spawn in `invariants.test.ts` | 3 failed (the 3 seeds; the CLI check turns the missing flag into exit 2) |
+| M3a | the check import removed from `determinism_cli.ts` | 1 failed (its CLI test) |
+| M3b | `require_node_flags.ts` does nothing | 10 failed (all CLI tests) |
+| M4 | the shared list empty | 14 failed: the 13 of the guard tests, plus one `two_process_determinism` test, which is the miscompile itself striking an unflagged run (intermittent; the mutant removes the protection) |
+| P1 | `test_data_dictionary.py` spawn without the flag | 1 failed (the drift test) and 13 errors (the CLI refuses) |
+| P2 | `tests/user_track/test_queries.py` spawn without the flag | 1 failed (the drift test) |
+| P3 | the TS list gains a second flag, the Python spawns keep one | 1 failed (the drift test) and 13 errors |
+
+**Canary, run once**: `node engine/tests/support/v8_canary.ts 160 4`, Node v25.6.1, 160 runs per flag set, 4 processes at a time (the two sets interleaved), 63 s, on a machine shared with other sessions (load average 5.5 on 8 cores, read a few minutes later).
+| Flags | Runs | Failed | Distinct outputs | Differ from the majority |
+|---|---|---|---|---|
+| none | 160 | 0 | 11 | 11 |
+| `--no-maglev-escape-analysis` | 160 | 0 | 1 | 0 |
+The majority output of the two sets is the same (sha256 prefix acdb9cfdc718). So the canary has the power to see the miscompile (11 of 160 without the flag; the 11 wrong runs gave 10 different wrong outputs) and the flag removes it, as in the measurements of ADR-0016.
+
+**Timing of `npm run check`** (one run each, informative; the machine was shared both times, load average 5.5 to 6.5): before 1:56.7 (Vitest duration 108.65 s), and that run failed: `two_process_determinism` experiment2, `Test Files 1 failed | 88 passed (89)`, `Tests 1 failed | 3898 passed | 1 todo (3900)`, i.e. the miscompile struck in the gate itself; after 1:34.2 (Vitest duration 90.90 s), `90 passed`. (A first "after" run with the separate config file read 1:33.9.) No slowdown from the flag is visible.
+
+**For the orchestrator**
+- Commands written without the flag now refuse and print the full command. `docs/design/single_sample_trace.md` lines 56 and 57 (`trace_cli.ts`, `trace_table_cli.ts --write`) now carry the flag (the only change to that file, by ruling). `prompts/` holds no `node ...` command and no CLI name (`git grep` for the CLI names, `node --`, `node` plus a path, and `engine/tests/support/*.ts` finds only a mention of the module `workload.ts` in `prompts/10_S1a_contracts_analyzer.md:150`), so there is nothing to list there. What still shows no flag: the header and `usage:` lines of the CLIs (under Parked).
+- Not covered by the flag, by design of the ADR: any process started without it (the guards see only the CLIs, the Vitest workers, the three TS spawns and the Python `["node", ...]` lists), `json2ts`, the browser (S3).
+- Paths: structure-only, none. Behaviour: `engine/tests/support/{node_flags,require_node_flags,v8_canary}.ts` (new), `engine/tests/support/*_cli.ts` (10, one import line each), `engine/tests/node_flags.test.ts` (new), `engine/tests/assembly/two_process_determinism.test.ts`, `engine/tests/invariants.test.ts`, `engine/tests/invariants_s1b.test.ts`, `vite.config.ts`, `tests/test_node_flags.py` (new), `tests/test_data_dictionary.py`, `tests/user_track/test_queries.py` (argv list and one comment line each), `docs/design/single_sample_trace.md` (the two command examples), `docs/progress.md`.
+
+**Parked**: show the flag in the header and `usage:` lines of the CLIs; derive the Python flag from the TS list instead of repeating it, if a third Python spawn appears (AHA).
+
+## 2026-10-30 — Maintenance review (orchestrator)
+
+**Verdict**: PASS. Every Node process that runs engine code carries `--no-maglev-escape-analysis` (ADR-0016, Proposed; option 2 chosen by the author in chat): the Vitest workers through `vite.config.ts`, the three spawning tests, the ten CLI scripts (they exit 2 without it), and the two Python spawns, with a Python drift check against `engine/tests/support/node_flags.ts`. `engine/src`, the goldens, the ledgers and the ADRs are unchanged.
+- Orchestrator runs: `uv run pytest -q` 213 passed; `check_docs --all` 0 failures; `npm run check` alone 90 files, 3913 passed, 1 todo; `check_all --manual` PASS. One Stop-hook run of `npm run check` failed while three checks ran at once and printed no failing test; the same suite passed alone right after. Mutation by the orchestrator: the `execArgv` line removed from `vite.config.ts` -> the worker guard fails (1 of 14), restored and `cmp` clean.
+- Rulings during the batch: the Python spawns were added to the allowed paths (neither file is user-owned); the flag goes into the existing `vite.config.ts` (a second config file would have shadowed it); the two trace commands in `docs/design/single_sample_trace.md` carry the flag.
+- Canary (outside the gate, Node v25.6.1, 160 runs per set): without the flag 11 outputs differ from the majority, with it none; both sets share the majority output.
+- Housekeeping: the adversary worktree, which an executor had reused as a scratch copy, held only superseded copies; it and its branch (no commit of its own) are removed.

@@ -87,7 +87,8 @@ def _dump(tmp_path_factory, which: str, query: str) -> Path:
     if shutil.which("node") is None:
         pytest.skip("node is not on the PATH: the engine dump of the integration checks cannot run")
     out = tmp_path_factory.mktemp(f"dump_{which}")
-    subprocess.run(["node", str(DUMP_CLI), str(out), which], cwd=ROOT, check=True, capture_output=True, timeout=300)
+    # ADR-0016: the engine's Node flags (engine/tests/support/node_flags.ts); the CLI exits 2 without them, tests/test_node_flags.py checks this copy
+    subprocess.run(["node", "--no-maglev-escape-analysis", str(DUMP_CLI), str(out), which], cwd=ROOT, check=True, capture_output=True, timeout=300)
     return out
 
 

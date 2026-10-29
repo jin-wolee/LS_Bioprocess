@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { ENGINE_NODE_FLAGS } from "../support/node_flags.ts";
 import { ROOT } from "../support/paths.ts";
 
 // Two-process determinism of the experiment runners (S2c3 open item, orchestrator decision 5 of S2d): the same experiment on the same seeds, run in two separate Node
@@ -8,7 +9,7 @@ import { ROOT } from "../support/paths.ts";
 // (a wall clock, an address, an iteration order of a hash, a module-level state left by an earlier run). The runner is engine/tests/support/determinism_cli.ts.
 
 const cli = join(ROOT, "engine", "tests", "support", "determinism_cli.ts");
-const run = (experiment: string): string => execFileSync(process.execPath, [cli, experiment], { cwd: ROOT, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+const run = (experiment: string): string => execFileSync(process.execPath, [...ENGINE_NODE_FLAGS, cli, experiment], { cwd: ROOT, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
 
 describe.each([["experiment1"], ["experiment2"]])("%s in two processes", (experiment) => {
   it("Given the first two seeds of its seed list When it runs in two separate processes Then the two reports are byte-identical", () => {

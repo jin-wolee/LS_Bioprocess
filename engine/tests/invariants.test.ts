@@ -5,6 +5,7 @@ import { runL3 } from "../src/analysis.ts";
 import type { L3Output } from "../src/analysis.ts";
 import { observe } from "../src/observe.ts";
 import { canonicalJsonl, logHash } from "../src/trace.ts";
+import { ENGINE_NODE_FLAGS } from "./support/node_flags.ts";
 import { ROOT, readJson } from "./support/paths.ts";
 import type { Json } from "./support/schemas.ts";
 import { makeWorkload } from "./support/workload.ts";
@@ -200,7 +201,7 @@ describe("I9 determinism: same inputs, same log_hash, across two Node processes"
 
   it.each([1, 17, 250])("seed %i: two child processes print the hash the test process computes", async (seed) => {
     const cli = join(ROOT, "engine", "tests", "support", "hash_cli.ts");
-    const run = (): string => execFileSync(process.execPath, [cli, String(seed)], { cwd: ROOT, encoding: "utf8" }).trim();
+    const run = (): string => execFileSync(process.execPath, [...ENGINE_NODE_FLAGS, cli, String(seed)], { cwd: ROOT, encoding: "utf8" }).trim();
     const first = run();
     expect(run()).toBe(first);
     expect(first).toBe(await logHash((cases[seed - 1] as (typeof cases)[number]).out.events));

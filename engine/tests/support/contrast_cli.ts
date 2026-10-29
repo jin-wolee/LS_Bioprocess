@@ -2,6 +2,7 @@
 // Runs the seed list of scenarios/experiments/capture_contrast.json (SC1 with the raw layer on, A, B and C each on manual_transcription and on adapter_ingest, paired by seed) and
 // writes the report to the path given on the command line. Stochastic, reported and never gated; the report is not committed. Run directly by Node (native type stripping),
 // so it imports modules with explicit .ts extensions only.
+import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runContrast } from "../../src/experiments/assembly/capture_contrast.ts";

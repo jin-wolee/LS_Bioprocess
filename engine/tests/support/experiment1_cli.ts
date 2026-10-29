@@ -3,6 +3,7 @@
 // Runs the seed list of scenarios/experiments/experiment1.json through every architecture, validates the report against schemas/experiment_report.schema.json
 // and writes it to the path given on the command line. Prints the timing and a compact summary. The report is not committed (it is not under version control).
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
+import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runOpenLoop } from "../../src/experiments/assembly/open_loop.ts";

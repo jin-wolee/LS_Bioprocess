@@ -29,7 +29,8 @@ def d() -> dict:
 
 @pytest.fixture(scope="module")
 def engine() -> dict:
-    out = subprocess.run(["node", str(CLI)], cwd=ROOT, check=True, capture_output=True, text=True, timeout=300).stdout
+    # ADR-0016: the engine's Node flags (engine/tests/support/node_flags.ts); the CLI exits 2 without them, tests/test_node_flags.py checks this copy
+    out = subprocess.run(["node", "--no-maglev-escape-analysis", str(CLI)], cwd=ROOT, check=True, capture_output=True, text=True, timeout=300).stdout
     return json.loads(out)
 
 

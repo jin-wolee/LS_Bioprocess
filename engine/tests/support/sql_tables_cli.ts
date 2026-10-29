@@ -3,6 +3,7 @@
 //   node engine/tests/support/sql_tables_cli.ts <output directory> sc4        the noise-free fixture of SC4 (a bias of +0.5 on AN-2 only), architecture C
 // One <table>.csv per table (header = column names, a null is an empty cell, times as 'YYYY-MM-DD hh:mm:ss'), plus facts.json with the numbers the test needs for its own expectations.
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
+import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { toCsv } from "../../src/export/csv.ts";

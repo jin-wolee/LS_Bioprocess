@@ -2,6 +2,7 @@
 // Runs the experiment of scenarios/experiments/ on the first two seeds of its seed list (the lists are validated at their full length first, then cut, so the A103 minimum
 // stays a rule of the real runs; the report of experiment 2 is built with the minimum set to 2 here only) and prints the report as canonical JSON. Nothing is written; the test compares the text of two processes.
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
+import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
 import { runClosedLoop } from "../../src/experiments/assembly/closed_loop.ts";
 import { buildClosedLoopReport } from "../../src/experiments/assembly/closed_loop_report.ts";
 import { runOpenLoop } from "../../src/experiments/assembly/open_loop.ts";

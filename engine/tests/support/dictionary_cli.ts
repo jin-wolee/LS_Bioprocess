@@ -3,6 +3,7 @@
 // and prints one JSON document: for every table the columns that were emitted with the types seen, whether a null was seen and the few distinct values of a text column; the states
 // seen; the state transitions performed, with their role; the transition table of the code; every key that occurs anywhere in the recorded or exported output.
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
+import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
 import { ANALYTE_UNITS, EXPORT_FIELDS } from "../../src/export/columns.ts";
 import { exportPackage } from "../../src/export/package.ts";
 import { exportRows } from "../../src/export/rows.ts";

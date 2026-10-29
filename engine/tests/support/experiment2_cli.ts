@@ -2,6 +2,7 @@
 // Runs the seed list of scenarios/experiments/experiment2.json through the closed loop (oracle, A, B, C and the sensitivity variants), builds the report, validates it against
 // schemas/closed_loop_report.schema.json and writes it to the path given on the command line. Prints the timing and a compact summary. The report is not committed.
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
+import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runClosedLoop } from "../../src/experiments/assembly/closed_loop.ts";
