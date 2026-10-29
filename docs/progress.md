@@ -247,3 +247,81 @@ The hand traces in `tests/fixtures/traces/` were exported once the same way from
 - A Proposed ADR on mixed fleets (per-bay bioreactor profiles, per-analyzer profiles, additive schema fields), decided 2026-10-29 to follow S1b; implementation in S3 or S4.
 
 **Next**: L1 calibration (sources, then the design proposal for the author).
+
+## 2026-10-29 — S1b: L1 calibration (executor, uncommitted)
+
+**Result**: the L1 changes the author approved on 2026-10-29 are in (spec and ledger first, then tests, then code); every gate is green. Base commit dad4f2d; nothing committed; Step 4 (golden event logs) not run; no ADR touched. The metrics below are reported, not gated, and no value was tuned to reach a range.
+
+**Done**
+- Spec 2.1 rewritten: logistic ceiling (Xmax = the A008 default), growth mu = mu_max x m_T x phi, phi = g / (Ks + g) x max(0, 1 - X / Xmax) with no temperature factor, death kd = (kd_min + (kd_late - kd_min) x (1 - phi)) x m_T,kd, mass balance (uptake capped by what is present, lactate = A084 x X x phi, glucose uptake at the A082 exponential value throughout, stationary values unused), predictive feed rule with its derivation, scripted feeds keep A192.
+- Ledger: A212 new (kd_min 0.0013 per h, range 0.0010-0.0016, grade S, S118); A081 notes (kd_late), A008 (carrying capacity), A011 (default, notes, sources S053 S054 S056 S118; the coupling form is a simulator choice, grade A), A013 (sources S114 S119, value unchanged), A050 (predictive rule, derivation), A084 and A192 (one sentence each), A109 (open question: the caption and the text of S056 give different Ks). S118 (Kroll et al. 2017) and S119 (Mahe et al. 2022) added, both `agent-read`; title, journal and pages checked against CrossRef.
+- Code: `engine/src/process.ts` (282 lines): `advance` (phi, coupled death, capped uptake, lactate x phi), `ruleShare` (the rule's bolus share f = max(0, (floor + D - g) / (C - floor)), D = A082 x X x glucose molar mass per day), `bolus` takes the share, scripted feeds pass the fixed A192. New settings in the three scenarios: `carrying_capacity_e6_per_ml` (A008), `early_death_per_h` (A212); `death_per_h` renamed `late_death_per_h` (A081). Input checks: feed glucose above the floor, carrying capacity positive.
+- Tests: `engine/tests/process_calibration.test.ts` (new, 23 tests); `process.test.ts` and `sampling.test.ts` updated where the old closed forms no longer hold (a constant death rate, no ceiling, the fixed rule bolus); a `NO_DEATH` helper in `tests/support/scenarios.ts`.
+
+**Evidence**
+- Structure-only step first (rename, the two new settings read but unused, `advance` exported): `process.test.ts` and `sampling.test.ts` 36 passed.
+- Red (new and updated tests against the old model): `Test Files 2 failed (2) | Tests 14 failed | 25 passed (39)`. Reasons, each by value: constant death `expected 9.979 to be close to 9.9935` (phi = 1), no ceiling `expected 20.441762597984322 to be close to 19.958`, lactate not tied to growth `expected 0.3431633333333333 to be 0.3` (no glucose) and `expected 14956 to be +0` (lactate rises in steps that start with zero glucose), fixed bolus `expected 0.048 to be close to 0.002004008016032064`.
+- Green: `npm run check` -> `Test Files 25 passed (25)`, `Tests 2412 passed (2412)` (before: 24 files, 2389); `uv run pytest -q` -> `186 passed, 62 deselected`; `check_docs --all` -> `231 files, 0 failure(s)`; `check_all --manual: PASS`. `git status --short -uall -- tests/golden tests/fixtures sql reference` is empty: the hand fixtures, traces and parity goldens are byte-identical.
+- Hand values: one step of 3600 s (dt = 1 h). phi = 1: x = 10 - 0.0013 x 0.5 x 10 = 9.9935. Ceiling (X = Xmax = 20): x = 20 - 0.0042 x 0.5 x 20 = 19.958. No glucose: x = 5 - 0.0042 x 0.5 x 5 = 4.9895 and lactate unchanged. phi = 0.25 (g = Ks, X = 10): mu = 0.027 x 0.5 x 0.25, kd = 0.0013 + 0.0029 x 0.75, x = 9.999. Bolus for X = 10, g = 4 at inoculation: g at the first decision = 4 - 4.504 x 2/24 = 3.62467, f = (1.0 + 4.504 - 3.62467) / 499 = 0.0037662, which brings glucose one day later to the floor (checked one step before the decision). The prediction 0.01 g/L above the floor feeds nothing, 0.01 below feeds 0.01 / 499.
+- Gate on the default scenario: glucose, glutamine, lactate, titer and cells are never negative or not finite, and lactate never rises in a step that starts with zero glucose. The default scenario never runs dry (zero such steps), so the relation is also checked on the same scenario with the glucose floor at 0, where 8,556 such steps exist; a test asserts that they exist.
+- Mutations, scratch copy only, each reverted: lactate without phi -> 4 tests fail; no ceiling -> 5; uptake not capped -> 5; old trigger rule at the floor -> 5; bolus without dilution (denominator C) -> 5; temperature inside phi -> 3.
+
+**Trajectory of the default scenario** (L1 has no RNG draw, so the trajectory is the same for every seed, as a test shows; the spread over the 24 reactors comes only from the inoculation minute against the 10:00 clock of decisions and shift; min / median / max over the 24)
+
+| Quantity | Result | Source range it can be compared with |
+|---|---|---|
+| Peak VCD | 11.48 / 11.51 / 11.55 e6 cells/mL | A008: 10-30e6 |
+| Culture day of the peak | 12.03 / 12.05 / 12.08 (the last value before harvest: cells are still increasing) | S053 tmax 8.4-9.6 d |
+| Harvest day, cause | 12.03 / 12.05 / 12.08; rule 24 of 24, none reached the 14 d limit | A004 14 d |
+| Viability at harvest | 78.83 / 78.88 / 78.97 % | S119 day 14: 90.3 +/- 3.8 % (standard fed-batch; its other arms were read once and not re-checked); S114 harvest below 60 % |
+| Minimum glucose | 0.793 g/L in all 24; 580-584 min per reactor below the 1.0 g/L floor, never zero | A010 floor 1.0 g/L |
+| Maximum glucose | 8.00 g/L (the initial value; no bolus raises it higher) | |
+| Maximum lactate | 7.09 / 7.11 / 7.14 g/L | S056 at most 1.0 g/L |
+| Feeds, volume | 8 rule feeds per reactor, 0.120-0.122 L each reactor, 2.912 L in all | |
+| Seed 1, whole scenario | 449 runs, 51 over_range (11.4 percent) | before: 58 of 323 (18.0 percent); A074 baseline 13.5 percent |
+
+Before the calibration (entry above): harvest at about day 8, lactate about 9.75 g/L. The ceiling factor at the peak is 1 - 11.5/20 = 0.42, so the carrying capacity is not what stops growth: the Monod term, the shift (growth x 0.5 from day 4) and death are.
+
+**Metric report of SC2 and SC5, re-run** (not gated; seeds 1 to 20; sample sd; the same script reproduces the first-round figures exactly on dad4f2d, e.g. burst 1602.5 / 87.4 / 1467.0-1800.0)
+- SC2, per-seed p90 `hold_time` in seconds: burst arm mean 1547.8, sd 61.1, min-max 1448.0-1676.0; staggered arm mean 1508.8, sd 29.9, min-max 1479.0-1579.0. Staggered minus burst: mean -38.9, sd 62.0, min-max -153.0 to 55.0; the staggered arm is lower in 14 of 20 seeds (before: 7 of 20). p90 queue wait: burst 390.9 (sd 66.7), staggered 358.8 (sd 38.3).
+- SC5, per-seed mean `hold_time` of the first attempt of samples that arrive 08:00 to 12:30 on day 8: no maintenance mean 1169.4 (sd 88.4, min-max 1041.6-1366.1); maintenance 1900.6 (sd 380.7, min-max 1303.4-2581.7); difference mean 731.2 (sd 337.5, min-max 150.5-1382.1), higher with the window in 20 of 20.
+- SC5, EDF against FIFO, every run of those samples: due next day (drawn after 10:00) FIFO 1229.2 (sd 154.2), EDF 1233.7 (sd 165.9), difference mean 4.5 (sd 20.1, min-max 0.0 to 90.0), EDF higher in 1 of 20; due today FIFO 2131.4 (sd 477.2), EDF 2129.9 (sd 476.9), difference mean -1.4 (sd 6.5, min-max -28.9 to 0.0), EDF higher in 0 of 20. The EDF cost of the first round (+278.9 s for the next-day group) is not reproduced: the policies now rarely differ. The cause was not diagnosed here (the harvest day moved from about 8 to about 12, which changes the sample load on day 8).
+- I12: median of 5, seed 1, start mark before `runScenario(cfg)`, stop mark after it returns: 78 ms (85, 78, 78, 75, 78) after one warm-up, 449 runs and 7,874 events; the test itself passes. The first-round figures were 57 ms and 78 ms.
+
+**Modelling choices** (for review; none changes a design rule)
+- The consumption D of the rule uses the viable density before the bolus; the bolus then dilutes cells and glucose together, so the predicted glucose is (g + f C - D) / (1 + f). This is the dilution-consistent form and gives a closed formula; S114's Eq. 9 has no dilution term.
+- The rule's bolus is exact up to floating point: when nothing is consumed (a test case) the next decision feeds a remainder of order 1e-16 L.
+- The lactate production in a step uses phi at the start of the step, like growth and death (explicit Euler); it is not scaled by the share of the glucose demand that was actually met in a capped step.
+- Lysis is not modelled (spec 2.1). Dead cells therefore accumulate and viability falls even while the viable density is still rising, which is why the harvest rule fires on day 12.
+
+**Open questions**
+- Lactate reaches about 7.1 g/L against at most 1.0 g/L in the batch cultures of S056 (and 1.35-2.25 g/L in S074): production follows growth (phi) and the lactate switch (A085) is off, so lactate accumulates for as long as glucose lasts. No source supports this magnitude; the choice (switch on, a stationary-phase production rule, or accept) is the author's.
+- Viability at harvest is just under the A013 threshold on day 12 and below the 90.3 +/- 3.8 % of the S119 standard fed-batch on day 14; the day-14 limit is still not reached. Whether to add lysis, change A013, or accept belongs to the author and the research role.
+- The default scenario keeps glucose below the 1.0 g/L floor for about 580 min per reactor (minimum 0.79 g/L) because the rule projects no growth; it never reaches zero.
+- The fact-check of the S118 and S119 quotes confirmed every number; four wordings were changed (see Fact-check round).
+
+**Parked**
+- `docs/research/README.md` line 41 still says "first-order death" and its table does not list A212; the A190 note ("the first bolus (A050) is due around day 4") describes the old rule and ignores the Monod term. Both are outside this call's scope.
+- A050 cites S114 in its notes and not in its `sources` field: the public pages that cite A050 (`docs/research/README.md`, `infographic/index.html`) may use `main-reread` sources only, and S114 is `agent-read`; with S114 in the field the public-number rule of `check_docs` (`scripts/ledger_rules.py`) would flag those lines. It moves into the field when S114 is re-read.
+- S118 and S119 need a `main-reread` of the quoted passages before a public number may use them (S118: section 3.2, the constant kD of 1.3e-3 per h up to 180 h; S119: the day-14 viabilities).
+- Per-reactor parameter draws (S4) would make the 24 trajectories differ; today they are the same curve shifted by the inoculation minute.
+- Structure-only versus behaviour paths. Structure-only (no behaviour change; after this step the process and sampling test files were green, the full suite was run only after the behaviour step): `scenarios/default.json`, `scenarios/sc02_shift_burst.json`, `scenarios/sc05_one_analyzer_down.json` (rename to `late_death_per_h`, the two new settings), `engine/tests/support/scenarios.ts`, `engine/tests/sampling.test.ts`, and the rename, the new config fields and the `export` hunks of `engine/src/process.ts` and `engine/tests/process.test.ts` (interleaved with behaviour hunks: `git add -p`). Behaviour: the remaining hunks of `engine/src/process.ts` and `engine/tests/process.test.ts`, `engine/tests/process_calibration.test.ts`, `docs/design/simulation_spec.md`, `docs/research/assumptions.yaml`, `docs/research/sources.yaml`, `docs/progress.md`.
+
+**Fact-check round** (wording only; no value changed; S118 and S119 stay `agent-read`)
+- S053 and A081, A011, spec 2.1: kd max is described as S053's parameter a2, analogous to the maximum death rate of a logistic fit to viable cell density; using it as the death rate when growth is fully limited is a simulator choice. The words "late-phase net decline" are gone. A081 keeps grade S for the sourced range; the use is the grade-A structure of A011.
+- S118, A212, A011, spec 2.1: 1.3e-3 per h is from section 3.2 (lysis taken into account, approximately constant up to 180 h). The section 3.3 sentence on the rise after 120 h is stated as a correlation only and is not offered as support for the coupling, whose form stays unsourced (grade A).
+- S056: the lactate consumption condition is "after the maximum cell concentration was achieved" (glucose depletion only approximately coincided). The new text of this call never said otherwise, but the existing S056 `supports`, A085 and A123 notes said "once glucose was depleted"; I corrected those three sentences and a fourth in the notes of the operating-mode profile ("after glucose depletion"), although the entries were not on the call's list.
+- S119 and A013, spec 2.1: no "fed daily" wording exists; the source added glucose from the daily measurement, to 6 g/L at a 4 g/L trigger, in ambr15 microscale cultures. Only 90.3 +/- 3.8 % (standard fed-batch, day 14) is quoted as confirmed; 82.2, 86.3 and 80.5 % are marked as read once and not re-checked. The comparison range of the trajectory table is 90.3 +/- 3.8 % accordingly.
+
+**Next**: the orchestrator reviews and applies the fact-check result; the author decides the lactate and viability questions; then Step 4 (golden event logs).
+
+## 2026-10-29 — S1b L1 calibration review (orchestrator)
+
+**Verdict**: PASS after one rework round (wording only). Approved by the author on 2026-10-29 as proposals 1-5 (logistic ceiling, death coupled to growth limitation, mass balance with lactate tied to growth, predictive daily feed, harvest-rule sources).
+- Orchestrator's own runs: `npm run check` → 25 files, 2412 passed; `uv run pytest -q` → 186 passed; `check_docs --all` → 0 failure(s); `check_all --manual: PASS`; `tests/golden`, `tests/fixtures`, `sql/`, `reference/` unchanged. Default trajectory reproduced with the adversary's script: harvest by the viability rule at culture day about 12.1 (was about 8.1), glucose minimum 0.79 g/L and never zero, lactate maximum 7.14 g/L, 192 feeds, 51 of 449 runs over-range in seed 1.
+- Fact-check (`fact-checker`, Sonnet): every number confirmed; four wordings were wrong and are corrected (S053 kd max is a parameter "analogous to the maximum death" rate, not a late-phase rate; the 120 h sentence of S118 is a correlation in section 3.3 and no basis for the coupling; S056 consumption follows the maximum cell concentration; S119 confirmed only for 90.3 ± 3.8 % on day 14). The executor also corrected the same S056 wording in S056, A085 and A123; accepted.
+- Remaining gap, reported not tuned: lactate is 3 to 7 times the source maxima (0.9 to 2.3 g/L), which drives the over-range reruns; the lactate term of proposal 3 omits the temperature factor although S056 ties production to the rate of growth.
+
+**Decision (author, 2026-10-29)**: calibrate lactate as its own step before the golden event logs.
+
+**Next**: lactate sources (in progress), proposal for the author, implementation, then Step 4.

@@ -6,8 +6,9 @@ import type { Rng } from "./rng.ts";
 import { buildSensors } from "./sensors.ts";
 import type { SensorConfig, SensorSeries } from "./sensors.ts";
 
-// L1 process model (spec 2.1, A011): nutrient-limited growth (Monod on glucose) with first-order death, nutrient use proportional
-// to viable cells, product from integrated viable cells, fed by discrete boluses. Explicit Euler at the integration step (A200).
+// L1 process model (spec 2.1, A011): nutrient-limited growth (Monod on glucose) under a logistic ceiling, death between an early and a late rate by
+// the limitation of growth, nutrient use proportional to viable cells and capped by what is present, lactate from growth, product from integrated
+// viable cells, fed by discrete boluses. Explicit Euler at the integration step (A200).
 // The truth run is open loop: nothing from L3, L4 or L5 enters (feedback is false). Every value comes from scenario settings;
 // the unit conversions below (1000 mM*g/mol per g/L, 1e-3 g/L per pg/cell/d at 1e6 cells/mL, seconds per hour and day) are not domain values.
 
@@ -37,8 +38,12 @@ export interface ProcessConfig {
   titer0: number;
   harvestViability: number;
   mu: number;
-  kd: number;
+  /** Death rate of a culture that grows freely (A212) and when growth is fully limited (A081). */
+  kdMin: number;
+  kdLate: number;
   ks: number;
+  /** Carrying capacity of the logistic ceiling on growth (A008). */
+  xmax: number;
   qGlc: number;
   qGln: number;
   qLac: number;
@@ -47,7 +52,7 @@ export interface ProcessConfig {
   mwLac: number;
   floor: number;
   decision_s: number;
-  /** Bolus as a fraction of the current culture volume (A192). */
+  /** Fixed bolus of a scripted feed, as a fraction of the current culture volume (A192). The rule sizes its own (A050). */
   bolus: number;
   feedGlc: number;
   feedGln: number;
@@ -69,7 +74,7 @@ export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedE
     productionDays: ["production_days", "d"], density: ["inoculation_density_e6_per_ml", "1e6 cells/mL"], viability0: ["initial_viability_pct", "%"],
     glucose0: ["initial_glucose_g_per_l", "g/L"], glutamine0: ["initial_glutamine_mm", "mM"], lactate0: ["initial_lactate_g_per_l", "g/L"], titer0: ["initial_titer_g_per_l", "g/L"],
     harvestViability: ["harvest_viability_pct", "%"],
-    mu: ["mu_max_per_h", "1/h"], kd: ["death_per_h", "1/h"], ks: ["glucose_ks_g_per_l", "g/L"],
+    mu: ["mu_max_per_h", "1/h"], kdMin: ["early_death_per_h", "1/h"], kdLate: ["late_death_per_h", "1/h"], ks: ["glucose_ks_g_per_l", "g/L"], xmax: ["carrying_capacity_e6_per_ml", "1e6 cells/mL"],
     qGlc: ["glucose_uptake_pmol_per_cell_d", "pmol/cell/d"], qGln: ["glutamine_uptake_pmol_per_cell_d", "pmol/cell/d"], qLac: ["lactate_production_pmol_per_cell_d", "pmol/cell/d"],
     qProd: ["productivity_pg_per_cell_d", "pg/cell/d"], mwGlc: ["glucose_molar_mass_g_per_mol", "g/mol"], mwLac: ["lactate_molar_mass_g_per_mol", "g/mol"],
     floor: ["glucose_floor_g_per_l", "g/L"], decisionMin: ["feed_decision_min", "min"], bolusPct: ["feed_bolus_pct", "%"], feedGlc: ["feed_glucose_g_per_l", "g/L"], feedGln: ["feed_glutamine_mm", "mM"],
@@ -81,13 +86,15 @@ export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedE
   if (!Number.isInteger(v.step) || v.step <= 0) throw new Error("the integration step must be a whole number of seconds, at least 1 (A200)");
   if (!Number.isInteger(v.cadence) || v.cadence <= 0) throw new Error("the sensor cadence must be a whole number of seconds, at least 1 (A100)");
   if (v.cohortSize <= 0) throw new Error("the cohort size must be positive");
+  if (!(v.feedGlc > v.floor)) throw new Error("the glucose of the feed must exceed the glucose floor (A193, A010)");
+  if (!(v.xmax > 0)) throw new Error("the carrying capacity must be positive (A008)");
   // every instant and duration derived from a parameter becomes whole seconds here, once (contract: Time)
   const whole = wholeSeconds;
   return {
     reactors: v.reactors, baySize: v.baySize, horizon_s: whole(v.horizonDays * DAY), step_s: v.step,
     cohortSize: v.cohortSize, cohortInterval_s: whole(v.cohortIntervalD * DAY), inocStart_s: whole(v.inocStartMin * 60), inocStep_s: whole(v.inocStepMin * 60),
     production_s: whole(v.productionDays * DAY), density: v.density, viability0: v.viability0, glucose0: v.glucose0, glutamine0: v.glutamine0, lactate0: v.lactate0, titer0: v.titer0,
-    harvestViability: v.harvestViability, mu: v.mu, kd: v.kd, ks: v.ks, qGlc: v.qGlc, qGln: v.qGln, qLac: v.qLac, qProd: v.qProd, mwGlc: v.mwGlc, mwLac: v.mwLac,
+    harvestViability: v.harvestViability, mu: v.mu, kdMin: v.kdMin, kdLate: v.kdLate, ks: v.ks, xmax: v.xmax, qGlc: v.qGlc, qGln: v.qGln, qLac: v.qLac, qProd: v.qProd, mwGlc: v.mwGlc, mwLac: v.mwLac,
     floor: v.floor, decision_s: whole(v.decisionMin * 60), bolus: v.bolusPct / 100, feedGlc: v.feedGlc, feedGln: v.feedGln,
     shiftOffset_s: whole(v.shiftDay * DAY), shiftMu: v.shiftMu, shiftKd: v.shiftKd, shiftProd: v.shiftProd, volume_l: volume, ph: v.ph,
     sensors: { step_s: v.step, cadence_s: v.cadence, phSp: v.ph, phSd: v.phSd, doSp: v.doSp, doSd: v.doSd, tempSp: v.tempSp, tempSd: v.tempSd, tempShiftSp: v.shiftSp, tempLag_s: whole(v.lagMin * 60) },
@@ -106,8 +113,8 @@ export interface CultureState {
   ph: number;
 }
 
-interface State { x: number; d: number; g: number; q: number; l: number; p: number }
-interface Mult { mu: number; kd: number; prod: number }
+export interface State { x: number; d: number; g: number; q: number; l: number; p: number }
+export interface Mult { mu: number; kd: number; prod: number }
 
 export interface Reactor {
   unit_id: string;
@@ -143,23 +150,31 @@ const BASE: Mult = { mu: 1, kd: 1, prod: 1 };
 const shifted = (c: ProcessConfig): Mult => ({ mu: c.shiftMu, kd: c.shiftKd, prod: c.shiftProd });
 
 /** One explicit Euler step of dt seconds, in place; every increment is computed from the state at the start of the step. */
-const advance = (c: ProcessConfig, s: State, m: Mult, dt: number): void => {
+export const advance = (c: ProcessConfig, s: State, m: Mult, dt: number): void => {
   const dh = dt / 3600;
   const dd = dt / DAY;
   const x = s.x;
-  const mu = s.g > 0 ? (c.mu * m.mu * s.g) / (c.ks + s.g) : 0;
-  const kd = c.kd * m.kd;
-  s.g = Math.max(0, s.g - ((c.qGlc * x * c.mwGlc) / 1000) * dd);
-  s.q = Math.max(0, s.q - c.qGln * x * dd);
-  s.l += ((c.qLac * x * c.mwLac) / 1000) * dd;
+  // limitation of growth: Monod on glucose under the logistic ceiling, no temperature factor (A011, A109, A008)
+  const phi = s.g > 0 ? (s.g / (c.ks + s.g)) * Math.max(0, 1 - x / c.xmax) : 0;
+  const mu = c.mu * m.mu * phi;
+  const kd = (c.kdMin + (c.kdLate - c.kdMin) * (1 - phi)) * m.kd;
+  s.g -= Math.min(s.g, ((c.qGlc * x * c.mwGlc) / 1000) * dd);
+  s.q -= Math.min(s.q, c.qGln * x * dd);
+  s.l += ((c.qLac * x * c.mwLac) / 1000) * phi * dd; // follows growth, so none without glucose (A084, S056, S054)
   s.p += c.qProd * m.prod * x * 1e-3 * dd;
   s.x += (mu - kd) * x * dh;
   s.d += kd * x * dh;
 };
 
-/** A bolus of a share of the current volume: cells and analytes are diluted, glucose and glutamine rise (A192, A193, A208). Returns the volume added in litres. */
-const bolus = (c: ProcessConfig, s: State, volume: { l: number }): number => {
-  const f = c.bolus;
+/** The smallest bolus share that brings the glucose of the next decision, 24 h on, to the floor (A050): consumption predicted from the current
+ * viable density with no growth, cells and glucose diluted by the bolus. Zero when the prediction already meets the floor. */
+const ruleShare = (c: ProcessConfig, s: State): number => {
+  const consumption = (c.qGlc * s.x * c.mwGlc) / 1000; // g/L per day
+  return Math.max(0, (c.floor + consumption - s.g) / (c.feedGlc - c.floor));
+};
+
+/** A bolus of a share f of the current volume: cells and analytes are diluted, glucose and glutamine rise (A192, A193, A208). Returns the volume added in litres. */
+const bolus = (c: ProcessConfig, s: State, volume: { l: number }, f: number): number => {
   const added = f * volume.l;
   volume.l += added;
   const k = 1 + f;
@@ -214,7 +229,7 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
     while (m < moments.length && (moments[m] as Moment).t <= t && !done) {
       const mo = moments[m++] as Moment;
       if (mo.kind === "alarm") process(mo.t, "alarm", "scripted");
-      else if (mo.kind === "scripted_feed") process(mo.t, "feed", "scripted", bolus(c, s, volume), "L");
+      else if (mo.kind === "scripted_feed") process(mo.t, "feed", "scripted", bolus(c, s, volume, c.bolus), "L");
       else if (mo.kind === "shift") {
         Object.assign(mult, shifted(c));
         process(mo.t, "temperature_shift", "scheduled", c.sensors.tempShiftSp, "C");
@@ -223,7 +238,10 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
           process(mo.t, "harvest", "rule");
           r.harvested_s = mo.t;
           done = true;
-        } else if (s.g < c.floor) process(mo.t, "feed", "rule", bolus(c, s, volume), "L");
+        } else {
+          const f = ruleShare(c, s);
+          if (f > 0) process(mo.t, "feed", "rule", bolus(c, s, volume, f), "L");
+        }
       } else {
         process(mo.t, "harvest", "scheduled");
         r.harvested_s = mo.t;

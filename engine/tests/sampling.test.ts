@@ -5,14 +5,14 @@ import { createRng } from "../src/rng.ts";
 import { runSampling } from "../src/sampling.ts";
 import type { SamplingRun } from "../src/sampling.ts";
 import { DAY, dayOf, isWeekend, mean } from "./support/metrics.ts";
-import { configOf } from "./support/scenarios.ts";
+import { configOf, NO_DEATH } from "./support/scenarios.ts";
 import type { Patch } from "./support/scenarios.ts";
 
 // L2 sampling and logistics (spec 2.2). Expected values are calendar arithmetic and ledger values quoted in the titles.
 // Day 0 is a Monday, so day % 7 >= 5 is a weekend (A201).
 
 const sampled = (patch: Patch = {}, name = "default") => {
-  const cfg = configOf(name, { ...patch, settings: { death_per_h: 0, ...patch.settings } });
+  const cfg = configOf(name, { ...patch, settings: { ...NO_DEATH, ...patch.settings } });
   const rng = createRng();
   const proc = runProcess(cfg.process, cfg.seed, rng);
   return { proc, ...runSampling(cfg.sampling, proc, cfg.seed, rng) } as SamplingRun & { proc: ReturnType<typeof runProcess> };

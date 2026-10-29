@@ -4,7 +4,7 @@ import { runProcess, stateAt } from "../src/process.ts";
 import type { ProcessRun } from "../src/process.ts";
 import { createRng } from "../src/rng.ts";
 import { sensorTickEvents } from "../src/sensors.ts";
-import { configOf } from "./support/scenarios.ts";
+import { configOf, NO_DEATH } from "./support/scenarios.ts";
 import type { Json } from "./support/schemas.ts";
 
 // L1 process (spec 2.1). Expected values are hand arithmetic from the ledger values quoted in each test, never engine output.
@@ -13,7 +13,7 @@ import type { Json } from "./support/schemas.ts";
 const DAY = 86400;
 const OFF = {
   mu_max_per_h: 0,
-  death_per_h: 0,
+  ...NO_DEATH,
   glucose_uptake_pmol_per_cell_d: 0,
   glutamine_uptake_pmol_per_cell_d: 0,
   lactate_production_pmol_per_cell_d: 0,
@@ -57,8 +57,8 @@ describe("L1: kinetics, checked against closed forms", () => {
     expect(s.viability).toBeCloseTo(97, 10);
   });
 
-  it("Given no growth and no death When one day passes Then uptake and production are linear: glucose 8 - 2.5 x 1.0 x 180.16/1000 = 7.5496 g/L, glutamine 4 - 1.2 = 2.8 mM, lactate 2.3 x 90.08/1000 = 0.207184 g/L, titer 35 x 1e-3 = 0.035 g/L", () => {
-    const run = proc({ mu_max_per_h: 0, death_per_h: 0 });
+  it("Given no growth, no death and phi = 1 (no Monod limit, a ceiling far above the density) When one day passes Then uptake and production are linear: glucose 8 - 2.5 x 1.0 x 180.16/1000 = 7.5496 g/L, glutamine 4 - 1.2 = 2.8 mM, lactate 2.3 x 90.08/1000 = 0.207184 g/L, titer 35 x 1e-3 = 0.035 g/L", () => {
+    const run = proc({ mu_max_per_h: 0, ...NO_DEATH, glucose_ks_g_per_l: 1e-9, carrying_capacity_e6_per_ml: 1e12 });
     const s = stateAt(run, "U01", 8 * 3600 + DAY);
     expect(s.glucose).toBeCloseTo(8 - 0.4504, 9);
     expect(s.glutamine).toBeCloseTo(2.8, 9);
@@ -67,8 +67,8 @@ describe("L1: kinetics, checked against closed forms", () => {
     expect(s.vcd).toBeCloseTo(1, 12);
   });
 
-  it("Given death only When 24 h pass Then viable cells follow exp(-0.0042 x 24) and the dead cells make up the rest of the initial 3 percent plus the lost cells", () => {
-    const run = proc({ mu_max_per_h: 0, glucose_uptake_pmol_per_cell_d: 0, glutamine_uptake_pmol_per_cell_d: 0, lactate_production_pmol_per_cell_d: 0, productivity_pg_per_cell_d: 0 });
+  it("Given death only and no glucose (growth fully limited, phi = 0) When 24 h pass Then the late rate applies: viable cells follow exp(-0.0042 x 24) and the dead cells make up the rest of the initial 3 percent plus the lost cells", () => {
+    const run = proc({ mu_max_per_h: 0, initial_glucose_g_per_l: 0, glucose_floor_g_per_l: 0, glucose_uptake_pmol_per_cell_d: 0, glutamine_uptake_pmol_per_cell_d: 0, lactate_production_pmol_per_cell_d: 0, productivity_pg_per_cell_d: 0 });
     const s = stateAt(run, "U01", 8 * 3600 + DAY);
     const x = Math.exp(-0.0042 * 24);
     expect(s.vcd / x).toBeCloseTo(1, 4);
@@ -76,39 +76,39 @@ describe("L1: kinetics, checked against closed forms", () => {
     expect(s.viability).toBeCloseTo((100 * x) / (x + dead), 3);
   });
 
-  it("Given glucose far above the Monod constant and no uptake When 24 h pass Then growth is the net rate (0.027 - 0.0042) per hour: exp(0.5472)", () => {
-    const run = proc({ glucose_ks_g_per_l: 1e-9, glucose_uptake_pmol_per_cell_d: 0, glutamine_uptake_pmol_per_cell_d: 0, lactate_production_pmol_per_cell_d: 0, productivity_pg_per_cell_d: 0 });
+  it("Given glucose far above the Monod constant, a ceiling far above the density and no uptake (phi = 1) When 24 h pass Then growth is the net rate (0.027 - 0.0013) per hour: exp(0.6168)", () => {
+    const run = proc({ glucose_ks_g_per_l: 1e-9, carrying_capacity_e6_per_ml: 1e12, glucose_uptake_pmol_per_cell_d: 0, glutamine_uptake_pmol_per_cell_d: 0, lactate_production_pmol_per_cell_d: 0, productivity_pg_per_cell_d: 0 });
     const s = stateAt(run, "U01", 8 * 3600 + DAY);
-    expect(s.vcd / Math.exp(0.5472)).toBeCloseTo(1, 3);
+    expect(s.vcd / Math.exp(0.6168)).toBeCloseTo(1, 3);
   });
 
   it("Given growth is limited by glucose only When glucose is half the Monod constant Then the growth rate is a third of the maximum (G / (Ks + G) with G = Ks/2)", () => {
-    const run = proc({ initial_glucose_g_per_l: 0.465, glucose_uptake_pmol_per_cell_d: 0, death_per_h: 0, glutamine_uptake_pmol_per_cell_d: 0, lactate_production_pmol_per_cell_d: 0, productivity_pg_per_cell_d: 0, glucose_floor_g_per_l: 0.1 });
+    const run = proc({ initial_glucose_g_per_l: 0.465, carrying_capacity_e6_per_ml: 1e12, glucose_uptake_pmol_per_cell_d: 0, ...NO_DEATH, glutamine_uptake_pmol_per_cell_d: 0, lactate_production_pmol_per_cell_d: 0, productivity_pg_per_cell_d: 0, glucose_floor_g_per_l: 0.1 });
     const s = stateAt(run, "U01", 8 * 3600 + DAY);
     expect(Math.log(s.vcd)).toBeCloseTo((0.027 / 3) * 24, 3);
   });
 });
 
 describe("L1: scheduled events", () => {
-  it("Given glucose is below the floor at the 10:00 decision When the rule runs Then one bolus is fed: glucose (0.5 + 0.024 x 500) / 1.024 = 12.20703125, cells diluted to 1/1.024, amount 0.024 x 2 L", () => {
+  it("Given glucose is 0.5 g/L at the 10:00 decision and nothing is consumed When the rule runs Then the bolus brings the next decision to the floor: f = (1.0 - 0.5) / (500 - 1.0) = 0.5/499, amount 2 L x f, glucose afterwards 1.0 g/L", () => {
     const run = proc({ ...OFF, initial_glucose_g_per_l: 0.5 });
-    const feeds = processEvents(run, "U01", "feed");
-    expect(feeds).toHaveLength(1); // glucose is 12.2 afterwards and nothing consumes it
-    expect(feeds[0]).toMatchObject({ t: 10 * 3600, source: "rule", amount_unit: "L" });
-    expect(feeds[0]?.amount).toBeCloseTo(0.048, 12);
+    const feeds = processEvents(run, "U01", "feed").filter((e) => e.t === 10 * 3600); // later decisions only round off the floating-point remainder
+    expect(feeds).toHaveLength(1);
+    expect(feeds[0]).toMatchObject({ source: "rule", amount_unit: "L" });
+    expect(feeds[0]?.amount).toBeCloseTo((2 * 0.5) / 499, 12);
     const s = stateAt(run, "U01", 10 * 3600);
-    expect(s.glucose).toBeCloseTo(12.5 / 1.024, 9);
-    expect(s.glutamine).toBeCloseTo(8.8 / 1.024, 9);
-    expect(s.vcd).toBeCloseTo(1 / 1.024, 12);
+    expect(s.glucose).toBeCloseTo(1.0, 9); // (0.5 + 500 f) / (1 + f) = (0.5 x 499 + 250) / 499.5
+    expect(s.glutamine).toBeCloseTo(2096 / 499.5, 9); // (4 + 200 f) / (1 + f) = (4 x 499 + 100) / 499.5
+    expect(s.vcd).toBeCloseTo(499 / 499.5, 12);
   });
 
   it("Given glucose stays above the floor When the batch runs Then the rule never feeds (8 - 14 x 0.4504 = 1.69 g/L at harvest)", () => {
-    const run = proc({ mu_max_per_h: 0, death_per_h: 0 });
+    const run = proc({ mu_max_per_h: 0, ...NO_DEATH });
     expect(processEvents(run, "U01", "feed")).toHaveLength(0);
   });
 
   it("Given the shift at 10:00 on culture day 4 (A195) When 24 h before and after are compared Then growth halves (A196): ln ratio after = 0.5 x ln ratio before", () => {
-    const run = proc({ ...OFF, mu_max_per_h: 0.027, glucose_ks_g_per_l: 1e-9 });
+    const run = proc({ ...OFF, mu_max_per_h: 0.027, glucose_ks_g_per_l: 1e-9, carrying_capacity_e6_per_ml: 1e12 });
     const shift = 4 * DAY + 10 * 3600; // U01 is inoculated on day 0
     const ev = processEvents(run, "U01", "temperature_shift");
     expect(ev).toHaveLength(1);
@@ -119,7 +119,7 @@ describe("L1: scheduled events", () => {
   });
 
   it("Given no death When 14 days pass Then the batch is harvested on the scheduled day (A004) and the trajectory ends there", () => {
-    const run = proc({ death_per_h: 0 });
+    const run = proc({ ...NO_DEATH });
     expect(reactor(run, "U01").harvested_s).toBe(8 * 3600 + 14 * DAY);
     expect(processEvents(run, "U01", "harvest")[0]).toMatchObject({ t: 8 * 3600 + 14 * DAY, source: "scheduled" });
   });
@@ -149,7 +149,7 @@ describe("L1: scheduled events", () => {
 });
 
 describe("L1: online sensors (A198, A199, A100)", () => {
-  const run = proc({ death_per_h: 0 });
+  const run = proc({ ...NO_DEATH });
   const series = (unit: string, signal: string) => run.sensors.find((s) => s.unit_id === unit && s.signal === signal) as ProcessRun["sensors"][number];
 
   it("Given a 14 d batch When the 60 s cadence runs Then each signal has a tick at inoculation and one every 60 s up to harvest: 14 x 1440 + 1 values", () => {

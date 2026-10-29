@@ -47,3 +47,6 @@ export const runOf = (name: string, p?: Patch, opts: Parameters<typeof runScenar
 
 /** A small, quick variant of the default scenario for tests that do not need 24 reactors or 21 days. */
 export const SMALL: Record<string, number> = { reactor_count: 6, bay_size: 6, cohort_size: 6, horizon_days: 8, production_days: 6 };
+
+/** Death off: both ends of the coupled death rate (A212, A081) at zero. */
+export const NO_DEATH: Record<string, number> = { early_death_per_h: 0, late_death_per_h: 0 };
