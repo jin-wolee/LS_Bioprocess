@@ -1,0 +1,22 @@
+{
+  "profile": "ctrl_neutral",
+  "note": "Test-only values: a hold and restart of the before_shift phase of batch B-U01: running at 08:00, holding at 09:00, held at 09:05, restarting at 09:30, running again at 09:35 (28800, 32400, 32700, 34200 and 34500 s).",
+  "cases": [
+    {
+      "name": "RQ11 running, holding, held, restarting and running load as five batch_phase_record rows",
+      "file_name": "ctrl_phases_CTRL-1_2030-01-07.csv",
+      "controller": "CTRL-1",
+      "received_at": 86400,
+      "expect": {
+        "phases": [
+          {"line": 3, "batch_id": "B-U01", "unit_id": "U01", "recipe_id": "REC-CULTURE", "procedure": "culture", "unit_procedure": "culture_run", "operation": "culture_control", "phase": "before_shift", "from_state": "idle", "to_state": "running", "ts": 28800, "actor": null, "command": null, "state": "loaded", "source_event_id": "U01|B-U01|before_shift|running|2030-01-07T08:00:00+00:00"},
+          {"line": 4, "phase": "before_shift", "from_state": "running", "to_state": "holding", "ts": 32400, "state": "loaded"},
+          {"line": 5, "phase": "before_shift", "from_state": "holding", "to_state": "held", "ts": 32700, "state": "loaded"},
+          {"line": 6, "phase": "before_shift", "from_state": "held", "to_state": "restarting", "ts": 34200, "state": "loaded"},
+          {"line": 7, "phase": "before_shift", "from_state": "restarting", "to_state": "running", "ts": 34500, "state": "loaded"}
+        ],
+        "findings": []
+      }
+    }
+  ]
+}

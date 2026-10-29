@@ -1,0 +1,23 @@
+{
+  "profile": "ctrl_bench",
+  "note": "Test-only values: held straight to running in the recipe steps of the bench family.",
+  "cases": [
+    {
+      "name": "RQ11 held straight to running is held (VR-025) in the bench family too",
+      "file_name": "bench_steps_CTRL-2_2030-01-07.csv",
+      "controller": "CTRL-2",
+      "received_at": 86400,
+      "belief": {"source_zone_s": 0},
+      "expect": {
+        "phases": [
+          {"line": 3, "from_state": "idle", "to_state": "running", "ts": 28800, "state": "loaded"},
+          {"line": 4, "from_state": "running", "to_state": "holding", "ts": 32400, "state": "loaded"},
+          {"line": 5, "from_state": "holding", "to_state": "held", "ts": 32700, "state": "loaded"},
+          {"line": 6, "from_state": "held", "to_state": "running", "ts": 33000, "state": "held"}
+        ],
+        "raw_records": [{"line": 6, "state": "held", "rule_id": "VR-025"}],
+        "findings": [{"rule": "VR-025", "target": "batch_phase_record:RF1:6", "action": "hold"}]
+      }
+    }
+  ]
+}

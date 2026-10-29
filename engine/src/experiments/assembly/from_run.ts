@@ -41,6 +41,10 @@ export const rosterOf = (s: SamplingConfig): Roster => ({ start_s: s.start_s, sh
 export const qualificationsOf = (run: Pick<ScenarioRun, "operators">): QualificationInput[] =>
   run.operators.map((o) => ({ qualification_id: `Q-${o.operator_id}`, operator_id: o.operator_id, qualified: o.qualified, valid_from: 0, valid_to: null }));
 
+/** The layout of the plant for the controller side: which bay each unit sits in, read from the run (the assembly may read the process; the emitters get plain data). */
+const withLayout = (raw: RawSetup, run: Pick<ScenarioRun, "process">): RawSetup =>
+  raw.controller ? { ...raw, controller: { unit_bay: Object.fromEntries(run.process.reactors.map((r) => [r.unit_id, r.bay])), ...raw.controller } } : raw;
+
 export const seedInputFromRun = (run: ScenarioRun, s: RunSettings): SeedInput => ({
   scenario_id: s.scenario_id,
   seed: run.l3Input.seed,
@@ -52,7 +56,7 @@ export const seedInputFromRun = (run: ScenarioRun, s: RunSettings): SeedInput =>
   label_rate_by_operator: Object.fromEntries(run.operators.map((o) => [o.operator_id, labelErrorRate(s.staff)])),
   ...(s.clock_offsets && { clock_offsets: s.clock_offsets }),
   qualifications: qualificationsOf(run),
-  ...(s.raw && { raw: s.raw }),
+  ...(s.raw && { raw: withLayout(s.raw, run) }),
   ...(s.entry_rules && { entry_rules: s.entry_rules }),
   // the tolerances of VR-003 and VR-004 have no ledger entry (scenarios/evaluation/default.json): those two rules are reported as not evaluable
   rules: { hold_limit_s: s.evaluation.hold_limit_s },

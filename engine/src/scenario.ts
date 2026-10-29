@@ -37,6 +37,12 @@ export interface RawSettings {
   capture_path?: CapturePath;
   /** When an analyzer export reaches the host (A216): the end of each staffed window (the default, spec 2.4.2) or at the instant each result is produced. */
   export_schedule: "window_end" | "per_run";
+  /** How a controller cuts its log files (A217): one file per record type per day (the default, spec 2.4.2) or each row as written. */
+  controller_log_cut: "daily" | "per_row";
+  /** The controller profile of each bay, bay 1 first (spec 2.4.2). Absent: no controller log is emitted. */
+  bay_controllers?: string[];
+  /** The scenario's set points (A198), which the controller logs as SP; the temperature shift is a process event with its own set point (A195). */
+  set_points: { pH: number; DO: number; temperature: number };
   /** The synthetic calendar date of scenario second 0, YYYY-MM-DD. */
   calendar_anchor: string;
   /** The zone the instruments are configured with, seconds ahead of UTC (A161: the device offset comes from configuration, not from the file). */
@@ -66,16 +72,20 @@ const oneOf = <T extends string>(value: T | undefined, allowed: readonly T[], fa
 const minutes = (p: Param): number => wholeSeconds(param({ x: p }, "x", "min") * 60);
 
 /** The raw-layer settings of a scenario. A setting that is read only with the layer on fails validation with the layer off, because a silent no-op would mislead. */
-const rawSettings = (sc: Scenario, settings: ReturnType<typeof checkParams>): RawSettings | undefined => {
+const rawSettings = (sc: Scenario, settings: ReturnType<typeof checkParams>, sensors: ProcessConfig["sensors"]): RawSettings | undefined => {
   if (sc.raw_layer !== true) {
-    for (const name of ["capture_path", "calendar_anchor", "export_schedule"] as const) {
+    for (const name of ["capture_path", "calendar_anchor", "export_schedule", "controller_log_cut", "bay_controllers"] as const) {
       if (sc[name] !== undefined) throw new Error(`scenario ${sc.scenario_id}: the setting ${name} is read only with raw_layer true, and raw_layer is off; remove ${name} or set raw_layer to true (spec section 5, Capture path)`);
     }
     return undefined;
   }
   if (sc.calendar_anchor === undefined) throw new Error(`scenario ${sc.scenario_id}: raw_layer needs the setting calendar_anchor (spec section 2.4.1, rule 1)`);
   if (settings.device_zone_h === undefined) throw new Error(`scenario ${sc.scenario_id}: raw_layer needs the setting device_zone_h, the zone the instruments are configured with (A161)`);
-  return { ...(sc.capture_path !== undefined && { capture_path: sc.capture_path }), export_schedule: sc.export_schedule ?? "window_end", calendar_anchor: sc.calendar_anchor, zone_offset_s: wholeSeconds(param(settings, "device_zone_h", "h") * 3600) };
+  return {
+    ...(sc.capture_path !== undefined && { capture_path: sc.capture_path }), export_schedule: sc.export_schedule ?? "window_end", controller_log_cut: sc.controller_log_cut ?? "daily",
+    ...(sc.bay_controllers !== undefined && { bay_controllers: [...sc.bay_controllers] }), set_points: { pH: sensors.phSp, DO: sensors.doSp, temperature: sensors.tempSp },
+    calendar_anchor: sc.calendar_anchor, zone_offset_s: wholeSeconds(param(settings, "device_zone_h", "h") * 3600),
+  };
 };
 
 export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfig => {
@@ -84,13 +94,13 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
   if (typeof sc.scenario_id !== "string" || sc.scenario_id === "") throw new Error("scenario: scenario_id missing");
   if (!Number.isInteger(sc.seed) || sc.seed < 0) throw new Error("scenario: seed must be a non-negative integer");
   const settings = checkParams(sc.settings ?? {}, "scenario settings");
-  const rawLayer = rawSettings(sc, settings);
   const bio = loadProfile(lookup("bioreactor", sc.profiles.bioreactor), "bioreactor");
   const analyzer = loadProfile(lookup("analyzer", sc.profiles.analyzer), "analyzer");
   const staff = loadProfile(lookup("staff", sc.profiles.staff), "staff");
   if (!bio.containers?.default) throw new Error(`profile ${bio.profile_id}: containers needs a default entry`);
   const scripted = (sc.scripted_events ?? []).map((e) => ({ type: e.type, unit_id: e.unit_id, at_s: minutes(e.at) }));
   const proc = processConfig(settings, bio.params, scripted);
+  const rawLayer = rawSettings(sc, settings, proc.sensors);
   const lots = (sc.lot_changes ?? []).map((l) => ({ analyzer: l.analyzer, at_s: minutes(l.at) }));
   const v = readAll(settings, { analyzers: ["analyzer_count", "analyzers"], rerun: ["rerun_probability", "fraction"], qcStart: ["qc_window_start_min", "min"], qcLength: ["qc_window_length_min", "min"] });
   const plan = oneOf(sc.sampling_plan, ["burst", "staggered"], "burst", "sampling_plan");

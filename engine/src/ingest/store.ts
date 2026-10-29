@@ -19,6 +19,8 @@ export interface IngestStore {
   /** `<source>|<sample>|<analyte>|<measured_at>` to the latest version of that measurement. */
   latest: Map<string, Latest>;
   counter: number;
+  /** Controller logs (S2e2, VR-025): the latest accepted `to_state` of each alarm or phase instance, by the instance key. A held row does not advance it. */
+  states: Map<string, string>;
 }
 
-export const newStore = (): IngestStore => ({ keys: new Map(), latest: new Map(), counter: 0 });
+export const newStore = (): IngestStore => ({ keys: new Map(), latest: new Map(), counter: 0, states: new Map() });

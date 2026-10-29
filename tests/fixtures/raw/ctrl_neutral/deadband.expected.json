@@ -1,0 +1,54 @@
+{
+  "profile": "ctrl_neutral",
+  "note": "Test-only values: the worked example of A172 (1 rpm deadband, 15 s maximum interval) typed by hand. Agitation sampled every 5 s as 100.0, 100.4, 101.2, 101.3, 101.3, 101.3, 101.3 from t = 0 s logs the three rows below. Scenario second 0 is 2030-01-07 00:00:00 UTC; the daily file reaches the host at the end of that day, 86400.",
+  "cases": [
+    {
+      "name": "RQ9 three logged rows load as received, never interpolated; the value read at 20 s is 101.2 with age 10 s and at 9 s it is 100.0 with age 9 s",
+      "file_name": "ctrl_tags_CTRL-1_2030-01-07.csv",
+      "controller": "CTRL-1",
+      "received_at": 86400,
+      "expect": {
+        "historian": [
+          {"line": 3, "tag": "U01.agitation.PV", "ts": 0, "value": 100.0, "quality": "good", "ingested_at": 86400, "state": "loaded", "source_event_id": "U01.agitation.PV|2030-01-07T00:00:00+00:00"},
+          {"line": 4, "tag": "U01.agitation.PV", "ts": 10, "value": 101.2, "quality": "good", "ingested_at": 86400, "state": "loaded", "source_event_id": "U01.agitation.PV|2030-01-07T00:00:10+00:00"},
+          {"line": 5, "tag": "U01.agitation.PV", "ts": 25, "value": 101.3, "quality": "good", "ingested_at": 86400, "state": "loaded", "source_event_id": "U01.agitation.PV|2030-01-07T00:00:25+00:00"}
+        ],
+        "raw_records": [
+          {"line": 3, "state": "loaded", "rule_id": null}, {"line": 4, "state": "loaded", "rule_id": null}, {"line": 5, "state": "loaded", "rule_id": null}
+        ],
+        "reads": [
+          {"tag": "U01.agitation.PV", "at": 20, "value": 101.2, "ts": 10, "age_s": 10},
+          {"tag": "U01.agitation.PV", "at": 9, "value": 100.0, "ts": 0, "age_s": 9}
+        ]
+      }
+    },
+    {
+      "name": "RQ9 the same file received twice is a no-op where ingest_idempotency is on (VR-008) and loads again where it is off",
+      "file_name": "ctrl_tags_CTRL-1_2030-01-07.csv",
+      "controller": "CTRL-1",
+      "received_at": 172800,
+      "after": ["deadband"],
+      "expect": {
+        "historian": [],
+        "raw_records": [
+          {"line": 3, "state": "no_op", "rule_id": "VR-008"}, {"line": 4, "state": "no_op", "rule_id": "VR-008"}, {"line": 5, "state": "no_op", "rule_id": "VR-008"}
+        ]
+      }
+    },
+    {
+      "name": "RQ9 with ingest_idempotency off every copy of a row loads",
+      "file_name": "ctrl_tags_CTRL-1_2030-01-07.csv",
+      "controller": "CTRL-1",
+      "received_at": 172800,
+      "after": ["deadband"],
+      "flags": {"ingest_idempotency": false},
+      "expect": {
+        "historian": [
+          {"line": 3, "tag": "U01.agitation.PV", "ts": 0, "value": 100.0, "ingested_at": 172800, "state": "loaded"},
+          {"line": 4, "tag": "U01.agitation.PV", "ts": 10, "value": 101.2, "ingested_at": 172800, "state": "loaded"},
+          {"line": 5, "tag": "U01.agitation.PV", "ts": 25, "value": 101.3, "ingested_at": 172800, "state": "loaded"}
+        ]
+      }
+    }
+  ]
+}

@@ -9,7 +9,9 @@
   "dependentSchemas": {
     "capture_path": { "required": ["raw_layer"], "properties": { "raw_layer": { "const": true } } },
     "calendar_anchor": { "required": ["raw_layer"], "properties": { "raw_layer": { "const": true } } },
-    "export_schedule": { "required": ["raw_layer"], "properties": { "raw_layer": { "const": true } } }
+    "export_schedule": { "required": ["raw_layer"], "properties": { "raw_layer": { "const": true } } },
+    "controller_log_cut": { "required": ["raw_layer"], "properties": { "raw_layer": { "const": true } } },
+    "bay_controllers": { "required": ["raw_layer"], "properties": { "raw_layer": { "const": true } } }
   },
   "properties": {
     "schema_version": { "type": "string", "const": "1" },
@@ -23,6 +25,8 @@
     "raw_layer": { "type": "boolean", "default": false, "description": "The raw device layer of ADR-0014 (spec section 2.4). Absent means false: every earlier scenario keeps a byte-identical event log. Not a ninth flag." },
     "capture_path": { "type": "string", "enum": ["manual_transcription", "adapter_ingest"], "description": "Overrides the capture path of every preset (spec section 5, 'Capture path'). Read only with raw_layer true; with the layer off a scenario that sets it fails validation, because a silent no-op would mislead." },
     "export_schedule": { "type": "string", "enum": ["window_end", "per_run"], "description": "When an analyzer export reaches the host (A216; the staffed window is A098, spec section 2.4.2): at the end of each staffed window (window_end, the default) or at the instant each result is produced (per_run). Needs raw_layer true. A capture-path contrast holds it fixed so that only the path changes." },
+    "controller_log_cut": { "type": "string", "enum": ["daily", "per_row"], "description": "How a controller cuts its log files (A217): one file per record type per day (daily, the default; the file reaches the host at the end of its day) or each row as written (per_row; the row reaches the host at its own stamp). Needs raw_layer true. A capture-path contrast holds it fixed so that only the path changes." },
+    "bay_controllers": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "The controller profile of each bay, bay 1 first (spec section 2.4.2: a bay uses one controller profile; the default raw-layer scenario puts one bay on each family). Needs raw_layer true. Absent: no controller log is emitted and the layer stays analyzer-side only." },
     "calendar_anchor": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "description": "The synthetic calendar date of scenario second 0 (a Monday, spec section 2.1), as YYYY-MM-DD; the emitters turn integer seconds into wall-clock text from it. Needs raw_layer true." },
     "profiles": {
       "type": "object",

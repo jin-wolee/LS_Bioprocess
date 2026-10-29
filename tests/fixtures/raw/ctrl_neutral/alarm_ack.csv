@@ -1,0 +1,5 @@
+synthetic, modeled on public documentation; not a real instrument file
+Timestamp,Unit,Alarm,Tag,Severity,From,To
+2030-01-07T09:00:00+00:00,U01,AL-1,pH.PV,500,normal,unacknowledged
+2030-01-07T09:05:00+00:00,U01,AL-1,pH.PV,500,unacknowledged,acknowledged
+2030-01-07T09:20:00+00:00,U01,AL-1,pH.PV,500,acknowledged,normal

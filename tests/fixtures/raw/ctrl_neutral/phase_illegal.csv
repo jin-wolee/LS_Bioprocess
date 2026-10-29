@@ -1,0 +1,7 @@
+synthetic, modeled on public documentation; not a real instrument file
+Timestamp,Unit,Batch,Recipe,Procedure,Unit Procedure,Operation,Phase,From,To
+2030-01-07T08:00:00+00:00,U01,B-U01,REC-CULTURE,culture,culture_run,culture_control,before_shift,idle,running
+2030-01-07T09:00:00+00:00,U01,B-U01,REC-CULTURE,culture,culture_run,culture_control,before_shift,running,holding
+2030-01-07T09:05:00+00:00,U01,B-U01,REC-CULTURE,culture,culture_run,culture_control,before_shift,holding,held
+2030-01-07T09:10:00+00:00,U01,B-U01,REC-CULTURE,culture,culture_run,culture_control,before_shift,held,running
+2030-01-07T09:30:00+00:00,U01,B-U01,REC-CULTURE,culture,culture_run,culture_control,before_shift,held,restarting

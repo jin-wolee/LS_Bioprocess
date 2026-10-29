@@ -1,0 +1,5 @@
+synthetic, modeled on public documentation; not a real instrument file
+Time,Variable,Value
+2030-01-07 00:00:00,pH.PV (U01),7.01
+2030-01-07 00:00:00,DO.PV (U01),30.2
+2030-01-07 01:00:00,temperature.SP (U02),37

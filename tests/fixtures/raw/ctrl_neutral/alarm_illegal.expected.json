@@ -1,0 +1,23 @@
+{
+  "profile": "ctrl_neutral",
+  "note": "Test-only values: the same alarm, but the third row goes from acknowledged straight back to unacknowledged, which the alarm model of data_model 16.5 does not allow.",
+  "cases": [
+    {
+      "name": "RQ10 acknowledged straight to unacknowledged is held (VR-025): the row is stored, flagged, and not available until reviewed",
+      "file_name": "ctrl_alarms_CTRL-1_2030-01-07.csv",
+      "controller": "CTRL-1",
+      "received_at": 86400,
+      "expect": {
+        "alarms": [
+          {"line": 3, "from_state": "normal", "to_state": "unacknowledged", "state": "loaded"},
+          {"line": 4, "from_state": "unacknowledged", "to_state": "acknowledged", "state": "loaded"},
+          {"line": 5, "alarm_id": "AL-1", "from_state": "acknowledged", "to_state": "unacknowledged", "ts": 33000, "state": "held"}
+        ],
+        "raw_records": [
+          {"line": 3, "state": "loaded", "rule_id": null}, {"line": 4, "state": "loaded", "rule_id": null}, {"line": 5, "state": "held", "rule_id": "VR-025"}
+        ],
+        "findings": [{"rule": "VR-025", "target": "alarm_event:RF1:5", "action": "hold"}]
+      }
+    }
+  ]
+}

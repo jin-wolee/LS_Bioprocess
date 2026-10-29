@@ -34,8 +34,11 @@ export interface FixtureCase {
 export const casesOf = (dialect: string, name: string): FixtureCase[] =>
   (JSON.parse(readFileSync(join(FIXTURES, dialect, `${name}.expected.json`), "utf8")) as { cases: FixtureCase[] }).cases;
 
+/** The analyzer dialects; the controller families have their own fixtures and runner (controller_fixtures.ts). */
+const ANALYZER_DIALECTS = ["allinone_csv", "counter_csv", "cds_table"];
+
 export const fixtureFiles = (): { dialect: string; name: string }[] =>
-  readdirSync(FIXTURES).flatMap((dialect) => readdirSync(join(FIXTURES, dialect)).filter((f) => f.endsWith(".csv")).map((f) => ({ dialect, name: f.replace(/\.csv$/, "") })));
+  readdirSync(FIXTURES).filter((dialect) => ANALYZER_DIALECTS.includes(dialect)).flatMap((dialect) => readdirSync(join(FIXTURES, dialect)).filter((f) => f.endsWith(".csv")).map((f) => ({ dialect, name: f.replace(/\.csv$/, "") })));
 
 export const textOf = (dialect: string, name: string): string => readFileSync(join(FIXTURES, dialect, `${name}.csv`), "utf8");
 

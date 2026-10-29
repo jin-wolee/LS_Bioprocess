@@ -11,7 +11,7 @@
 
 export const ROLES = ["sampler", "analyst", "reviewer", "approver", "administrator", "rule"] as const;
 export type Role = (typeof ROLES)[number];
-export type Entity = "sample" | "result";
+export type Entity = "sample" | "result" | "alarm_event" | "batch_phase_record";
 
 export interface Edge {
   from: string;
@@ -53,7 +53,53 @@ export const MACHINES: Readonly<Record<Entity, readonly Edge[]>> = {
     { from: "under_review", to: "rejected", by: ["reviewer"] },
     { from: "released", to: "superseded", by: ["approver"] },
   ],
+  // S2e2, the controller records (data_model 16.5). The state of an instance is `to_state` of its latest record, and a controller log is append-only (K22): these tables are what the
+  // adapter checks a logged transition against (VR-025), not steps that the recorder performs. The diagrams label no role among the five of section 6; a step the process causes (a
+  // condition becoming active or clearing, a state that follows from the previous one) takes `rule`, and a step an operator causes (acknowledge, shelve, start, hold, restart, stop,
+  // abort, reset) takes `analyst`, the person at the bench: a stand-in, because no operator role exists (basis `default` in the dictionary).
+  alarm_event: [
+    { from: "normal", to: "unacknowledged", by: ["rule"] },
+    { from: "unacknowledged", to: "acknowledged", by: ["analyst"] },
+    { from: "unacknowledged", to: "rtn_unacknowledged", by: ["rule"] },
+    { from: "acknowledged", to: "normal", by: ["rule"] },
+    { from: "rtn_unacknowledged", to: "normal", by: ["analyst"] },
+    { from: "normal", to: "shelved", by: ["analyst"] },
+    { from: "normal", to: "suppressed_by_design", by: ["rule"] },
+    { from: "normal", to: "out_of_service", by: ["analyst"] },
+    { from: "shelved", to: "normal", by: ["analyst"] },
+    { from: "suppressed_by_design", to: "normal", by: ["rule"] },
+    { from: "out_of_service", to: "normal", by: ["analyst"] },
+  ],
+  batch_phase_record: [
+    { from: "idle", to: "running", by: ["analyst"] },
+    { from: "running", to: "complete", by: ["rule"] },
+    { from: "running", to: "pausing", by: ["analyst"] },
+    { from: "pausing", to: "paused", by: ["rule"] },
+    { from: "paused", to: "running", by: ["analyst"] },
+    { from: "running", to: "holding", by: ["analyst"] },
+    { from: "holding", to: "held", by: ["rule"] },
+    { from: "held", to: "restarting", by: ["analyst"] },
+    { from: "restarting", to: "running", by: ["rule"] },
+    { from: "running", to: "stopping", by: ["analyst"] },
+    { from: "paused", to: "stopping", by: ["analyst"] },
+    { from: "held", to: "stopping", by: ["analyst"] },
+    { from: "stopping", to: "stopped", by: ["rule"] },
+    { from: "running", to: "aborting", by: ["analyst"] },
+    { from: "held", to: "aborting", by: ["analyst"] },
+    { from: "stopping", to: "aborting", by: ["analyst"] },
+    { from: "aborting", to: "aborted", by: ["rule"] },
+    { from: "complete", to: "resetting", by: ["analyst"] },
+    { from: "stopped", to: "resetting", by: ["analyst"] },
+    { from: "aborted", to: "resetting", by: ["analyst"] },
+    { from: "resetting", to: "idle", by: ["rule"] },
+  ],
 };
+
+/** Does the table list this transition, whoever causes it? The adapter asks this of a logged transition (VR-025); `transit` is what a step that this code performs goes through. */
+export const isTransition = (entity: Entity, from: string, to: string): boolean => MACHINES[entity].some((e) => e.from === from && e.to === to);
+
+/** The initial state of a machine: the state of an instance before its first record (data_model 16.5: `[*] --> normal`, `[*] --> idle`). */
+export const INITIAL: Readonly<Partial<Record<Entity, string>>> = { alarm_event: "normal", batch_phase_record: "idle" };
 
 /**
  * Performs one transition: returns the new state, or throws when the table does not list it or the role may not cause it. `log` collects what was performed (a test reads it).

@@ -35,6 +35,7 @@ interface Seen {
 const tables = new Map<string, Map<string, Seen>>();
 const keys = new Set<string>();
 const log: Transition[] = [];
+const logged = new Map<string, { entity: string; from: string; to: string }>();
 
 const kind = (v: unknown): string =>
   v === null ? "null" : Array.isArray(v) || ArrayBuffer.isView(v) ? "array" : typeof v === "number" ? (Number.isInteger(v) ? "integer" : "number") : typeof v === "object" ? "object" : typeof v;
@@ -66,7 +67,10 @@ const take = (ds: RecordedDataset): void => {
   for (const series of ds.historian.series) add("historian_series", series);
   for (const row of ds.historian.late) add("historian_value", row);
   // S2e1: the raw-side tables of an adapter_ingest dataset (data_model section 16.1)
-  for (const t of ["adapter", "raw_file", "raw_record", "parse_error"] as const) for (const row of ds.raw?.[t] ?? []) add(t, row);
+  for (const t of ["adapter", "raw_file", "raw_record", "parse_error", "alarm_event", "batch_phase_record"] as const) for (const row of ds.raw?.[t] ?? []) add(t, row);
+  // S2e2: the transitions the controller logs carry (the alarm and phase machines of data_model 16.5 are checked against what was parsed)
+  for (const r of ds.raw?.alarm_event ?? []) logged.set(`alarm_event|${r.from_state}|${r.to_state}`, { entity: "alarm_event", from: r.from_state, to: r.to_state });
+  for (const r of ds.raw?.batch_phase_record ?? []) logged.set(`batch_phase_record|${r.from_state}|${r.to_state}`, { entity: "batch_phase_record", from: r.from_state, to: r.to_state });
   add("dataset", ds);
   walk(ds);
 };
@@ -122,6 +126,16 @@ for (const path of ["manual_transcription", "adapter_ingest"] as const) {
   const config = rawConfigOf("default", { seed: 1, settings: SMALL }, { capture_path: path });
   for (const ds of Object.values(runSeed(rawInputOf(runScenario(config), config, "default", CONFIGS.slice(0, 3).map((c) => c.config), SMALL.horizon_days as number)).datasets)) take(ds);
 }
+// S2e2: two bays of two units, one on each controller family, with a hand-given alarm on each (test-only values: AL-1 goes unacknowledged, acknowledged by op1 and normal; the production
+// run emits no alarm log). The raw tables then hold alarm events and batch phase records of both families, and the historian holds the parsed rows.
+{
+  const config = rawConfigOf("default", { seed: 1, settings: { reactor_count: 4, bay_size: 2, cohort_size: 4, horizon_days: 8, production_days: 6 } });
+  const input = rawInputOf(runScenario(config), config, "two-bays", CONFIGS.slice(0, 3).map((c) => c.config), 8);
+  const alarm = (unit: string, from: string, to: string, ts: number, actor: string | null) => ({ unit, alarm_id: "AL-1", tag: "pH.PV", severity: 500, from, to, ts, actor });
+  const hand = ["U01", "U03"].flatMap((u) => [alarm(u, "normal", "unacknowledged", 40000, null), alarm(u, "unacknowledged", "acknowledged", 40300, "op1"), alarm(u, "acknowledged", "normal", 41200, null)]);
+  if (!input.raw?.controller) throw new Error("no controller setup");
+  for (const ds of Object.values(runSeed({ ...input, raw: { ...input.raw, controller: { ...input.raw.controller, forced: { alarms: hand } } } }).datasets)) take(ds);
+}
 const truncated = "synthetic, modeled on public documentation; not a real instrument file\nSample ID,Date Time\nS1,2030-01-07 09:10:00\nS2,2030-01-07";
 const parsed = parseFile(truncated, { entry: adapterEntry(dialectOf("allinone_csv"), { instrument: "AN-1", required_analytes: [] }), file_name: "x.csv", raw_file_id: "RF0", received_at: 0, anchor_epoch_s: 0, flags: { ingest_idempotency: true, append_only_versions: true }, store: newStore() });
 for (const e of parsed.parse_errors) add("parse_error", e);
@@ -130,4 +144,4 @@ const summary = Object.fromEntries(
   [...tables].map(([t, cols]) => [t, Object.fromEntries([...cols].map(([c, s]) => [c, { types: [...s.types].sort(), values: s.values.size <= 16 ? [...s.values].sort() : [] }]))]),
 );
 const performed = [...new Map(log.map((t) => [`${t.entity}|${t.from}|${t.to}|${t.by}`, t])).values()].sort((a, b) => `${a.entity}${a.from}${a.to}${a.by}`.localeCompare(`${b.entity}${b.from}${b.to}${b.by}`));
-console.log(JSON.stringify({ tables: summary, performed, transition_table: MACHINES, roles: ROLES, export_fields: EXPORT_FIELDS, analyte_units: ANALYTE_UNITS, keys: [...keys].sort() }));
+console.log(JSON.stringify({ tables: summary, performed, logged: [...logged.values()].sort((a, b) => `${a.entity}${a.from}${a.to}`.localeCompare(`${b.entity}${b.from}${b.to}`)), transition_table: MACHINES, roles: ROLES, export_fields: EXPORT_FIELDS, analyte_units: ANALYTE_UNITS, keys: [...keys].sort() }));

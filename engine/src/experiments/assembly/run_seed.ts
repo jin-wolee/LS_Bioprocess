@@ -12,7 +12,7 @@ import type { ReviewConfig } from "../../record/review.ts";
 import type { QualificationInput, RecordedDataset } from "../../record/types.ts";
 import { validate } from "../../record/validate.ts";
 import type { RuleConfig } from "../../record/validate.ts";
-import { NOT_APPLICABLE, observationsOf, rawMetrics } from "../../evaluate/raw_metrics.ts";
+import { NOT_APPLICABLE, controllerObservations, observationsOf, rawMetrics } from "../../evaluate/raw_metrics.ts";
 import type { RawMetrics } from "../../evaluate/raw_metrics.ts";
 import { resolveCapturePath } from "../../record/capture.ts";
 import type { CapturePath } from "../../raw/types.ts";
@@ -21,6 +21,7 @@ import { keyFile } from "./key_file.ts";
 import { rawPath } from "./raw_path.ts";
 import type { RawSetup } from "./raw_path.ts";
 import { rawKeyFile } from "./raw_key_file.ts";
+import { controllerPath, mergeTables } from "./raw_controller.ts";
 
 // One truth run, every architecture: inject (fair opportunities), record, validate, review, write the answer key once, evaluate. The truth run is shared,
 // so the truth log is the same for every architecture (experiment 1, spec section 6.1). Detection raises flags and never re-draws or re-measures.
@@ -80,12 +81,19 @@ export const runSeed = (input: SeedInput): SeedOutput => {
     const out = injected[i] as (typeof injected)[number];
     // the raw layer: the files are emitted from the same rows and draws on both capture paths; the path decides what the recorder is given
     const captured = input.raw ? rawPath({ setup: input.raw, seed: input.seed, architecture, path: resolveCapturePath(architecture, input.raw.capture_path), events: out.events, received_at: out.received_at }) : null;
-    const recorded = record({ events: captured?.events ?? out.events, sensors: input.sensors, received_at: captured?.received_at ?? out.received_at, ...(input.qualifications && { qualifications: input.qualifications }), ...(captured && { capture: captured.capture }) }, architecture);
+    // S2e2: the controller logs. Machine files, so only the adapter path has them (spec 5, "Capture path", rule 3); the layer off, or a layer on with no bay controller, has none
+    const controller = captured && input.raw?.controller
+      ? controllerPath({ setup: input.raw.controller, anchor_epoch_s: input.raw.anchor_epoch_s, zone_offset_s: input.raw.zone_offset_s, path: captured.path, flags: { ingest_idempotency: architecture.flags.ingest_idempotency }, events: input.events, sensors: input.sensors })
+      : null;
+    const capture = captured && controller ? { ...captured.capture, historian: controller.historian, findings: [...(captured.capture.findings ?? []), ...controller.findings] } : captured?.capture;
+    const recorded = record({ events: captured?.events ?? out.events, sensors: input.sensors, received_at: captured?.received_at ?? out.received_at, ...(input.qualifications && { qualifications: input.qualifications }), ...(capture && { capture }) }, architecture);
+    const tables = captured?.tables && controller ? mergeTables(captured.tables, controller.tables) : captured?.tables;
     if (captured) {
       const head = { engine_version: input.engine_version, scenario_id: input.scenario_id, seed: input.seed, architecture: architecture.id, capture_path: captured.path };
-      rawRuns[architecture.id] = { path: captured.path, key_text: rawKeyFile(head, captured.key), metrics: captured.tables ? rawMetrics(observationsOf(captured.key.files, captured.outputs)) : NOT_APPLICABLE };
+      const key = controller ? { ...captured.key, not_modelled: [...captured.key.not_modelled, ...controller.not_modelled] } : captured.key;
+      rawRuns[architecture.id] = { path: captured.path, key_text: rawKeyFile(head, key), metrics: captured.tables ? rawMetrics([...observationsOf(captured.key.files, captured.outputs), ...(controller ? controllerObservations(controller.outputs) : [])]) : NOT_APPLICABLE };
     }
-    const validated = validate(captured?.tables ? { ...recorded, raw: captured.tables } : recorded, { ...input.rules, ...(input.entry_rules && { entry: input.entry_rules }) });
+    const validated = validate(tables ? { ...recorded, raw: tables } : recorded, { ...input.rules, ...(input.entry_rules && { entry: input.entry_rules }) });
     const reviewed = review(validated.dataset, input.review);
     datasets[architecture.id] = reviewed;
     return evaluate({ truth: input.truth, dataset: reviewed, not_evaluable: validated.not_evaluable, key_text, architecture: architecture.id, config: input.config });

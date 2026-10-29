@@ -4,6 +4,7 @@ import type { Profile } from "../../profiles.ts";
 import type { EntryConfig } from "../../record/rule_types.ts";
 import type { Roster } from "../../record/review.ts";
 import type { RawSettings } from "../../scenario.ts";
+import type { ControllerProfile } from "../../raw/controller_types.ts";
 import type { Dialect } from "../../raw/types.ts";
 import type { RawSetup } from "./raw_path.ts";
 
@@ -21,7 +22,7 @@ export const exportAtWindowEnd = (roster: Roster): ((t: number) => number) => (t
 /** The export schedule per_run (A216): each result leaves at the host instant it is produced, which is the entry time the manual path gives the same result. */
 export const exportPerRun = (t: number): number => t;
 
-export const rawSetupFor = (raw: RawSettings, analyzer: Profile, dialects: Readonly<Record<string, Dialect>>, roster: Roster): RawSetup => {
+export const rawSetupFor = (raw: RawSettings, analyzer: Profile, dialects: Readonly<Record<string, Dialect>>, roster: Roster, controllers: Readonly<Record<string, ControllerProfile>> = {}): RawSetup => {
   const ladder = analyzer.route?.[0]?.dilution_factors;
   return {
     dialects, anchor_epoch_s: anchorEpoch(raw.calendar_anchor), zone_offset_s: raw.zone_offset_s,
@@ -32,6 +33,8 @@ export const rawSetupFor = (raw: RawSettings, analyzer: Profile, dialects: Reado
     default_dilution: ladder && ladder[0] !== undefined ? param(analyzer.params, ladder[0], "factor") : null,
     export_at: raw.export_schedule === "per_run" ? exportPerRun : exportAtWindowEnd(roster),
     ...(raw.capture_path !== undefined && { capture_path: raw.capture_path }),
+    // the controller side exists only where the scenario puts a controller profile on each bay (spec 2.4.2); the cut is A217
+    ...(raw.bay_controllers !== undefined && { controller: { profiles: controllers, bays: raw.bay_controllers, cut: raw.controller_log_cut, set_points: raw.set_points } }),
   };
 };
 

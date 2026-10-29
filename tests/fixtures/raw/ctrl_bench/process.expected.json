@@ -1,0 +1,36 @@
+{
+  "profile": "ctrl_bench",
+  "note": "Test-only values. The unit sits in parentheses in the variable name (A171) and the adapter rewrites it to unit_tag.signal.role; the stamp has no zone and the entry zone is 0 h (a scenario input, A161). The same canonical form as the other family.",
+  "cases": [
+    {
+      "name": "RQ9 the variable pH.PV (U01) loads as the canonical tag U01.pH.PV, the same form the other family writes",
+      "file_name": "bench_process_CTRL-2_2030-01-07.csv",
+      "controller": "CTRL-2",
+      "received_at": 86400,
+      "belief": {"source_zone_s": 0},
+      "expect": {
+        "historian": [
+          {"line": 3, "tag": "U01.pH.PV", "ts": 0, "value": 7.01, "quality": "good", "ingested_at": 86400, "state": "loaded"},
+          {"line": 4, "tag": "U01.DO.PV", "ts": 0, "value": 30.2, "quality": "good", "state": "loaded"},
+          {"line": 5, "tag": "U02.temperature.SP", "ts": 3600, "value": 37, "quality": "good", "state": "loaded"}
+        ],
+        "raw_records": [
+          {"line": 3, "state": "loaded", "rule_id": null}, {"line": 4, "state": "loaded", "rule_id": null}, {"line": 5, "state": "loaded", "rule_id": null}
+        ]
+      }
+    },
+    {
+      "name": "RQ1 an entry without a zone leaves the local stamp unresolved: nothing is stored as a historian value and every row is quarantined (VR-024)",
+      "file_name": "bench_process_CTRL-2_2030-01-07.csv",
+      "controller": "CTRL-2",
+      "received_at": 86400,
+      "belief": {"source_zone_s": null},
+      "expect": {
+        "historian": [],
+        "raw_records": [
+          {"line": 3, "state": "quarantined", "rule_id": "VR-024"}, {"line": 4, "state": "quarantined", "rule_id": "VR-024"}, {"line": 5, "state": "quarantined", "rule_id": "VR-024"}
+        ]
+      }
+    }
+  ]
+}

@@ -33,6 +33,16 @@ export interface Scenario {
    */
   export_schedule?: "window_end" | "per_run";
   /**
+   * How a controller cuts its log files (A217): one file per record type per day (daily, the default; the file reaches the host at the end of its day) or each row as written (per_row; the row reaches the host at its own stamp). Needs raw_layer true. A capture-path contrast holds it fixed so that only the path changes.
+   */
+  controller_log_cut?: "daily" | "per_row";
+  /**
+   * The controller profile of each bay, bay 1 first (spec section 2.4.2: a bay uses one controller profile; the default raw-layer scenario puts one bay on each family). Needs raw_layer true. Absent: no controller log is emitted and the layer stays analyzer-side only.
+   *
+   * @minItems 1
+   */
+  bay_controllers?: [string, ...string[]];
+  /**
    * The synthetic calendar date of scenario second 0 (a Monday, spec section 2.1), as YYYY-MM-DD; the emitters turn integer seconds into wall-clock text from it. Needs raw_layer true.
    */
   calendar_anchor?: string;

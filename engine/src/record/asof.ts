@@ -1,3 +1,4 @@
+import { lastRowAt } from "./tag_read.ts";
 import type { HistorianRow, ProcessEventRow, RecordedDataset, ResultRow, SampleRow } from "./types.ts";
 
 // Reads of a recorded dataset "as of" a decision time (data_model section 5, "Bitemporal and as-of rule"; spec section 3 rule 5).
@@ -48,6 +49,33 @@ export interface ProcessContext {
   pv: Record<string, number>;
 }
 
+/**
+ * The late rows of a dataset by tag, in time order (S2e2: a parsed controller log has about fifty thousand rows, so a read must not scan them). The index is rebuilt when the list
+ * grew, and it is keyed by the list itself, so a dataset that is copied with another list gets its own.
+ */
+const lateIndexes = new WeakMap<readonly HistorianRow[], { n: number; byTag: Map<string, HistorianRow[]> }>();
+const lateByTag = (late: readonly HistorianRow[]): Map<string, HistorianRow[]> => {
+  const cached = lateIndexes.get(late);
+  if (cached && cached.n === late.length) return cached.byTag;
+  const byTag = new Map<string, HistorianRow[]>();
+  for (const r of late) {
+    const rows = byTag.get(r.tag);
+    if (rows) rows.push(r);
+    else byTag.set(r.tag, [r]);
+  }
+  for (const rows of byTag.values()) rows.sort((a, b) => a.ts - b.ts || a.ingested_at - b.ingested_at);
+  lateIndexes.set(late, { n: late.length, byTag });
+  return byTag;
+};
+
+/** The signal a historian tag of the unit stands for, or null: `unit.signal` is the layer-off tag and `unit.signal.PV` the process value of the raw layer (data_model 16.4); a set point or an output is not a process value. */
+const processSignalOf = (tag: string, unit: string): string | null => {
+  if (!tag.startsWith(`${unit}.`)) return null;
+  const rest = tag.slice(unit.length + 1);
+  const signal = rest.endsWith(".PV") ? rest.slice(0, -3) : rest;
+  return signal === "" || signal.includes(".") ? null : signal;
+};
+
 /** The last historian value of `unit.signal` at or before `t` among the rows known at `asOf`; for a repeated ts the latest ingested row wins. */
 const historianAt = (ds: RecordedDataset, unit: string, signal: string, t: number, asOf: number): number | undefined => {
   const strict = ds.architecture.flags.available_at;
@@ -58,7 +86,11 @@ const historianAt = (ds: RecordedDataset, unit: string, signal: string, t: numbe
     const j = Math.min(Math.floor((limit - s.t0_s) / s.cadence_s), s.n - 1);
     if (j >= 0) candidates.push({ ts: s.t0_s + j * s.cadence_s, value: s.pv[j] as number, ingested_at: s.t0_s + j * s.cadence_s });
   }
-  for (const r of ds.historian.late) if (r.tag === `${unit}.${signal}` && r.ts <= t && (!strict || r.ingested_at <= asOf)) candidates.push(r);
+  const byTag = lateByTag(ds.historian.late);
+  for (const tag of [`${unit}.${signal}`, `${unit}.${signal}.PV`]) {
+    const row = lastRowAt(byTag.get(tag) ?? [], t, strict ? asOf : Number.POSITIVE_INFINITY);
+    if (row) candidates.push(row);
+  }
   candidates.sort((a, b) => b.ts - a.ts || b.ingested_at - a.ingested_at);
   return candidates[0]?.value;
 };
@@ -98,7 +130,8 @@ export const contextAsOf = (ds: RecordedDataset, result: ResultRow, asOf: number
     (e) => e.unit_id === sample.unit_id && e.batch_id === batch_id && e.occurred_at <= join_time && (!strict || e.ingested_at <= asOf),
   );
   const pv: Record<string, number> = {};
-  for (const signal of new Set([...ds.historian.series.filter((x) => x.unit_id === sample.unit_id).map((x) => x.signal as string), ...ds.historian.late.filter((r) => r.tag.startsWith(`${sample.unit_id}.`)).map((r) => r.tag.slice(sample.unit_id.length + 1))])) {
+  const lateSignals = [...lateByTag(ds.historian.late).keys()].flatMap((tag) => processSignalOf(tag, sample.unit_id) ?? []);
+  for (const signal of new Set([...ds.historian.series.filter((x) => x.unit_id === sample.unit_id).map((x) => x.signal as string), ...lateSignals])) {
     const v = historianAt(ds, sample.unit_id, signal, join_time, asOf);
     if (v !== undefined) pv[signal] = v;
   }

@@ -1,12 +1,13 @@
 {
   "schema_version": "1",
   "experiment_id": "capture_contrast",
-  "description": "The capture-path contrast (spec section 5, Automatic linkage alone; prompts/20 Step 6): SC1 with the raw device layer on, each preset on manual_transcription and on adapter_ingest, paired by seed. The seed list is written here before any run: at least 20 seeds (A103), neutral integers, none date-shaped, chosen by hand and not a function of any result. Stochastic, reported with the seed count and the spread, never gated. The export schedule (A216) is named per block before any run: the first block, per_run, holds the timing fixed (each result reaches the host at the instant it is produced on both paths), so only the path changes and the block is linkage alone; the second block, window_end, is a timing sensitivity (export at the end of the staffed window against an entry delay that is not modelled, spec 2.4.8) and is not linkage alone. The calendar anchor is a synthetic Monday and the instrument zone a scenario input (A161).",
+  "description": "The capture-path contrast (spec section 5, Automatic linkage alone; prompts/20 Step 6): SC1 with the raw device layer on, each preset on manual_transcription and on adapter_ingest, paired by seed. The seed list is written here before any run: at least 20 seeds (A103), neutral integers, none date-shaped, chosen by hand and not a function of any result. Stochastic, reported with the seed count and the spread, never gated. The controller side is SC1 with one bay on each controller family (spec 2.4.2): the controller log cut (A217) is named per block too, per_row in the first block and daily in the second. The export schedule (A216) is named per block before any run: the first block, per_run, holds the timing fixed (each result reaches the host at the instant it is produced on both paths), so only the path changes and the block is linkage alone; the second block, window_end, is a timing sensitivity (export at the end of the staffed window against an entry delay that is not modelled, spec 2.4.8) and is not linkage alone. The calendar anchor is a synthetic Monday and the instrument zone a scenario input (A161).",
   "scenario": "default",
   "presets": ["a_manual", "b_lims_lite", "c_context"],
+  "bay_controllers": ["ctrl_neutral", "ctrl_bench"],
   "blocks": [
-    {"label": "linkage alone: export per run, so a result reaches the host at the instant it is produced on both paths", "export_schedule": "per_run"},
-    {"label": "timing sensitivity: export at window end (A216) against an entry delay that is not modelled; not linkage alone", "export_schedule": "window_end"}
+    {"label": "linkage alone: export per run and controller rows cut per row, so a result and a historian value reach the host at the instant each is produced on both paths", "export_schedule": "per_run", "controller_log_cut": "per_row"},
+    {"label": "timing sensitivity: export at window end (A216) and controller logs cut daily (A217) against an entry delay that is not modelled; not linkage alone", "export_schedule": "window_end", "controller_log_cut": "daily"}
   ],
   "calendar_anchor": "2030-01-07",
   "device_zone_h": {"value": 0, "unit": "h", "ref": "A161"},

@@ -47,6 +47,14 @@ describe("SC1 ordinary Tuesday with the raw layer on", () => {
   it("Given every cell Then it counts the same number of requests (the denominator is all analysis requests)", () => {
     expect(new Set(outs.flatMap((o) => o.cells.map((c) => c.n_requests))).size).toBe(1);
   });
+  it("Given the controller logs of the default raw-layer scenario (one bay on each family) Then A keeps the columnar series as observable events, and B, C and the first ablations parse the logs into the same historian rows, no ordering asserted", () => {
+    const ds = (i: number) => Object.values((outs[i] as SeedOutput).datasets)[0];
+    expect(ds(0)?.historian.series.length).toBe(72);
+    expect(ds(0)?.historian.late).toEqual([]);
+    const rows = (i: number) => JSON.stringify((ds(i)?.historian.late ?? []).map((r) => [r.tag, r.ts, r.value]).sort());
+    expect(ds(2)?.historian.late.length ?? 0).toBeGreaterThan(10_000);
+    for (const i of [1, 2, 3, 4]) expect(rows(i)).toBe(rows(2)); // a flag that decides what the recorder keeps does not change what the controller wrote
+  });
 });
 
 describe("SC6 wrong clock with the raw layer on", () => {
@@ -77,6 +85,18 @@ describe("SC6 wrong clock with the raw layer on", () => {
     const rows = (id: string) => out.datasets[id]?.result.filter((r) => r.request_id === truth?.request_id && r.analyte === truth?.analyte);
     expect(rows("c_context")?.[0]?.measured_at).toBe(truth?.t);
     expect(rows("a_manual")?.[0]?.measured_at).toBe(truth?.t);
+  });
+  it("Given the same offset Then the controller stamps do not move: the offset is the analyzer's clock (A049, one analyzer set +5 h), and the controller logs are the same with and without it", () => {
+    const config = rawConfigOf("default", SMALL_RUN);
+    const plain = runSeed(rawInputOf(runScenario(config), config, "default-raw-noclock", CONFIGS.slice(0, 3).map((c) => c.config), 8));
+    for (const id of ["b_lims_lite", "c_context"]) {
+      const [with5h, without] = [out, plain].map((o) => o.datasets[id]);
+      expect(with5h?.historian.late.length).toBeGreaterThan(0);
+      expect(JSON.stringify(with5h?.historian.late)).toBe(JSON.stringify(without?.historian.late));
+      expect(JSON.stringify(with5h?.raw?.batch_phase_record)).toBe(JSON.stringify(without?.raw?.batch_phase_record));
+      const controllerFiles = (o: typeof with5h) => (o?.raw?.raw_file ?? []).filter((f) => /^(ctrl|bench)_/.test(f.file_name)).map((f) => [f.file_name, f.content_hash, f.received_at]);
+      expect(controllerFiles(with5h)).toEqual(controllerFiles(without));
+    }
   });
   it("Given a clock error Then the injector's key lists it for every architecture: no capture path and no flag prevents it", () => {
     const key = JSON.parse(out.key_text) as { architectures: Record<string, { errors: { type: string }[] }> };

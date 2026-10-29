@@ -1,0 +1,21 @@
+{
+  "profile": "ctrl_bench",
+  "note": "Test-only values. The bench alarm row carries the alarm (with the unit in parentheses), the new state and the user; it has no From, no watched tag and no severity, so the adapter takes the previous state of the instance (normal for the first row of an instance) and leaves tag and severity null. The acknowledging user op1 is a test-only id.",
+  "cases": [
+    {
+      "name": "RQ10 the acknowledge row carries the acknowledging user; the three transitions are three rows and from_state is the previous state of the instance",
+      "file_name": "bench_alarms_CTRL-2_2030-01-07.csv",
+      "controller": "CTRL-2",
+      "received_at": 86400,
+      "belief": {"source_zone_s": 0},
+      "expect": {
+        "alarms": [
+          {"line": 3, "alarm_id": "AL-1", "unit_id": "U01", "tag": null, "severity": null, "from_state": "normal", "to_state": "unacknowledged", "ts": 32400, "actor": null, "state": "loaded"},
+          {"line": 4, "alarm_id": "AL-1", "unit_id": "U01", "from_state": "unacknowledged", "to_state": "acknowledged", "ts": 32700, "actor": "op1", "state": "loaded"},
+          {"line": 5, "alarm_id": "AL-1", "unit_id": "U01", "from_state": "acknowledged", "to_state": "normal", "ts": 33600, "actor": null, "state": "loaded"}
+        ],
+        "findings": []
+      }
+    }
+  ]
+}

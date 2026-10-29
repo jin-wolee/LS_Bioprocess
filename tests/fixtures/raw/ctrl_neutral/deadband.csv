@@ -1,0 +1,5 @@
+synthetic, modeled on public documentation; not a real instrument file
+Timestamp,Unit,Tag,Value,Quality
+2030-01-07T00:00:00+00:00,U01,agitation.PV,100.0,good
+2030-01-07T00:00:10+00:00,U01,agitation.PV,101.2,good
+2030-01-07T00:00:25+00:00,U01,agitation.PV,101.3,good

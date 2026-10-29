@@ -1,0 +1,26 @@
+{
+  "profile": "ctrl_neutral",
+  "note": "Test-only values: the hold of phase_hold, but the fourth row goes from held straight to running; the phase model of data_model 16.5 passes through restarting. The fifth row, held to restarting, is judged against the last accepted state (held), not against the row that was held.",
+  "cases": [
+    {
+      "name": "RQ11 held straight to running is held (VR-025); the rows before it load, and the row after it is judged against the last accepted state",
+      "file_name": "ctrl_phases_CTRL-1_2030-01-07.csv",
+      "controller": "CTRL-1",
+      "received_at": 86400,
+      "expect": {
+        "phases": [
+          {"line": 3, "from_state": "idle", "to_state": "running", "state": "loaded"},
+          {"line": 4, "from_state": "running", "to_state": "holding", "state": "loaded"},
+          {"line": 5, "from_state": "holding", "to_state": "held", "state": "loaded"},
+          {"line": 6, "phase": "before_shift", "from_state": "held", "to_state": "running", "ts": 33000, "state": "held"},
+          {"line": 7, "phase": "before_shift", "from_state": "held", "to_state": "restarting", "ts": 34200, "state": "loaded"}
+        ],
+        "raw_records": [
+          {"line": 6, "state": "held", "rule_id": "VR-025"},
+          {"line": 7, "state": "loaded", "rule_id": null}
+        ],
+        "findings": [{"rule": "VR-025", "target": "batch_phase_record:RF1:6", "action": "hold"}]
+      }
+    }
+  ]
+}

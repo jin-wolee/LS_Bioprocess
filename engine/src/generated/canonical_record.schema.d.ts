@@ -6,7 +6,7 @@
  */
 
 /**
- * A canonical record produced by an adapter (data_model sections 7 and 16.3): the ingestion envelope with raw_ref as file and line, and the payload of the target. The analyzer result is built in S2e1; the three controller targets (data_model 16.4) are fixed here and filled in S2e2 (Step 7). A rule changes a state and never a value; a rejected line is not a record but a parse_error row.
+ * A canonical record produced by an adapter (data_model sections 7 and 16.3): the ingestion envelope with raw_ref as file and line, and the payload of the target. The analyzer result is built in S2e1; the three controller targets (data_model 16.4) are fixed here and filled in S2e2 (Step 7); a field that a family log does not carry is null. A rule changes a state and never a value; a rejected line is not a record but a parse_error row.
  */
 export type CanonicalRecord = ResultRecord | HistorianValue | AlarmEvent | BatchPhaseRecord;
 
@@ -93,7 +93,10 @@ export interface AlarmEvent {
   payload: {
     alarm_id: string;
     unit_id: string;
-    tag: string;
+    /**
+     * The process tag the alarm watches; null where the family alarm log does not carry it (ctrl_bench).
+     */
+    tag: string | null;
     severity: number | null;
     from_state: string;
     to_state: string;
@@ -108,12 +111,24 @@ export interface BatchPhaseRecord {
   record_kind: "phase_transition";
   envelope: Envelope;
   payload: {
-    batch_id: string;
+    /**
+     * Null where the family phase log does not carry it (ctrl_bench writes recipe, step and state only).
+     */
+    batch_id: string | null;
     unit_id: string;
     recipe_id: string;
-    procedure: string;
-    unit_procedure: string;
-    operation: string;
+    /**
+     * Null where the family phase log does not carry it (ctrl_bench writes recipe, step and state only).
+     */
+    procedure: string | null;
+    /**
+     * Null where the family phase log does not carry it (ctrl_bench writes recipe, step and state only).
+     */
+    unit_procedure: string | null;
+    /**
+     * Null where the family phase log does not carry it (ctrl_bench writes recipe, step and state only).
+     */
+    operation: string | null;
     phase: string;
     from_state: string;
     to_state: string;

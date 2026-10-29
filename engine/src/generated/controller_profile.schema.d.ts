@@ -6,7 +6,7 @@
  */
 
 /**
- * A controller family of the raw device layer (ADR-0014, spec section 2.4.2), profile data in the style of ADR-0012: the logs a bioreactor controller writes (tag log, alarm log, batch-phase log) and the logging deadbands of its tags. Every numeric parameter is {value, unit, ref} with ref a ledger id; modeled_on lists S### ids that must resolve; the banner line is required. A synthetic format modeled on public documentation, not a real controller file. The emitter and adapter for it are built in S2e2 (Step 7); this schema fixes the data.
+ * A controller family of the raw device layer (ADR-0014, spec section 2.4.2), profile data in the style of ADR-0012: the logs a bioreactor controller writes (tag log, alarm log, batch-phase log) and the logging deadbands of its tags. Every numeric parameter is {value, unit, ref} with ref a ledger id; modeled_on lists S### ids that must resolve; the banner line is required. A synthetic format modeled on public documentation, not a real controller file. Since S2e2 (Step 7) the controller emitter and adapter read it: each log column names its role, so one generic emitter and one generic parser serve every family and branch on no profile id.
  */
 export interface ControllerProfile {
   schema_version: "1";
@@ -18,11 +18,28 @@ export interface ControllerProfile {
    * @minItems 1
    */
   modeled_on: [string, ...string[]];
+  stamp: {
+    /**
+     * iso_utc_offset: the stamp is a UTC instant with its offset in the text (ctrl_neutral). local_wall_clock: year first, a dash, 24 h, to the second, no zone (RQ1 by assumption, ctrl_bench); the adapter entry zone resolves it.
+     */
+    form: "iso_utc_offset" | "local_wall_clock";
+    ref: string;
+  };
   tag_naming: {
     /**
      * ctrl_neutral writes the unit in its own column, ctrl_bench in parentheses inside the variable name (A171); the adapter rewrites both to unit_tag.signal.role.
      */
     form: "unit_column" | "unit_in_parentheses";
+    ref: string;
+  };
+  /**
+   * The ISA-88 ids a batch-phase row carries (A170): one recipe, one procedure, one unit procedure and one operation; the phases come from the observable process events (data_model section 7, S2e2 table).
+   */
+  phase_model: {
+    recipe: string;
+    procedure: string;
+    unit_procedure: string;
+    operation: string;
     ref: string;
   };
   /**
@@ -36,6 +53,55 @@ export interface ControllerProfile {
        * @minItems 1
        */
       columns: [string, ...string[]];
+      /**
+       * The role of each column, in the order of `columns` (the same length): the generic emitter and parser map by role, never by position or by label.
+       *
+       * @minItems 1
+       */
+      roles: [
+        (
+          | "stamp"
+          | "unit"
+          | "tag"
+          | "value"
+          | "quality"
+          | "alarm"
+          | "severity"
+          | "from_state"
+          | "to_state"
+          | "state"
+          | "user"
+          | "batch"
+          | "recipe"
+          | "procedure"
+          | "unit_procedure"
+          | "operation"
+          | "phase"
+          | "event"
+          | "message"
+        ),
+        ...(
+          | "stamp"
+          | "unit"
+          | "tag"
+          | "value"
+          | "quality"
+          | "alarm"
+          | "severity"
+          | "from_state"
+          | "to_state"
+          | "state"
+          | "user"
+          | "batch"
+          | "recipe"
+          | "procedure"
+          | "unit_procedure"
+          | "operation"
+          | "phase"
+          | "event"
+          | "message"
+        )[]
+      ];
       ref: string;
     },
     ...{
@@ -45,6 +111,55 @@ export interface ControllerProfile {
        * @minItems 1
        */
       columns: [string, ...string[]];
+      /**
+       * The role of each column, in the order of `columns` (the same length): the generic emitter and parser map by role, never by position or by label.
+       *
+       * @minItems 1
+       */
+      roles: [
+        (
+          | "stamp"
+          | "unit"
+          | "tag"
+          | "value"
+          | "quality"
+          | "alarm"
+          | "severity"
+          | "from_state"
+          | "to_state"
+          | "state"
+          | "user"
+          | "batch"
+          | "recipe"
+          | "procedure"
+          | "unit_procedure"
+          | "operation"
+          | "phase"
+          | "event"
+          | "message"
+        ),
+        ...(
+          | "stamp"
+          | "unit"
+          | "tag"
+          | "value"
+          | "quality"
+          | "alarm"
+          | "severity"
+          | "from_state"
+          | "to_state"
+          | "state"
+          | "user"
+          | "batch"
+          | "recipe"
+          | "procedure"
+          | "unit_procedure"
+          | "operation"
+          | "phase"
+          | "event"
+          | "message"
+        )[]
+      ];
       ref: string;
     }[]
   ];

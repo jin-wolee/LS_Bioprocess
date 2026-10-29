@@ -42,6 +42,11 @@ export interface CaptureInput {
   findings?: readonly ValidationFindingRow[];
   /** Incoming rows kept aside by the adapter's idempotency rule (VR-008b): not loaded, the original stays. */
   conflicts?: readonly IngestConflictRow[];
+  /**
+   * S2e2: the historian values parsed from the controller logs (adapter_ingest, with a controller on the bay). They are the historian of the dataset: the logged rows replace the
+   * engine's columnar series, which is what the layer-off recorders and the manual path read as observable events (spec 5, "Capture path", rule 3).
+   */
+  historian?: readonly HistorianRow[];
 }
 
 export interface RecorderInput {
@@ -225,13 +230,17 @@ export interface ProcessEventRow {
   ingested_at: number;
 }
 
-/** A historian row: a tag, its valid time `ts`, the value, and when the system received it (data_model section 2). */
+/**
+ * A historian row: a tag, its valid time `ts`, the value, and when the system received it (data_model section 2). With the raw layer on and a parsed controller log the tag is
+ * `unit_tag.signal.role` (data_model 16.4), `ingested_at` is the file's `received_at`, and `raw_ref` points to the line (data_model 16.2).
+ */
 export interface HistorianRow {
   tag: string;
   ts: number;
   value: number;
-  quality: "good";
+  quality: string;
   ingested_at: number;
+  raw_ref?: { raw_file_id: string; line_no: number } | null;
 }
 
 export interface RecordedDataset {

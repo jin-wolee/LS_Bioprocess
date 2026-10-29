@@ -8,17 +8,22 @@ import type { KeyRow } from "../raw/key.ts";
 export const NOT_APPLICABLE = { status: "not_applicable", reason: "manual_transcription: no file is parsed, so there is no ingest metric" } as const;
 export const NONE_OCCURRED = { status: "none_occurred" } as const;
 
+/** The device class of a raw data row: a row of an analyzer export or of a controller log. */
+export type DeviceClass = "analyzer" | "controller";
+
 /** One written row with what the parser did to it. `state` is "file_rejected" for a row of a file that was rejected as a whole (every row of it counts as unreadable). */
 export interface RowObservation {
   key: KeyRow;
   state: RawRecordState | "file_rejected";
   /** The instant the parser stored for the row (seconds of the scenario), or null when it stored none. */
   parsed_s: number | null;
+  device: DeviceClass;
 }
 
 export type Share = { status: "reported"; num: number; den: number } | typeof NONE_OCCURRED;
 
-export interface RawMetrics {
+/** The metrics of spec 2.4.7 over a set of rows: all rows (the total) or the rows of one device class. */
+export interface RawClassMetrics {
   status: "reported";
   rows: number;
   /** Rows rejected as unreadable (VR-023, a rejected file counts every row) over all raw data rows written, repeated rows and rows of replayed files included. */
@@ -33,9 +38,21 @@ export interface RawMetrics {
   clean: { status: "reported"; den: number; held_or_quarantined: number } | typeof NONE_OCCURRED;
 }
 
+/** A device class of which no row was written (a scenario with no controller on a bay, say): not applicable, never zero. */
+export const NO_ROWS = { status: "not_applicable", reason: "no raw data row of this device class was written" } as const;
+
+/**
+ * The metrics as spec 2.4.7 defines them (the total, over all raw data rows the emitters wrote) and beside them the same metrics per device class, each over the rows of that
+ * class only. The controller rows are about 99 percent of the rows of a run, so a total guard alone would let quarantining every analyzer row look harmless; the class guard
+ * (clean rows of the class quarantined or held, over the clean rows of the class) does not dilute. The classes partition the rows: a row is in exactly one.
+ */
+export interface RawMetrics extends RawClassMetrics {
+  by_class: Record<DeviceClass, RawClassMetrics | typeof NO_ROWS>;
+}
+
 const share = (num: number, den: number): Share => (den === 0 ? NONE_OCCURRED : { status: "reported", num, den });
 
-export const rawMetrics = (rows: readonly RowObservation[]): RawMetrics => {
+const classMetrics = (rows: readonly RowObservation[]): RawClassMetrics => {
   const failed = rows.filter((r) => r.state === "rejected" || r.state === "file_rejected").length;
   const ambiguous = rows.filter((r) => r.key.ambiguous);
   const truncated = (k: KeyRow): number => Math.floor(k.intended_s / k.resolution_s) * k.resolution_s;
@@ -55,6 +72,28 @@ export const rawMetrics = (rows: readonly RowObservation[]): RawMetrics => {
   };
 };
 
+export const rawMetrics = (rows: readonly RowObservation[]): RawMetrics => ({
+  ...classMetrics(rows),
+  by_class: Object.fromEntries((["analyzer", "controller"] as const).map((c) => {
+    const mine = rows.filter((r) => r.device === c);
+    return [c, mine.length === 0 ? NO_ROWS : classMetrics(mine)];
+  })) as RawMetrics["by_class"],
+});
+
+/** A written controller row as the key sees it: no quirk, no repeat and an unambiguous stamp. Controller rows are clean by construction: a production run realises no controller quirk. */
+const CLEAN_ROW: KeyRow = { line: 0, sample_id: "-", intended_s: 0, resolution_s: 1, ambiguous: false, repeat: false, quirks: [], unreadable: false };
+
+/**
+ * The observations of the controller files (spec 2.4.7: all raw data rows the emitters wrote, controller rows included): one per data row, with what the parser did to it, and a
+ * rejected file counting every row it holds. The rows of a controller log carry no quirk, so they enter the clean-row guard as clean rows.
+ */
+export const controllerObservations = (outputs: readonly Pick<ParseOutput, "raw_file" | "raw_records">[]): RowObservation[] =>
+  outputs.flatMap((o) =>
+    o.raw_file.state === "rejected"
+      ? Array.from({ length: o.raw_file.row_count }, (): RowObservation => ({ key: CLEAN_ROW, state: "file_rejected", parsed_s: null, device: "controller" }))
+      : o.raw_records.map((r): RowObservation => ({ key: CLEAN_ROW, state: r.state, parsed_s: null, device: "controller" })),
+  );
+
 /** The observations of a run: the written rows of each file (the raw quirk key) paired with the parse output of the same file, in the order the files arrived. */
 export const observationsOf = (files: readonly { file_name: string; rows: readonly KeyRow[] }[], outputs: readonly ParseOutput[]): RowObservation[] => {
   if (files.length !== outputs.length) throw new Error(`raw metrics: ${files.length} files in the key, ${outputs.length} parse outputs`);
@@ -62,10 +101,10 @@ export const observationsOf = (files: readonly { file_name: string; rows: readon
     const out = outputs[i] as ParseOutput;
     if (out.raw_file.file_name !== f.file_name) throw new Error(`raw metrics: file ${i} is ${f.file_name} in the key and ${out.raw_file.file_name} in the parse output`);
     return f.rows.map((key): RowObservation => {
-      if (out.raw_file.state === "rejected") return { key, state: "file_rejected", parsed_s: null };
+      if (out.raw_file.state === "rejected") return { key, state: "file_rejected", parsed_s: null, device: "analyzer" };
       const rec = out.raw_records.find((r) => r.line_no === key.line);
       const at = out.records.find((r) => r.envelope.raw_ref.line_no === key.line)?.payload.measured_at ?? null;
-      return { key, state: rec?.state ?? "rejected", parsed_s: at };
+      return { key, state: rec?.state ?? "rejected", parsed_s: at, device: "analyzer" };
     });
   });
 };

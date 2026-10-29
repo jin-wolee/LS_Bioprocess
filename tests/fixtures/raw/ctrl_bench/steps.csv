@@ -1,0 +1,7 @@
+synthetic, modeled on public documentation; not a real instrument file
+Time,Recipe,Step,State
+2030-01-07 08:00:00,REC-CULTURE,before_shift (U01),running
+2030-01-07 09:00:00,REC-CULTURE,before_shift (U01),holding
+2030-01-07 09:05:00,REC-CULTURE,before_shift (U01),held
+2030-01-07 09:30:00,REC-CULTURE,before_shift (U01),restarting
+2030-01-07 09:35:00,REC-CULTURE,before_shift (U01),running

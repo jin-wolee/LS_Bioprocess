@@ -24,6 +24,13 @@ for (const block of report.blocks) {
   console.log(`block ${block.export_schedule}: ${block.label} (${block.n_seeds} seeds; ${block.interval})`);
   for (const p of block.presets) {
     console.log(`  ${p.preset}: ingest metrics manual ${p.ingest.manual.status}; adapter reported in ${p.ingest.adapter.seeds_reported} of ${block.n_seeds} seeds, parse failure median ${String(p.ingest.adapter.parse_failure_median)}`);
+    for (const cls of ["analyzer", "controller"] as const) {
+      const c = p.ingest.adapter.by_class[cls];
+      console.log(c.status === "reported"
+        ? `    ingest, ${cls} rows only: ${c.rows_median} rows (median), parse failure median ${String(c.parse_failure_median)}, quarantined ${String(c.quarantined_median)}, held ${String(c.held_median)}, clean rows quarantined or held ${String(c.clean_share_median)} (median share); manual not applicable`
+        : `    ingest, ${cls}: ${c.status}`);
+    }
+    console.log(`    ingest, total: ${p.ingest.adapter.rows_median} rows (median), clean rows quarantined or held ${String(p.ingest.adapter.clean_share_median)} (median share)`);
     for (const r of p.paired.filter((x) => SHOWN.some((s) => x.metric.includes(s)))) console.log(`    ${r.metric}: adapter minus manual, median ${String(r.median)} [${String(r.lo)}, ${String(r.hi)}], ${r.n_defined} of ${r.n_seeds} seeds`);
   }
 }

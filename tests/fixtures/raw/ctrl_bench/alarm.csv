@@ -1,0 +1,5 @@
+synthetic, modeled on public documentation; not a real instrument file
+Time,Alarm,State,User
+2030-01-07 09:00:00,AL-1 (U01),unacknowledged,
+2030-01-07 09:05:00,AL-1 (U01),acknowledged,op1
+2030-01-07 09:20:00,AL-1 (U01),normal,

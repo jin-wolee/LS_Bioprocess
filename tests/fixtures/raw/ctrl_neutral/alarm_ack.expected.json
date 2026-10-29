@@ -1,0 +1,36 @@
+{
+  "profile": "ctrl_neutral",
+  "note": "Test-only values: alarm AL-1 on U01 watching pH.PV at severity 500, activated at 09:00, acknowledged at 09:05 and back to normal at 09:20 (32400, 32700 and 33600 s). The production run emits no alarm log (no acknowledge or return-to-normal time has a ledger entry, spec 2.4.8).",
+  "cases": [
+    {
+      "name": "RQ10 unacknowledged, acknowledged and normal give three alarm_event rows, one per transition, never merged",
+      "file_name": "ctrl_alarms_CTRL-1_2030-01-07.csv",
+      "controller": "CTRL-1",
+      "received_at": 86400,
+      "expect": {
+        "alarms": [
+          {"line": 3, "alarm_id": "AL-1", "unit_id": "U01", "tag": "U01.pH.PV", "severity": 500, "from_state": "normal", "to_state": "unacknowledged", "ts": 32400, "actor": null, "comment": null, "state": "loaded", "source_event_id": "U01|AL-1|unacknowledged|2030-01-07T09:00:00+00:00"},
+          {"line": 4, "alarm_id": "AL-1", "unit_id": "U01", "tag": "U01.pH.PV", "severity": 500, "from_state": "unacknowledged", "to_state": "acknowledged", "ts": 32700, "actor": null, "state": "loaded"},
+          {"line": 5, "alarm_id": "AL-1", "unit_id": "U01", "tag": "U01.pH.PV", "severity": 500, "from_state": "acknowledged", "to_state": "normal", "ts": 33600, "actor": null, "state": "loaded"}
+        ],
+        "raw_records": [
+          {"line": 3, "state": "loaded", "rule_id": null}, {"line": 4, "state": "loaded", "rule_id": null}, {"line": 5, "state": "loaded", "rule_id": null}
+        ],
+        "findings": []
+      }
+    },
+    {
+      "name": "RQ10 a log that starts mid-instance (the first row seen is acknowledged to normal) is accepted: there is no earlier record to contradict",
+      "file_name": "ctrl_alarms_CTRL-1_2030-01-07.csv",
+      "controller": "CTRL-1",
+      "received_at": 86400,
+      "drop_lines": [3, 4],
+      "expect": {
+        "alarms": [
+          {"line": 3, "alarm_id": "AL-1", "from_state": "acknowledged", "to_state": "normal", "ts": 33600, "state": "loaded"}
+        ],
+        "findings": []
+      }
+    }
+  ]
+}

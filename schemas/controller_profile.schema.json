@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "controller_profile.schema.json",
   "title": "ControllerProfile",
-  "description": "A controller family of the raw device layer (ADR-0014, spec section 2.4.2), profile data in the style of ADR-0012: the logs a bioreactor controller writes (tag log, alarm log, batch-phase log) and the logging deadbands of its tags. Every numeric parameter is {value, unit, ref} with ref a ledger id; modeled_on lists S### ids that must resolve; the banner line is required. A synthetic format modeled on public documentation, not a real controller file. The emitter and adapter for it are built in S2e2 (Step 7); this schema fixes the data.",
+  "description": "A controller family of the raw device layer (ADR-0014, spec section 2.4.2), profile data in the style of ADR-0012: the logs a bioreactor controller writes (tag log, alarm log, batch-phase log) and the logging deadbands of its tags. Every numeric parameter is {value, unit, ref} with ref a ledger id; modeled_on lists S### ids that must resolve; the banner line is required. A synthetic format modeled on public documentation, not a real controller file. Since S2e2 (Step 7) the controller emitter and adapter read it: each log column names its role, so one generic emitter and one generic parser serve every family and branch on no profile id.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "profile_id", "kind", "banner", "modeled_on", "tag_naming", "logs", "params"],
+  "required": ["schema_version", "profile_id", "kind", "banner", "modeled_on", "stamp", "tag_naming", "phase_model", "logs", "params"],
   "properties": {
     "schema_version": { "type": "string", "const": "1" },
     "profile_id": { "type": "string", "minLength": 1 },
@@ -13,6 +13,15 @@
     "description": { "type": "string" },
     "banner": { "type": "string", "const": "synthetic, modeled on public documentation; not a real instrument file" },
     "modeled_on": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^S\\d{3}$" } },
+    "stamp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["form", "ref"],
+      "properties": {
+        "form": { "type": "string", "enum": ["iso_utc_offset", "local_wall_clock"], "description": "iso_utc_offset: the stamp is a UTC instant with its offset in the text (ctrl_neutral). local_wall_clock: year first, a dash, 24 h, to the second, no zone (RQ1 by assumption, ctrl_bench); the adapter entry zone resolves it." },
+        "ref": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
+      }
+    },
     "tag_naming": {
       "type": "object",
       "additionalProperties": false,
@@ -22,17 +31,31 @@
         "ref": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
       }
     },
+    "phase_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recipe", "procedure", "unit_procedure", "operation", "ref"],
+      "description": "The ISA-88 ids a batch-phase row carries (A170): one recipe, one procedure, one unit procedure and one operation; the phases come from the observable process events (data_model section 7, S2e2 table).",
+      "properties": {
+        "recipe": { "type": "string", "minLength": 1 },
+        "procedure": { "type": "string", "minLength": 1 },
+        "unit_procedure": { "type": "string", "minLength": 1 },
+        "operation": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
+      }
+    },
     "logs": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["log", "file_prefix", "columns", "ref"],
+        "required": ["log", "file_prefix", "columns", "roles", "ref"],
         "properties": {
           "log": { "type": "string", "enum": ["tag", "alarm", "phase", "process_data", "user_events", "alarms", "recipe_steps", "errors"] },
           "file_prefix": { "type": "string", "minLength": 1 },
           "columns": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "roles": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["stamp", "unit", "tag", "value", "quality", "alarm", "severity", "from_state", "to_state", "state", "user", "batch", "recipe", "procedure", "unit_procedure", "operation", "phase", "event", "message"] }, "description": "The role of each column, in the order of `columns` (the same length): the generic emitter and parser map by role, never by position or by label." },
           "ref": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
         }
       }

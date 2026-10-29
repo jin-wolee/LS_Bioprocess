@@ -16,6 +16,7 @@ import type { EmittedFile } from "../../raw/key.ts";
 import type { AnalysisRow, CapturePath, DeviceSettings, Dialect } from "../../raw/types.ts";
 import type { Architecture } from "../../record/architecture.ts";
 import type { CaptureInput } from "../../record/types.ts";
+import type { ControllerSetup } from "./raw_controller.ts";
 
 // The capture step between the observable stream and the recorder, for one architecture on one capture path (spec section 5, "Capture path"). The files are emitted from the
 // same rows and the same draws on both paths (the printout and the file are what the person and the adapter read). On adapter_ingest the files are parsed and the result rows
@@ -36,6 +37,8 @@ export interface RawSetup {
   export_at: (t: number) => number;
   /** The scenario's override of the capture path of every preset. */
   capture_path?: CapturePath;
+  /** The controller side (S2e2): absent when the scenario names no bay controllers, which leaves the layer analyzer-side only. */
+  controller?: ControllerSetup;
   /** What a device really does, by instrument; what the adapter believes, by instrument. A mismatch is an injected error. */
   devices?: Readonly<Record<string, Partial<DeviceSettings>>>;
   beliefs?: Readonly<Record<string, Partial<Omit<Belief, "instrument" | "required_analytes">>>>;
@@ -145,7 +148,7 @@ export const rawPath = (input: RawPathInput): RawPathOutput => {
   const bridged = bridge(events, outputs, manifests);
   const tables: RawTables = {
     adapter: [...entries.values()].map((e) => ({ adapter_id: e.adapter_id, adapter_version: e.adapter_version, dialect_id: e.dialect_id, device_class: e.device_class, instrument_id: e.instrument, date_order: e.date_order, date_separator: e.date_separator, clock_style: e.clock_style, source_zone_s: e.source_zone_s, stamp_means: e.stamp_means, time_resolution_s: e.time_resolution_s, modeled_on: e.modeled_on, banner: e.banner })),
-    raw_file: outputs.map((o) => o.raw_file), raw_record: outputs.flatMap((o) => o.raw_records), parse_error: outputs.flatMap((o) => o.parse_errors),
+    raw_file: outputs.map((o) => o.raw_file), raw_record: outputs.flatMap((o) => o.raw_records), parse_error: outputs.flatMap((o) => o.parse_errors), alarm_event: [], batch_phase_record: [],
   };
   return { path: input.path, events: bridged.events, received_at: bridged.received_at, capture: bridged.capture, files, outputs, tables, key };
 };

@@ -84,11 +84,28 @@ def test_analytes_master_data_is_the_unit_table_of_the_export(d: dict, engine: d
     assert set(columns(d, "result")["analyte"]["values"]) == set(d["analytes"])
 
 
-def test_the_controller_side_of_the_raw_layer_is_a_marked_placeholder_not_invented_entries(d: dict) -> None:
-    # S2e1 describes the analyzer side as entries (below); the controller side waits for S2e2 and stays a placeholder (data_model sections 16.4 and 16.5)
+def test_the_controller_side_of_the_raw_layer_is_described_as_entries_and_the_rest_stays_a_marked_placeholder(d: dict, engine: dict) -> None:
+    # S2e2 (data_model sections 16.4 and 16.5): alarm_event, batch_phase_record and the layer-on historian_value are entries with a state machine each. What no run emits yet (the columns of
+    # section 16.2 below) stays a placeholder and is not an entry: none of those columns is listed in an entity, and none was emitted by any run
+    assert {"alarm_event", "batch_phase_record", "historian_value"} <= set(d["entities"])
+    assert all(d["entities"][e]["emitted"] for e in ("alarm_event", "batch_phase_record", "historian_value"))
+    assert {"alarm_event", "batch_phase_record"} <= set(d["state_machines"])
     assert d["raw_layer"]["status"] == "placeholder"
-    assert d["raw_layer"]["entities"] == ["alarm_event", "batch_phase_record"]
-    assert not set(d["raw_layer"]["entities"]) & set(d["entities"])
+    assert set(d["raw_layer"]["new_columns"]) == {"result.range_flag", "run.started_at_derived", "instrument.adapter_id", "unit.controller_adapter_id"}
+    for qualified in d["raw_layer"]["new_columns"]:
+        entity, name = qualified.split(".")
+        assert name not in columns(d, entity) if entity in d["entities"] else True, qualified
+    assert "raw_ref" in columns(d, "historian_value")  # the one column of the old placeholder that S2e2 emits
+
+
+def test_the_controller_entities_are_what_the_adapter_parsed(d: dict, engine: dict) -> None:
+    assert engine["tables"]["historian_value"]["raw_ref"]["types"] == ["object"]
+    assert set(columns(d, "adapter")["device_class"]["values"]) == {"analyzer", "controller"}
+    assert {"ctrl_neutral", "ctrl_bench"} <= set(columns(d, "adapter")["dialect_id"]["values"])
+    assert {"tag_value", "alarm_transition", "phase_transition"} <= set(columns(d, "raw_record")["record_kind"]["values"])
+    assert "unknown_name" in columns(d, "parse_error")["code"]["values"]
+    # both families land in the canonical form unit_tag.signal.role (data_model 16.4); the historian carries no other form with the layer on
+    assert engine["tables"]["historian_value"]["tag"]["types"] == ["string"]
 
 
 def test_the_analyzer_side_of_the_raw_layer_is_described_as_entries(d: dict) -> None:
@@ -154,7 +171,7 @@ def test_the_state_machines_are_well_formed(d: dict) -> None:
     roles = set(d["roles"])
     assert ROLES_OF_SECTION_6 <= roles and roles - ROLES_OF_SECTION_6 == {"rule"}, "the five roles of data_model section 6 and the automatic actor kind of S2d"
     for entity, m in d["state_machines"].items():
-        states = set(columns(d, entity)["state"]["values"])
+        states = set(columns(d, entity)[m.get("state_column", "state")]["values"])  # the controller records keep the state of an instance in to_state (S2e2)
         edges = [(t["from"], t["to"]) for t in m["transitions"]]
         assert len(edges) == len(set(edges)), f"{entity}: a transition is listed twice"
         assert {s for e in edges for s in e} == states, f"{entity}: the states of the transitions are exactly the allowed values of the state column"
@@ -176,7 +193,8 @@ def test_the_state_machines_are_well_formed(d: dict) -> None:
 
 def test_the_transition_table_of_the_code_is_the_one_of_the_dictionary(d: dict, engine: dict) -> None:
     as_set = lambda ts: {(t["from"], t["to"], tuple(sorted(t["by"]))) for t in ts}  # noqa: E731
-    for entity in ("sample", "result"):
+    assert set(engine["transition_table"]) == set(d["state_machines"]) == {"sample", "result", "alarm_event", "batch_phase_record"}
+    for entity in d["state_machines"]:
         assert as_set(d["state_machines"][entity]["transitions"]) == as_set(engine["transition_table"][entity]), entity
     assert set(engine["roles"]) == set(d["roles"])
 
@@ -187,6 +205,30 @@ def test_every_state_emitted_belongs_to_its_machine_and_the_emitted_ones_are_dec
         machine = d["state_machines"][entity]
         assert seen <= {t["to"] for t in machine["transitions"]}, f"{entity}: a state emitted that the machine does not reach"
         assert seen == set(machine["emitted_states"]), f"{entity}: declared emitted_states differ from what the runs emitted"
+
+
+def test_every_state_a_controller_log_carried_belongs_to_its_machine_and_every_transition_logged_is_listed(d: dict, engine: dict) -> None:
+    # S2e2: the controller records are not performed by the recorder but parsed from a log; the states the runs parsed are declared, and each (from, to) pair is a listed transition
+    for entity in ("alarm_event", "batch_phase_record"):
+        machine = d["state_machines"][entity]
+        listed = {(t["from"], t["to"]) for t in machine["transitions"]}
+        to_seen = set(engine["tables"][entity]["to_state"]["values"])
+        assert to_seen == set(machine["emitted_states"]), f"{entity}: declared emitted_states differ from what the runs parsed"
+        assert set(engine["tables"][entity]["from_state"]["values"]) <= {s for e in listed for s in e}
+        pairs = {(x["from"], x["to"]) for x in engine["logged"] if x["entity"] == entity}
+        assert pairs and pairs <= listed, f"{entity}: a logged transition that the machine does not list: {sorted(pairs - listed)}"
+
+
+def test_the_roles_of_the_controller_machines_are_those_of_the_stand_in_rule(d: dict) -> None:
+    # a step the process causes takes rule, a step an operator causes takes analyst (data_model section 7, S2e2 table); typed by hand
+    alarm = {(t["from"], t["to"]): t["by"] for t in d["state_machines"]["alarm_event"]["transitions"]}
+    assert alarm[("normal", "unacknowledged")] == ["rule"] and alarm[("unacknowledged", "acknowledged")] == ["analyst"]
+    assert alarm[("acknowledged", "normal")] == ["rule"] and alarm[("rtn_unacknowledged", "normal")] == ["analyst"]
+    phase = {(t["from"], t["to"]): t["by"] for t in d["state_machines"]["batch_phase_record"]["transitions"]}
+    assert phase[("idle", "running")] == ["analyst"] and phase[("running", "complete")] == ["rule"]
+    assert phase[("running", "holding")] == ["analyst"] and phase[("holding", "held")] == ["rule"] and phase[("held", "restarting")] == ["analyst"]
+    assert len(alarm) == 11 and len(phase) == 21, "the 11 transitions of the alarm diagram and the 21 of the phase diagram (data_model 16.5)"
+    assert ("held", "running") not in phase and ("acknowledged", "unacknowledged") not in alarm, "the two transitions that VR-025 holds"
 
 
 def test_every_transition_performed_is_listed_and_its_role_is_permitted(d: dict, engine: dict) -> None:
@@ -210,7 +252,8 @@ def test_the_transitions_the_pipeline_performs_are_the_ones_the_design_gives_it(
 
 def test_the_transitions_no_run_performs_are_listed_so_the_gap_is_visible(d: dict, engine: dict) -> None:
     performed = {(p["entity"], p["from"], p["to"]) for p in engine["performed"]}
-    never = {(e, t["from"], t["to"]) for e, m in d["state_machines"].items() for t in m["transitions"]} - performed
+    # the machines of sample and result are the ones the pipeline performs; the controller records are parsed, not performed (above)
+    never = {(e, t["from"], t["to"]) for e, m in d["state_machines"].items() if e in ("sample", "result") for t in m["transitions"]} - performed
     assert never == {
         # the recorder models no sample state beyond skipped (data_model section 7, S2a)
         ("sample", "planned", "drawn"), ("sample", "drawn", "in_transit"), ("sample", "in_transit", "received"), ("sample", "received", "aliquoted"), ("sample", "aliquoted", "closed"),
@@ -220,6 +263,6 @@ def test_the_transitions_no_run_performs_are_listed_so_the_gap_is_visible(d: dic
     }
 
 
-@pytest.mark.parametrize("entity,pair", [("result", ("released", "held")), ("result", ("rejected", "released")), ("result", ("held", "released")), ("sample", ("closed", "drawn"))])
+@pytest.mark.parametrize("entity,pair", [("result", ("released", "held")), ("result", ("rejected", "released")), ("result", ("held", "released")), ("sample", ("closed", "drawn")), ("alarm_event", ("acknowledged", "unacknowledged")), ("batch_phase_record", ("held", "running"))])
 def test_a_transition_not_in_the_table_is_not_in_the_dictionary(d: dict, entity: str, pair: tuple[str, str]) -> None:
     assert pair not in {(t["from"], t["to"]) for t in d["state_machines"][entity]["transitions"]}

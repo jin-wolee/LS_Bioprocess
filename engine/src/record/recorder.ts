@@ -122,7 +122,9 @@ export const record = (input: RecorderInput, config: Architecture, log?: Transit
     ...recordResults(events, flags, input.received_at, input.capture),
     batch: [...batch.values()],
     process_event,
-    // the series are copied field by field: an object handed over with more than the process value (a truth array) keeps none of it
-    historian: { series: input.sensors.map(({ unit_id, signal, t0_s, cadence_s, n, pv }) => ({ unit_id, signal, t0_s, cadence_s, n, pv })), late: [] },
+    // the series are copied field by field; with parsed controller logs (S2e2) the historian is the logged rows instead: what the controller wrote, as late as its files arrived
+    historian: input.capture?.historian
+      ? { series: [], late: [...input.capture.historian] }
+      : { series: input.sensors.map(({ unit_id, signal, t0_s, cadence_s, n, pv }) => ({ unit_id, signal, t0_s, cadence_s, n, pv })), late: [] },
   };
 };

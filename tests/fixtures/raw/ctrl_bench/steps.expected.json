@@ -1,0 +1,23 @@
+{
+  "profile": "ctrl_bench",
+  "note": "Test-only values: the hold and restart of phase_hold written as recipe steps. The bench row has recipe, step (with the unit in parentheses) and the new state only, so batch, procedure, unit procedure and operation are null and from_state is the previous state of the instance (idle for the first row).",
+  "cases": [
+    {
+      "name": "RQ11 the recipe steps running, holding, held, restarting and running load as five batch_phase_record rows",
+      "file_name": "bench_steps_CTRL-2_2030-01-07.csv",
+      "controller": "CTRL-2",
+      "received_at": 86400,
+      "belief": {"source_zone_s": 0},
+      "expect": {
+        "phases": [
+          {"line": 3, "batch_id": null, "unit_id": "U01", "recipe_id": "REC-CULTURE", "procedure": null, "unit_procedure": null, "operation": null, "phase": "before_shift", "from_state": "idle", "to_state": "running", "ts": 28800, "state": "loaded"},
+          {"line": 4, "from_state": "running", "to_state": "holding", "ts": 32400, "state": "loaded"},
+          {"line": 5, "from_state": "holding", "to_state": "held", "ts": 32700, "state": "loaded"},
+          {"line": 6, "from_state": "held", "to_state": "restarting", "ts": 34200, "state": "loaded"},
+          {"line": 7, "from_state": "restarting", "to_state": "running", "ts": 34500, "state": "loaded"}
+        ],
+        "findings": []
+      }
+    }
+  ]
+}

@@ -34,7 +34,7 @@ describe("Idempotent re-ingest (property)", () => {
 });
 
 const key = (line: number, more: Partial<KeyRow> = {}): KeyRow => ({ line, sample_id: `S${line}`, intended_s: 1000 * line, resolution_s: 1, ambiguous: false, repeat: false, quirks: [], unreadable: false, ...more });
-const obs = (k: KeyRow, state: RawRecordState | "file_rejected", parsed_s: number | null = null): RowObservation => ({ key: k, state, parsed_s });
+const obs = (k: KeyRow, state: RawRecordState | "file_rejected", parsed_s: number | null = null): RowObservation => ({ key: k, state, parsed_s, device: "analyzer" });
 
 /** Ten rows written: five clean, two repeats, one unreadable, two with ambiguous stamps (one pinned by another row, one unresolved). */
 const TEN = (repeatState: RawRecordState): RowObservation[] => [
