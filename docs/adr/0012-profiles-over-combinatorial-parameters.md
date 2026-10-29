@@ -24,11 +24,11 @@ Proposed: option 2. The engine implements only generic mechanisms: multi-visit r
 
 | Profile | Options (default first) | Ledger ids | Grade, honestly |
 |---|---|---|---|
-| Bioreactor | bench manual (A067); micro-scale parallel (A065) and mini-scale parallel (A066) as the `micro_mini_parallel` family; pilot single-use (A068) | A065, A066, A067, A068; volume share A057 | A065, A066, A067 are graded S, with derived (D) parts; A068 is graded A (class boundary and purge volumes unsourced) |
-| Analyzer | all-in-one (A069); split cell counter plus metabolite analyzer (A070); HPLC titer (A071) | A069, A070, A071; interface A036 | A069 is graded S; A070 is A (hand-off between instruments unsourced); A071 is A (column switching and system-suitability time unsourced, A030) |
+| Bioreactor | bench manual (A067); micro-scale parallel (A065) and mini-scale parallel (A066) as the `micro_mini_parallel` family; pilot single-use (A068) | A065, A066, A067, A068; volume share A057 | A065, A066 and A067 are graded D (the sample share of the culture, A057, is derived; A067 also has a proxy part, A037); A068 is graded A (class boundary and purge volumes unsourced) |
+| Analyzer | all-in-one (A069); split cell counter plus metabolite analyzer (A070); HPLC titer (A071) | A069, A070, A071; interface A036 | A069 is graded D (the capacity ceiling, A075, is derived); A070 is A (hand-off between instruments unsourced); A071 is A (column switching and system-suitability time unsourced, A030) |
 | Staff | experienced (A072); trainee (A073) | A072, A073; A047, A058, A059, A060, A062, A063, A064, A076 | both graded A: label error rate is a clinical proxy (A047), the count-variability figures come from a bead study (A058, A059), and every trainee multiplier and delay or technique spread is an assumption (A062, A063, A064, A076) |
 
-A bundle takes the grade of its weakest component. The UI shows the bundle grade and lists the unsourced parts; a trainee effect is never presented as measured, because the clinical review found the evidence on staff training insufficient (A062). Operator id and qualification reference ride on the existing `audit_trail` flag (ADR-0005).
+A bundle takes the grade of its weakest component, in the order S, P, D, A: a bundle with a derived part is D, not S, and one with an unsourced part is A (the ledger check enforces this). The UI shows the bundle grade and lists the unsourced parts; a trainee effect is never presented as measured, because the clinical review found the evidence on staff training insufficient (A062). Operator id and qualification reference ride on the existing `audit_trail` flag (ADR-0005).
 
 ## Consequences
 

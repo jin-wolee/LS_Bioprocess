@@ -1,6 +1,6 @@
 # Simulation specification
 
-Status: design draft, no simulation result exists yet. Synthetic scenario built from public sources and labelled assumptions (ADR-0001). Nothing here predicts a real laboratory.
+Status: design draft, no simulation result exists yet. Synthetic scenario built from public sources and labelled assumptions (ADR-0001). Nothing here predicts a real laboratory. Extensions (cell-line profiles, operating modes, break-out events such as contamination) are designed in section 11 under ADR-0013 and are not built before S2.
 
 How to read the numbers: every number carries a ledger id (`S###` source, `A###` assumption; grades S, P, D, A are explained in `docs/research/README.md`). A number without an id is a defect, not a placeholder. Figures that rest on a source below `main-reread` are provisional and may not appear on the public README or infographic. Table, column and time-field names, and the derived quantities `hold_time` and `turnaround`, are defined once in `docs/design/data_model.md` (sections 2 and 5); this file uses them and does not redefine them.
 
@@ -42,7 +42,7 @@ Time is an integer number of seconds everywhere in the engine. ISA-88 vocabulary
 
 ### 2.1 L1 process
 
-Fed-batch is the default mode (A003): production culture 13 to 17 d (A004, S017; default 14, and the ledger range's 12 d low end comes from a different study, S019), preceded by an N-1 seed of 2 to 5 d (A005), inoculated at 0.5 to 1.5 million cells/mL (A007). Glucose is kept above 1.0 g/L by discrete feeds (A010, S017), so a feed can fall between a draw and its measurement. Peak viable cell density in fed-batch is typically 10 to 30 million cells/mL (A008, S053; the default is a pick inside that range); perfusion has no source and is an assumption (A009, grade A). Harvest follows a simulator rule (A013). Perfusion (A006, only one duration sourced) is deferred to session S4.
+Fed-batch is the default mode (A003): production culture 13 to 17 d (A004, S017; default 14, and the ledger range's 12 d low end comes from a different study, S019), preceded by an N-1 seed of 2 to 5 d (A005), inoculated at 0.5 to 1.5 million cells/mL (A007). Glucose is kept above 1.0 g/L by discrete feeds (A010, S017), so a feed can fall between a draw and its measurement. Peak viable cell density in fed-batch is typically 10 to 30 million cells/mL (A008, S053; the default is a pick inside that range); the perfusion default of 60 million cells/mL rests on one published worked illustration, not a measured run, and is graded P with an unsourced lower range end (A009, S080, S079; provisional). Harvest follows a simulator rule (A013). Perfusion (A006, only one duration sourced) is deferred to session S4.
 
 Kinetics are nutrient-limited growth with first-order death, nutrient use proportional to viable cells and product proportional to integrated viable cells (A011). The constants are ledger entries: growth and death rates (A080, A081), per-cell uptake and production rates (A082, A083, A084), the lactate switch (A085), specific productivity (A086) and the glucose half-saturation constant (A109). They come from a few CHO studies and are provisional.
 
@@ -75,14 +75,14 @@ Rules (invariants, tested):
 
 ## 4. Profiles
 
-Scenarios pick profiles. Profiles are data under `scenarios/profiles/{bioreactor,analyzer,staff}/`; each numeric parameter is `{value, unit, ref}` with `ref` resolving to a ledger id (ADR-0012). A bundle takes the grade of its weakest component.
+Scenarios pick profiles. Profiles are data under `scenarios/profiles/{bioreactor,analyzer,staff}/`; each numeric parameter is `{value, unit, ref}` with `ref` resolving to a ledger id (ADR-0012). A bundle takes the grade of its weakest component, in the order S, P, D, A, so a bundle with a derived part is D, not S, and one with an unsourced part is A. The bundle grades in the tables below are those of the ledger bundles A065 to A073.
 
 ### 4.1 Bioreactor
 
 | Profile (default first) | How samples are taken | Sample as share of culture | Bundle grade | Ids |
 |---|---|---|---|---|
-| `bench_manual`: 2 to 5 L glass or single-use | operator draws into a closed container or syringe | 0.014 percent | S (with derived part) | A067, A002, A057 |
-| `micro_mini_parallel`: micro-scale 10 to 15 mL, 24 or 48 vessels; mini-scale 100 to 250 mL, 12 or 24 vessels | automated liquid handler into a cup | micro 4.8 percent; mini 0.31 percent (0.16 to 0.7) | S (with derived part) | A065, A066, A057, S009, S011 |
+| `bench_manual`: 2 to 5 L glass or single-use | operator draws into a closed container or syringe | 0.014 percent | D (volume share derived, A057; the closed-container model is a proxy, A037) | A067, A002, A057 |
+| `micro_mini_parallel`: micro-scale 10 to 15 mL, 24 or 48 vessels; mini-scale 100 to 250 mL, 12 or 24 vessels | automated liquid handler into a cup | micro 4.8 percent; mini 0.31 percent (0.16 to 0.7) | D (volume share derived, A057) | A065, A066, A057, S009, S011 |
 | `pilot`: 50 to 250 L single-use (class boundary assumed, A104) | sterile syringe from a sampling line | 0.00055 percent, analyzer volume only | A (boundary and purge volumes unsourced) | A068, A057, A104, S036 |
 
 On micro-scale systems the number of samples consumes the culture: 14 daily samples would draw 67 percent of the vessel (A057, derived), which is why the source calls sampling a burden there (S011). Pilot line purge and discard volumes are not sourced and are not modelled (A105). Automation also changes who creates the label, whether an operator is present, whether draws burst at shift start, and the delivery order (a vessel-order autosampler makes high-numbered vessels wait longest).
@@ -108,7 +108,7 @@ What is sourced is narrow (A058, A059, A060, A047). The effect of training on la
 
 ### 4.4 Generic engine mechanisms
 
-Multi-visit routing, sequence-dependent setup, volume budget, rate multipliers and delivery order. Nothing in the engine branches on a profile id, scenario id or architecture id.
+Multi-visit routing, sequence-dependent setup, volume budget, rate multipliers and delivery order. The extensions add a per-reactor parameter draw, material-lot consumption and an event script (section 11.1). Nothing in the engine branches on a profile id, scenario id or architecture id.
 
 ## 5. Data architecture = feature flags
 
@@ -151,6 +151,26 @@ Hypothesis matrix (a design hypothesis to be tested in session S2 by forced-erro
 | late correction leaking into an earlier decision | `available_at` | as-of query (section 3, rule 5) | queries see rows as of now |
 | unattributable record | `audit_trail` | qualification check (VR-015) | operator free text or absent |
 | sampling technique error (A064) | none | recorded container and hold context | context not recorded |
+
+### Detection rules and the flags they need
+
+A rule can only fire on fields that are stored. For every detection mechanism named in the matrix above, the table lists the flags that must be on for the rule to have the fields it reads, the other data it reads, and when it cannot fire. It is derived from the rule definitions in `data_model.md` sections 5 and 8, and it is a design hypothesis for the forced-error fixtures of section 6, not a result. Flag names are exactly those of the flag table above. Rows marked (ext) belong to the extensions (section 11) and are checked from S5.
+
+| Rule or mechanism | Flags that must be on | Other data it reads | Cannot fire when | Matrix row |
+|---|---|---|---|---|
+| VR-009 possible double label | `two_clocks` | `unit_id`, `sample_id` and analyte of two samples | `sampled_at` is not stored (only the measured time is kept) | label or transcription error |
+| VR-014 label matches no open request | `system_issued_id` | the list of open `analysis_request` rows (the registry of issued keys) | keys are typed or handwritten, so there is no registry to compare with; a typo that matches another open request passes | label or transcription error |
+| VR-010 hold time above the limit (A046, A039) | `two_clocks` | `run_started_at` | only the measured time is stored; unreliable while an instrument clock is skewed | feed in the gap |
+| VR-020 no open batch at sampling time | `two_clocks` | `unit_id` and the batch open interval | `sampled_at` is not stored; a mis-key onto another unit that has an open batch passes (gross cases only) | unit or batch re-keyed or mis-joined |
+| VR-004 clock or time-zone mismatch (S029, S030) | `two_clocks` | the instrument's configured zone (master data); `ingested_at` against `measured_at`; the skew shows against `sampled_at` | one time stored; `ingested_at` not stored (data_model open question 7) | clock or time-zone error |
+| Idempotency log (VR-008, VR-008b) | `ingest_idempotency` | `source_system`, `source_event_id`, `idempotency_key`, content | the flag is off: no keys, duplicates double count | duplicate or replayed file |
+| Audit review (the `audit_event` history) | `audit_trail` | who, when, what changed, old and new version | the flag is off: no history of the change | lost rerun or silent overwrite |
+| Bridging comparison (requests sharing a `control_id`) | `instrument_state_snapshot` | `control_id`, `instrument_state_id` on `run`, bridging samples in the plan | no instrument link, or no bridging samples planned | instrument or lot effect |
+| As-of query (section 3, rule 5) | `available_at`, `append_only_versions` | `available_at` of each result version; `ingested_at` of historian rows | `available_at` off: queries see rows as of now; `append_only_versions` off: the earlier version no longer exists | late correction leaking into an earlier decision |
+| VR-015 qualification check | `audit_trail` | `operator_id`, qualification validity dates | the operator is free text or absent | unattributable record |
+| Container and hold context check | `two_clocks` (for the hold part) | recorded container (L2 setting), `hold_time` | the container is not recorded; one time stored | sampling technique error |
+| VR-021 (ext) lot recorded as used, no consumption edge | `write_time_keys` | `process_event` lot reference against `lineage_edge` relation `consumed_in` | the lot is free text only (subset schemas) | not in the matrix |
+| VR-022 (ext) result still released under an open hold | `available_at`, `append_only_versions`, `audit_trail` | `quality_hold` target and placement time, lineage from the target to the result | no lineage edge from the held target to the result; it fires late by design, after the release | not in the matrix |
 
 ## 6. Experiments
 
@@ -212,11 +232,13 @@ Each scenario asks one question. Scenarios live in `scenarios/*.json`.
 | SC10 Pool genealogy | What happens at merges across batch boundaries? | cross-batch pool (A052, A053, A054; turnaround unset, A055) | lineage-query exact reconstruction | S4 |
 | SC11 GMP preset | Same model, different control strength? | source-of-record setting (A056); clock and audit expectations (S029, S030) | attributable rate, exact reconstruction, availability | S3 |
 
+Scenarios SC12 to SC14 belong to the extensions and are catalogued with the same columns in section 11.5; they are built after S2.
+
 No numeric claim is made for any scenario until its session has produced results.
 
 ## 8. Metrics
 
-No composite score. Every table reports the seed count and the spread across seeds. A metric without a stated denominator is a defect. Metrics are reported, not gated; the only gates are the structural fixtures of section 6. `hold_time` and `turnaround` are defined in data_model section 5, and metrics use their truth values.
+No composite score. Every table reports the seed count and the spread across seeds. A metric without a stated denominator is a defect. Metrics are reported, not gated; the only gates are the structural fixtures of section 6. The extension metrics (containment, identification, re-flagging) are defined in section 11.6 under the same rules. `hold_time` and `turnaround` are defined in data_model section 5, and metrics use their truth values.
 
 | Metric | Definition | Denominator |
 |---|---|---|
@@ -266,3 +288,188 @@ The recorders' gate in S2 is separate from this ladder: the forced-error fixture
 - Making architecture C win by construction.
 - Viability loss in a held neat sample as a central effect (A040 default 0).
 - Pilot-scale purge and discard volume (A105), downstream assay turnaround (A055), instrument-to-instrument bias magnitudes (A032) — unsourced, so not modelled.
+- CFD, mechanistic mixing or transport, and organism growth beyond the signal curve (ADR-0013); events other than contamination; assay sensitivity (confirming tests report the truth).
+- Any extension before S2 ends (section 11).
+
+## 11. Extensions (designed, not built)
+
+Status: designed in ADR-0013 (Proposed); built after S2 (cell lines and modes in S4, break-out events in S5). Nothing here changes S0 to S2. Every figure in this section rests on sources S057 to S083, none of which is `main-reread`, so every figure here is provisional and may not appear on a public page. Table, column and state names for the new entities are defined once in `data_model.md` section 15.
+
+### 11.1 Scope and invariants
+
+| Extension | Layers touched | Built in | Ledger bundles |
+|---|---|---|---|
+| Cell-line profiles | L1 (per-reactor kinetics); batch master data (seed lot) | S4 | A150, A151, A152 |
+| Operating-mode profiles | L1 (duration, feeds, streams), L2 (cadence, context unit) | S4 | A153, A154, A155, A156 |
+| Break-out events | L1 (hidden onset and signature), L2 (confirming draws), L3 (long-turnaround tests), L4 (holds, deviation, retro-flag), L5 (investigation walk-back) | S5 | A157, A158 |
+
+1. **Off by default.** With no extension selected, every S0 to S2 scenario produces the same event log as before. This is a regression check against the existing goldens and never regenerates them.
+2. **Data, not code.** Cell lines, modes and event types are data under `scenarios/`, each numeric parameter `{value, unit, ref}` with `ref` resolving to a ledger id (ADR-0012). The engine gains generic mechanisms only: a per-reactor parameter draw, material-lot consumption, and an event script with onset, signal and test times. Nothing branches on a profile, mode or event id.
+3. **Truth and recorded world.** The onset time, the origin and the organism are hidden truth (`"x-visibility": "hidden"`). Recorders see signals in the historian, confirming-test results, deviation records and holds. Only the evaluator reads the set of truly affected items (section 3, rule 2).
+4. **Open loop.** Break-out events run as a variant of experiment 1 (section 6.1). The truth run, including the scripted response (unit stopped, confirming samples drawn), is shared by all architectures, and holds change recorded-world state only. Detection never causes a re-draw or re-measure of a routine sample (section 8, rule 4).
+5. **Determinism.** New random draws use the canonical key of section 3 with new purposes (clone, event type, event onset); a draw never shifts another sample's draws.
+6. **Grades stay visible.** The UI shows the bundle grade and the unsourced parts, as for the ADR-0012 profiles. A bundle takes the weakest component grade.
+
+### 11.2 Cell-line profiles
+
+Each reactor draws a clone at inoculation. The clone changes these L1 parameters and no others.
+
+| Parameter varied | Platform value | Per-reactor spread | Ids | Grade |
+|---|---|---|---|---|
+| Maximum growth rate | A080 | SD 6.5 percent of the mean (3 to 15 percent) | A119 | D (range ends A) |
+| Specific productivity | A086 | highest over lowest clone 2.5 (2.4 to 15.5) | A120 | A (range D) |
+| Peak viable cell density | A008 (fed-batch), A009 (perfusion) | highest over lowest clone 2.5 (1.6 to 5.3) | A121 | A (range D) |
+| Lactate production rate | A084 | multiplier 1.0 (0.44 to 1.25) | A122 | P |
+| Lactate consumption | global switch off (A085) | only clones flagged as consumers; net consumption starts when glucose falls below about 0.6 g/L (A123) | A123 | A |
+
+Not varied, for lack of a spread source: death rate (A081), glucose half-saturation (A109), per-cell glucose and glutamine uptake (A082, A083). Well-scale productivity and density spreads (A120, A121) are applied to bioreactors as an assumption.
+
+| Profile (default first) | Meaning | Bundle | Grade |
+|---|---|---|---|
+| `platform` | every reactor uses the platform kinetics, spread zero; the S0 to S2 behaviour | existing defaults A080, A084, A086 | as those entries |
+| `clone_panel` | per-reactor clone drawn around the platform kinetics | A150 | A |
+| `lactate_consumer` | clone that turns to net lactate consumption late in the run | A151 | A |
+| `high_lactate_producer` | clone at the upper lactate multiplier (1.25 times A084) | A152 | P |
+
+The clone is a property of the seed lot (`material_lot.cell_line_id`, data_model section 15). The process context of a result therefore contains the cell line only where the batch-to-seed-lot link is recorded; where it is not, a lactate difference between reactors can only be explained by the analyst's guess (SC13). A scenario can also fix the clone per bay instead of drawing it. Intensified seeds are cell-line dependent (two lines behaved alike on both seed types and the third differed, A126, S079); no interaction term is modelled beyond the spreads above.
+
+### 11.3 Operating-mode profiles
+
+The mode is per reactor, so a bay can hold several. The mode sets duration, feeds, cadence and the context unit.
+
+| Profile (default first) | Duration | Inoculation | Samples per reactor per day | Context unit | Streams and harvest | Bundle (grade) |
+|---|---|---|---|---|---|---|
+| `fed_batch` | 14 d (A004) | A007 | A014, A015 | batch | bolus feeds (A010, A050); harvest rule A013 | A154 (A) |
+| `batch` | 5 d (3 to 7, A125) | A007 | A014, A015 | batch | no feed and no glucose floor; harvest at the end | A153 (A) |
+| `intensified_fed_batch` | 10 d (7 to 14, A127) | 5 million cells/mL (2 to 20, A126) from a perfused or enriched-batch N-1 seed | 1 in production (A131); 2 in a perfused N-1 (A130) | batch plus a `seeded_from` link to the N-1 batch | like fed-batch | A155 (A) |
+| `perfusion` | 40 d (30 to 90, A006) | batch phase first, then perfusion (S080) | 2 (A130) | harvest window, default 24 h (8 to 168 h, A132), inside one campaign batch | medium in at 1 rising to 3 vessel volumes per day (A128), bleed 0.3 vessel volumes per day (A129), permeate harvest and bleed as separate streams (A133), peak density 60 million cells/mL (A009) | A156 (A) |
+
+Consequences for records, not only for kinetics:
+
+- **Context unit.** In perfusion there is no batch boundary; the unit is the harvest window (A132, SC9). Results and samples carry the window, and the permeate pool of a window is the item downstream lineage attaches to (`harvested_from` from the batch to a harvest window, data_model section 15). The unit of an intensified run is still the batch, but it gains a parent: the N-1 seed batch, whose own samples follow A130.
+- **Sampling hygiene.** A 40 d perfusion at 2 draws per day is 80 draws against the validated 50 draws of a single-use port connection (A134, A130, A006; derived), so the run needs a second port or a closed sampling device. The engine counts draws per port connection and emits a `port_change` process event when the scenario schedules one. No hazard multiplier is applied beyond the limit (no source); the count of draws beyond it is a reported metric (section 11.6).
+- **Load.** Cadence differs by mode (A014, A015, A130, A131), so arrivals at the analyzers and utilisation (both windows, A098, A074) are restated per mode.
+- **Peak density.** The perfusion default of 60 million cells/mL rests on one published worked illustration, not a measured run, and is graded P; the lower range end has no source, while perfusion is quoted above 100 million cells/mL in general (A009, S080, S079).
+
+### 11.4 Break-out events
+
+A break-out event is a scripted, rare, hidden-truth occurrence. Contamination and sterility failure come first; no other event type is designed here (YAGNI, ADR-0013).
+
+**Event script (scenario data).** `type` (bacterial, fungal, mycoplasma or viral; the weights of A137 are used only when a scenario asks for a random draw), `origin`, the affected unit or lot, `onset_at` (hidden), and the scripted response: a signal is observed, the unit is stopped, confirming samples are drawn, a deviation is opened. The response times are scenario inputs without defaults (section 11.7) and are identical across architectures. The tests report the truth: no assay sensitivity or false positive is modelled (no source), except that a nucleic-acid test reports a positive only when the scenario marks its target as covering the organism (A146).
+
+Events emitted. Truth only: `contamination_onset`. Observable: `signal_observed`, `unit_stopped`, `deviation_opened`, `confirm_sample_drawn` (a draw that exceeds the volume budget is skipped and logged as `draw_skipped_volume_budget`), `confirm_result`, `hold_placed`, `hold_released`, `result_reflagged`, `deviation_closed`.
+
+**Types and signatures.**
+
+| Type | Signal in the process data (direction, A140) | Lag from onset to first signal | Confirming tests (turnaround) | Weight if drawn |
+|---|---|---|---|---|
+| Bacterial | DO falls, then pH falls; nutrient use, growth or viability deviate from history. Magnitudes are scenario knobs: DO reaches its low alarm within 6 h after the lag, pH falls 0.3 below the set point before base addition catches up (A141; the controller deadband for comparison is A095) | 12 h (4 to 36 h, A139, grade A) | bioburden 5 d (A142), sterility 14 d (A143) | 0.70 (A137) |
+| Fungal | same signature as bacterial (A140) | A139 applies (no separate source) | as bacterial | 0.20 (A137) |
+| Mycoplasma | growth plateau, then viability fall; glucose and glutamine uptake fall with growth; ammonia rises; arginine is consumed; DO rises and CO2 in the gas mix rises with little base needed | 2 d (2 to 6 d, A138; one species, one line, perfusion) | culture 28 d (A144), indicator cells 8 d (A145), nucleic-acid test 1 d (A146) | 0.08 (A137) |
+| Viral | possibly no process change, or a growth or viability change; often found by required tests (A140) | none modelled: the signal may never appear (no source) | nucleic-acid test 1 d (sequence-specific, A146), in-vitro assay 28 d (A147) | 0.02 (A137) |
+
+**Origins and probabilities, with honest grades.**
+
+| Origin | How it enters the run | Probability | Grade | Ids |
+|---|---|---|---|---|
+| All routes except sampling (background) | one draw per batch at inoculation | the survey rate 0.0077 per batch (up to 0.023) minus the sampling share below; a 2008 self-reported survey, not cell-line specific; about 0.18 events per 24 reactors per cycle at the default (derived) | D | A135, S066, A001 |
+| Sampling event | a hazard at each draw; a draw can introduce the organism into the unit | 0.0002 per draw (0 to 0.001); no measured rate exists; ceiling derived as the per-batch rate over about 22 draws, 0.00035 to 0.001 | A (range D) | A136 |
+| Seed (cell bank or N-1) | the scenario names a contaminated seed lot; every reactor inoculated from it is affected from inoculation | no rate; scenario choice | A | A149, A155 |
+| Medium or feed lot | the scenario names a contaminated lot; every unit that consumes it after the lot became contaminated is affected | no rate; scenario choice | A | A149 |
+| Equipment (sterilisation or connection failure, shared equipment) | scenario names the unit or the shared item | no rate; scenario choice | A | A149 |
+| Draws beyond a port's validated count | counted and reported, no hazard multiplier | no source | not modelled | A134 |
+
+For the reference fed-batch, the non-sampling share is the survey rate minus the sampling share: about 22 draws times 0.0002 is 0.0044, leaving 0.0033 (derived from A135, A136, A004, A014, A015), so the total equals the survey rate when the sampling hazard is at its default. For other modes the sampling part scales with the number of draws (A130, A131) and the non-sampling part is not scaled with duration (no source). The upper survey rate pairs with the upper sampling hazard (derived in A136). Because the origin split is mostly unsourced, scenarios inject a named event rather than wait for chance, and a random-draw mode is labelled assumed.
+
+**Signals before tests.** Between the onset and the first signal every sample drawn from the unit is measured normally and its result may be released; the at-line analyzers keep returning results for days or weeks after the unit was already contaminated (A158). Confirming tests then take days to weeks.
+
+```mermaid
+sequenceDiagram
+  participant R as Reactor (truth)
+  participant A as At-line analyzers
+  participant H as Historian
+  participant Q as Quality records
+  participant T as Test lab
+  Note over R: onset_at (hidden truth)
+  R->>A: samples keep being drawn and measured
+  A->>Q: results released as usual
+  R->>H: first process signal after the lag (A139, A138)
+  H->>Q: signal_observed, deviation_opened
+  Q->>R: scripted response, unit_stopped (time is a scenario input)
+  Q->>T: confirm_sample_drawn (volume budget A057, A148)
+  Q->>Q: hold_placed on batch, pools, lots (walk-back below)
+  T-->>Q: confirm_result after the turnaround (A142 to A147)
+  Q->>Q: positive, retro-flag released results; negative, hold_released
+```
+
+**Confirming tests.**
+
+| Test | Turnaround | Sample volume | Ids | Note |
+|---|---|---|---|---|
+| Bioburden (plate count) | 5 d (3 to 7) | none found | A142 | grade P: the source scope is non-sterile products |
+| Sterility | 14 d | 20 mL per medium for a container above 40 mL, two media | A143, A148 | time from a 2008 draft; volume is a scale proxy |
+| Mycoplasma, culture | 28 d (14 to 28) | 10.5 mL culture plus 1 mL indicator cell, 11.5 mL | A144, A148 | grade S |
+| Mycoplasma, indicator cells | 8 d (6 to 10) | 11.5 mL | A145, A148 | grade D |
+| Nucleic-acid test | 1 d (0.33 to 3) | none found | A146 | grade A; finds only what its target covers |
+| Adventitious virus, in-vitro assay | 28 d (14 to 28) | none found | A147 | grade S |
+
+Confirming draws obey the volume budget (A057). The mycoplasma set is 77 to 115 percent of a micro-parallel vessel (A148, A110; derived), so on that profile the draw is skipped and the unit cannot be confirmed from its own culture; it is 4.6 to 11.5 percent of a mini-parallel vessel (A148, A114) and 0.23 to 0.58 percent of a bench vessel (A148, A002).
+
+**Investigation walk-back (L5).** A signal opens a deviation. The investigation estimates the onset as the first signal minus an assumed lag (a decision setting, not truth; default the ledger default for the suspected type, A139 or A138, swept over the ledger range in SC12; onset estimation from the DO drop and growth rate, A149, S064, S065) and walks in three directions, then closes with a written deviation record (A149, S071).
+
+```mermaid
+flowchart LR
+  SIG["Signal on reactor U (observable)"] --> EST["Estimated onset = signal minus assumed lag"]
+  EST --> D1["1 Reactor: samples and results since onset"]
+  EST --> D2["2 Downstream: harvests, pools, lots holding its material"]
+  EST --> D3["3 Siblings: batches sharing seed, feed or media lot, or equipment"]
+  D1 --> HOLD["quality_hold on batch, pool, lot, result"]
+  D2 --> HOLD
+  D3 --> HOLD
+  HOLD --> TEST["Confirming tests, days to weeks"]
+  TEST -->|positive| RETRO["Retro-flag released results; quarantine pools and lots"]
+  TEST -->|negative| REL["Release holds"]
+  RETRO --> DEV["Deviation record closed"]
+  REL --> DEV
+```
+
+| Direction | Question | Reads | Where it over- or under-shoots |
+|---|---|---|---|
+| 1 Reactor | which samples and results from this reactor are suspect? | the batch's samples with `sampled_at` at or after the estimated onset (the measured time where `sampled_at` is not stored), their aliquots, requests and results | a window that is too wide flags clean results (precision); too narrow misses affected ones (recall) |
+| 2 Downstream | which harvests, pools and lots hold this reactor's material? | forward over derivation edges (`harvested_from`, `split_into`, `pooled_into`, `drawn_as`) and the samples and results drawn from what it reaches | a pool that merges a clean batch with the affected one is held whole (A052, A053); the continuous-harvest unit is the window (A132) |
+| 3 Siblings | which other batches share a seed, feed lot, media lot or equipment? | backward one step from the batch to its lots and seed parent (`consumed_in`, `seeded_from`), then forward from those to other batches and from those over derivation edges | every sibling is a candidate; if the origin was a sampling event the siblings are clean, a precision cost |
+
+The walk-back is a recursive traversal over material and derivation edges as of the decision time (data_model section 15.4); the SQL is the author's task. Hypothesis, to be tested in S5 and not a result: direction 1 needs `write_time_keys` and `two_clocks`; directions 2 and 3 need derivation and lot edges, which no flag covers today (ADR-0013 open question); reproducing what was released when needs `available_at` and `append_only_versions`; who held what and why needs `audit_trail`.
+
+### 11.5 Scenarios SC12 to SC14
+
+Same columns as the catalogue in section 7. Given-When-Then tests named after the scenario ids are written when the scenarios are built; `prompts/PRINCIPLES.md` section 2 names SC1 to SC11 until then.
+
+| ID | Question | Settings (ids) | Main metrics | Session |
+|---|---|---|---|---|
+| SC12 Contamination break-out and walk-back | After one reactor shows a contamination signal, how fast and how completely can each architecture find everything the event touched? | a bacterial event injected through a shared medium lot, then again through a sampling event and through a seed lot (A157, A135, A136, A137); signal lag and magnitudes (A139, A140, A141); investigation scope (A149) with the assumed lag swept (A139 range); confirming tests (A142 to A147, volumes A148, budget A057); mycoplasma variant (A138, A144 to A146); lot topology and response delays are scenario inputs without defaults (section 11.7) | time to containment; identification recall, precision and false-alarm rate by direction; released-before-containment share and retro-flag completeness | S5 |
+| SC13 Cell line or instrument? | When two groups of reactors differ in lactate, does the record let an analyst tell a clone difference from an analyzer bias? | two bays, one `platform` and one `high_lactate_producer` (A152, A122, A084) crossed with an analyzer bias and a lot-change step (A032, A034, A033, A093, A092) in a two-by-two design; bridging samples (`control_id`); cells with a true effect of zero are the phantom tests | phantom effect size; detection recall, precision and false-alarm rate for the instrument effect; exact reconstruction (process context now includes the cell line) | S4 |
+| SC14 Mode switch | What happens to the records when part of a fleet moves from fed-batch to perfusion? | a share of reactors changes from `fed_batch` to `perfusion` (A154, A156), cadence from A014 and A015 to A130, context unit from batch to harvest window (A132), port limit (A134), duration and peak density (A006, A009); builds on SC9 | exact reconstruction by context-unit kind; `hold_time` median, p90 and SLA exceedance (A097) before and after the switch; utilisation in both windows (A098, A074); draws beyond the port limit; misattribution at window boundaries | S4 |
+
+### 11.6 Extension metrics
+
+Same rules as section 8: no composite score, the seed count and the spread over seeds are reported, a metric without a denominator is a defect, and anti-gaming rules 1 to 8 apply. The set of truly affected items `T` is computed by the evaluator from the truth log: results and samples drawn from an affected unit at or after the true onset; harvests, pools and lots that physically contain material from an affected unit after the onset; batches that consumed a contaminated lot after it became contaminated, and what derives from them. Each item of `T` belongs to one direction: samples and results of the affected reactor (1), material downstream of the affected unit (2), or other batches and what derives from them (3).
+
+| Metric | Definition | Denominator |
+|---|---|---|
+| Time to containment | for each item of `T` still in hand at `signal_at` (not yet consumed, discarded or released onward), the time from `signal_at`, the first observable signal, to its first `quality_hold`; median and p90 per item kind | all items of `T` still in hand at `signal_at`; an item never held counts as not contained; median and p90 are over held items with the contained share printed beside them |
+| Identification recall | per direction: items of `T` in that direction that the walk-back returned | all items of `T` in that direction; an item the records cannot link counts as missed |
+| Identification precision | per direction: returned items that are in `T` | all items returned in that direction |
+| Identification false-alarm rate | per direction: returned items not in `T` | all items in the search universe (the kinds searched, over the run horizon) that are not in `T` |
+| Released-before-containment share | results in `T` that stood `released` before containment | all results in `T` |
+| Retro-flag completeness | results in `T` released before containment that later carry a quarantined version with the hold reference, the person and the reason (data_model section 15.3) | all results in `T` released before containment |
+| Draws beyond the port limit | draws taken on a port connection after its validated count (A134) without a recorded `port_change` | all draws in perfusion reactors |
+
+Recall is always shown with precision, and detection with the false-alarm rate. A confirming draw skipped for the volume budget stays in every denominator.
+
+### 11.7 Gaps to close before building
+
+- No ledger entry for the delay between the first signal and the scripted response, for the shared-lot topology (how many reactors share a seed, media or feed lot) or for the lot withdrawal schedule. They stay scenario inputs without defaults and are printed with every result.
+- No source for a viral signal lag, for assay sensitivity, for a per-origin split of contamination, or for a hazard change beyond a port's validated draw count (A137, A134, A146).
+- Batch length and intensified run length are choices (A125, A127). The cell-line spreads for productivity and density come from well-scale data (A120, A121).
+- The open flag question (lot and derivation links) is recorded in ADR-0013 and in data_model section 14.

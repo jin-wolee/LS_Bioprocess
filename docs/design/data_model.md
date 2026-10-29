@@ -1,6 +1,6 @@
 # Canonical data model
 
-Status: design draft. This document is the specification and the basis for acceptance tests. **The DDL itself is the author's task** (`sql/schema.sql`, listed in `.claude/user_owned.txt`) and is deliberately not written here; neither are the three core SQL queries (an as-of window join of results to process context, a recursive lineage query, a bridging correction) under `sql/queries/` (ADR-0010). Synthetic data only; nothing here describes a real system.
+Status: design draft. This document is the specification and the basis for acceptance tests. **The DDL itself is the author's task** (`sql/schema.sql`, listed in `.claude/user_owned.txt`) and is deliberately not written here; neither are the three core SQL queries (an as-of window join of results to process context, a recursive lineage query, a bridging correction) under `sql/queries/` (ADR-0010). Synthetic data only; nothing here describes a real system. Extensions (material lots, quality holds, confirming tests, retro-flags) are specified in section 15 and are not built before S2.
 
 Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_spec.md`. A number without an id is a defect. This file is the canonical source for table, column and time-field names; prompts and schemas follow it.
 
@@ -30,7 +30,7 @@ Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_sp
 | `method` | one versioned analytical method | `method_id` + version | analytes, expected units, dilution rule, effective dates | immutable once used |
 | `result` | one analyte value for a request, one version | `result_id`; unique on (`request_id`, analyte, version) | `run_id`, value, original and canonical unit (UCUM), `measured_at`, `ingested_at`, `reviewed_at`, `available_at`, state, supersedes link, raw reference | |
 | `process_context` (view) | one result or sample at one as-of time | derived | process state at `sampled_at` from the historian and events, as known at the as-of time | versioned projection, joined with an as-of join |
-| `lineage_edge` | one derivation step between two items | `edge_id` | `from_item_id`, `to_item_id`, `relation`, `activity`, `occurred_at`, `available_at` | items are samples, aliquots, results or process materials; `relation` is one of the eight values of section 12 |
+| `lineage_edge` | one derivation step between two items | `edge_id` | `from_item_id`, `to_item_id`, `relation`, `activity`, `occurred_at`, `available_at` | items are samples, aliquots, results or process materials; `relation` is one of the eight values of section 12, plus two in section 15.1 when extensions are on |
 
 Supporting entities: `operator` (pseudonymous id, role, shift), `qualification` (operator, scope, level such as experienced or trainee per A072 and A073, valid from and to), `source_event` (ingestion envelope, section 7), `audit_event` (who, when, what changed, reason, old and new version), `validation_finding` (rule, target, severity, action, status), `historian_value` (`tag`, `ts`, `value`, `quality`, `ingested_at`; rows are not versioned, a late or corrected value arrives as a new row with a later `ingested_at`).
 
@@ -319,11 +319,11 @@ flowchart LR
   R0["Run R0 (QC failed)"] -->|rerun_of| R1["Run R1"]
 ```
 
-Edge relations: `harvested_from`, `split_into`, `pooled_into`, `drawn_as`, `aliquot_of`, `measured_in`, `superseded_by`, `rerun_of`. Edges point in the direction of derivation. The origin batches of any item are found by walking edges backwards to batch nodes; the walk is a recursive query on the edge table and terminates because the graph is acyclic (K10). Pool hold limits are product-specific, and the public teaching case shows no hold data (A054, S017); downstream assay turnaround has no sourced value (A055). Writing the recursive query is the author's task.
+Edge relations: `harvested_from`, `split_into`, `pooled_into`, `drawn_as`, `aliquot_of`, `measured_in`, `superseded_by`, `rerun_of`. Two more relations (`consumed_in`, `seeded_from`) exist when extensions are on (section 15.1). Edges point in the direction of derivation. The origin batches of any item are found by walking edges backwards to batch nodes; the walk is a recursive query on the edge table and terminates because the graph is acyclic (K10). Pool hold limits are product-specific, and the public teaching case shows no hold data (A054, S017); downstream assay turnaround has no sourced value (A055). Writing the recursive query is the author's task.
 
 ## 13. Acceptance hooks for the author's DDL
 
-Integrity rules are enforced by test queries, not by database triggers: DuckDB has no triggers. Declarative constraints (primary key, unique, not null, foreign key) cover K1, K2 and K9 where DuckDB supports them. The other rules (immutability K5, K8 and K13, one open batch K6, no double occupancy K7, acyclicity K10, volume conservation K12, and the validation rules of section 8) are queries over the tables that return no row on good data and at least one row on a bad-data fixture. State columns (the lists in section 6) and closed lists such as `lineage_edge.relation` (section 12) use `CHECK (column IN (...))` constraints, not ENUM types.
+Integrity rules are enforced by test queries, not by database triggers: DuckDB has no triggers. Declarative constraints (primary key, unique, not null, foreign key) cover K1, K2 and K9 where DuckDB supports them. The other rules (immutability K5, K8 and K13, one open batch K6, no double occupancy K7, acyclicity K10, volume conservation K12, and the validation rules of section 8) are queries over the tables that return no row on good data and at least one row on a bad-data fixture. State columns (the lists in section 6) and closed lists such as `lineage_edge.relation` (sections 12 and 15.1) use `CHECK (column IN (...))` constraints, not ENUM types.
 
 Acceptance tests (`tests/user_track/`, run with `pytest -m user_track`) are specified against section 4 and section 8: uniqueness (K1, K9), not-null (K2), immutability (K5, K8, K13), acyclicity and volume conservation (K10, K12), and fixture-based answers for the three queries. The tests are written by the AI path; the schema and queries are not.
 
@@ -334,4 +334,103 @@ Acceptance tests (`tests/user_track/`, run with `pytest -m user_track`) are spec
 3. Is `process_context` materialised per as-of time, or computed on demand?
 4. Surrogate keys or natural keys for the master data tables.
 5. Representation of the source zone: offset, zone name, or both.
-6. How `from_item_id` and `to_item_id` identify the kind of item they point to (a prefix in the id, or a kind column).
+6. How `from_item_id` and `to_item_id` identify the kind of item they point to (a prefix in the id, or a kind column). The target of a `quality_hold` (section 15.1) has the same question.
+7. Do architectures A and B store a row-creation stamp (`ingested_at`)? VR-003, VR-004 and the rule table of the simulation spec section 5 read it, and no flag provides it today.
+8. Lot and derivation links (section 15): do the eight flags cover them, or do A and B keep lots as free text and only C stores the edges, or is a ninth flag needed (an amendment to ADR-0005, see ADR-0013)?
+
+## 15. Extensions: material lots, holds, confirming tests and retro-flags (designed, not built)
+
+Status: designed under ADR-0013 (Proposed). The seed-lot link comes with the cell-line profiles in S4 and the rest with break-out events in S5. The ledger ids cited are provisional (none of S057 to S083 is `main-reread`). Names here are canonical for prompts and schemas; the DDL and the walk-back SQL stay the author's task (ADR-0010). With no extension selected, the earlier schema is unchanged and none of the entities below exists.
+
+### 15.1 Entities and changes
+
+New entities.
+
+| Entity | Grain | Key | Main attributes | Notes |
+|---|---|---|---|---|
+| `material_lot` | one prepared or received lot of seed, medium or feed | `lot_id` | `kind` (seed, medium, feed; a closed list), `cell_line_id` (seed only), `prepared_at`, quantity with UCUM unit, `parent_lot_id` (nullable), state | the seed lot of a production batch is a cell-bank expansion or an N-1 culture (A155); `cell_line_id` is where the clone of A150 to A152 is recorded |
+| `harvest_window` | one interval of a continuous harvest | `window_id` | `batch_id`, `window_start`, `window_end`, stream (permeate or bleed) | the context unit of perfusion (A132, A133); the target of `harvested_from` for continuous modes; batch modes have one harvest item without a window |
+| `deviation` | one written record of an unplanned event | `deviation_id` | `opened_at`, `opened_by`, trigger (signal or test result), estimated onset, assumed lag, scope note, state, conclusion, `closed_at`, `closed_by` | the written deviation record of A149; one per event |
+| `quality_hold` | one hold or quarantine placed on one item | `hold_id` | `deviation_id`, target kind and `target_id` (batch, harvest window, pool, material lot, result or sample), `kind` (hold or quarantine), `placed_at` (valid time), `placed_by`, `reason`, `released_at`, `released_by`, `outcome` (released or rejected), `available_at` | named `quality_hold` so it does not clash with the validation action "hold" of section 8 |
+
+Changes to existing entities.
+
+| Entity | Change |
+|---|---|
+| `process_event` | types gain `inoculation` (consumes a seed lot), `medium_addition` (consumes a medium or feed lot), `unit_stopped` and `port_change` (a new sampling-port connection, A134) |
+| `batch` | `seed_lot_id`, at most one per batch; the cell line is read through the seed lot and not stored twice; process mode ids follow A124 |
+| `instrument` | class gains `external_lab` for confirming tests that run outside the analyzers |
+| `analysis_request` | `purpose` (routine or confirmatory). The existing metrics and rules count routine requests only; confirming requests enter the extension metrics through their effects |
+| `method` | `kind` gains the confirming tests: bioburden, sterility, mycoplasma culture, mycoplasma indicator cells, nucleic-acid test, adventitious-virus in-vitro assay (A142 to A147) |
+| `result` | `outcome` (not detected, detected or invalid; null for routine results) and `hold_id` (nullable); `value` is null when `outcome` is set |
+| `lineage_edge` | `relation` gains two values: `consumed_in` (edge from a material lot to the `process_event` that used it; one edge per lot and batch with the first use and the quantity for continuous feeds) and `seeded_from` (edge from the N-1 batch or seed lot to the production batch, named from the target's side as `harvested_from` is) |
+
+```mermaid
+erDiagram
+  MATERIAL_LOT ||--o{ PROCESS_EVENT : "consumed_in edge"
+  MATERIAL_LOT |o--o{ BATCH : "seed_lot_id"
+  BATCH ||--o{ HARVEST_WINDOW : "harvested_from edge"
+  DEVIATION ||--o{ QUALITY_HOLD : places
+  QUALITY_HOLD }o--o{ RESULT : "covers, by lineage"
+  ANALYSIS_REQUEST ||--o{ RESULT : produces
+  INSTRUMENT ||--o{ RUN : performs
+  RUN ||--o{ RESULT : yields
+```
+
+### 15.2 States
+
+| Entity | States (transitions in order) |
+|---|---|
+| `material_lot` | prepared, available, in use, consumed or discarded; side states on hold and quarantined while a `quality_hold` covers it |
+| `quality_hold` | placed, under test (confirming requests open), then released or converted to quarantine and rejected; closed with its deviation |
+| `deviation` | opened, contained (the holds of the investigation are placed), concluded (all confirming results are in), closed |
+
+### 15.3 Confirming results with long turnaround, and the retro-flag
+
+A confirming test is an `analysis_request` with `purpose` confirmatory on an aliquot of a confirming sample (random-draw purpose `confirm`, section 3 rule 3 of the spec). It runs on an instrument of class `external_lab`: `run.started_at` is the start of the test or incubation and `ended_at`, `measured_at` are the read-out, so K2 still holds. The request stays in state `in run` for the whole incubation (no new state). Turnaround (`available_at` minus `sampled_at`) is days to weeks (A142 to A147). The hold-time rule VR-010 and the holding-time metric apply to routine requests only. The result carries `outcome` instead of a value.
+
+The retro-flag is the creation of result version n+1 for a result whose version n is already `released`.
+
+1. **Trigger.** A `quality_hold` is placed whose coverage, by lineage, includes a released result, or a positive confirming result arrives. Both are routine events of an investigation, so the rule is general and not tied to contamination.
+2. **Effect.** Version n+1 has the same value and units as n (K16), state `quarantined`, `supersedes` pointing at n, `hold_id` set, and `available_at` at the instant of the flag. Version n is not modified; it is superseded by the existence of n+1 (K8).
+3. **Who, when, why.** An `audit_event` records the person (`placed_by` of the hold), the time, the reason (`reason` of the hold) and the old and new version.
+4. **Reversal.** A negative confirming result lifts the hold; version n+1 goes through `under_review` and is released again with the same value. A positive result leads the reviewer to reject it (the value is kept, section 6).
+5. **As-of.** A query as of a time before the flag still sees version n as released (section 5 rule). With `available_at` off, queries see the flag as of now and leak it backwards; with `append_only_versions` off the flag overwrites in place and the fact that n had been released and used is lost; with `audit_trail` off the person and the reason are missing. This is a design hypothesis per flag, tested in S5.
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  [*] --> N_released: version n released
+  N_released --> N_superseded: retro-flag creates version n+1
+  [*] --> N1_quarantined: version n+1, same value, hold_id set
+  N1_quarantined --> N1_released: hold lifted after a negative result
+  N1_quarantined --> N1_rejected: positive result, reviewer rejects (value kept)
+  N_superseded --> [*]
+  N1_released --> [*]
+  N1_rejected --> [*]
+```
+
+### 15.4 The walk-back query (described, not written)
+
+Inputs: the signalling `batch_id`, the signal time, an assumed lag, and an as-of time. The graph is the `lineage_edge` rows with `available_at` at or before the as-of time; it is acyclic (K10), so the traversal terminates.
+
+1. **Direction 1, the reactor.** Take the samples of the batch whose `sampled_at` is at or after the estimated onset (signal time minus the assumed lag; the measured time where `sampled_at` is not stored), follow `aliquot_of` and `measured_in` forward to their results, and take the latest version per key as of the as-of time.
+2. **Direction 2, downstream.** From the batch (or its harvest windows) follow the derivation relations forward as a recursive closure: `harvested_from`, `split_into`, `pooled_into`, `drawn_as`, `aliquot_of`, `measured_in`, and the `rerun_of` and `superseded_by` links of what it reaches. The closure never walks backward, so a pool that merges the affected batch with a clean one is reached, but the clean batch is not implicated by it.
+3. **Direction 3, siblings.** From the batch walk backward exactly one step along `consumed_in` and `seeded_from` to its lots and its seed parent. From each of those walk forward along `consumed_in` and `seeded_from` to the other batches, then run the direction 2 closure from each of them. The backward step is one hop on purpose: an unbounded walk back through a pool would implicate every batch that ever shared anything.
+4. **Output.** The set of items, each labelled with its direction and the path that reached it. These are the candidates for `quality_hold` rows. The recursion is the forward counterpart of the origin query of section 12 (ADR-0010); writing it is the author's task if it is built.
+
+### 15.5 New constraints and rules
+
+| # | Constraint |
+|---|---|
+| K15 | Every `quality_hold` references a `deviation`. |
+| K16 | A retro-flag version keeps the value and the original and canonical units of the version it supersedes. |
+| K17 | A batch has at most one `seed_lot_id`; `consumed_in` and `seeded_from` edges point at existing items. |
+| K18 | `result.outcome` is not null exactly when the request `purpose` is confirmatory, and `value` is null then. |
+
+| Id | Check | Severity | Action |
+|---|---|---|---|
+| VR-021 | a `process_event` of type `inoculation` or `medium_addition` names a lot but no `consumed_in` edge from that lot exists | warning | hold |
+| VR-022 | a result version in state `released` at time t is covered by a `quality_hold` placed at or before t and no later version exists | error | quarantine (creates the retro-flag version of section 15.3) |
+
+VR-022 fires late by design: the hold is placed after the release, and the finding is the retro-flag. Like every rule it changes a state and never a value (principle 4). Acceptance hooks follow section 13: K15 to K18 and the two rules are test queries that return no row on good data and at least one on a bad-data fixture (a lot used without an edge, a released result under a hold, a retro-flag version with a changed value).
