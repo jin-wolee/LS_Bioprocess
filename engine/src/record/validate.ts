@@ -2,6 +2,8 @@ import type { Rule, RuleConfig } from "./rule_types.ts";
 import { KEY_RULES } from "./rules_keys.ts";
 import { QC_RULES } from "./rules_qc.ts";
 import { TIME_RULES } from "./rules_time.ts";
+import { transit } from "./transitions.ts";
+import type { Transition } from "./transitions.ts";
 import type { RecordedDataset, ResultRow, ResultState, ValidationFindingRow } from "./types.ts";
 
 // Detection = the validation rule catalogue of data_model section 8 applied to a recorded dataset (S2b). Rules change the state of a row
@@ -36,7 +38,8 @@ export const requestOfTarget = (ds: RecordedDataset, target: string): string | n
   return null;
 };
 
-export const validate = (ds: RecordedDataset, cfg: RuleConfig): Validation => {
+/** `log` (optional) collects the state transitions performed, for the data dictionary tests (S2d). */
+export const validate = (ds: RecordedDataset, cfg: RuleConfig, log?: Transition[]): Validation => {
   const not_evaluable: Validation["not_evaluable"] = [];
   const found: ValidationFindingRow[] = [];
   for (const rule of RULES) {
@@ -62,7 +65,8 @@ export const validate = (ds: RecordedDataset, cfg: RuleConfig): Validation => {
     const own = states.get(`result:${r.result_id}`);
     const request = states.get(`sample:${r.request_id}`);
     const state = own && request ? (RANK[own] >= RANK[request] ? own : request) : (own ?? request ?? null);
-    return state === null ? r : { ...r, state };
+    // a row with state null is in `measured` (data_model section 6); a rule moves it to held, quarantined or rejected, and only through the table
+    return state === null ? r : { ...r, state: transit("result", "measured", state, "rule", log) as RuleState };
   });
   return { dataset: { ...ds, result, validation_finding: [...ds.validation_finding, ...found] }, not_evaluable };
 };

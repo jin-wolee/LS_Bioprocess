@@ -1,6 +1,8 @@
 import type { ObservableEvent } from "../observe.ts";
 import type { Architecture } from "./architecture.ts";
 import { recordResults } from "./results.ts";
+import { transit } from "./transitions.ts";
+import type { Transition } from "./transitions.ts";
 import type { AnalysisRequestRow, BatchRow, InstrumentStateRow, ProcessEventRow, QualificationInput, RecordedDataset, RecorderInput, RunRow, SampleRow } from "./types.ts";
 
 // The recorder (spec section 3, rule 1; section 5): one generic function from the observable events, the observable sensor series and
@@ -13,7 +15,8 @@ import type { AnalysisRequestRow, BatchRow, InstrumentStateRow, ProcessEventRow,
 
 const stateIdOf = (analyzer: string, t: number): string => `${analyzer}@${t}`;
 
-export const record = (input: RecorderInput, config: Architecture): RecordedDataset => {
+/** `log` (optional) collects the state transitions performed, for the data dictionary tests (S2d). */
+export const record = (input: RecorderInput, config: Architecture, log?: Transition[]): RecordedDataset => {
   const flags = config.flags;
   const events: readonly ObservableEvent[] = input.events;
 
@@ -67,7 +70,8 @@ export const record = (input: RecorderInput, config: Architecture): RecordedData
         // spec section 2.2: a skipped draw still counts in every denominator. Only a system that issued the label from a plan has a row to show; on paper nobody wrote anything.
         if (flags.system_issued_id) {
           sample.push({
-            sample_id: e.sample_id, unit_id: e.unit_id, batch_id: flags.write_time_keys ? e.batch_id : null, keys_fixed_at_write: flags.write_time_keys, state: "skipped",
+            sample_id: e.sample_id, unit_id: e.unit_id, batch_id: flags.write_time_keys ? e.batch_id : null, keys_fixed_at_write: flags.write_time_keys,
+            state: transit("sample", "planned", "skipped", "rule", log) as "skipped", // the volume budget (VR-016) refuses the draw: planned -> skipped, data_model section 6
             sampled_at: null, planned_at: planned.get(e.sample_id) ?? null, operator_id: null, qualification_id: null, label_method: null, container: null,
           });
         }

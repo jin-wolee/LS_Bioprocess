@@ -1,0 +1,569 @@
+{
+  "architectures": {
+    "a_manual": {
+      "answers": {
+        "process_context": {
+          "answer": {
+            "batch_phase": "after_shift",
+            "feed_epoch": 4
+          },
+          "verdict": "wrong"
+        },
+        "sampled_at": {
+          "answer": null,
+          "verdict": "unanswerable"
+        },
+        "unit": {
+          "answer": "U03",
+          "verdict": "correct"
+        }
+      },
+      "flags": {
+        "append_only_versions": false,
+        "audit_trail": false,
+        "available_at": false,
+        "ingest_idempotency": false,
+        "instrument_state_snapshot": false,
+        "system_issued_id": false,
+        "two_clocks": false,
+        "write_time_keys": false
+      },
+      "labelling": "handwritten",
+      "realised_errors": [
+        {
+          "detail": {
+            "feed_at": 900000
+          },
+          "sample_id": "U03-D10-2",
+          "type": "feed_in_gap"
+        },
+        {
+          "detail": {},
+          "sample_id": "U03-D10-2",
+          "type": "unattributable_record"
+        }
+      ],
+      "tables": {
+        "analysis_request": [
+          {
+            "control_id": null,
+            "request_id": "U03-D10-2"
+          }
+        ],
+        "process_context": {
+          "batch_id": "B-U03",
+          "batch_phase": "after_shift",
+          "feed_epoch": 4,
+          "join_basis": "measured_at",
+          "join_time": 901157,
+          "pv": {
+            "DO": 30.107500023517467,
+            "pH": 6.991123305504089,
+            "temperature": 33.00045158845969
+          },
+          "unit_id": "U03"
+        },
+        "result": [
+          {
+            "analyte": "vcd",
+            "available_at": null,
+            "ingested_at": null,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1687",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 11.336824493393996,
+            "version": 1
+          },
+          {
+            "analyte": "viability",
+            "available_at": null,
+            "ingested_at": null,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1688",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 83.0597807603188,
+            "version": 1
+          },
+          {
+            "analyte": "glucose",
+            "available_at": null,
+            "ingested_at": null,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1689",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 0.8413617986934934,
+            "version": 1
+          },
+          {
+            "analyte": "lactate",
+            "available_at": null,
+            "ingested_at": null,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1690",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 2.7181951906416812,
+            "version": 1
+          },
+          {
+            "analyte": "glutamine",
+            "available_at": null,
+            "ingested_at": null,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1691",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 0,
+            "version": 1
+          },
+          {
+            "analyte": "ph",
+            "available_at": null,
+            "ingested_at": null,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1692",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 6.996844474532313,
+            "version": 1
+          }
+        ],
+        "run": [
+          {
+            "analyzer_name": "AN-1",
+            "attempt": 1,
+            "ended_at": 901157,
+            "instrument_id": null,
+            "instrument_state_id": null,
+            "qc_outcome": "qc_passed",
+            "request_id": "U03-D10-2",
+            "run_id": "U03-D10-2/1/1",
+            "started_at": 900887,
+            "visit": 1
+          }
+        ],
+        "sample": [
+          {
+            "batch_id": null,
+            "container": null,
+            "keys_fixed_at_write": false,
+            "label_method": "handwritten",
+            "operator_id": null,
+            "planned_at": null,
+            "qualification_id": null,
+            "sample_id": "U03-D10-2",
+            "sampled_at": null,
+            "state": null,
+            "unit_id": "U03"
+          }
+        ]
+      }
+    },
+    "b_lims_lite": {
+      "answers": {
+        "process_context": {
+          "answer": {
+            "batch_phase": "after_shift",
+            "feed_epoch": 4
+          },
+          "verdict": "wrong"
+        },
+        "sampled_at": {
+          "answer": null,
+          "verdict": "unanswerable"
+        },
+        "unit": {
+          "answer": "U03",
+          "verdict": "correct"
+        }
+      },
+      "flags": {
+        "append_only_versions": false,
+        "audit_trail": true,
+        "available_at": false,
+        "ingest_idempotency": true,
+        "instrument_state_snapshot": false,
+        "system_issued_id": true,
+        "two_clocks": false,
+        "write_time_keys": false
+      },
+      "labelling": "preprinted_barcode",
+      "realised_errors": [
+        {
+          "detail": {
+            "feed_at": 900000
+          },
+          "sample_id": "U03-D10-2",
+          "type": "feed_in_gap"
+        },
+        {
+          "detail": {
+            "planned_at": 899616,
+            "sampled_at": 899841
+          },
+          "sample_id": "U03-D10-2",
+          "type": "planned_vs_actual"
+        }
+      ],
+      "tables": {
+        "analysis_request": [
+          {
+            "control_id": null,
+            "request_id": "U03-D10-2"
+          }
+        ],
+        "process_context": {
+          "batch_id": "B-U03",
+          "batch_phase": "after_shift",
+          "feed_epoch": 4,
+          "join_basis": "measured_at",
+          "join_time": 901157,
+          "pv": {
+            "DO": 30.107500023517467,
+            "pH": 6.991123305504089,
+            "temperature": 33.00045158845969
+          },
+          "unit_id": "U03"
+        },
+        "result": [
+          {
+            "analyte": "vcd",
+            "available_at": null,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1687",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 11.336824493393996,
+            "version": 1
+          },
+          {
+            "analyte": "viability",
+            "available_at": null,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1688",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 83.0597807603188,
+            "version": 1
+          },
+          {
+            "analyte": "glucose",
+            "available_at": null,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1689",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 0.8413617986934934,
+            "version": 1
+          },
+          {
+            "analyte": "lactate",
+            "available_at": null,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1690",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 2.7181951906416812,
+            "version": 1
+          },
+          {
+            "analyte": "glutamine",
+            "available_at": null,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1691",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 0,
+            "version": 1
+          },
+          {
+            "analyte": "ph",
+            "available_at": null,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R1692",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 6.996844474532313,
+            "version": 1
+          }
+        ],
+        "run": [
+          {
+            "analyzer_name": "AN-1",
+            "attempt": 1,
+            "ended_at": 901157,
+            "instrument_id": null,
+            "instrument_state_id": null,
+            "qc_outcome": "qc_passed",
+            "request_id": "U03-D10-2",
+            "run_id": "U03-D10-2/1/1",
+            "started_at": 900887,
+            "visit": 1
+          }
+        ],
+        "sample": [
+          {
+            "batch_id": null,
+            "container": null,
+            "keys_fixed_at_write": false,
+            "label_method": "handwritten",
+            "operator_id": "OP-01",
+            "planned_at": 899616,
+            "qualification_id": "Q-OP-01",
+            "sample_id": "U03-D10-2",
+            "sampled_at": null,
+            "state": null,
+            "unit_id": "U03"
+          }
+        ]
+      }
+    },
+    "c_context": {
+      "answers": {
+        "process_context": {
+          "answer": {
+            "batch_phase": "after_shift",
+            "feed_epoch": 3
+          },
+          "verdict": "correct"
+        },
+        "sampled_at": {
+          "answer": 899841,
+          "verdict": "correct"
+        },
+        "unit": {
+          "answer": "U03",
+          "verdict": "correct"
+        }
+      },
+      "flags": {
+        "append_only_versions": true,
+        "audit_trail": true,
+        "available_at": true,
+        "ingest_idempotency": true,
+        "instrument_state_snapshot": true,
+        "system_issued_id": true,
+        "two_clocks": true,
+        "write_time_keys": true
+      },
+      "labelling": "issued_at_draw",
+      "realised_errors": [],
+      "tables": {
+        "analysis_request": [
+          {
+            "control_id": null,
+            "request_id": "U03-D10-2"
+          }
+        ],
+        "process_context": {
+          "batch_id": "B-U03",
+          "batch_phase": "after_shift",
+          "feed_epoch": 3,
+          "join_basis": "sampled_at",
+          "join_time": 899841,
+          "pv": {
+            "DO": 30.126283087771036,
+            "pH": 6.9946927627856725,
+            "temperature": 32.97723028739897
+          },
+          "unit_id": "U03"
+        },
+        "result": [
+          {
+            "analyte": "vcd",
+            "available_at": 901157,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R2149",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 11.336824493393996,
+            "version": 1
+          },
+          {
+            "analyte": "viability",
+            "available_at": 901157,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R2150",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 83.0597807603188,
+            "version": 1
+          },
+          {
+            "analyte": "glucose",
+            "available_at": 901157,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R2151",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 0.8413617986934934,
+            "version": 1
+          },
+          {
+            "analyte": "lactate",
+            "available_at": 901157,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R2152",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 2.7181951906416812,
+            "version": 1
+          },
+          {
+            "analyte": "glutamine",
+            "available_at": 901157,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R2153",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 0,
+            "version": 1
+          },
+          {
+            "analyte": "ph",
+            "available_at": 901157,
+            "ingested_at": 901157,
+            "measured_at": 901157,
+            "request_id": "U03-D10-2",
+            "result_id": "R2154",
+            "reviewed_at": null,
+            "run_id": "U03-D10-2/1/1",
+            "state": null,
+            "supersedes": null,
+            "value": 6.996844474532313,
+            "version": 1
+          }
+        ],
+        "run": [
+          {
+            "analyzer_name": "AN-1",
+            "attempt": 1,
+            "ended_at": 901157,
+            "instrument_id": "AN-1",
+            "instrument_state_id": "AN-1@900000",
+            "qc_outcome": "qc_passed",
+            "request_id": "U03-D10-2",
+            "run_id": "U03-D10-2/1/1",
+            "started_at": 900887,
+            "visit": 1
+          }
+        ],
+        "sample": [
+          {
+            "batch_id": "B-U03",
+            "container": null,
+            "keys_fixed_at_write": true,
+            "label_method": "handwritten",
+            "operator_id": "OP-01",
+            "planned_at": 899616,
+            "qualification_id": "Q-OP-01",
+            "sample_id": "U03-D10-2",
+            "sampled_at": 899841,
+            "state": null,
+            "unit_id": "U03"
+          }
+        ]
+      }
+    }
+  },
+  "engine_version": "0.1.0",
+  "fixture": "single_sample_trace",
+  "pick": {
+    "arrived_at": 900887,
+    "batch_id": "B-U03",
+    "context_at_draw": {
+      "batch_phase": "after_shift",
+      "feed_epoch": 3
+    },
+    "context_at_measurement": {
+      "batch_phase": "after_shift",
+      "feed_epoch": 4
+    },
+    "feeds_in_interval": [
+      900000
+    ],
+    "feeds_of_batch": [
+      291600,
+      378000,
+      813600,
+      900000,
+      986400
+    ],
+    "measured_at": 901157,
+    "rule": "In SC3, the lowest sample_id (plain string order; the ids are zero-padded) whose interval [sampled_at, run.started_at] contains a feed of its own unit and batch. run.started_at is the start of the first run of the request (attempt 1, visit 1), the instant hold_time is measured to (data_model section 5). Both ends count.",
+    "run_started_at": 900887,
+    "sample_id": "U03-D10-2",
+    "sampled_at": 899841,
+    "unit_id": "U03"
+  },
+  "scenario": {
+    "days": 21,
+    "id": "sc03_feed_in_gap",
+    "seed": 1
+  }
+}

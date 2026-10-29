@@ -1,0 +1,10 @@
+# Expected output of bridging_offset.sql on bridging_fixture.sql (Card B3), typed by hand; the arithmetic is in the header of bridging_fixture.sql.
+# Parameters: reference_instrument REF, target_instrument TGT, changeover_at 2030-01-10 00:00:00. Tolerance 1e-9 on every number.
+# Only the ordinary requests (control_id NULL) are compared. The card does not say how the control requests themselves, the target result before the changeover (RQ-O3) and the reference
+# result (RQ-O4) appear: they may be absent, or present unchanged, so the test accepts either, and fails only if one of them carries a correction (a nonzero offset or a changed value).
+# An empty cell is NULL. n_controls is not compared for the lactate row (the card gives no value where no offset is estimable).
+# RQ-O1: 8.0 - 0.5 = 7.5.  RQ-O2: 6.5 - 0.5 = 6.0.  RQ-O5: lactate has no controls: offset_applied and value_corrected are NULL, never 3.0.
+request_id,analyte,version,instrument_id,value_raw,offset_applied,value_corrected,n_controls
+RQ-O1,glucose,1,TGT,8.0,0.5,7.5,2
+RQ-O2,glucose,1,TGT,6.5,0.5,6.0,2
+RQ-O5,lactate,1,TGT,3.0,,,*

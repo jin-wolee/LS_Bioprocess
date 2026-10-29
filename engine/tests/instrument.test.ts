@@ -77,7 +77,7 @@ describe("Run-level QC failure (A088)", () => {
     expect(inRange).toBeGreaterThan(4000);
     expect(failed / inRange).toBeGreaterThan(0.012);
     expect(failed / inRange).toBeLessThan(0.03);
-  });
+  }, 35_000); // explicit timeout (S2d rework R1): twenty default-scenario runs take about 3.4 s; the default 5 s timed out under load
 
   it("Given the probability is 0 Then no run fails QC", () => {
     expect(runOf("default", { settings: { ...SMALL, rerun_probability: 0 } }).runs.some((r) => r.outcome === "qc_failed")).toBe(false);

@@ -1,0 +1,21 @@
+# Expected output of lineage_recursive.sql (Card B2), typed by hand; the walk is in the header of lineage_fixture.sql. Columns of the query: ancestor_id, depth, ordered by depth, ancestor_id.
+# Rows of one fixture and one max_depth are compared as an ordered list. root_id P2 for every case.
+# fixture lineage: the eight edges; fixture lineage_cycle: the same plus the bad edge P2 > P1 (lineage_cycle_edge.sql), which must not change the answer.
+fixture,max_depth,ancestor_id,depth
+lineage,10,P1a,1
+lineage,10,P1b,1
+lineage,10,P1,2
+lineage,10,A1,3
+lineage,10,A2,3
+lineage,10,S1,4
+lineage,10,S2,4
+lineage,2,P1a,1
+lineage,2,P1b,1
+lineage,2,P1,2
+lineage_cycle,10,P1a,1
+lineage_cycle,10,P1b,1
+lineage_cycle,10,P1,2
+lineage_cycle,10,A1,3
+lineage_cycle,10,A2,3
+lineage_cycle,10,S1,4
+lineage_cycle,10,S2,4

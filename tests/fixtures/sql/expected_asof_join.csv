@@ -1,0 +1,24 @@
+# Expected output of asof_join.sql on asof_join_fixture.sql (Card B1), typed by hand; the arithmetic is in the header of asof_join_fixture.sql.
+# One block per (decision_time, max_age_s). n_rows is the number of rows the query returns for that case; a case with n_rows 0 has one line with the other cells empty.
+# Cells: an empty cell is NULL. A * means the card does not say (the test does not compare that cell): ctx_ts when the match is too old.
+# Rows are compared as a set (the card gives no row order). Times are 2030-01-07; ctx_ts is the ts of the matched historian row.
+#
+# D = 09:00:00  no result is known yet (the first version is available at 09:30:00): 0 rows.
+# D = 10:00:00 and 10:29:59  RQ-1 version 1 with the uncorrected 2.0 (the correction is ingested at 10:30:00); RQ-2 version 1 with NULL context (no sampled_at).
+# D = 10:30:00 (boundary, <=) and 11:00:00  RQ-1 version 2 with the correction 2.5; RQ-2 version 1.
+# D = 10:00:00 with max_age_s 30: the match is 60 s old (08:40:00 - 08:39:00), so ctx_value is NULL; with max_age_s 60 it is kept (60 <= 60).
+# Never 5.0: that is the 09:00:00 row, which a join on measured_at (09:25:00) would return.
+decision_time,max_age_s,n_rows,request_id,analyte,version,tag,ctx_ts,ctx_value
+2030-01-07 09:00:00,3600,0,,,,,,
+2030-01-07 10:00:00,3600,2,RQ-1,glucose,1,U03.pH,2030-01-07 08:39:00,2.0
+2030-01-07 10:00:00,3600,2,RQ-2,glucose,1,U03.pH,,
+2030-01-07 10:29:59,3600,2,RQ-1,glucose,1,U03.pH,2030-01-07 08:39:00,2.0
+2030-01-07 10:29:59,3600,2,RQ-2,glucose,1,U03.pH,,
+2030-01-07 10:30:00,3600,2,RQ-1,glucose,2,U03.pH,2030-01-07 08:39:00,2.5
+2030-01-07 10:30:00,3600,2,RQ-2,glucose,1,U03.pH,,
+2030-01-07 11:00:00,3600,2,RQ-1,glucose,2,U03.pH,2030-01-07 08:39:00,2.5
+2030-01-07 11:00:00,3600,2,RQ-2,glucose,1,U03.pH,,
+2030-01-07 10:00:00,30,2,RQ-1,glucose,1,U03.pH,*,
+2030-01-07 10:00:00,30,2,RQ-2,glucose,1,U03.pH,,
+2030-01-07 10:00:00,60,2,RQ-1,glucose,1,U03.pH,2030-01-07 08:39:00,2.0
+2030-01-07 10:00:00,60,2,RQ-2,glucose,1,U03.pH,,

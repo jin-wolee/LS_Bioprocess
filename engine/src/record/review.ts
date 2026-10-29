@@ -1,3 +1,5 @@
+import { transit } from "./transitions.ts";
+import type { Transition } from "./transitions.ts";
 import type { RecordedDataset, ResultRow, ValidationFindingRow } from "./types.ts";
 
 // The review step (data_model section 6, state diagram; section 7, "Review step and VR-012 decided in the S2 review step"). After the validation rules a row is
@@ -60,7 +62,8 @@ export const reviewPoint = (t: number, roster: Roster, timing: ReviewTiming): nu
 
 const isOpen = (f: ValidationFindingRow): boolean => f.action === "hold" || f.action === "quarantine";
 
-export const review = (ds: RecordedDataset, cfg: ReviewConfig): RecordedDataset => {
+/** `log` (optional) collects the state transitions performed, for the data dictionary tests (S2d). */
+export const review = (ds: RecordedDataset, cfg: ReviewConfig, log?: Transition[]): RecordedDataset => {
   const rejecting = new Set(cfg.reject_also ?? []);
   const outcomeOf = (rule: string): Outcome => {
     if (rejecting.has(rule)) return "rejected";
@@ -82,10 +85,12 @@ export const review = (ds: RecordedDataset, cfg: ReviewConfig): RecordedDataset 
     const at = reviewPoint(r.ingested_at ?? r.measured_at, cfg.roster, cfg.timing);
     reviewedResults.add(r.result_id);
     reviewedRequests.add(r.request_id);
+    // the review performs both steps of the diagram at one instant (under_review has no duration): the row goes to under_review, then the reviewer rejects or the approver releases
+    transit("result", r.state, "under_review", "reviewer", log);
     // any rejecting rule wins; a rejected row was never knowable downstream, so it has no available_at
     return rules.some((rule) => outcomeOf(rule) === "rejected")
-      ? { ...r, state: "rejected", reviewed_at: at, available_at: null }
-      : { ...r, state: "released", reviewed_at: at, available_at: strict ? at : r.available_at };
+      ? { ...r, state: transit("result", "under_review", "rejected", "reviewer", log) as "rejected", reviewed_at: at, available_at: null }
+      : { ...r, state: transit("result", "under_review", "released", "approver", log) as "released", reviewed_at: at, available_at: strict ? at : r.available_at };
   });
 
   const validation_finding = ds.validation_finding.map((f): ValidationFindingRow => {

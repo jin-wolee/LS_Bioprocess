@@ -80,7 +80,7 @@ describe("Open loop: the truth log_hash is identical across all eleven architect
         expect(alone.outcomes[i]?.truth_log_hash, `${arch.id} seed ${seed}`).toBe(independent);
       }
     }
-  });
+  }, 30_000); // explicit timeout (S2d rework R1): about 2 s in a quiet run
 
   it("Given two different seeds Then the truth log_hash differs (the check is not a constant)", async () => {
     const [a, b] = (await runOpenLoop(input)).outcomes;
