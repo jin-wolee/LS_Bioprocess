@@ -1,6 +1,6 @@
 # Simulation specification
 
-Status: design draft, no simulation result exists yet. Synthetic scenario built from public sources and labelled assumptions (ADR-0001). Nothing here predicts a real laboratory. Extensions (cell-line profiles, operating modes, break-out events such as contamination) are designed in section 11 under ADR-0013 and are not built before S2.
+Status: design draft, no simulation result exists yet. Synthetic scenario built from public sources and labelled assumptions (ADR-0001). Nothing here predicts a real laboratory. Extensions (cell-line profiles, operating modes, break-out events such as contamination) are designed in section 11 under ADR-0013 and are not built before S2. The raw device layer (synthetic equipment output files and their adapters, section 2.4, ADR-0014) is a scope extension of S2 itself.
 
 How to read the numbers: every number carries a ledger id (`S###` source, `A###` assumption; grades S, P, D, A are explained in `docs/research/README.md`). A number without an id is a defect, not a placeholder. Figures that rest on a source below `main-reread` are provisional and may not appear on the public README or infographic. Table, column and time-field names, and the derived quantities `hold_time` and `turnaround`, are defined once in `docs/design/data_model.md` (sections 2 and 5); this file uses them and does not redefine them.
 
@@ -31,12 +31,16 @@ flowchart LR
   L2 -->|planned label, received| OE
   L3 -->|run, QC, calibration, maintenance| OE
   OE --> L4["L4 recorders: A, B, C"]
+  OE -. "raw_layer on: section 2.4" .-> RAW["raw device layer: emitters, synthetic files, adapters"]
+  RAW -. "adapter output to B and C" .-> L4
   L4 --> L5["L5 use: queries, decisions"]
   L5 -. "experiment 2 only" .-> L1
   TL --> EV["metrics evaluator + error answer key"]
   L4 --> EV
   L5 --> EV
 ```
+
+Between L3 and L4 sits the raw device layer (section 2.4). It is not a numbered layer, so L4 and L5 keep their names. It is off by default.
 
 Time is an integer number of seconds everywhere in the engine. ISA-88 vocabulary is used for the physical model (Site, Area, Unit, Batch).
 
@@ -58,6 +62,139 @@ Kinetics are nutrient-limited growth with first-order death, nutrient use propor
 
 Queue policy defaults to first-in-first-out, with priority, earliest-deadline-first and SLA variants (A035). QC time per analyzer per day and maintenance windows are scenario settings (A031); the QC failure probability per QC run is A087 and the maintenance window length is A096. A measurement is repeated with probability A088 for reasons other than range; a result above the over-range limit (A089) is repeated at a higher dilution (A090). Instrument behaviour is assumed and switched on per scenario (A033): the analyzer recalibrates on a fixed interval (A091), a drift random walk accumulates between recalibrations and resets at each one (A092), and a reagent lot change adds a step (A093); inter-instrument bias and habitual assignment are A032 and A034. Result noise follows the analyzer's specification limits for within-run and day-to-day precision (A077, A078) and the counter's repeatability (A079); these are limits, not typical performance. Service times come from the analyzer profile (section 4). A run may not overlap a QC or maintenance window, and a window is checked over the whole run, not only at its start.
 
+### 2.4 Raw device layer (between L3 and L4)
+
+Status: scope extension of S2 under ADR-0014 (Proposed). Off by default (scenario setting `raw_layer`): with it off, recorders consume `observable_events` as before and every earlier scenario keeps a byte-identical event log. It is not a ninth flag (ADR-0005 stays at eight). The raw files are synthetic formats modeled on public documentation; the project does not claim to read any real instrument's files. Every figure here rests on S084 to S103, none of which is `main-reread`, so all of it is provisional. Entities and the field-level mapping are in `data_model.md` section 16; this section owns the emitters, the quirks, the error classes and the metrics.
+
+#### 2.4.1 Path and rules
+
+```mermaid
+flowchart LR
+  OE[("observable_events")] --> EM["emitter per dialect: renders rows, applies raw quirks"]
+  EM --> RF[("raw file: synthetic device file")]
+  EM --> RK[("raw quirk key: evaluator only")]
+  RF --> AD["adapter per dialect: parser"]
+  AD -->|"canonical records with envelope"| L4["L4 recorders B and C"]
+  AD -->|"unreadable lines"| PE[("parse_error dead letter")]
+  OE -->|"typed or pasted by hand"| LA["L4 recorder A"]
+```
+
+1. **Emitters read observable data only.** They consume `observable_events` and plain data supplied by the assembly (an instrument's clock offset, its date order, quirk opportunities). They never read truth. The calendar anchor (a synthetic start date) and each instrument's zone offset are scenario data; the engine's integer seconds become wall-clock text only inside an emitter.
+2. **Belief and actual are separate.** What the device writes (its date order, units, zone) is scenario data used by the emitter. What the parser assumes is the adapter entry (`data_model.md` section 16.1). A mismatch between them is an injected error, not a parser fault.
+3. **Round trip.** With every quirk switch off, parsing an emitted file returns the events it was rendered from, on the mapped fields and within the dialect's time resolution. This is an EDD fixture typed by hand.
+4. **Fair by construction.** Quirk opportunities are drawn once per row or file with the canonical key tuple of section 3 and purpose `raw:<quirk id>` (a file-level draw uses the export id in place of the sample). They do not depend on the architecture or on detection. The same raw files reach every architecture; detection only raises flags.
+5. **Capture path by preset.** B and C parse the files with the adapters. A is proposed to ingest by hand (typed or pasted values, where the existing transcription errors apply) and has no adapter; its raw-layer metrics read "not applicable". This is an open point for the decider (ADR-0014).
+6. **Raw quirk key.** The emitters return the realised quirks as plain data (file, row, quirk id, intended value or instant); the assembly writes them to the answer-key file, and only the evaluator reads it (section 3, rule 2).
+7. **ADR-0014 rules.** Every emitted file starts with the line "synthetic, modeled on public documentation; not a real instrument file". A dialect lists the `S###` ids it is modeled on, uses its own short field names, and copies no manual text. Dialect, profile and file-name prefixes are vendor-neutral.
+
+#### 2.4.2 Dialects
+
+Dialects are profile data (ADR-0012): analyzer dialects under `scenarios/profiles/dialect/`, controller families under `scenarios/profiles/controller/`. There is one generic emitter and one generic parser; the engine never branches on a dialect id. No ledger bundle exists yet for a dialect, so the grade shown is the weakest of the entries cited, and parts that no source shows are marked assumed.
+
+| Dialect | Used by | Shape of the synthetic file | Modeled on | Weakest cited grade |
+|---|---|---|---|---|
+| `allinone_csv` | `allinone_atline`; the chemistry side of `split_cellcounter_metabolite` (the stand-in of A070) | one CSV per operator export, named with a neutral prefix and the export time (A159); quoted header row, optional units row, one row per analysis, trailing comma, blank cell where a value is absent (A160); local stamp with no zone, date order, separator and 12 or 24 h per instrument (A161); units per analyte (A162); record fields (A165); the over-range note form is assumed (A163) | S003, S038, S086 | A (A161 default and A163 form are assumed) |
+| `counter_csv` | the counter side of `split_cellcounter_metabolite` | one CSV per sample set; units in the column headers; stamp month, day, year, 24 h, to the minute, no zone (A166); optional append mode that repeats earlier rows (A167) | S084, S085, S086 | P |
+| `cds_table` | `hplc` | a user-designed result table: columns and their order come from a template (A168); one row per injection or per peak; retention time in seconds and area in mAU*s (A168); the titer amount column is assumed (A168); a new result id per processing run (A169) | S088, S089, S090, S091 | P |
+| `ctrl_neutral` | controller family 1 | three logs: tag log (UTC stamp with offset, tag, value, quality), alarm log, batch-phase log; tag name is unit tag, signal and role (A171); ISA-88 hierarchy and phase states (A170); ISA-18.2 alarm states (A174) | S093, S094, S095, S097, S101 | P |
+| `ctrl_bench` | controller family 2 | five record types as separate CSV exports: process data, user events, alarms, recipe steps, errors; each variable logged by deadband and maximum log interval (A172); the unit sits in parentheses in the variable name (A171); alarm rows carry the acknowledging user and time (A174, S099); the CSV column layout is not in the text read, so it is assumed | S099 | P (layout assumed) |
+
+| Analyzer profile (section 4.2) | Dialect or dialects |
+|---|---|
+| `allinone_atline` | `allinone_csv` |
+| `split_cellcounter_metabolite` | `counter_csv` for the counter visit and `allinone_csv`, chemistry columns only, for the metabolite visit (A070) |
+| `hplc` | `cds_table` |
+
+A bay uses one controller profile. The default raw-layer scenario puts one bay on each family, which is a design choice and no claim about any site. Analyzer exports run once per instrument at the end of each staffed window (A098, assumed); controller logs are cut one file per record type per day. Neither schedule has a source. The OPC-style tag records of the all-in-one analyzer (UTC stamp and a separate local offset, A165, S004) are not emitted; they are the contrast case for the stamp without a zone and are parked (YAGNI).
+
+#### 2.4.3 Raw quirks
+
+Each quirk is a behaviour of the raw file that a parser must handle. The test of each is a Given-When-Then in the S2 brief named after its id.
+
+| Id | Quirk | Emitted by | What the adapter does | Ids |
+|---|---|---|---|---|
+| RQ1 | Stamp with no zone: local wall-clock text, no offset | `allinone_csv`, `counter_csv`; `cds_table` and `ctrl_bench` by assumption | the zone comes from the adapter entry (the instrument's configured zone); the UTC instant is stored beside the source zone (K14); a missing zone in the entry makes the stamp unresolved (VR-024) | A161, A166, A168, S099, S029 |
+| RQ2 | Date order, separator and clock style are user settings: 3 orders, 3 separators, 12 or 24 h; default year first, '-', 24 h. A day of 12 or less reads validly under two orders; a 12 h clock without a day-part marker is ambiguous | `allinone_csv`, `ctrl_bench` | the entry pins the order. If it says unknown, one row with a day above 12 pins it for the whole file (resolved); if none does, the stamp is unresolved and the row is quarantined (VR-024). If the entry pins the wrong order, the stamp is read as a valid but wrong instant (resolved wrongly) and the adapter cannot know | A161 |
+| RQ3 | Stamp truncated to the minute | `counter_csv` | `measured_at` carries a resolution of one minute (`time_resolution_s`); rows in one minute keep file order | A166 |
+| RQ4 | Repeated rows: append mode repeats earlier rows; overlapping operator exports repeat selected rows; a transfer retry drops a file twice (scenario switch, any dialect) | `counter_csv` (append), `allinone_csv` (overlap), any dialect (replay) | `source_event_id` is the dialect's natural key (instrument, row stamp, sample id); same key and content is a no-op where `ingest_idempotency` is on (VR-008), same key and different content is quarantined (VR-008b), and with the flag off every copy loads | A167, A159 |
+| RQ5 | Reanalysis: a new row with a new row time while the original sample time stays in its own field; a processing run in the data system gets a new result id. Scenario-scripted, no random rate (no source) | `allinone_csv`, `cds_table` | result version n+1 of the same measurement: `measured_at` keeps the original sample time and the new row time is the envelope's `event_time`; version n absent from the store is VR-019 | A164, A169 |
+| RQ6 | Range and error marking: an analytical-range breach is a blank value plus an error note naming analyte and direction; a process-range breach is a status only; a blank cell also means an analyte not measured | `allinone_csv` | blank value with a range note becomes a null value with a `range_flag`; a blank value for an analyte the method requires, with no note, is held (VR-026). The CSV form of the note is assumed | A163, A160 |
+| RQ7 | Units row absent: units are implied by the instrument's settings | `allinone_csv` (optional row); `counter_csv` and `cds_table` state units in the header and do not emit it | units come from the adapter entry; if the instrument's setting differs, the value is read in the wrong unit without notice; only VR-005 (dimension) or VR-006 (implausible value) can catch it | A160, A162 |
+| RQ8 | Template-defined columns: the user chooses the column set and order | `cds_table` | columns are mapped by role through the template map in the entry, never by position; an unknown column is an information finding; a required role missing rejects the file (VR-023) | A168 |
+| RQ9 | Deadband and maximum-interval logging: a value is logged when it moves by its deadband or the maximum log interval has passed; the series is irregular. An optional historian exception stage is off by default | `ctrl_neutral`, `ctrl_bench` | rows load as received, never interpolated; context at a time uses the last row at or before it (`data_model.md` section 16.4) | A172, A173 |
+| RQ10 | Alarm state changes: one row per transition, acknowledge and return-to-normal as separate events; the bench family records the acknowledging user and time | `ctrl_neutral`, `ctrl_bench` | one `alarm_event` per row, never merged; a transition the state model does not allow is held (VR-025) | A174, S099 |
+| RQ11 | Batch phase transitions: ISA-88 procedure, unit procedure, operation and phase, with the 13 phase states | `ctrl_neutral`, `ctrl_bench` (recipe steps) | one `batch_phase_record` per row; a transition the model does not allow is VR-025 | A170, S099 |
+
+The clock offset of an instrument (A049, example +5 h) is not a quirk but an injected error: the emitter shifts every stamp of that instrument, and RQ1 makes the shift undetectable from the file alone. Alarm limits with a deadband and an on-delay (A175) are kept for a later limit-based alarm rule; S2 renders the scenario's scheduled `alarm` events only (YAGNI).
+
+Events emitted by the layer. Observable: `export_written` (file name, export instant on the instrument clock, row count), `reanalysis_done` (L3, scenario-scripted), `raw_file_received` (host clock), `record_parsed`, `parse_error_raised`. Nothing here adds a truth event.
+
+#### 2.4.4 Controller signals
+
+| Signal (canonical name) | Roles logged | Series in L1 today | Note |
+|---|---|---|---|
+| `pH` | PV, SP, OUT | yes (A100) | control deadband around the set point is A095 |
+| `DO` | PV, SP, OUT | yes (A100) | |
+| `temperature` | PV, SP, OUT | yes (A100) | the set point changes at the scheduled temperature shift |
+| `agitation` | PV, SP | no | the default log deadband of the agitation PV is 0.5 rpm (A172) |
+| `gas_flow_<gas>` | PV, OUT | no | gas names are scenario data |
+| `feed_pump`, `base_pump` | OUT | no | the feed pump follows the scheduled feed events (A010) |
+| `offgas_CO2` | PV | no | |
+
+L1 produces the series named in A100 only. The other signals must come from L1 as new `sensor_tick` signals when `raw_layer` is on (they depend on hidden process state, which an emitter may not read) and are absent otherwise, so layer-off logs stay byte-identical. SP and OUT are computed by a generic controller rule from the observable PV and the scenario's set points; they add no truth quantity. No ledger parameters exist yet for these signals (section 2.4.8).
+
+#### 2.4.5 Adapter output
+
+Entity-level mapping; the field-level mapping, keys and states are in `data_model.md` section 16.
+
+| Dialect | Raw record | Becomes |
+|---|---|---|
+| `allinone_csv` | one analysis row | a `run` and one `result` per analyte; a reanalysis row is result version n+1 |
+| `counter_csv` | one analysis row | a `run` and the `result` rows for count, viability and size |
+| `cds_table` | one injection or peak row | a `run` per injection and a titer `result` from the amount column |
+| tag log or process data | one tag value | a `historian_value` |
+| alarm log | one transition | an `alarm_event` |
+| phase log or recipe steps | one transition | a `batch_phase_record` |
+
+Every file becomes a `raw_file`, every data line a `raw_record`, every unreadable line a `parse_error`, and every loaded row carries the ingestion envelope of `data_model.md` section 7 with `raw_ref` pointing at its line.
+
+#### 2.4.6 Error classes that now start in the raw file
+
+| Existing error class (section 5 matrix) | Raw-level origin |
+|---|---|
+| label or transcription error | the sample-id text the operator typed at the analyzer; the file carries it unchanged and the adapter passes it through (VR-014 still applies) |
+| clock or time-zone error (A049) | the instrument's clock offset in every stamp (RQ1), plus the unpinned or wrong date order (RQ2) |
+| duplicate or replayed file | repeated rows and replayed files (RQ4) |
+| lost rerun or silent overwrite | reanalysis rows (RQ5): with `append_only_versions` off, version n+1 overwrites version n |
+
+Two classes are new and appear as rows of the section 5 matrix: timestamp misread (RQ2, RQ3) and a unit implied by instrument settings that changed (RQ7). The other classes (feed in the gap, unit or batch re-keyed, instrument or lot effect, late correction, unattributable record, sampling technique) do not arise in a file and are unchanged.
+
+#### 2.4.7 Metrics
+
+Same rules as section 8: reported with the seed count and spread, never gated, no composite score. They read the raw quirk key and are reported for the architectures that parse (B, C and the ablations of C). Preset A shows "not applicable". Denominators are fixed.
+
+| Metric | Definition | Denominator |
+|---|---|---|
+| Parse failure rate | raw data rows rejected as unreadable (VR-023); every row of a rejected file counts | all raw data rows the emitters wrote, including repeated rows and rows of replayed files |
+| Ambiguous timestamps | three shares: resolved correctly (the parsed instant equals the intended instant in the key), resolved wrongly (another valid instant), unresolved (quarantined, VR-024) | all raw rows whose stamp text is ambiguous under the formats in play, by the key; if none, "none occurred" is printed and no share |
+| Duplicate rows suppressed | repeated rows (second and later copies) that were no-ops (VR-008); the share loaded twice and the share quarantined (VR-008b) are printed beside it | all repeated rows written; if none, "none occurred" |
+| Records quarantined or held at ingest | rows with action quarantine and rows with action hold from the ingest-stage rules (VR-005, VR-006, VR-008b, VR-019, VR-024, VR-025, VR-026), counted separately | all raw data rows received. Always shown with the share of clean rows (no realised quirk or error in the key) that were quarantined or held, over all clean rows, and with the exact reconstruction rate of section 8, so that quarantining everything cannot look good |
+
+#### 2.4.8 Gaps to close before building
+
+The research role adds these ledger entries (graded A where unsourced) before the step that needs them starts; an executor never invents a number.
+
+- Log deadband and maximum interval for tags other than the agitation PV (A172 gives one default and one worked example only).
+- Signal parameters for gas flows, pumps and off-gas CO2 (A100 covers pH, DO and temperature) and the controller rule that computes OUT.
+- Acknowledge and return-to-normal times of a scheduled alarm (A174 has no timing); alarm deadband and delay for pH and DO (A175).
+- The meaning of an analyzer row stamp (start or end of the run) is not in the ledger; the dialect declares it and the default, end of run, is an assumption (A161, A166, S003).
+- The CSV form of the over-range note (A163), the titer amount column (A168), the column layout of the bench controller (S099) and the zone convention of the data system (A168) are assumed and printed as assumed.
+- Summer-time changes in device stamps and any random reanalysis rate have no source and are not modelled.
+
+#### 2.4.9 Where it sits in S2
+
+It is built after the flags, the injector, the evaluator and the structural gate (Steps 1 to 4 of `prompts/20_S2_capture_metrics.md`), as Steps 5 to 8 of that brief. Its gate is structural: the round-trip fixture, one Given-When-Then test per quirk (RQ1 to RQ11), idempotent re-ingest, the forced-error cells of the two new matrix rows, and the three-rules checklist. No scenario id is added; SC1 and SC6 are re-run with the layer on, and SC6's clock offset then lives in the file stamps. Stochastic raw-layer metrics are reported over at least 20 seeds (A103) and are never gated.
+
 ## 3. Truth, recorded world and the observation contract
 
 The engine emits two streams.
@@ -67,7 +204,7 @@ The engine emits two streams.
 
 Rules (invariants, tested):
 
-1. Recorders (L4) consume `observable_events` only and never read truth. Hidden fields are annotated `"x-visibility": "hidden"` in the schemas. Test: change hidden-only fields and the recorder output must be byte-identical.
+1. Recorders (L4) consume `observable_events` only (with the raw layer on, B and C consume the adapter output, which is `observable_events` rendered through a synthetic device file, section 2.4) and never read truth. Hidden fields are annotated `"x-visibility": "hidden"` in the schemas. Test: change hidden-only fields and the recorder output must be byte-identical.
 2. Who may read truth. The metrics evaluator reads truth, because it must in order to score, and it is the only reader of the error answer key (the record of which errors the injector materialised where). Experiment assembly (drawing the shared truth run and the error opportunities) and the oracle arm of experiment 2 may also read truth. Recorders and L5 (analyst queries and decisions) never do.
 3. Same `(scenario, seed, engine_version)` gives a byte-identical event log. Randomness comes from a keyed integer generator with key (physical sample, analyte, attempt, purpose); experiment 2 adds `seed` and `reactor`. A rerun or an added sample never changes another sample's draws.
 4. Every export and shareable URL carries `schema_version`, `engine_version` and `seed`.
@@ -95,7 +232,7 @@ On micro-scale systems the number of samples consumes the culture: 14 daily samp
 | `split_cellcounter_metabolite` | 130 s plus 120 s = 250 s (4.2 min) of instrument time over two visits, plus a hand-off between them (A106); 200 + 135 = 335 uL | two queues; the two results can be measured at different times and carry different clocks | A (hand-off unsourced) | A070 (its components include A025, A026, A106, A107), S005, S006 |
 | `hplc` (titer) | 1 min run, 5 to 50 uL injection; column changeover and system-suitability time is assumed | shared column is the contested resource | A | A071, A028, A029, A030, S026 |
 
-The 250 s and 335 uL figures are sums of stand-alone sourced numbers (derived). On the same analyte scope (cells, viability, metabolites, electrolytes) the all-in-one panel takes 235 s and 135 to 220 uL, so the split path needs about 1.06 times the instrument time and 52 to 148 percent more sample (A107, derived). The full 16-analyte menu (A116) is a different scope and is not compared. The metabolite side uses the FLEX2 chemistry module as a stand-in (A070). Interface: shared-folder CSV drop by default; a vendor OPC server is a separately licensed alternative (A036). Calibration behaviour (drift, resets, lot change) is assumed (A033).
+The 250 s and 335 uL figures are sums of stand-alone sourced numbers (derived). On the same analyte scope (cells, viability, metabolites, electrolytes) the all-in-one panel takes 235 s and 135 to 220 uL, so the split path needs about 1.06 times the instrument time and 52 to 148 percent more sample (A107, derived). The full 16-analyte menu (A116) is a different scope and is not compared. The metabolite side uses the FLEX2 chemistry module as a stand-in (A070). Interface: shared-folder CSV drop by default; a vendor OPC server is a separately licensed alternative (A036). With the raw layer on, each profile writes a synthetic file in the dialect of section 2.4.2. Calibration behaviour (drift, resets, lot change) is assumed (A033).
 
 ### 4.3 Staff
 
@@ -151,6 +288,10 @@ Hypothesis matrix (a design hypothesis to be tested in session S2 by forced-erro
 | late correction leaking into an earlier decision | `available_at` | as-of query (section 3, rule 5) | queries see rows as of now |
 | unattributable record | `audit_trail` | qualification check (VR-015) | operator free text or absent |
 | sampling technique error (A064) | none | recorded container and hold context | context not recorded |
+| timestamp misread (date order or 12/24 h, RQ2; minute-truncated stamp, RQ3) (raw) | none; the adapter entry's setting is not an architecture flag | VR-024 when the order cannot be pinned; VR-003 when the misread instant lies later than receipt; VR-002 with `two_clocks` when it lies before `sampled_at` | the misread instant still lies between the draw and receipt; it then shows only as alignment error |
+| unit implied by instrument settings, changed (RQ7) (raw) | none | VR-005 on a dimension mismatch; VR-006 on an implausible value | same dimension and a plausible magnitude |
+
+Rows marked (raw) exist only with `raw_layer` on and need an adapter, so they do not apply to preset A. The origin of four earlier rows moves into the raw file with the layer on (section 2.4.6).
 
 ### Detection rules and the flags they need
 
@@ -169,6 +310,10 @@ A rule can only fire on fields that are stored. For every detection mechanism na
 | As-of query (section 3, rule 5) | `available_at`, `append_only_versions` | `available_at` of each result version; `ingested_at` of historian rows | `available_at` off: queries see rows as of now; `append_only_versions` off: the earlier version no longer exists | late correction leaking into an earlier decision |
 | VR-015 qualification check | `audit_trail` | `operator_id`, qualification validity dates | the operator is free text or absent | unattributable record |
 | Container and hold context check | `two_clocks` (for the hold part) | recorded container (L2 setting), `hold_time` | the container is not recorded; one time stored | sampling technique error |
+| VR-023 (raw) line or file cannot be read into the canonical fields | none; adapter stage, every parsing architecture | the dialect and the adapter entry (template map, unit map); the raw text | the architecture has no adapter (preset A) | not in the matrix (a load failure; the line goes to `parse_error`) |
+| VR-024 (raw) stamp ambiguous and not resolvable | none; adapter stage | the entry's date-order setting (unknown) or a 12 h clock without a day-part marker; the other rows of the file | the entry pins an order, right or wrong: the stamp is then never ambiguous to the adapter (a wrong pin is the invisible case of the matrix row) | timestamp misread |
+| VR-025 (raw) alarm or phase transition not allowed by the state model | none; adapter stage | the previous `alarm_event` or `batch_phase_record` of the same instance | the log starts mid-instance (the first row seen is accepted); a skipped intermediate state in a truncated log looks like an illegal transition | not in the matrix |
+| VR-026 (raw) blank value with no range or error note | none; adapter stage | the method's list of required analytes; the note column | the method lists the analyte as optional | not in the matrix (feeds the exact reconstruction rate) |
 | VR-021 (ext) lot recorded as used, no consumption edge | `write_time_keys` | `process_event` lot reference against `lineage_edge` relation `consumed_in` | the lot is free text only (subset schemas) | not in the matrix |
 | VR-022 (ext) result still released under an open hold | `available_at`, `append_only_versions`, `audit_trail` | `quality_hold` target and placement time, lineage from the target to the result | no lineage edge from the held target to the result; it fires late by design, after the release | not in the matrix |
 
@@ -238,7 +383,7 @@ No numeric claim is made for any scenario until its session has produced results
 
 ## 8. Metrics
 
-No composite score. Every table reports the seed count and the spread across seeds. A metric without a stated denominator is a defect. Metrics are reported, not gated; the only gates are the structural fixtures of section 6. The extension metrics (containment, identification, re-flagging) are defined in section 11.6 under the same rules. `hold_time` and `turnaround` are defined in data_model section 5, and metrics use their truth values.
+No composite score. Every table reports the seed count and the spread across seeds. A metric without a stated denominator is a defect. Metrics are reported, not gated; the only gates are the structural fixtures of section 6. The extension metrics (containment, identification, re-flagging) are defined in section 11.6 under the same rules; the raw-layer metrics (parse failures, ambiguous timestamps, duplicate rows suppressed, records quarantined or held at ingest) are defined in section 2.4.7. `hold_time` and `turnaround` are defined in data_model section 5, and metrics use their truth values.
 
 | Metric | Definition | Denominator |
 |---|---|---|
@@ -281,7 +426,7 @@ The recorders' gate in S2 is separate from this ladder: the forced-error fixture
 ## 10. Deliberately out of scope
 
 - Predicting any real laboratory; compliance claims (Part 11, Annex 11, ASM, SiLA, OPC UA) — describe, never claim.
-- Real data, verbatim vendor file formats, any LIMS or MES product.
+- Real data, verbatim vendor file formats, any LIMS or MES product. The raw device layer (section 2.4) emits synthetic formats modeled on public documentation; it reads no real instrument's files and never claims to, and it adds no vendor OPC server, SiLA 2 or OPC UA LADS interface, no summer-time handling and no Allotrope schema file (ADR-0014).
 - A single summary score; a server, accounts or a database service.
 - A PAT or soft-sensor model (optional, only on explicit request); downstream processing and perfusion before session S4.
 - Pyodide; DuckDB-WASM in the default bundle (ADR-0003).
@@ -443,7 +588,7 @@ The walk-back is a recursive traversal over material and derivation edges as of 
 
 ### 11.5 Scenarios SC12 to SC14
 
-Same columns as the catalogue in section 7. Given-When-Then tests named after the scenario ids are written when the scenarios are built; `prompts/PRINCIPLES.md` section 2 names SC1 to SC11 until then.
+Same columns as the catalogue in section 7. Given-When-Then tests named after the scenario ids are written when the scenarios are built; `prompts/PRINCIPLES.md` section 2 covers SC1 to SC14.
 
 | ID | Question | Settings (ids) | Main metrics | Session |
 |---|---|---|---|---|
@@ -469,7 +614,7 @@ Recall is always shown with precision, and detection with the false-alarm rate. 
 
 ### 11.7 Gaps to close before building
 
-- No ledger entry for the delay between the first signal and the scripted response, for the shared-lot topology (how many reactors share a seed, media or feed lot) or for the lot withdrawal schedule. They stay scenario inputs without defaults and are printed with every result.
+- The delay between the first signal and the scripted response, and from a confirmed positive to a hold, is ledger entry A176, and the shared-lot topology (how many reactors share a seed, media or feed lot) is A177. Both are graded A and have no default, so they stay scenario inputs printed with every result. The lot withdrawal schedule is still not in the ledger and stays a scenario input too.
 - No source for a viral signal lag, for assay sensitivity, for a per-origin split of contamination, or for a hazard change beyond a port's validated draw count (A137, A134, A146).
 - Batch length and intensified run length are choices (A125, A127). The cell-line spreads for productivity and density come from well-scale data (A120, A121).
 - The open flag question (lot and derivation links) is recorded in ADR-0013 and in data_model section 14.

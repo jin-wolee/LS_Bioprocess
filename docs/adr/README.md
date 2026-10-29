@@ -26,5 +26,6 @@ Each record states a context, at least two real options, a proposed decision, it
 | [0011](0011-infographic-themes-and-story-mode.md) | Infographic themes and scroll story mode | Proposed |
 | [0012](0012-profiles-over-combinatorial-parameters.md) | Profiles over combinatorial parameters | Proposed |
 | [0013](0013-scope-extensions-cell-lines-modes-breakout-events.md) | Scope extensions: cell-line profiles, operating modes and break-out events | Proposed |
+| [0014](0014-equipment-output-adapters-from-public-docs.md) | Equipment output adapters modeled on public documentation | Proposed |
 
 Keep this table in step with the files. A status other than `Proposed` appears here only after the author's own commit.

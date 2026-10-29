@@ -1,6 +1,6 @@
 # Canonical data model
 
-Status: design draft. This document is the specification and the basis for acceptance tests. **The DDL itself is the author's task** (`sql/schema.sql`, listed in `.claude/user_owned.txt`) and is deliberately not written here; neither are the three core SQL queries (an as-of window join of results to process context, a recursive lineage query, a bridging correction) under `sql/queries/` (ADR-0010). Synthetic data only; nothing here describes a real system. Extensions (material lots, quality holds, confirming tests, retro-flags) are specified in section 15 and are not built before S2.
+Status: design draft. This document is the specification and the basis for acceptance tests. **The DDL itself is the author's task** (`sql/schema.sql`, listed in `.claude/user_owned.txt`) and is deliberately not written here; neither are the three core SQL queries (an as-of window join of results to process context, a recursive lineage query, a bridging correction) under `sql/queries/` (ADR-0010). Synthetic data only; nothing here describes a real system. Extensions (material lots, quality holds, confirming tests, retro-flags) are specified in section 15 and are not built before S2. The raw device layer (raw files, adapters, alarm and batch-phase records; ADR-0014) is specified in section 16 and is a scope extension of S2.
 
 Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_spec.md`. A number without an id is a defect. This file is the canonical source for table, column and time-field names; prompts and schemas follow it.
 
@@ -18,7 +18,7 @@ Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_sp
 
 | Entity | Grain | Key | Main attributes | Notes |
 |---|---|---|---|---|
-| `unit` | one vessel (ISA-88 unit) | `unit_id` | area, bay, bioreactor profile reference, working volume with UCUM unit, `unit_tag` | master data; profile ids per A065 to A068; `unit_tag` is the historian tag prefix of the unit, and a historian tag is `unit_tag`, a dot and a signal name (for example `U03.pH`) |
+| `unit` | one vessel (ISA-88 unit) | `unit_id` | area, bay, bioreactor profile reference, working volume with UCUM unit, `unit_tag` | master data; profile ids per A065 to A068; `unit_tag` is the historian tag prefix of the unit, and a historian tag is `unit_tag`, a dot and a signal name (for example `U03.pH`; with the raw layer on the signal name ends in a role, `U03.pH.PV`, section 16.4) |
 | `batch` | one culture run on a unit | `batch_id` | `unit_id`, process mode (A003), inoculated and harvested times, seed-train parent via a lineage edge | at most one open batch per unit at a time |
 | `process_event` | one event in a batch | `event_id` | `batch_id`, `unit_id`, type (feed, temperature shift, alarm, harvest), `occurred_at`, amount with unit, source | feeds are discrete (A010, S017) |
 | `sample` | one physical draw | `sample_id` | `unit_id`, `batch_id`, `sampled_at`, `planned_at`, sampler `operator_id`, container, label method, state | `sampled_at` lives here and only here, and is stored only when `two_clocks` is on; `planned_at` is recorded only where a sampling plan issues the label (`system_issued_id`) |
@@ -32,7 +32,7 @@ Ledger ids (`S###`, `A###`) follow the conventions in `docs/design/simulation_sp
 | `process_context` (view) | one result or sample at one as-of time | derived | process state at `sampled_at` from the historian and events, as known at the as-of time | versioned projection, joined with an as-of join |
 | `lineage_edge` | one derivation step between two items | `edge_id` | `from_item_id`, `to_item_id`, `relation`, `activity`, `occurred_at`, `available_at` | items are samples, aliquots, results or process materials; `relation` is one of the eight values of section 12, plus two in section 15.1 when extensions are on |
 
-Supporting entities: `operator` (pseudonymous id, role, shift), `qualification` (operator, scope, level such as experienced or trainee per A072 and A073, valid from and to), `source_event` (ingestion envelope, section 7), `audit_event` (who, when, what changed, reason, old and new version), `validation_finding` (rule, target, severity, action, status), `historian_value` (`tag`, `ts`, `value`, `quality`, `ingested_at`; rows are not versioned, a late or corrected value arrives as a new row with a later `ingested_at`).
+Supporting entities: `operator` (pseudonymous id, role, shift), `qualification` (operator, scope, level such as experienced or trainee per A072 and A073, valid from and to), `source_event` (ingestion envelope, section 7), `audit_event` (who, when, what changed, reason, old and new version), `validation_finding` (rule, target, severity, action, status), `historian_value` (`tag`, `ts`, `value`, `quality`, `ingested_at`; rows are not versioned, a late or corrected value arrives as a new row with a later `ingested_at`). With the raw layer on, section 16 adds `adapter`, `raw_file`, `raw_record`, `parse_error`, `alarm_event` and `batch_phase_record`.
 
 ## 3. Entity-relationship sketch
 
@@ -133,7 +133,7 @@ In the truth world both quantities use truth stamps. In recorded data they exist
 
 Expected order for a released result: `sampled_at` <= `run_started_at` <= `measured_at` <= `ingested_at` <= `reviewed_at` <= `available_at` (when release is gated by review; otherwise `available_at` follows `ingested_at`). Violations are findings, not exceptions.
 
-**Bitemporal and as-of rule.** `sampled_at`, `run_started_at`, `measured_at`, `occurred_at` and `ts` are valid time: when something was true in the lab. `ingested_at` and `available_at` are transaction time: when the system knew it. A decision or query "as of t" uses, per logical key, the latest result version (greatest `available_at`) among those with `available_at` at or before t, and the historian rows and process events with `ingested_at` at or before t (for a repeated `tag` and `ts`, the latest ingested row). Process context for a result is then matched on valid time at `sampled_at`. With the flag `available_at` off, queries see everything as of now, which leaks late corrections into earlier decisions. With `two_clocks` off, only the measured time is stored; `sampled_at` is not stored and cannot be reconstructed.
+**Bitemporal and as-of rule.** `sampled_at`, `run_started_at`, `measured_at`, `occurred_at` and `ts` are valid time: when something was true in the lab. `ingested_at` and `available_at` are transaction time: when the system knew it. A decision or query "as of t" uses, per logical key, the latest result version (greatest `available_at`) among those with `available_at` at or before t, and the historian rows and process events with `ingested_at` at or before t (for a repeated `tag` and `ts`, the latest ingested row). Process context for a result is then matched on valid time at `sampled_at`. With the flag `available_at` off, queries see everything as of now, which leaks late corrections into earlier decisions. With `two_clocks` off, only the measured time is stored; `sampled_at` is not stored and cannot be reconstructed. A tag logged by deadband has rows only where the value moved or the maximum log interval passed, so the value at a time is the last row at or before it (section 16.4).
 
 **Clocks.** Timed records need controlled or synchronised clocks and a specified time zone (S029, sections 5.1 and 6.13); changing any clock used for recording timed events, including in process instrumentation, should be restricted (S030, 4.12); time-zone configuration is also covered second-hand (S052). How often a clock is wrong has no source (A049), so the wrong-clock scenario (SC6, example offset +5 h) is a stress case, not an estimate.
 
@@ -223,7 +223,7 @@ Rules, active when `ingest_idempotency` is on:
 
 Fixtures: duplicate file, rows in reversed order, replayed file with one changed value, truncated file.
 
-**Instrument file mapping (skeleton, specified in session S2).** The baseline is a result file dropped into a shared folder: a FLEX2-class analyzer exports CSV to a shared folder, and the file name carries an export time (S003, snippet). The vendor OPC server is a separately licensed add-on (S004, snippet) and connector guides treat these instruments as file-based (S038, S039, snippet). Vendor file formats are not copied verbatim; the mapping is by role.
+**Instrument file mapping (skeleton, specified in session S2; the adapters, dialects and field-level mapping are in section 16).** The baseline is a result file dropped into a shared folder: a FLEX2-class analyzer exports CSV to a shared folder, and the file name carries an export time (S003, snippet). The vendor OPC server is a separately licensed add-on (S004, snippet) and connector guides treat these instruments as file-based (S038, S039, snippet). Vendor file formats are not copied verbatim; the mapping is by role.
 
 | Source role | Canonical target | Transform | Rule |
 |---|---|---|---|
@@ -264,7 +264,7 @@ Actions: **hold** (row stored, not available until reviewed), **quarantine** (ro
 | VR-019 | result version n+1 arrives without version n | error | quarantine |
 | VR-020 | sample on a unit with no open batch at `sampled_at` | error | hold |
 
-Resolution is always a new version by a named reviewer with a reason; the finding keeps its history.
+Resolution is always a new version by a named reviewer with a reason; the finding keeps its history. Four rules for the raw device layer (VR-023 to VR-026) are in section 16.6.
 
 ## 9. Data dictionary outline
 
@@ -335,8 +335,11 @@ Acceptance tests (`tests/user_track/`, run with `pytest -m user_track`) are spec
 4. Surrogate keys or natural keys for the master data tables.
 5. Representation of the source zone: offset, zone name, or both.
 6. How `from_item_id` and `to_item_id` identify the kind of item they point to (a prefix in the id, or a kind column). The target of a `quality_hold` (section 15.1) has the same question.
-7. Do architectures A and B store a row-creation stamp (`ingested_at`)? VR-003, VR-004 and the rule table of the simulation spec section 5 read it, and no flag provides it today.
+7. Do architectures A and B store a row-creation stamp (`ingested_at`)? VR-003, VR-004 and the rule table of the simulation spec section 5 read it, and no flag provides it today. With the raw layer on, B and C store the envelope's `received_at` as `ingested_at` (section 16.3); the question stays open for A and for the layer-off case.
 8. Lot and derivation links (section 15): do the eight flags cover them, or do A and B keep lots as free text and only C stores the edges, or is a ninth flag needed (an amendment to ADR-0005, see ADR-0013)?
+9. Does preset A parse files (ADR-0014 proposes: no, A ingests by hand)? If it does, A stores the section 16 tables with a subset of columns.
+10. What an analyzer row stamp means (start or end of the run) is not in the ledger; the adapter entry declares it (`stamp_means`) and the default, end of run, is an assumption (A161, A166, S003).
+11. With the raw layer on the canonical tag carries a role (`U03.pH.PV`); with it off the L1 series keeps the plain form (`U03.pH`). Whether the plain form is renamed everywhere is deferred until the layer is built.
 
 ## 15. Extensions: material lots, holds, confirming tests and retro-flags (designed, not built)
 
@@ -434,3 +437,140 @@ Inputs: the signalling `batch_id`, the signal time, an assumed lag, and an as-of
 | VR-022 | a result version in state `released` at time t is covered by a `quality_hold` placed at or before t and no later version exists | error | quarantine (creates the retro-flag version of section 15.3) |
 
 VR-022 fires late by design: the hold is placed after the release, and the finding is the retro-flag. Like every rule it changes a state and never a value (principle 4). Acceptance hooks follow section 13: K15 to K18 and the two rules are test queries that return no row on good data and at least one on a bad-data fixture (a lot used without an edge, a released result under a hold, a retro-flag version with a changed value).
+
+## 16. Raw device layer: raw files, adapters and controller records (designed for S2)
+
+Status: designed under ADR-0014 (Proposed) as a scope extension of S2. The entities below exist only when the scenario setting `raw_layer` is on; with it off the earlier schema is unchanged. The files are synthetic formats modeled on public documentation, not real instrument files. The ledger ids cited are provisional (none of S084 to S103 is `main-reread`). The emitters, quirks (RQ1 to RQ11) and metrics are in `docs/design/simulation_spec.md` section 2.4. Names here are canonical for prompts and schemas; the DDL stays the author's task (ADR-0010).
+
+### 16.1 Raw-side entities
+
+| Entity | Grain | Key | Main attributes | Notes |
+|---|---|---|---|---|
+| `adapter` | one adapter version: a dialect plus what the parser believes about one device | `adapter_id` + `adapter_version` | `dialect_id`, device class (analyzer or controller), `date_order` (year-first, day-first, month-first or unknown), `date_separator`, `clock_style` (24 h, 12 h or unknown), `source_zone`, `stamp_means` (start or end of run), `time_resolution_s`, unit map (unit text per column role to a UCUM code), template map (header text per column role), note map (error text to `range_flag`), `modeled_on` (list of `S###`), banner line | master data, the adapter registry; immutable once a file was parsed with it (K21); a belief, not the truth: the device's real settings are scenario data, and a mismatch is the origin of RQ2 and RQ7 |
+| `raw_file` | one received file | `raw_file_id` | `adapter_id` and `adapter_version`, `file_name`, `content_hash`, `row_count`, `received_at` (host clock; the `ingested_at` of everything loaded from it), the source `instrument_id` or `unit_id`, state (received, parsed or rejected) | append-only; the same content received twice is two rows with one `content_hash`; the content is kept immutable (`raw_ref`, section 7) |
+| `raw_record` | one data line of a raw file | `raw_record_id` | `raw_file_id`, `line_no`, `record_kind` (analysis, injection, peak, tag_value, alarm_transition, phase_transition), `raw_text` (the line as received), `source_event_id`, state | states: loaded, no_op (exact duplicate), held, quarantined, rejected |
+| `parse_error` | one dead-lettered line or file | `parse_error_id` | `raw_file_id`, `line_no` (null for a file-level error), `column_role`, `code`, `rule_id`, `reason`, `raised_at` | the dead-letter list of section 8 for the action reject; `code` is one of `unknown_dialect_or_template`, `required_column_missing`, `bad_row_width`, `malformed_stamp`, `non_numeric_value`, `unknown_unit`. Findings on loaded rows (hold, quarantine) stay in `validation_finding` |
+
+```mermaid
+erDiagram
+  ADAPTER ||--o{ RAW_FILE : "parsed with"
+  INSTRUMENT }o--|| ADAPTER : "described by"
+  UNIT }o--o| ADAPTER : "controller described by"
+  RAW_FILE ||--o{ RAW_RECORD : contains
+  RAW_FILE ||--o{ PARSE_ERROR : "dead letters"
+  RAW_RECORD ||--o| SOURCE_EVENT : "envelope"
+  SOURCE_EVENT ||--o{ RESULT : "ingested as"
+  RAW_RECORD ||--o{ HISTORIAN_VALUE : loads
+  RAW_RECORD ||--o{ ALARM_EVENT : loads
+  RAW_RECORD ||--o{ BATCH_PHASE_RECORD : loads
+```
+
+### 16.2 Changes to existing entities
+
+| Entity | Change |
+|---|---|
+| `instrument` | `adapter_id` and `adapter_version`; the configured time zone (section 2) is the zone the adapter applies |
+| `unit` | `controller_adapter_id` and version (the controller family of the vessel) |
+| `run` | `started_at_derived` (true when the file gave one stamp and the start was computed from the nominal service time of the analyzer profile, A023, A025, A028) |
+| `result` | `range_flag` (nullable; `above_analytical`, `below_analytical`, `above_process`, `below_process`; `value` is null for the two analytical values, A163) and `time_resolution_s` (nullable; one minute for the counter dialect, A166); the existing raw reference is `raw_file_id` and `line_no` |
+| `historian_value` | `raw_ref` (nullable) |
+
+### 16.3 From raw roles to canonical targets
+
+The role-level skeleton of section 7 stays; this table adds the dialect specifics. A dialect names each column by a role in its adapter entry's template map, so mapping never depends on position (RQ8).
+
+| Raw role | Canonical target | Transform | Rule |
+|---|---|---|---|
+| sample identifier text | `sample_id` through the label | trim and case rules as section 7; passed through unchanged | VR-014 |
+| row stamp (analysis, injection) | `run.ended_at` and `result.measured_at`, or `run.started_at` for a data-system injection; the other end of the run is derived | parse with the entry's order, separator and clock style; apply `source_zone`; store UTC beside the source zone (K14); the other end of the run is the stamp minus the nominal service time (A023, A025) or plus the method run time (A028), with `started_at_derived` | VR-003, VR-004, VR-024 |
+| original sample time and row time (reanalysis) | `result.measured_at` of version n+1 equals the original sample time; the row time is the envelope `event_time` | link to version n by instrument, sample id and original sample time (`superseded_by`, section 12) | VR-019 |
+| analyte value cell | `result.value`, one `result` per analyte | parse the number; a blank is null | VR-006, VR-023, VR-026 |
+| unit (row, header or entry) | `unit_original`, `unit_ucum`, canonical value and unit (K11) | the entry's unit map; units absent from the file come from the entry (RQ7) | VR-005, VR-023 |
+| error or range note | `result.range_flag` | the entry's note map | VR-026 |
+| dilution ratios | `result.dilution_factor` | numeric (A165, A090) | VR-013 |
+| operator | `operator_id` and qualification reference | lookup | VR-015 |
+| instrument serial or name | `instrument_id` | lookup through the adapter entry | VR-011 |
+| peak amount (data system) | `result.value` for the titer analyte (the amount column is assumed, A168) | convert to the canonical unit; an undefined conversion is a finding | VR-005 |
+| result id (data system) | part of `source_event_id`; `supersedes` for a reprocessed result | a new id per processing run (A169) | VR-019 |
+| tag value | `historian_value` | tag name parsed into unit tag, signal and role (section 16.4); `ingested_at` is the file's `received_at` | none new |
+| alarm transition | `alarm_event` | section 16.4 | VR-025 |
+| phase transition | `batch_phase_record` | section 16.4 | VR-025 |
+
+Envelope (section 7) for a parsed line: `source_system` is the instrument or controller; `source_event_id` is the dialect's natural key (analyzers: instrument, row stamp text and sample id; data system: injection id and result id; tag log: tag and stamp text; alarm: alarm instance, new state and stamp; phase: batch, phase instance, new state and stamp); `idempotency_key` is derived from source, event id and content version as in section 7; `raw_ref` is file and line; `event_time` is the stamp text as sent with the format used; `received_at` is the file's `received_at` and becomes `ingested_at`.
+
+### 16.4 Controller-side entities and tag naming
+
+**Tag naming convention.** A canonical tag is `unit_tag`, a dot, a signal and a dot, then a role: `<unit_tag>.<signal>.<role>`, with role one of `PV`, `SP`, `OUT` (A171). Examples: `U03.pH.PV`, `U03.pH.SP`, `U03.pH.OUT`. The signal list is in the simulation spec section 2.4.4 and the data dictionary. The family `ctrl_neutral` writes this form with the unit in its own column; `ctrl_bench` writes the unit in parentheses inside the variable name (A171), and the adapter rewrites it to the canonical form. A `historian_value` holds the canonical tag.
+
+**Reading a deadband-logged series.** Rows exist only where the value moved by its deadband or the maximum log interval passed (A172). The value of a tag at time t is the last row with `ts` at or before t (step-hold), with its age `t - ts`. Rows are never interpolated, and a late row is a new row with a later `ingested_at` as in section 5.
+
+| Entity | Grain | Key | Main attributes | Notes |
+|---|---|---|---|---|
+| `alarm_event` | one state transition of one alarm instance | `alarm_event_id` | `alarm_id` (the instance), `unit_id`, `tag` (the process tag it watches), `severity` (OPC UA scale, S097), `from_state`, `to_state`, `ts` (valid time), `ingested_at`, `actor` (the acknowledging user, where the family records one, S099), `comment` | append-only; fields follow the OPC UA names (A174); acknowledge and return-to-normal are separate events |
+| `batch_phase_record` | one state transition of one phase instance | `phase_record_id` | `batch_id`, `unit_id`, `recipe_id`, `procedure`, `unit_procedure`, `operation`, `phase` (the ISA-88 hierarchy as ids), `from_state`, `to_state`, `ts` (valid time), `ingested_at`, `actor` (nullable), `command` (nullable) | append-only; at most one open unit procedure per unit (S093); the batch times of section 2 stay the batch master data, and the phase log is checked against them, never used to overwrite them |
+
+### 16.5 State models
+
+Alarm states are the ISA-18.2 states of A174.
+
+```mermaid
+stateDiagram-v2
+  [*] --> normal
+  normal --> unacknowledged: condition becomes active
+  unacknowledged --> acknowledged: operator acknowledges
+  unacknowledged --> rtn_unacknowledged: condition clears first
+  acknowledged --> normal: condition clears
+  rtn_unacknowledged --> normal: operator acknowledges
+  normal --> shelved: operator shelves
+  normal --> suppressed_by_design: design logic suppresses
+  normal --> out_of_service: taken out of service
+  shelved --> normal: unshelved
+  suppressed_by_design --> normal: released
+  out_of_service --> normal: returned to service
+```
+
+Phase states are the 13 states of A170. The ledger lists the states only; the standard is paywalled, so these transitions are a design choice that follows common practice (S093, S094), not a quotation.
+
+```mermaid
+stateDiagram-v2
+  [*] --> idle
+  idle --> running: start
+  running --> complete: finishes
+  running --> pausing: pause
+  pausing --> paused
+  paused --> running: resume
+  running --> holding: hold
+  holding --> held
+  held --> restarting: restart
+  restarting --> running
+  running --> stopping: stop
+  paused --> stopping: stop
+  held --> stopping: stop
+  stopping --> stopped
+  running --> aborting: abort
+  held --> aborting: abort
+  stopping --> aborting: abort
+  aborting --> aborted
+  complete --> resetting: reset
+  stopped --> resetting: reset
+  aborted --> resetting: reset
+  resetting --> idle
+```
+
+### 16.6 New constraints and rules
+
+| # | Constraint |
+|---|---|
+| K19 | `raw_file` and `raw_record` are append-only and their content is immutable; the same content may be received twice. |
+| K20 | Every row loaded from a file has a `raw_ref` to an existing `raw_record`, and every `raw_record` in state rejected has exactly one `parse_error`. |
+| K21 | An `adapter` version is immutable once a file was parsed with it. |
+| K22 | An alarm or phase instance changes state only along the transitions of section 16.5, and its log is append-only. In recorded data a violation is the finding VR-025. |
+
+| Id | Check | Severity | Action |
+|---|---|---|---|
+| VR-023 | a raw line or file cannot be read into the canonical fields: malformed stamp, non-numeric value where one is required, unmappable unit text, wrong row width, required column missing, unknown dialect or template | error | reject (writes a `parse_error`) |
+| VR-024 | a stamp is ambiguous and cannot be resolved: the entry's date order is unknown and no row of the file forces it, or a 12 h clock has no day-part marker | error | quarantine |
+| VR-025 | an `alarm_event` or `batch_phase_record` transition is not allowed by the state models of section 16.5, and the instance has an earlier record | warning | hold |
+| VR-026 | a blank value for an analyte the method requires, with no range or error note | warning | hold |
+
+These rules read what the adapter stage knows, so they fire in every architecture that parses files (B and C). Like every rule they change a state and never a value. Acceptance hooks follow section 13: K19 to K22 and the four rules are test queries that return no row on good data and at least one on a bad-data fixture (a file replayed with a changed row, a stamp read under the wrong order, a transition from `held` straight to `running`, a blank cell without a note).
