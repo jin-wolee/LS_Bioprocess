@@ -267,6 +267,37 @@ Fixtures: duplicate file, rows in reversed order, replayed file with one changed
 | instrument serial | `instrument_id` | lookup | VR-011 |
 | file name and export time | `raw_ref`, `source_event_id` | hash of file and row | VR-008 |
 
+### Recorder rules decided in S2a
+
+The recorder (`engine/src/record/`) turns the observable events and the observable sensor stream into the recorded rows of one architecture. The rules below were not decided by sections 2 to 7 and are fixed here; they are the reading the S2a tests are typed from. A column that an architecture cannot know is null, not absent (principle 7).
+
+| Rule | Decision |
+|---|---|
+| Keys (`write_time_keys`) | On: `sample_id`, `unit_id` and `batch_id` are fixed at write. Off: `sample_id` and `unit_id` are stored (the unit comes from the label as carried by the stream) and `batch_id` is null at write; it is derived at read by a time join, the batch of that unit open at the stored time (`inoculated_at` <= t < `harvested_at`). The stored time is `sampled_at` when `two_clocks` is on, else `measured_at`. No open batch gives null. `keys_fixed_at_write` says which case a row is in. |
+| Join basis (two flags are independent) | The time that the key join and the process-context join use is `sampled_at` whenever the architecture stores it, else `measured_at`, whatever `write_time_keys` says. |
+| Idempotency (`ingest_idempotency`) | The key is source, source event id and content version; the value is not in it (the observable stream carries one content version, 1). On: same key and same content is a no-op, logged as a VR-008 information finding; same key and other content is not loaded, the original stays, and the incoming row is kept in the dataset's conflict list (`ingest_conflict`) for the rule VR-008b of S2b. Off: duplicates and conflicting rows are all rows (double count). A replay is an insert in every architecture; only the flag makes it a no-op. |
+| Skipped draw (spec section 2.2) | Where the architecture issues the label from a plan (`system_issued_id` on), a skipped draw is a `sample` row with `state` `skipped`, its `planned_at`, no `sampled_at`, operator, label or result. Without a plan there is no row, because nobody wrote anything. A skipped draw still counts in every metric denominator, which the evaluator reads from the truth log. |
+| Overwrite (`append_only_versions` off) | A rerun (an attempt not seen before for the request and analyte) replaces the existing rows of that key in place, including `available_at`. An as-of read before the rerun's `available_at` therefore finds nothing of that key: the earlier version no longer exists. |
+| Planned time | `planned_at` is stored if and only if `system_issued_id` is on, whatever the labelling method; preset C stores both `planned_at` and `sampled_at`. The recorder stores the method that the `label_bound` event reports; the architecture's `labelling` is applied to the scenario by the assembly. |
+| Process context | `feed_epoch` is the number of feeds of the batch with `occurred_at` at or before the join time; `batch_phase` is `harvested` after a harvest event, else `after_shift` after a temperature-shift event, else `before_shift`; `pv` is the last historian value of each signal of the unit at or before the join time. Process events and historian rows count when their `ingested_at` is at or before the as-of time, and only with `available_at` on. |
+| `ingested_at` and `available_at` (interim) | Open question 7 of section 14 stays open for A, B and the layer-off case: result rows carry no `ingested_at` until S2b decides it. With `available_at` on, a result's `available_at` is the stamp of its observable event (no ingestion or review delay is modelled before S2b). Historian and process-event rows from the stream are ingested at their own stamp. |
+| Attribution (interim) | With `audit_trail` on, `sample.operator_id` is the sampler (visible in the stream) and each change of a result is an `audit_event` with old and new value and version. The analyst who reran a result and the qualification reference are not in the stream; they come with the injector (S2b). |
+| Instrument state (limitation) | A state comes from each `calibration_recorded` event (`lot_id` is the reagent lot; `qc_lot` and `software_version` are not observable). A reagent lot change between two calibrations is invisible to the record; the default scenario has none. |
+| Findings | The recorder writes `validation_finding` rows (`rule`, `target`, `severity`, `action`) only for VR-008 information. When S2b creates findings the table has the columns of section 2 including `status`. |
+
+New names introduced by the recorder (the table and column names follow section 2 otherwise):
+
+| Name | Meaning |
+|---|---|
+| `keys_fixed_at_write` | `sample` column, boolean: the keys were fixed at write time (`write_time_keys` on). |
+| `analyzer_name` | `run` column: the analyzer as free text, as seen on the event; stored whatever `instrument_state_snapshot` says. |
+| `join_basis`, `join_time` | Of a process context: the stored time that its join used (`sampled_at` or `measured_at`) and its value. |
+| `feed_epoch`, `batch_phase` | Of a process context: the feed count and the phase defined above; values of `batch_phase`: `before_shift`, `after_shift`, `harvested`. |
+| `pv` | The process value of an online sensor series in the observable stream (the series carries no truth array); in a process context, the map of the last value per signal. |
+| `ingest_conflict` | Table of the dataset: incoming rows kept aside by the idempotency rule (columns of `source_event` plus request, analyte, run, value and `measured_at`). |
+| `state` of `sample` | `skipped` for a refused draw, null otherwise until the state machines of S2d. |
+| `source_of_record` | Optional setting of the architecture config, `lims` or `mes_ebr` (spec section 5, A056); nothing reads it in S2a. |
+
 ## 8. Validation rule catalogue (draft)
 
 Actions: **hold** (row stored, not available until reviewed), **quarantine** (row stored in a quarantine state, excluded from released views), **reject** (row not loaded; goes to a dead-letter list with reason and `raw_ref`). A rule never edits a value. The tolerances in VR-003 and VR-004 are scenario settings; this document fixes no value.
