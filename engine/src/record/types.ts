@@ -2,10 +2,10 @@ import type { ObservableEvent, ObservableSensorSeries } from "../observe.ts";
 import type { RawTables } from "../ingest/canonical.ts";
 import type { CapturePath } from "../raw/types.ts";
 import type { Architecture } from "./architecture.ts";
-import type { BreakoutInput, DeviationRow, EquipmentRow, LineageEdgeRow, MaterialLotRow, QualityHoldRow } from "./breakout_types.ts";
+import type { BreakoutInput, DeviationRow, EquipmentRow, LineageEdgeRow, MaterialLotRow, QualityHoldRow, RetroFlagAudit, RetroFlagColumn } from "./breakout_types.ts";
 
 export type { CapturePath };
-export type { BreakoutInput, DeviationRow, DeviationState, EquipmentRow, EquipmentState, HoldState, LineageEdgeRow, LotState, MaterialLotRow, QualityHoldRow } from "./breakout_types.ts";
+export type { BreakoutInput, DeviationRow, DeviationState, EquipmentRow, EquipmentState, HoldState, LineageEdgeRow, LotState, MaterialLotRow, QualityHoldRow, RetroFlagAudit, RetroFlagColumn } from "./breakout_types.ts";
 
 // The recorded dataset of one architecture (data_model section 2). Column names are data_model's. A column an architecture cannot
 // know is null (data_model principle 7), never absent, so a test can state "stored" as "not null". Times are integer seconds of
@@ -142,7 +142,7 @@ export interface InstrumentStateRow {
   valid_to: number | null;
 }
 
-export interface ResultRow {
+export interface ResultRow extends RetroFlagColumn {
   result_id: string;
   request_id: string;
   analyte: string;
@@ -188,7 +188,7 @@ export const hasValue = (r: ResultRow): r is ValuedResult => r.value !== null;
 export type ResultState = "held" | "quarantined" | "rejected" | "released";
 
 /** audit_trail only: one row per change of a result (a rerun that replaces an earlier attempt). */
-export interface AuditEventRow {
+export interface AuditEventRow extends RetroFlagAudit {
   audit_id: string;
   request_id: string;
   analyte: string;

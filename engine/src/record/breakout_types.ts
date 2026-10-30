@@ -7,6 +7,17 @@ export interface BreakoutInput {
   equipment: readonly { equipment_id: string; name: string }[];
 }
 
+/** Break-out, the retro-flag (data_model 15.3; batch 4): the hold that covers a result version. Set on version n+1 only, so every other row and every run without a break-out block has no such column. */
+export interface RetroFlagColumn {
+  hold_id?: string | null;
+}
+
+/** Break-out, the retro-flag (data_model 15.3 item 3): the audit event of a flag names the hold and, with `audit_trail`, carries the person and the reason of the hold. Absent on the audit event of a rerun. */
+export interface RetroFlagAudit {
+  hold_id?: string;
+  placed_by?: string | null;
+  reason?: string | null;
+}
 
 export type LotState = "prepared" | "available" | "in_use" | "consumed" | "discarded" | "on_hold" | "quarantined";
 export type EquipmentState = "in_service" | "on_hold" | "quarantined";

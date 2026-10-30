@@ -66,8 +66,20 @@ const isOpen = (f: ValidationFindingRow): boolean => f.action === "hold" || f.ac
 /** 2026-10-30 S2f F4: an open reject finding (VR-014: the row is not loaded, data_model section 8) is no hold to resolve, but it decides the outcome of a row that is in a state already. */
 const isReject = (f: ValidationFindingRow): boolean => f.action === "reject" && f.status === "open";
 
+/**
+ * One row at its review point: the review performs both steps of the diagram at one instant (under_review has no duration), so the row goes to under_review, then the reviewer rejects it or the
+ * approver releases it. A rejected row was never knowable downstream, so it has no available_at (the value is kept); a released one has, with available_at on, the review point. The same step
+ * resolves a retro-flag version (data_model 15.3 item 4; break-out batch 4): rejected after a positive confirming result, released again after a negative one.
+ */
+export const reviewVersion = (r: ResultRow, outcome: Outcome, at: number, strict: boolean, log?: Transition[]): ResultRow => {
+  transit("result", r.state ?? "measured", "under_review", "reviewer", log);
+  return outcome === "rejected"
+    ? { ...r, state: transit("result", "under_review", "rejected", "reviewer", log) as "rejected", reviewed_at: at, available_at: null }
+    : { ...r, state: transit("result", "under_review", "released", "approver", log) as "released", reviewed_at: at, available_at: strict ? at : r.available_at };
+};
+
 /** `log` (optional) collects the state transitions performed, for the data dictionary tests (S2d). */
-export const review = (ds: RecordedDataset, cfg: ReviewConfig, log?: Transition[]): RecordedDataset => {
+export const review =(ds: RecordedDataset, cfg: ReviewConfig, log?: Transition[]): RecordedDataset => {
   const rejecting = new Set(cfg.reject_also ?? []);
   const outcomeOf = (rule: string): Outcome => {
     if (rejecting.has(rule)) return "rejected";
@@ -92,12 +104,8 @@ export const review = (ds: RecordedDataset, cfg: ReviewConfig, log?: Transition[
     const at = reviewPoint(r.ingested_at ?? r.measured_at, cfg.roster, cfg.timing);
     reviewedResults.add(r.result_id);
     reviewedRequests.add(r.request_id);
-    // the review performs both steps of the diagram at one instant (under_review has no duration): the row goes to under_review, then the reviewer rejects or the approver releases
-    transit("result", r.state, "under_review", "reviewer", log);
-    // any rejecting rule wins; a rejected row was never knowable downstream, so it has no available_at
-    return rejected || rules.some((rule) => outcomeOf(rule) === "rejected")
-      ? { ...r, state: transit("result", "under_review", "rejected", "reviewer", log) as "rejected", reviewed_at: at, available_at: null }
-      : { ...r, state: transit("result", "under_review", "released", "approver", log) as "released", reviewed_at: at, available_at: strict ? at : r.available_at };
+    // any rejecting rule wins
+    return reviewVersion(r, rejected || rules.some((rule) => outcomeOf(rule) === "rejected") ? "rejected" : "released", at, strict, log);
   });
 
   const validation_finding = ds.validation_finding.map((f): ValidationFindingRow => {

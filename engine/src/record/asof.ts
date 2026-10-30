@@ -17,19 +17,31 @@ const newer = (a: ResultRow, b: ResultRow): number => a.version - b.version || (
 /** A held, quarantined or rejected row is not available until a reviewer resolves it (data_model sections 6 and 8); `released` and null rows are. */
 const unavailable = (r: ResultRow): boolean => r.state === "held" || r.state === "quarantined" || r.state === "rejected";
 
+/**
+ * The versions that a retro-flag has superseded (data_model 15.3 item 5; break-out batch 4): version n is replaced by the existence of version n+1 (the row with a `hold_id`), whatever state n+1
+ * is in. With available_at on the flag is seen from the instant it was written (`ingested_at` of n+1), so a read before it still sees version n as released. With it off nothing can cut by
+ * transaction time and the flag is seen as of now: it leaks backwards. A dataset without a break-out block has no such row.
+ */
+const flaggedOver = (ds: RecordedDataset, asOf: number, strict: boolean): Set<string> => {
+  const out = new Set<string>();
+  for (const r of ds.result) if (r.hold_id != null && r.supersedes !== null && (!strict || (r.ingested_at ?? Number.POSITIVE_INFINITY) <= asOf)) out.add(r.supersedes);
+  return out;
+};
+
 /** The latest version per (request, analyte) that was knowable at `asOf`. Rows tied on both (a double count) are all returned. */
 export const resultsAsOf = (ds: RecordedDataset, asOf: number): ResultRow[] => {
   const strict = ds.architecture.flags.available_at;
+  const over = flaggedOver(ds, asOf, strict);
   const best = new Map<string, ResultRow>();
   for (const r of ds.result) {
-    if (unavailable(r)) continue;
+    if (unavailable(r) || over.has(r.result_id)) continue;
     if (strict && (r.available_at === null || r.available_at > asOf)) continue;
     const k = `${r.request_id}/${r.analyte}`;
     const cur = best.get(k);
     if (!cur || newer(r, cur) > 0) best.set(k, r);
   }
   return ds.result.filter((r) => {
-    if (unavailable(r)) return false;
+    if (unavailable(r) || over.has(r.result_id)) return false;
     const cur = best.get(`${r.request_id}/${r.analyte}`);
     return cur !== undefined && newer(r, cur) === 0;
   });
@@ -95,9 +107,20 @@ const historianAt = (ds: RecordedDataset, unit: string, signal: string, t: numbe
   return candidates[0]?.value;
 };
 
+/** The samples of a dataset by id, the first row of an id winning, as `find` would. Rebuilt when the list grew; keyed by the list itself, like the late rows above. */
+const sampleIndexes = new WeakMap<readonly SampleRow[], { n: number; byId: Map<string, SampleRow> }>();
+export const sampleById = (ds: RecordedDataset): Map<string, SampleRow> => {
+  const cached = sampleIndexes.get(ds.sample);
+  if (cached && cached.n === ds.sample.length) return cached.byId;
+  const byId = new Map<string, SampleRow>();
+  for (const s of ds.sample) if (!byId.has(s.sample_id)) byId.set(s.sample_id, s);
+  sampleIndexes.set(ds.sample, { n: ds.sample.length, byId });
+  return byId;
+};
+
 /** The sample of a result, the time its join uses (the stored time) and what that time is. `sampled_at` whenever the architecture stores it, else the measured time. */
 const joinOf = (ds: RecordedDataset, result: ResultRow): { sample: SampleRow; join_basis: "sampled_at" | "measured_at"; join_time: number } | null => {
-  const sample = ds.sample.find((s) => s.sample_id === result.request_id);
+  const sample = sampleById(ds).get(result.request_id);
   if (!sample) return null;
   return sample.sampled_at === null ? { sample, join_basis: "measured_at", join_time: result.measured_at } : { sample, join_basis: "sampled_at", join_time: sample.sampled_at };
 };
