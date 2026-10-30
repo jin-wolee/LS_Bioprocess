@@ -339,7 +339,7 @@ With both fields absent the effective lists are `profiles.bioreactor` once per b
 
 ## 5. Data architecture = feature flags
 
-The flag definitions and the expected outcome per flag are owned by ADR-0005; this section repeats the table so the spec reads on its own and must say the same.
+The flag definitions and the expected outcome per flag are owned by ADR-0005 (the first eight), ADR-0017 (`material_lot_links`) and ADR-0020 (`equipment_links`); this section repeats the table so the spec reads on its own and must say the same.
 
 | Flag | On | Off | Error it targets |
 |---|---|---|---|
@@ -351,18 +351,20 @@ The flag definitions and the expected outcome per flag are owned by ADR-0005; th
 | `write_time_keys` | `sample_id`, `unit_id`, `batch_id` fixed at write time and never re-keyed; it does not own `sampled_at` | unit and batch attached later by a time join against the historian and batch record, using the stored time | misattribution, mis-joined context |
 | `ingest_idempotency` | source event id and key; duplicates and replays are no-ops | duplicates double count | duplicate or replayed files |
 | `audit_trail` | who, when, what changed; operator id and qualification | no history | unattributable records |
+| `material_lot_links` | an inoculation or a medium or feed addition stores the lot id as a key, and the recorder writes the `consumed_in` and `seeded_from` edges | no edge; at most a free-text lot name in the batch record, which a query cannot join | the sibling walk-back through a shared lot (ext; ADR-0017) |
+| `equipment_links` | an `equipment_use` event stores the equipment id as a key, and the recorder writes the `used_in` edge from the item to the use | no edge; at most a free-text equipment name in the batch record, which a query cannot join | the sibling walk-back through shared equipment (ext; ADR-0020) |
 
 Planned time is separate from `two_clocks`. A sampling plan that issues the label (`system_issued_id`) gives the sample a `planned_at`; keeping it, and not the actual draw time, is a limit of preset B that comes from the L2 labelling setting and the L4 recorder, not from the definition of `two_clocks` off. With `two_clocks` off the single stored time is always the measured time.
 
 | Preset | Flags on | Labelling default | Capture path default (layer on) | Realistic limits kept |
 |---|---|---|---|---|
 | A manual/Excel | none | handwritten | `manual_transcription` | transcription, one stored time (the measured time), overwrite, no instrument id |
-| B LIMS-lite | `system_issued_id`, `ingest_idempotency`, `audit_trail` | pre-printed barcode | `adapter_ingest` | records the planned time (from the plan that issues the label), not the actual draw time; reagent lot and calibration not linked; dilution factor typed by hand; joined to the historian by the one stored time, the measured time. B is not a straw man: barcodes, automatic capture and an audit trail exist |
-| C context-preserving | all eight | issued at draw | `adapter_ingest` | keys fixed at write time; process context as a versioned as-of projection joined with `AS OF`; residual error remains, such as a correct barcode stuck on the wrong tube |
+| B LIMS-lite | `system_issued_id`, `ingest_idempotency`, `audit_trail`, `equipment_links` | pre-printed barcode | `adapter_ingest` | records the planned time (from the plan that issues the label), not the actual draw time; reagent lot and calibration not linked; dilution factor typed by hand; joined to the historian by the one stored time, the measured time; logs which equipment item a batch used (`equipment_links`, ADR-0020) but keeps the lots a reactor consumed unlinked (`material_lot_links` off, ADR-0017). B is not a straw man: barcodes, automatic capture and an audit trail exist |
+| C context-preserving | all ten | issued at draw | `adapter_ingest` | keys fixed at write time; process context as a versioned as-of projection joined with `AS OF`; residual error remains, such as a correct barcode stuck on the wrong tube |
 
 - Labelling method is set independently of the flags; scenarios may cross them.
 - Capture path is a second setting, also independent of the flags and the labelling method: any preset may override its default (A with `adapter_ingest`, C with `manual_transcription`). It is defined under "Capture path" below.
-- Ablation: C with exactly one flag off, for each flag (eight runs). The expected outcome per flag is stated in ADR-0005.
+- Ablation: C with exactly one flag off, for each flag (ten runs). The expected outcome per flag is stated in ADR-0005, ADR-0017 and ADR-0020. The two flags of the break-out extension are read only where lots and equipment items exist (section 11.8, with a `breakout` block): with none, nothing reads them, no recorded value changes, and the ablation of either flag equals C.
 - The system of record for routine in-process results (MES/EBR or LIMS) differs by site and is a setting (A056, SC11); only release-relevant tests get state-machine and Part 11-grade control.
 
 Hypothesis matrix (a design hypothesis to be tested in session S2 by forced-error fixtures, section 6; not a result). Rule ids are in data_model section 8.
@@ -382,8 +384,10 @@ Hypothesis matrix (a design hypothesis to be tested in session S2 by forced-erro
 | timestamp misread (date order or 12/24 h, RQ2; minute-truncated stamp, RQ3) (raw) | none; the adapter entry's setting is not an architecture flag | VR-024 when the order cannot be pinned; VR-003 when the misread instant lies later than receipt; VR-002 with `two_clocks` when it lies before `sampled_at` | the misread instant still lies between the draw and receipt; it then shows only as alignment error |
 | unit implied by instrument settings, changed (RQ7) (raw) | none | VR-005 on a dimension mismatch; VR-006 on an implausible value | same dimension and a plausible magnitude |
 | result transcription error: a wrong digit, unit or dilution factor typed from the screen or printout (manual) | none among the flags; `adapter_ingest` removes the copy step, which is a path and not a flag | VR-005 on a dimension mismatch; VR-006 on an impossible value; VR-013 on a missing or implausible dilution factor | the typed value is plausible, in the right dimension, with a plausible dilution factor |
+| contamination of a batch carried to a sibling batch through a shared material lot (ext) | none; the plant carries it, not the record | the sibling walk-back (direction 3, data_model 15.4) reaches the other batches through `consumed_in` and `seeded_from`; VR-021 flags a lot recorded as used with no edge | `material_lot_links` off: the lot is free text, no edge a query can join, so the other batches that used it are not reached |
+| contamination of a batch carried to a sibling batch through shared equipment (ext) | none; the plant carries it, not the record | the sibling walk-back (direction 3) reaches the other batches through `used_in`; VR-021 flags an equipment use with no edge | `equipment_links` off: the item is free text, no edge a query can join, so the other batches that used it are not reached |
 
-Rows marked (raw) exist only with `raw_layer` on and `capture_path` `adapter_ingest`, because they arise in a file. Rows marked (manual) exist only with the layer on and `manual_transcription`. On the other path such a row reads "not applicable", never zero. The origin of four earlier rows moves into the raw file with the layer on (section 2.4.6), and "duplicate or replayed file" then also needs a file to parse, so it arises only on `adapter_ingest`.
+Rows marked (raw) exist only with `raw_layer` on and `capture_path` `adapter_ingest`, because they arise in a file. Rows marked (manual) exist only with the layer on and `manual_transcription`. Rows marked (ext) exist only in a scenario with a `breakout` block (section 11.8). On the other path, or without the block, such a row reads "not applicable", never zero. The origin of four earlier rows moves into the raw file with the layer on (section 2.4.6), and "duplicate or replayed file" then also needs a file to parse, so it arises only on `adapter_ingest`.
 
 **Notes from S2b.** With the current rule definitions VR-014 cannot detect an injected label error in any architecture: a system-issued id prevents the typo, and without it no list of open requests exists before the sample arrives. The label row's cells therefore read prevented or invisible, unless VR-009 applies. The non-rule entries of the "Detected by" column (the idempotency log, the audit trail, the bridging study, the as-of query, the recorded container and hold context) are scored in S2c by named evidence in the record, not by a rule id.
 
@@ -412,7 +416,7 @@ Rows marked (raw) exist only with `raw_layer` on and `capture_path` `adapter_ing
 
 ### Detection rules and the flags they need
 
-A rule can only fire on fields that are stored. For every detection mechanism named in the matrix above, the table lists the flags that must be on for the rule to have the fields it reads, the other data it reads, and when it cannot fire. It is derived from the rule definitions in `data_model.md` sections 5 and 8, and it is a design hypothesis for the forced-error fixtures of section 6, not a result. Flag names are exactly those of the flag table above. Rows marked (ext) belong to the extensions (section 11) and are checked from S5. The VR-004 and bridging rows were revised after the S2c1 forced fixtures by the author's decisions of 2026-10-29; "Notes from S2c1" above keeps the original hypothesis and the reasons.
+A rule can only fire on fields that are stored. For every detection mechanism named in the matrix above, the table lists the flags that must be on for the rule to have the fields it reads, the other data it reads, and when it cannot fire. It is derived from the rule definitions in `data_model.md` sections 5 and 8, and it is a design hypothesis for the forced-error fixtures of section 6, not a result. Flag names are exactly those of the flag table above. Rows marked (ext) belong to the extensions (section 11) and are checked from S5; the break-out rows (the sibling walk-back, VR-021, VR-022) are checked from S3 (section 11.8). The VR-004 and bridging rows were revised after the S2c1 forced fixtures by the author's decisions of 2026-10-29; "Notes from S2c1" above keeps the original hypothesis and the reasons.
 
 | Rule or mechanism | Flags that must be on | Other data it reads | Cannot fire when | Matrix row |
 |---|---|---|---|---|
@@ -433,12 +437,12 @@ A rule can only fire on fields that are stored. For every detection mechanism na
 | VR-025 (raw) alarm or phase transition not allowed by the state model | none; adapter stage | the previous `alarm_event` or `batch_phase_record` of the same instance | the log starts mid-instance (the first row seen is accepted); a skipped intermediate state in a truncated log looks like an illegal transition | not in the matrix |
 | VR-026 (raw) blank value with no range or error note | none; adapter stage | the method's list of required analytes; the note column | the method lists the analyte as optional | not in the matrix (feeds the exact reconstruction rate) |
 | VR-005, VR-006, VR-013 (manual) on a typed entry | none; recorder stage, every architecture on `manual_transcription` | the method's expected unit and dimension, the plausible range of the analyte, the dilution rule (data_model section 8) | the typed value is plausible, in the right dimension, with a plausible dilution factor | result transcription error |
-| VR-021 (ext) lot recorded as used, no consumption edge | `write_time_keys` | `process_event` lot reference against `lineage_edge` relation `consumed_in` | the lot is free text only (subset schemas) | not in the matrix |
+| VR-021 (ext) lot or equipment item recorded as used, no edge | `material_lot_links` for the lot and seed checks (`consumed_in`, `seeded_from`); `equipment_links` for the equipment check (`used_in`) | `process_event` lot or equipment reference and `batch.seed_lot_id` against the `lineage_edge` relations `consumed_in`, `seeded_from` and `used_in` | the flag of that edge is off: the lot or item is free text only and nothing is stored to compare (subset schemas) | the two sibling walk-back rows (ext) |
 | VR-022 (ext) result still released under an open hold | `available_at`, `append_only_versions`, `audit_trail` | `quality_hold` target and placement time, lineage from the target to the result | no lineage edge from the held target to the result; it fires late by design, after the release | not in the matrix |
 
 ### Capture path (a setting, not a flag)
 
-`capture_path` says how a result that an instrument has produced becomes a record in the architecture's store. It is a scenario setting like the labelling method: independent of the eight flags, never a ninth flag (ADR-0005 stays at eight), with a default per preset (preset table above). It records the author's decision of 2026-10-29 (ADR-0014, Proposed): start from the primitive method, results copied by hand, and offer automatic linkage as an option.
+`capture_path` says how a result that an instrument has produced becomes a record in the architecture's store. It is a scenario setting like the labelling method: independent of the ten flags, never an eleventh flag (ADR-0005 has eight; ADR-0017 and ADR-0020 add two), with a default per preset (preset table above). It records the author's decision of 2026-10-29 (ADR-0014, Proposed): start from the primitive method, results copied by hand, and offer automatic linkage as an option.
 
 | Value | What happens |
 |---|---|

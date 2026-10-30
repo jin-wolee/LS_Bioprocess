@@ -90,7 +90,7 @@ The orchestrator reviews and orders rework; it does not build. Rails: PRINCIPLES
 
 - [ ] File inventory (`git status --short -uall`) matches the brief's allowed paths; anything else is a finding.
 - [ ] `git diff HEAD -- package.json pyproject.toml` shows only dependencies the brief names (read the file when it is untracked).
-- [ ] No extra feature flag (exactly eight), profile mechanism, scenario or UI code beyond the session's scope. PAT model absent unless requested.
+- [ ] No extra feature flag (exactly ten), profile mechanism, scenario or UI code beyond the session's scope. PAT model absent unless requested.
 - [ ] Ideas the executor did not build are listed under "Parked" in `docs/progress.md`.
 
 ## J. Boundaries and decisions

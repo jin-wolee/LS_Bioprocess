@@ -22,8 +22,8 @@ A record that stores only `measured_at` pairs the result with the post-feed proc
 
 ## What the simulator will compare
 
-- **Feature flags** (ADR-0005), each tied to the error it targets: `system_issued_id`, `two_clocks`, `available_at`, `instrument_state_snapshot`, `append_only_versions`, `write_time_keys`, `ingest_idempotency`, `audit_trail`.
-- **Presets** built from the flags: A manual/Excel (no flags), B LIMS-lite (issued id, idempotent ingest, audit trail), C context-preserving (all flags). B is meant as a fair baseline, not a straw man. Ablations switch one flag off from C.
+- **Feature flags** (ADR-0005; the last two ADR-0017 and ADR-0020), each tied to the error it targets: `system_issued_id`, `two_clocks`, `available_at`, `instrument_state_snapshot`, `append_only_versions`, `write_time_keys`, `ingest_idempotency`, `audit_trail`, `material_lot_links`, `equipment_links`. The last two matter only when a contamination event is scripted: they decide whether the record can reach the other batches that shared a lot or an equipment item.
+- **Presets** built from the flags: A manual/Excel (no flags), B LIMS-lite (issued id, idempotent ingest, audit trail, equipment links), C context-preserving (all flags). B is meant as a fair baseline, not a straw man. Ablations switch one flag off from C.
 - **Labelling setting** (layer L2, independent of the flags): handwritten, pre-printed barcode, or issued at draw (ADR-0005).
 - **Capture path setting** (ADR-0014; read when the optional raw device layer is on): `manual_transcription`, where a person types the value from the instrument screen or printout (preset A default), or `adapter_ingest`, where synthetic device files modeled on public documentation are parsed by adapters (B and C default). Any preset can switch it, so automatic linkage can be tested on its own.
 - **Judging**: the gate is structural, with hand-typed forced-error fixtures. Stochastic comparisons run over at least 20 seeds (A103), are reported with intervals and are never gated. Orderings between presets must emerge from mechanisms; C is not built to win, and its residual errors are reported.

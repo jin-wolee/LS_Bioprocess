@@ -1148,7 +1148,7 @@ assumptions:
     unit: d
     grade: S
     sources: [S063]
-    notes: "After a CHO DG44 perfusion bioreactor was spiked with Mycoplasma arginini, nothing changed for at least 2 d; growth plateaued 2-4 d after the spike, viability began to fall after 3-6 d, and DO and gas-mix/base-addition trends were indicators from about 2 d (S063). The organism peaked near 1e7 CFU/mL and doubles in about 6 h or more (S063). One species, one line, perfusion; the timing depends on cell density and perfusion rate at the time of contamination, and for other species the cells may not be affected at all."
+    notes: "After a CHO DG44 perfusion bioreactor was spiked with Mycoplasma arginini, nothing changed for at least 2 d; growth plateaued 2-4 d after the spike, viability began to fall after 3-6 d, and DO and gas-mix/base-addition trends were indicators from about 2 d (S063). The organism peaked near 1e7 CFU/mL and doubles in about 6 h or more (S063). One species, one line, perfusion; the timing depends on cell density and perfusion rate at the time of contamination, and for other species the cells may not be affected at all. Used as the time from onset to the first process signal, the instant the true DO value reaches its high alarm limit (A197), the same meaning as A139; the rise of DO takes place inside the lag over the hours of the scenario input A219. The growth plateau and the viability fall of the same source (2 to 4 d and after 3 to 6 d) are the ranges of A220 and A222. One species, one line, perfusion; applied to the fed-batch default as a proxy."
   - id: A139
     name: bacterial_onset_to_signal_lag_h
     default: 12
@@ -1156,7 +1156,7 @@ assumptions:
     unit: h
     grade: A
     sources: [S064, S065, S082]
-    notes: "No source gives a lag. Direction only: contamination of a mammalian-cell bioreactor shows first as a drop in dissolved oxygen, then a pH fall, shifted nutrient use and changed growth or viability (S065); the time of the DO drop is used to back-estimate when contamination began (S064); in one study conductivity rose hours before DO fell (S082, abstract seen as an excerpt). The lag depends on organism growth rate, starting count and cell density. Fungal contamination uses the same placeholder."
+    notes: "Meaning, by the author's ruling of 2026-10-30: the lag is the time from the onset of contamination to the first process signal, the instant the true DO value reaches its low alarm limit (A197). The fall of DO and pH (A141) takes place inside the lag, in its last hours, so a scenario whose lag is shorter than its ramp is refused at load, and a lag at the low end of the range needs a ramp no longer than it. The walk-back estimates the onset as the first signal minus an assumed lag whose default is this one; when the assumed lag equals the true lag the estimate is the true onset. No source gives a lag. Direction only: contamination of a mammalian-cell bioreactor shows first as a drop in dissolved oxygen, then a pH fall, shifted nutrient use and changed growth or viability (S065); the time of the DO drop is used to back-estimate when contamination began (S064); in one study conductivity rose hours before DO fell (S082, abstract seen as an excerpt). The lag depends on organism growth rate, starting count and cell density. Fungal contamination uses the same placeholder."
   - id: A140
     name: contamination_signature_by_type
     default: "bacterial/fungal: DO falls, pH falls, nutrient use and growth or viability deviate from history; mycoplasma: growth plateau then viability fall, glucose and glutamine uptake fall with growth, ammonia rises, arginine is consumed, DO rises and CO2 in the gas mix rises with little base needed; virus: possibly no process change, or a growth or viability change, often found by required tests"
@@ -1167,12 +1167,12 @@ assumptions:
     notes: "Range n/a because this is a description. Bacterial direction: S065, S064. Mycoplasma direction and timing: S063. Virus: in two consortium cases the cells looked normal and testing found the virus, in many others dying or unhealthy cells were the first sign (S058); monitoring growth and viability may help early detection (S060). Direction only; magnitudes are A141."
   - id: A141
     name: bacterial_signal_magnitude_placeholder
-    default: "DO reaches its low alarm within 6 h after the lag; pH falls 0.3 below set point before base addition catches up"
+    default: "DO falls from its set point to its low alarm limit (A197) over the last 6 h of the lag and reaches it at the first signal; pH falls 0.3 below set point over the same hours before base addition catches up; the 6 h is a scenario knob and must not exceed the lag (A139)"
     range: "n/a"
     unit: "% air saturation and pH units"
     grade: A
     sources: [S065]
-    notes: "Range n/a because this is a placeholder text. S065 says 'a drop in % DO' and 'a drastic decrease in pH' without numbers. The values are a choice meant to cross a normal alarm band (the pH controller deadband of A095 is +/-0.05 for comparison) and should be kept as scenario knobs; remove if the design uses categorical severity instead."
+    notes: "Range n/a because this is a placeholder text. S065 says 'a drop in % DO' and 'a drastic decrease in pH' without numbers. The values are a choice meant to cross a normal alarm band (the pH controller deadband of A095 is +/-0.05 for comparison) and should be kept as scenario knobs; remove if the design uses categorical severity instead. Changed by the author's ruling of 2026-10-30: the earlier text put the 6 h after the lag; it now lies inside it. Range, grade and sources unchanged."
   - id: A142
     name: bioburden_test_turnaround_days
     default: 5
@@ -1467,13 +1467,13 @@ assumptions:
     sources: [S065, S058]
     notes: "Range n/a because the value is a scenario input, not a parameter with a default (simulation_spec section 11.7). Two delays are meant: from the first process signal to the first scripted response (isolate the unit, stop feeds, draw confirming samples) and from a confirmed positive result to a hold or quarantine action on the affected lots. No source gives either delay. Direction only: containment after a suspected contamination is to isolate the bioreactor and stop feeds (S065), and the most used virus test takes at least two weeks, so material can move on downstream before a positive is known (S058). The delay is identical across architectures, so it changes how much material is touched before containment, not which architecture finds it. Sweep points for tests (for example 0 h, 24 h, 72 h) are a test design choice, not data. Withdrawal timing once a recall is decided is A187."
   - id: A177
-    name: shared_lot_topology
-    default: "no default; a scenario input giving, for each of seed lot, media lot and feed lot, how many reactors draw from it"
+    name: shared_lot_and_equipment_topology
+    default: "no default; a scenario input giving, for each seed lot, media lot, feed lot and shared equipment item, which reactors draw from or use it and when"
     range: "1 to the number of reactors (A001)"
-    unit: reactors per lot
+    unit: "reactors per lot or item"
     grade: A
     sources: [S071, S049]
-    notes: "No source gives how many reactors share a lot. The range ends are logical bounds: 1 means no sharing and the upper end is every reactor in the scenario (A001 sets 24 by default, range 5-100). Why it matters: the investigation walk-back extends to other reactors or batches that share a seed train, feed lot, media lot or equipment (A149), and the production record review rule extends an investigation to other batches associated with the failure (S071); 'seed train' is a term of the industrial biopharma ontology (S049). Sharing is also what scenario SC12 injects when an event enters through a shared medium lot (A157). The topology is a map from lot to reactors, set per scenario and printed with every result. Lot withdrawal timing is a separate gap and is not covered here."
+    notes: "No source gives how many reactors share a lot. The range ends are logical bounds: 1 means no sharing and the upper end is every reactor in the scenario (A001 sets 24 by default, range 5-100). Why it matters: the investigation walk-back extends to other reactors or batches that share a seed train, feed lot, media lot or equipment (A149), and the production record review rule extends an investigation to other batches associated with the failure (S071); 'seed train' is a term of the industrial biopharma ontology (S049). Sharing is also what scenario SC12 injects when an event enters through a shared medium lot (A157). The topology is a map from lot to reactors, set per scenario and printed with every result. Lot withdrawal timing is a separate gap and is not covered here. Equipment is added by the author's ruling of 2026-10-30. A149 names equipment among the things that tie reactors together; no source gives which items are shared or by how many reactors. The topology is a map from lot or item to units and instants, set per scenario and printed with every result."
 
   # ---------------- controller emitters (simulation_spec section 2.4.8) ----------------
   - id: A178
@@ -1640,7 +1640,7 @@ assumptions:
     unit: "schedule; pH units, % air saturation, C"
     grade: A
     sources: [S099]
-    notes: "Range n/a because this is a schedule. The offsets are the windows derived in A184 from the bench controller's default limits, which are absolute and centred on 7.20, 50 % and 37 C; with the set points of A198 (pH 7.00, DO 30 %) or after the shift (33 C) absolute limits would sit on the set point or alarm at once, so they are expressed relative to it here. The simulation spec renders only scheduled alarm events (section 2.4.3); alarm volume and acknowledgement are A186."
+    notes: "Range n/a because this is a schedule. The offsets are the windows derived in A184 from the bench controller's default limits, which are absolute and centred on 7.20, 50 % and 37 C; with the set points of A198 (pH 7.00, DO 30 %) or after the shift (33 C) absolute limits would sit on the set point or alarm at once, so they are expressed relative to it here. The simulation spec renders only scheduled alarm events (section 2.4.3); alarm volume and acknowledgement are A186. Also used by the break-out events: the DO low alarm (set point minus 10 % air saturation) is the first signal of a bacterial contamination and the DO high alarm (plus 10 %) that of a mycoplasma contamination (spec 11.8, rule S1). No alarm event is rendered by this use."
   - id: A198
     name: online_sensor_signals_and_setpoints
     default: "three signals on every reactor, each with roles PV, SP and OUT: pH, DO, temperature; tag = unit_tag.signal.role, for example U03.pH.PV, U03.DO.SP, U03.temperature.OUT; set points pH 7.00 (deadband A182), DO 30 % air saturation, temperature 37 C then 33 C (A195); cadence A100 (60 s); other signals (agitation, gas flows, pumps, off-gas CO2) are absent unless a scenario adds them (A178 to A183)"
@@ -1813,3 +1813,80 @@ assumptions:
     grade: A
     sources: []
     notes: "No source gives the outcome for these rules (they are rules of the simulator). The three rules name an identified cause in the value as recorded: a unit of another dimension (VR-005), a value outside the physical range of the analyte (VR-006), a dilution factor that the method needs and the row lacks or does not offer (VR-013). This is the direction of A213: rejection when a result is clearly attributable to an identified cause (S127 4.8), as for the hold-time rule and the QC outcome there. The reviewer sees the record only, so the outcome is a policy of the rule id, as in A213 and A214, and a rejected row stays in the data and in every denominator (as A213)."
+
+  # ---------------- break-out events: required scenario inputs (S3 batch 1, 2026-10-30) ----------------
+  # Inputs of the mycoplasma contamination and of the investigation that no source gives a value for. None has a default: the scenario must set each one and every result prints it (spec section 11.8, rules S13 and S10).
+  - id: A219
+    name: mycoplasma_do_rise_ramp_h
+    default: "no default; a required scenario input, printed with every result"
+    range: "above 0 and at most the lag (A138)"
+    unit: h
+    grade: A
+    sources: [S063]
+    notes: "Range is a logical bound, not a measured spread: the rise lies inside the lag, so it cannot be longer than it. Length of the DO rise that ends at the high alarm (A197) at the first signal (A138). The source names DO and gas-mix trends as indicators from about 2 d but gives no magnitude, shape or length of the rise (S063, direction only). A scenario input printed with every result."
+  - id: A220
+    name: mycoplasma_plateau_delay_d
+    default: "no default; a required scenario input, printed with every result"
+    range: [2, 4]
+    range_grade: S
+    unit: d
+    grade: A
+    sources: [S063]
+    notes: "Delay from the onset to the start of the growth plateau. The range is the one the source reports: growth plateaued 2-4 d after the spike (S063; one species, one line, perfusion, A138). The timing depends on cell density and perfusion rate at the time of contamination, and the fed-batch default is another setting, so no single value is offered. A scenario input printed with every result."
+  - id: A221
+    name: mycoplasma_growth_multiplier_after_plateau
+    default: "no default; a required scenario input, printed with every result"
+    range: [0, 1]
+    unit: factor
+    grade: A
+    sources: [S063]
+    notes: "Range ends are logical bounds: 0 is a full plateau, 1 is no effect. Multiplier on the growth rate from the plateau instant (A220). The source says growth plateaued and gives no magnitude (S063, qualitative only), and no other source read gives one. A scenario input printed with every result."
+  - id: A222
+    name: mycoplasma_viability_fall_delay_d
+    default: "no default; a required scenario input, printed with every result"
+    range: [3, 6]
+    range_grade: S
+    unit: d
+    grade: A
+    sources: [S063]
+    notes: "Delay from the onset to the start of the viability fall. The range is the one the source reports: viability began to fall after 3-6 d (S063; one species, one line, perfusion, A138). A scenario input printed with every result."
+  - id: A223
+    name: mycoplasma_death_multiplier_after_fall
+    default: "no default; a required scenario input, printed with every result"
+    range: "1 or more; no upper end is sourced"
+    unit: factor
+    grade: A
+    sources: [S063]
+    notes: "The lower end is a logical bound: 1 is no effect and a fall of viability needs a death rate above the usual one. Multiplier on the death rate from the fall instant (A222). The source says viability fell and gives no magnitude (S063, qualitative only), and no other source read gives one. A scenario input printed with every result."
+  - id: A224
+    name: nat_target_covers_organism
+    default: "no default; a required scenario input, printed with every result"
+    range: [0, 1]
+    unit: flag
+    grade: A
+    sources: [S058, S060]
+    notes: "Range ends are the two cases: 0 means the target of the nucleic-acid test does not cover the organism, 1 means it does. Whether the nucleic-acid test (A146) reports the organism as detected. A nucleic-acid test is sequence-specific and finds only what its assay targets (S058, A146 note); it can support real-time decisions for specific viruses (S060). Which target a site runs is not in any source read. A scenario input printed with every result."
+  - id: A225
+    name: bioburden_sample_volume_ml
+    default: "no default; a required scenario input, printed with every result"
+    range: "above 0"
+    unit: mL
+    grade: A
+    sources: []
+    notes: "Volume of the bioburden draw. No source gives a bioburden volume (A142 and A148 notes say none was found); the mycoplasma and sterility volumes of A148 are not borrowed. The bound is logical: a draw has a volume. A scenario input printed with every result."
+  - id: A226
+    name: nat_sample_volume_ml
+    default: "no default; a required scenario input, printed with every result"
+    range: "above 0"
+    unit: mL
+    grade: A
+    sources: []
+    notes: "Volume of the nucleic-acid draw. No source gives one: the pages read state no nucleic-acid turnaround (A146 note) and A148 lists no nucleic-acid volume. The bound is logical: a draw has a volume. A scenario input printed with every result."
+  - id: A227
+    name: hold_release_delay_h
+    default: "no default; a required scenario input, printed with every result"
+    range: "at least 0"
+    unit: h
+    grade: A
+    sources: [S065, S058]
+    notes: "Delay from the last negative result to the release of a hold. A176 covers the delay from a positive result to a hold only, with the same two sources and the same direction (containment after a suspected contamination, S065; material moves on downstream before a positive is known, S058); no source gives a delay after a negative result. The bound is logical. A scenario input printed with every result. Until it is set S3 reuses the second delay of A176 and prints it as assumed."
