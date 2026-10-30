@@ -1,0 +1,113 @@
+"""Browser plumbing for the checks of the lab page (scripts/qa_lab.py): a fresh page with its console and request logs, the waits, the visit of a screen through its navigation link, the small
+run of the end-to-end path and the controls for language and theme.
+
+The screens are visited through the navigation links of the page, so the state of the page (the Worker, the form, the result of the last run) stays between them. The Results screen needs a
+run: `run_small` makes the small run of the end-to-end path (the default scenario, two seeds of the list, A and C), because the gate does not time a run of twenty seeds.
+"""
+from __future__ import annotations
+
+from contextlib import contextmanager
+
+from qa_checks import VIEWPORTS
+from qa_lab_helpers import SMALL_RUN
+
+
+FINAL_MS = 120_000  # how long a browser may take to finish the check (Firefox and WebKit are the slower ones)
+
+
+@contextmanager
+def open_lab(browser, url, size=VIEWPORTS["1440"], scheme="light", reference=None, init_script=None):
+    """A fresh context (a cold load), the page opened, with its console errors and request URLs. `reference`: None keeps the real reference.json; a str replaces its body; an int
+    answers with that HTTP status (the page must say the check could not run). `init_script` runs in the page before any of its own code."""
+    ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, color_scheme=scheme, locale="en-US")
+    try:
+        if init_script:
+            ctx.add_init_script(init_script)
+        page = ctx.new_page()
+        errors: list[str] = []
+        requests: list[str] = []
+        page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+        page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
+        page.on("request", lambda r: requests.append(r.url))
+        if reference is not None:
+            if isinstance(reference, int):
+                page.route("**/reference.json", lambda route: route.fulfill(status=reference, body="not found"))
+            else:
+                page.route("**/reference.json", lambda route: route.fulfill(status=200, content_type="application/json", body=reference))
+        page.goto(url, wait_until="load")
+        yield page, errors, requests
+    finally:
+        ctx.close()
+
+
+def wait_final(page, timeout=FINAL_MS) -> dict:
+    """Wait until the Worker has answered ready and the check has left `pending`; return its state, detail, banner text and the whole body text. Home must be the screen shown."""
+    page.wait_for_selector("#main[data-ready=true]", timeout=timeout)
+    page.wait_for_function("() => { const c = document.querySelector('#check-chip'); return !!c && c.dataset.checkState !== 'pending'; }", timeout=timeout)
+    page.wait_for_selector("[data-result]", timeout=timeout)
+    return page.evaluate("""() => { const c = document.querySelector('#check-chip');
+        return {state: c.dataset.checkState, detail: JSON.parse(c.dataset.detail),
+                banner: document.querySelector('#check-banner').innerText.trim(), body: document.body.innerText}; }""")
+
+
+def go(page, screen: str) -> None:
+    """Follow the navigation link of a screen, as a reader does; the state of the page stays."""
+    page.click(f"#nav-{screen}")
+    page.wait_for_selector(f"#main[data-screen={screen}]", timeout=10_000)
+    page.wait_for_timeout(60)
+
+
+def wait_run(page, timeout=FINAL_MS) -> None:
+    """Wait for the run in flight to end: its status appears when Run is pressed and goes when the result, the refusal or the cancel arrives."""
+    page.wait_for_selector("#run-status", state="attached", timeout=5_000)
+    page.wait_for_selector("#run-status", state="detached", timeout=timeout)
+
+
+def set_architectures(page, wanted) -> None:
+    for arch in ("a_manual", "b_lims_lite", "c_context"):
+        page.set_checked(f"#arch-{arch}", arch in wanted)
+
+
+def run_small(page) -> str:
+    """The small run of the end-to-end path, started from Setup like a reader does it; returns the seeds as the form held them. The page ends on Results with the result shown."""
+    go(page, "setup")
+    page.wait_for_selector("#run:not([disabled])", timeout=30_000)
+    page.fill("#seed-count", str(SMALL_RUN["seeds"]))
+    set_architectures(page, SMALL_RUN["architectures"])
+    seeds = page.input_value("#seeds")
+    page.click("#run")
+    wait_run(page)
+    page.wait_for_selector("[data-result][data-report]", timeout=10_000)
+    return seeds
+
+
+def set_lang(page, lang: str) -> None:
+    if not (page.evaluate("document.documentElement.lang") or "").lower().startswith(lang):
+        page.click("#lang-toggle")
+    page.wait_for_function("l => document.documentElement.lang.toLowerCase().startsWith(l)", arg=lang, timeout=3000)
+
+
+def apply_state(page, theme: str, lang: str) -> list[str]:
+    """Drive the controls like a reader; return the contract violations seen on the way."""
+    problems = []
+    page.select_option("#theme-select", theme)
+    set_lang(page, lang)
+    page.wait_for_timeout(150)
+    shown = page.evaluate("document.documentElement.dataset.theme || ''")
+    if theme in ("light", "dark") and shown != theme:
+        problems.append(f"theme {theme}: data-theme is '{shown}'")
+    if theme == "auto" and shown:
+        problems.append(f"theme auto: data-theme should be absent, is '{shown}'")
+    return problems
+
+
+NUMBERS_JS = """() => {
+  const out = [], walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const el = n.parentElement;
+    if (!el || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(el.tagName) || !/\\d/.test(n.textContent)) continue;
+    out.push({text: (n.textContent.match(/.{0,30}\\d+.{0,30}/s) || [n.textContent])[0].trim(), marked: !!el.closest('[data-ref],[data-result],[data-label]'),
+              where: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.split(/\\s+/)[0] : '')});
+  }
+  return out;
+}"""

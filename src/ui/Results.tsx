@@ -1,7 +1,7 @@
 import type { ExperimentReport } from "../../engine/src/generated/experiment_report.schema";
 import { ErrorBlock } from "./ErrorBlock.tsx";
 import { FlagLegend, FlagName } from "./Flags.tsx";
-import { ErrorTypeName, FewSeeds, Figure, MetricName } from "./Figure.tsx";
+import { ErrorTypeName, Figure, MetricName } from "./Figure.tsx";
 import { FooterInputs, ResultBlock } from "./ResultBlock.tsx";
 import { Ref } from "./Ref.tsx";
 import { RunStatus } from "./RunStatus.tsx";
@@ -81,7 +81,7 @@ export function Architecture({ block, blocks, ready }: { block: Block; blocks: B
   );
 }
 
-function Report({ state, ready }: { state: State; ready: ReadyInfo }) {
+export function Report({ state, ready }: { state: State; ready: ReadyInfo }) {
   const result = state.results;
   if (!result?.report) return null;
   const { report, footer } = result;
@@ -101,12 +101,10 @@ function Report({ state, ready }: { state: State; ready: ReadyInfo }) {
         <T k="results.interval.label" />: <Label engine>{report.interval}</Label>
       </p>
       <FooterInputs footer={footer} />
-      <FewSeeds.Provider value={!report.meets_min_seeds}>
-        {report.architectures.map((block) => (
-          <Architecture key={block.id} block={block} blocks={report.architectures} ready={ready} />
-        ))}
-        <Utilisation report={report} view={result.utilisation} ready={ready} />
-      </FewSeeds.Provider>
+      {report.architectures.map((block) => (
+        <Architecture key={block.id} block={block} blocks={report.architectures} ready={ready} />
+      ))}
+      <Utilisation report={report} view={result.utilisation} ready={ready} />
     </ResultBlock>
   );
 }

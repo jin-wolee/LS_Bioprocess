@@ -1,14 +1,9 @@
-import { createContext } from "preact";
 import type { ComponentChildren } from "preact";
-import { useContext } from "preact/hooks";
 import { hasKey } from "../i18n/index.ts";
 import { RangeBar } from "./RangeBar.tsx";
 import { fmt } from "./results_view.ts";
 import type { ReportRow } from "./results_view.ts";
 import { Label, T } from "./T.tsx";
-
-/** True while the report has fewer seeds than the minimum (A103): each spread then says so beside itself (lab_ui.md section 3). */
-export const FewSeeds = createContext(false);
 
 /** The name of a metric: its translated label, or the path the engine gave it until the dictionary has an entry (the engine adds a metric; the dictionary follows). */
 export function MetricName({ path }: { path: string }) {
@@ -27,7 +22,6 @@ export function ErrorTypeName({ type }: { type: string }) {
  * range bar. A row with no number says why instead (`status`), never a zero. All of it is an output, so the screen puts it inside a result block (invariant 3).
  */
 export function Figure({ name, row, max, label }: { name: ComponentChildren; row: ReportRow; max: number; label: string }) {
-  const few = useContext(FewSeeds);
   return (
     <div class="figure" data-metric={row.metric} data-status={row.status}>
       <div class="figure-name">{name}</div>
@@ -47,7 +41,6 @@ export function Figure({ name, row, max, label }: { name: ComponentChildren; row
         </div>
       )}
       <RangeBar row={row} max={max} name={label} />
-      {few && row.status === "reported" && <T k="results.fig.few" class="chip chip-few" data-warn="few-seeds" />}
       <div class="figure-meta">
         <T k="results.fig.seeds" />: <T k="results.fig.seeds.of" parts={{ defined: <Label>{row.n_defined}</Label>, total: <Label>{row.n_seeds}</Label> }} />
         {row.denominator && (

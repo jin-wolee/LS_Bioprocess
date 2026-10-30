@@ -60,14 +60,17 @@ ASSUMPTIONS = """assumptions:
 """
 
 
-def make_root(tmp_path, scenario_refs=("A001",), i18n_text="", ledger_assumptions=ASSUMPTIONS):
-    """A throwaway repo with two tiny ledgers, src/worker/data.ts importing one scenario file, and an optional dictionary."""
+def make_root(tmp_path, scenario_refs=("A001",), i18n_text="", ledger_assumptions=ASSUMPTIONS, bundle=None):
+    """A throwaway repo with two tiny ledgers, src/worker/data.ts importing one scenario file, and an optional dictionary. `bundle`: the `bundle` field a profile file has."""
     (tmp_path / "docs/research").mkdir(parents=True)
     (tmp_path / "docs/research/sources.yaml").write_text(SOURCES, encoding="utf-8")
     (tmp_path / "docs/research/assumptions.yaml").write_text(ledger_assumptions, encoding="utf-8")
     (tmp_path / "scenarios").mkdir()
     settings = {f"s{i}": {"value": 1, "unit": "u", "ref": ref} for i, ref in enumerate(scenario_refs)}
-    (tmp_path / "scenarios/x.json").write_text(json.dumps({"settings": settings, "stability": [{"rate": {"value": 1, "unit": "u", "ref": scenario_refs[0]}}]}), encoding="utf-8")
+    doc = {"settings": settings, "stability": [{"rate": {"value": 1, "unit": "u", "ref": scenario_refs[0]}}]}
+    if bundle is not None:
+        doc["bundle"] = bundle
+    (tmp_path / "scenarios/x.json").write_text(json.dumps(doc), encoding="utf-8")
     (tmp_path / "src/worker").mkdir(parents=True)
     (tmp_path / "src/worker/data.ts").write_text('import x from "../../scenarios/x.json";\nexport const D = x;\n', encoding="utf-8")
     if i18n_text:
@@ -113,6 +116,24 @@ def test_the_ids_are_those_of_the_files_data_ts_imports_not_of_every_scenario_fi
     root = make_root(tmp_path, ("A001",))
     (root / "scenarios/not_shipped.json").write_text(json.dumps({"settings": {"a": {"value": 1, "unit": "u", "ref": "A003"}}}), encoding="utf-8")
     assert "A003" not in view_of(root)["assumptions"]
+
+
+def test_the_bundle_field_of_a_shipped_profile_file_is_named_like_a_ref_and_its_grade_comes_from_the_ledger(tmp_path):
+    view = view_of(make_root(tmp_path, ("A001",), bundle="A002"))
+    assert view["assumptions"]["A002"] == {"grade": "S", "range": [1, 6], "unit": "analyzers", "sources": ["S001", "S002"], "provisional": True}
+    assert list(view["assumptions"]) == ["A001", "A002"]
+    assert view["sources"] == {"S001": {"verification": "main-reread"}, "S002": {"verification": "snippet"}}
+
+
+def test_a_bundle_id_in_no_ledger_fails_and_names_the_file(tmp_path):
+    with pytest.raises(SystemExit) as e:
+        view_of(make_root(tmp_path, ("A001",), bundle="A998"))
+    assert "A998" in str(e.value) and "scenarios/x.json" in str(e.value)
+
+
+def test_a_bundle_grade_follows_the_ledger_when_the_ledger_changes(tmp_path):
+    changed = ASSUMPTIONS.replace("range: [1, 6]\n    unit: analyzers\n    grade: S", "range: [1, 6]\n    unit: analyzers\n    grade: D")
+    assert view_of(make_root(tmp_path, ("A001",), bundle="A002", ledger_assumptions=changed))["assumptions"]["A002"]["grade"] == "D"
 
 
 # ---------- unknown ids and ledger errors ----------
@@ -174,3 +195,22 @@ def test_the_committed_view_names_every_ref_of_the_shipped_files():
     view = json.loads((REPO / "src/generated/ledger_view.json").read_text(encoding="utf-8"))
     known = set(view["assumptions"]) | set(view["sources"])
     assert refs and refs <= known
+
+
+# ---------- the bundles of the profile files (no second list of their ids in src/worker) ----------
+# Hand-typed from the "bundle ..., grade ..." of each profile file's description and from docs/research/assumptions.yaml (A065 to A073; A066, the mini-scale class, has no profile file yet).
+BUNDLE_GRADES = {"A065": "D", "A067": "D", "A068": "A", "A069": "D", "A070": "A", "A071": "A", "A072": "A", "A073": "A"}
+
+
+def test_the_committed_view_holds_the_grade_of_the_bundle_of_every_profile_file_the_worker_bundles():
+    view = json.loads((REPO / "src/generated/ledger_view.json").read_text(encoding="utf-8"))
+    bundles = {}
+    for path in ll.shipped_json(REPO):
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(doc, dict) and "bundle" in doc:
+            bundles[doc["bundle"]] = view["assumptions"].get(doc["bundle"], {}).get("grade")
+    assert bundles == BUNDLE_GRADES
+
+
+def test_no_second_list_of_the_bundle_ids_ships_in_src_worker():
+    assert not (REPO / "src/worker/profile_bundles.json").exists()

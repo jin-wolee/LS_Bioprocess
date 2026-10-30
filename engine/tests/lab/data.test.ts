@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { knownId } from "../../../src/ledger.ts";
-import { LAB_DATA, PROFILE_BUNDLES, SHIPPED } from "../../../src/worker/data.ts";
+import { LAB_DATA, SHIPPED } from "../../../src/worker/data.ts";
 import { LAB_PROFILES, labData } from "../support/lab_data.ts";
 import { lookup } from "../support/scenarios.ts";
 
@@ -39,11 +39,6 @@ describe("the bundled data", () => {
     expect(() => LAB_DATA.lookup("controller", "ctrl_bench")).toThrow(/no bundled controller profile/);
     expect(() => LAB_DATA.lookup("analyzer", "no_such")).toThrow(/no bundled analyzer profile no_such/);
     expect(() => LAB_DATA.lookup("staff", "hplc")).toThrow(/no bundled staff profile hplc/);
-  });
-
-  it("Given the profile files Then profile_bundles.json lists exactly the bundle each names (the ledger script reads `ref` keys, not `bundle`)", () => {
-    const named = LAB_PROFILES.map(([kind, id]) => (lookup(kind, id) as { bundle: string }).bundle).sort();
-    expect([...PROFILE_BUNDLES].sort()).toEqual(named);
   });
 });
 

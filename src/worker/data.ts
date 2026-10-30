@@ -18,7 +18,6 @@ import bLimsLite from "../../scenarios/architectures/b_lims_lite.json";
 import cContext from "../../scenarios/architectures/c_context.json";
 import evaluation from "../../scenarios/evaluation/default.json";
 import experiment1 from "../../scenarios/experiments/experiment1.json";
-import profileBundles from "./profile_bundles.json";
 import rawLayer from "./raw_layer.json";
 
 // The JSON the Worker bundles: the four scenarios of the Setup picker, the profiles they and the Setup lists can name, the dialects of the raw layer, the three architecture presets,
@@ -27,12 +26,9 @@ import rawLayer from "./raw_layer.json";
 
 const PROFILE_DOCS: readonly (Record<string, unknown> & { kind: string; profile_id: string })[] = [benchManual, microMini, pilot, allinoneAtline, hplc, splitAnalyzers, experienced, trainee];
 
-/** The bundle ids that profile_bundles.json lists (see its description: the ledger script reads `ref` keys only). */
-export const PROFILE_BUNDLES: readonly string[] = profileBundles.bundles.map((b) => b.ref);
-
 /** Every bundled document, for the tests that check what ships (the ledger ids they name). */
 export const SHIPPED: readonly unknown[] = [
-  defaultScenario, sc02, sc03, sc05, ...PROFILE_DOCS, allinoneCsv, cdsTable, counterCsv, aManual, bLimsLite, cContext, evaluation, experiment1, rawLayer, profileBundles,
+  defaultScenario, sc02, sc03, sc05, ...PROFILE_DOCS, allinoneCsv, cdsTable, counterCsv, aManual, bLimsLite, cContext, evaluation, experiment1, rawLayer,
 ];
 
 // Typed structurally: src/worker/worker.ts hands it to the lab functions as their LabData, and the compiler checks the shape there (this file may not import the engine).

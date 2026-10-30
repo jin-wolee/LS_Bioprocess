@@ -34,7 +34,6 @@ export const koResults: Record<keyof typeof enResults, string> = {
   "results.fig.denominator.count": "시드당 중앙 개수 {count}",
   "results.fig.reason": "이유",
   "results.fig.none": "수치 없음",
-  "results.fig.few": "최소 시드 수 미달",
   "results.bar.title": "{metric}: 중앙값 {median}, 범위 {lo}부터 {hi}까지",
   "results.bar.none": "{metric}: 수치 없음",
 

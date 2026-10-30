@@ -5,7 +5,8 @@
 
 Runs `npm run build:lab` first unless --no-build, serves --root over http.server on a free localhost port, drives headless Chromium (Playwright sync API) for every check and, for
 `engines`, headless Firefox and WebKit as well (the standing test of ADR-0019's claim: the check reads `identical` in each). Every browser is closed. Writes results.json,
-summary.md and shots/*.png to --out. This file is the CLI, the build and the report; the checks and the unit-tested helpers live in qa_lab_checks.py.
+summary.md and shots/*.png to --out. This file is the CLI, the build and the report; the checks live in qa_lab_checks.py (page as a whole), qa_lab_sweeps.py (screens by language and theme), qa_lab_flags.py and qa_lab_results.py,
+the browser plumbing in qa_lab_browser.py and the unit-tested helpers in qa_lab_helpers.py.
 """
 from __future__ import annotations
 
@@ -18,7 +19,10 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 from qa_checks import Result
 from qa_infographic import guarded, serve
-from qa_lab_checks import check_check, check_contrast, check_engines, check_flags, check_ko, check_load, check_matrix, check_numbers, check_results, check_size, check_time
+from qa_lab_checks import check_check, check_engines, check_load, check_size, check_time
+from qa_lab_flags import check_flags
+from qa_lab_results import check_results
+from qa_lab_sweeps import check_contrast, check_ko, check_matrix, check_numbers
 
 REPO = Path(__file__).resolve().parents[1]
 

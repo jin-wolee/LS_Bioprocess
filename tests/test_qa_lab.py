@@ -1,4 +1,4 @@
-"""Pure helpers of scripts/qa_lab_checks.py (the headless QA of the lab page, docs/design/lab_ui.md section 12).
+"""Pure helpers of scripts/qa_lab_helpers.py (the headless QA of the lab page, docs/design/lab_ui.md section 12).
 
 Expected values are hand arithmetic, never taken from the code under test. The browser checks themselves run through `uv run python scripts/qa_lab.py`.
 """
@@ -13,7 +13,8 @@ import pytest
 from helpers import REPO
 
 sys.path.insert(0, str(REPO / "scripts"))
-import qa_lab_checks as qc  # noqa: E402
+import qa_lab_helpers as qc  # noqa: E402
+from qa_checks import VIEWPORTS  # noqa: E402
 
 BASE = "http://127.0.0.1:8123/"
 
@@ -144,7 +145,7 @@ def test_number_offenders_ignores_whitespace_and_empty_nodes():
 # ---------- themes ----------
 def test_the_lab_sweeps_four_themes_and_two_viewports():
     assert [t[0] for t in qc.LAB_THEMES] == ["light", "dark", "auto-light", "auto-dark"]
-    assert qc.VIEWPORTS == {"1440": (1440, 900), "390": (390, 844)}
+    assert VIEWPORTS == {"1440": (1440, 900), "390": (390, 844)}
 
 
 # ---------- the flags check (lab_ui.md section 11) ----------
@@ -239,3 +240,31 @@ def test_the_small_run_is_two_seeds_of_the_list_with_architectures_a_and_c():
 
 def test_screens_are_the_four_that_exist_now():
     assert qc.SCREENS == ["home", "setup", "results", "notes"]
+
+
+# ---------- a Ref inside running text stays on the line of its sentence (lab_ui.md section 6) ----------
+REF = {"text": "A103", "top": 100, "bottom": 124}
+
+
+def test_refs_off_their_line_accepts_text_before_and_after_on_the_line_of_the_ref():
+    assert qc.refs_off_their_line([{**REF, "before": {"top": 102, "bottom": 120}, "after": {"top": 102, "bottom": 120}}]) == []
+
+
+def test_refs_off_their_line_accepts_a_ref_at_the_start_or_end_of_its_text():
+    assert qc.refs_off_their_line([{**REF, "before": None, "after": {"top": 102, "bottom": 120}}, {**REF, "before": {"top": 102, "bottom": 120}, "after": None}]) == []
+
+
+def test_refs_off_their_line_names_text_before_the_ref_on_the_line_above():
+    problems = qc.refs_off_their_line([{**REF, "before": {"top": 70, "bottom": 90}, "after": {"top": 102, "bottom": 120}}])
+    assert len(problems) == 1 and "A103" in problems[0] and "before" in problems[0]
+
+
+def test_refs_off_their_line_names_text_after_the_ref_on_the_line_below():
+    problems = qc.refs_off_their_line([{**REF, "before": {"top": 102, "bottom": 120}, "after": {"top": 130, "bottom": 150}}])
+    assert len(problems) == 1 and "after" in problems[0]
+
+
+def test_refs_off_their_line_names_both_sides_of_a_block_level_ref():
+    # the defect of the S3c review: the ref on a line of its own, the sentence in three lines
+    problems = qc.refs_off_their_line([{**REF, "before": {"top": 70, "bottom": 90}, "after": {"top": 130, "bottom": 150}}])
+    assert len(problems) == 2

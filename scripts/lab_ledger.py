@@ -4,7 +4,7 @@
     uv run python scripts/lab_ledger.py --write    # write src/generated/ledger_view.json
     uv run python scripts/lab_ledger.py --check    # fail when the committed file differs from a fresh generation (npm run build:lab runs this)
 
-The ids are exactly those that the shipped JSON (the files src/worker/data.ts imports) and the dictionaries (src/i18n/*.ts) name; an id that is in no ledger is an error.
+The ids are exactly those that the shipped JSON (the files src/worker/data.ts imports: the `ref` of every parameter and the `bundle` of every profile file) and the dictionaries (src/i18n/*.ts) name; an id that is in no ledger is an error.
 An A### is followed to its S### sources, and it is provisional when any of them is below `main-reread` (invariant 3). The ledgers are never edited here.
 """
 from __future__ import annotations
@@ -36,10 +36,10 @@ def shipped_json(root: Path) -> list[Path]:
 
 
 def refs_in(doc, found: set[str]) -> None:
-    """Every `ref` value of a parsed JSON document ({value, unit, ref} parameters, ADR-0012)."""
+    """Every `ref` value of a parsed JSON document ({value, unit, ref} parameters, ADR-0012) and the `bundle` of a profile file."""
     if isinstance(doc, dict):
         for key, value in doc.items():
-            if key == "ref" and isinstance(value, str):
+            if key in ("ref", "bundle") and isinstance(value, str):
                 found.add(value)
             else:
                 refs_in(value, found)

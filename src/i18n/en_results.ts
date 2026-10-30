@@ -33,7 +33,6 @@ export const enResults = {
   "results.fig.denominator.count": "median count per seed {count}",
   "results.fig.reason": "reason",
   "results.fig.none": "no figure",
-  "results.fig.few": "below the seed minimum",
   "results.bar.title": "{metric}: median {median}, range {lo} to {hi}",
   "results.bar.none": "{metric}: no figure",
 
