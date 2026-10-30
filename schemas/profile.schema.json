@@ -2,14 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "profile.schema.json",
   "title": "Profile",
-  "description": "A bioreactor, analyzer or staff profile (data, not code). Every numeric parameter is {value, unit, ref}; ref resolves to a ledger id (ADR-0012). profile_id is a free string: ids of profiles are never enumerated in a schema or in generated types.",
+  "description": "A bioreactor, analyzer, staff or break-out event-type profile (data, not code). Every numeric parameter is {value, unit, ref}; ref resolves to a ledger id (ADR-0012). profile_id is a free string: ids of profiles are never enumerated in a schema or in generated types.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "profile_id", "kind", "params"],
   "properties": {
     "schema_version": { "type": "string", "const": "1" },
     "profile_id": { "type": "string", "minLength": 1 },
-    "kind": { "type": "string", "enum": ["bioreactor", "analyzer", "staff"] },
+    "kind": { "type": "string", "enum": ["bioreactor", "analyzer", "staff", "breakout"] },
     "description": { "type": "string" },
     "bundle": { "type": "string", "pattern": "^A[0-9]{3}$", "description": "The ledger bundle this profile is (A065 to A073, ADR-0012): the lab reads the bundle grade from it. Data for the page; the engine does not read it." },
     "route": {
@@ -23,6 +23,25 @@
       "type": "object",
       "additionalProperties": { "type": "string", "enum": ["open", "closed"] }
     },
+    "contamination_type": { "type": "string", "minLength": 1, "description": "Break-out profiles: the type the event reports in the truth log (spec 11.4). Data: the engine never branches on it." },
+    "alarm_signal": { "type": "string", "enum": ["DO", "pH"], "description": "Break-out profiles: the signal whose true value reaching its alarm limit is the first signal (spec 11.8.2 rule S1). It must be one of `signals`; the sign of its change says low or high." },
+    "signals": {
+      "description": "Break-out profiles: the signals that move over the ramp that ends at the first signal, and the param that holds the change of each from its set point (unit % air saturation for DO, pH for pH).",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/signal_change" }
+    },
+    "tests": {
+      "description": "Break-out profiles: the confirming tests, in aliquot order. Names refer to keys of params, or (volume, portions) to keys of scenario_inputs.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/confirm_test" }
+    },
+    "scenario_inputs": {
+      "description": "Break-out profiles: inputs the ledger gives no number for, which the scenario must supply (a scenario without one is refused by name). Each has the unit the engine expects and the ledger id of the entry that describes it.",
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/scenario_input" }
+    },
     "params": {
       "type": "object",
       "minProperties": 1,
@@ -30,6 +49,38 @@
     }
   },
   "$defs": {
+    "signal_change": {
+      "title": "SignalChange",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signal", "change"],
+      "properties": {
+        "signal": { "type": "string", "enum": ["DO", "pH"] },
+        "change": { "type": "string", "minLength": 1 }
+      }
+    },
+    "confirm_test": {
+      "title": "ConfirmTest",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test", "turnaround", "volume"],
+      "properties": {
+        "test": { "type": "string", "minLength": 1 },
+        "turnaround": { "type": "string", "minLength": 1, "description": "The param that holds the turnaround, in days." },
+        "volume": { "type": "string", "minLength": 1, "description": "The param or scenario input that holds the volume of one portion, in mL." },
+        "portions": { "type": "string", "minLength": 1, "description": "The param that holds how many portions the test takes (unit media); absent: one." }
+      }
+    },
+    "scenario_input": {
+      "title": "ScenarioInput",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "ref"],
+      "properties": {
+        "unit": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string", "pattern": "^A\\d{3}$|^S\\d{3}$" }
+      }
+    },
     "stage": {
       "title": "Stage",
       "type": "object",

@@ -1,5 +1,9 @@
 import { runL3 } from "./analysis.ts";
 import type { L3Input, L3Run, L3Window } from "./analysis.ts";
+import { breakoutEvents } from "./breakout/events.ts";
+import type { BreakoutPlan } from "./breakout/plan.ts";
+import { checkStops, scriptOf, withScript } from "./breakout/script.ts";
+import { applySignals } from "./breakout/signal.ts";
 import type { Event } from "./generated/event.schema";
 import { buildInstruments } from "./instrument.ts";
 import type { Instruments } from "./instrument.ts";
@@ -41,6 +45,8 @@ export interface ScenarioRun {
   samples: SampleRecord[];
   operators: Operator[];
   process: ProcessRun;
+  /** The script of the break-out event, when the scenario has one: truth side, never handed to a recorder. */
+  breakout?: BreakoutPlan;
   l3Input: L3Input;
   /** The analyzer profile of each instrument, by instrument id (spec 4.5.6): plain data for the evaluator, which reads utilisation per profile from it. */
   instrumentProfiles: Record<string, string>;
@@ -92,8 +98,14 @@ const buildL3Input = (cfg: ScenarioConfig, samples: readonly SampleRecord[]): L3
 export const runScenario = (cfg: ScenarioConfig, opts: RunOptions = {}): ScenarioRun => {
   if (cfg.feedback) throw new Error("feedback: the closed loop (experiment 2) is not built in S1b; set feedback to false");
   const rng = createRng(opts.onKey);
-  const proc = runProcess(cfg.process, cfg.seed, rng);
+  const bo = cfg.breakout && { b: cfg.breakout, plan: scriptOf(cfg, cfg.breakout) };
+  const proc = runProcess(bo ? withScript(cfg.process, bo.plan) : cfg.process, cfg.seed, rng);
+  if (bo) {
+    checkStops(cfg.scenario_id, bo.plan, proc);
+    applySignals(proc.sensors, bo.plan, bo.b);
+  }
   const sampling = runSampling(cfg.sampling, proc, cfg.seed, rng);
+  const scripted = bo ? breakoutEvents(bo.b, bo.plan, cfg.seed, cfg.sampling, proc, sampling, rng) : [];
   const input = buildL3Input(cfg, sampling.samples);
   const instruments = buildInstruments(cfg.analysis.instrument, input.analyzers.map((x) => x.id), cfg.seed, rng);
   const measure = makeMeasure({
@@ -115,6 +127,6 @@ export const runScenario = (cfg: ScenarioConfig, opts: RunOptions = {}): Scenari
 
   // one log: the header, then L1, L2, the instrument calibrations and the L3 events in time order; at an equal instant the layers keep this order
   const [header, ...l3Events] = l3.events as [Event, ...Event[]];
-  const events = [header, ...[...proc.events, ...sampling.events, ...instruments.events, ...l3Events].sort((a, b) => a.t - b.t)];
-  return { events, observable: observe(events), sensors: proc.sensors, observableSensors: observeSensors(proc.sensors), samples: sampling.samples, operators: sampling.operators, process: proc, l3Input: input, instrumentProfiles: Object.fromEntries(cfg.analysis.instruments.map((i) => [i.id, i.profile])), runs: l3.runs, instruments };
+  const events = [header, ...[...proc.events, ...sampling.events, ...scripted, ...instruments.events, ...l3Events].sort((a, b) => a.t - b.t)];
+  return { events, observable: observe(events), sensors: proc.sensors, observableSensors: observeSensors(proc.sensors), samples: sampling.samples, operators: sampling.operators, process: proc, ...(bo && { breakout: bo.plan }), l3Input: input, instrumentProfiles: Object.fromEntries(cfg.analysis.instruments.map((i) => [i.id, i.profile])), runs: l3.runs, instruments };
 };

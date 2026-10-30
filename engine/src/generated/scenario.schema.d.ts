@@ -21,7 +21,7 @@ export interface Scenario {
   sampling_plan?: "burst" | "staggered";
   label_method?: "handwritten" | "preprinted_barcode" | "issued_at_draw";
   /**
-   * The raw device layer of ADR-0014 (spec section 2.4). Absent means false: every earlier scenario keeps a byte-identical event log. Not a ninth flag.
+   * The raw device layer of ADR-0014 (spec section 2.4). Absent means false: every earlier scenario keeps a byte-identical event log. Not one of the ten flags.
    */
   raw_layer?: boolean;
   /**
@@ -89,6 +89,83 @@ export interface Scenario {
     offset?: Param;
     tau?: Param;
   }[];
+  /**
+   * One scripted break-out event (spec 11.4, 11.8; ADR-0013): a hidden contamination with an origin, the shared lots and equipment, the scripted response and the confirming samples. Absent means no event: every earlier scenario keeps a byte-identical event log. Every instant and delay is in hours from scenario start; every number is {value, unit, ref}. `lag` is the time from the onset to the first signal (A139) and `ramp` the length of the linear signal ramp that ends at it (A141), both in hours; absent, the profile's values apply, and the ramp may not exceed the lag. The delays of `response` (A176), the topology (A177) and the inputs the event-type profile names (for the bacterial profile the bioburden volume, A225) have no default and are required: a scenario that omits one is refused, naming it.
+   */
+  breakout?: {
+    /**
+     * The event-type profile under scenarios/profiles/breakout/ (for example bacterial); data, never branched on by id.
+     */
+    profile: string;
+    lag?: Param;
+    ramp?: Param;
+    /**
+     * Where the contamination enters (spec 11.4 origins, 11.8.2 rule S1). seed_lot and medium_lot name a declared lot, shared_equipment a declared item; contaminated_at is the hidden instant from which the item is contaminated. unit_equipment is a unit's own equipment, with a scenario instant. sampling names the draw (a sample id) after which the organism enters the unit.
+     */
+    origin:
+      | {
+          kind: "seed_lot" | "medium_lot";
+          lot_id: string;
+          contaminated_at: Param;
+        }
+      | {
+          kind: "shared_equipment";
+          equipment_id: string;
+          contaminated_at: Param;
+        }
+      | {
+          kind: "unit_equipment";
+          unit_id: string;
+          at: Param;
+        }
+      | {
+          kind: "sampling";
+          sample_id: string;
+        };
+    /**
+     * A177 (widened to equipment): which units consume which lot or use which equipment item, and when. A seed lot is consumed at the inoculation of its unit (no `at`); a medium lot and an equipment use carry `at`. A unit has at most one seed lot. A consumption or use at or after the end of its unit (a stop or a harvest) leaves no record.
+     */
+    topology: {
+      lots?: {
+        lot_id: string;
+        kind: "seed" | "medium";
+        prepared_at: Param;
+      }[];
+      equipment?: {
+        equipment_id: string;
+        name: string;
+      }[];
+      consumption?: {
+        unit_id: string;
+        lot_id: string;
+        at?: Param;
+      }[];
+      use?: {
+        unit_id: string;
+        equipment_id: string;
+        at: Param;
+      }[];
+    };
+    /**
+     * A176, the two delays, both required with no default and identical across architectures: from the first signal to the scripted response (the stop of each affected unit and the confirming draws), and from a positive result to the hold or quarantine action.
+     */
+    response: {
+      signal_to_response: Param;
+      positive_to_hold: Param;
+    };
+    /**
+     * The units that get one confirming sample at the first decision instant (11.8.2 rule S2).
+     *
+     * @minItems 1
+     */
+    confirm: [string, ...string[]];
+    /**
+     * The scenario inputs the profile declares and gives no default (for the bacterial profile bioburden_sample_volume_ml, A225).
+     */
+    inputs?: {
+      [k: string]: Param;
+    };
+  };
 }
 export interface Param {
   value: number;

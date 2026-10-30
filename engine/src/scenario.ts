@@ -1,3 +1,6 @@
+import { loadBreakout } from "./breakout/config.ts";
+import type { BreakoutConfig } from "./breakout/config.ts";
+import { planBreakout } from "./breakout/plan.ts";
 import { wholeSeconds } from "./clock.ts";
 import type { Param } from "./generated/profile.schema";
 import type { Scenario } from "./generated/scenario.schema";
@@ -64,6 +67,8 @@ export interface ScenarioConfig {
   feedback: boolean;
   /** Present only with `raw_layer` true; absent leaves every earlier scenario exactly as it was. */
   raw?: RawSettings;
+  /** The break-out event of the scenario (spec 11.4, 11.8): present only when the scenario has a `breakout` block; absent leaves every earlier scenario exactly as it was. */
+  breakout?: BreakoutConfig;
   process: ProcessConfig;
   sampling: SamplingConfig;
   analysis: AnalysisConfig;
@@ -119,6 +124,8 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
   if (bays && base.phLoop) throw new Error(`scenario ${sc.scenario_id}: bay_profiles cannot be combined with the pH loop of experiment 2, which reads one container for every bay (spec section 4.5)`);
   const proc = bays ? { ...base, bayVolume_l: bays.map((b) => workingVolume(b.params)) } : base;
   const rawLayer = rawSettings(sc, settings, proc);
+  const breakout = sc.breakout === undefined ? undefined : loadBreakout(sc.breakout, sc.scenario_id, lookup);
+  if (breakout) planBreakout(breakout, sc.scenario_id, proc); // the refusals that need the units; the run plans again for the script
   const lots = (sc.lot_changes ?? []).map((l) => ({ analyzer: l.analyzer, at_s: minutes(l.at) }));
   const v = readAll(settings, { analyzers: ["analyzer_count", "analyzers"], rerun: ["rerun_probability", "fraction"], qcStart: ["qc_window_start_min", "min"], qcLength: ["qc_window_length_min", "min"] });
   const fleet = loadFleet(sc.scenario_id, sc.analyzer_profiles, analyzer, v.analyzers, lookup, routeConfig);
@@ -130,6 +137,7 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
     policy: oneOf(sc.queue_policy, ["fifo", "edf"], "fifo", "queue_policy"),
     feedback: sc.feedback ?? false,
     ...(rawLayer && { raw: rawLayer }),
+    ...(breakout && { breakout }),
     process: proc,
     sampling: { ...samplingConfig(settings, staff.params, bio.params, (fleet.plan[0] as StageCfg).storage, plan, label), ...(bays && { bays: bays.map((b) => drawVolumes(settings, b.params)) }) },
     analysis: {

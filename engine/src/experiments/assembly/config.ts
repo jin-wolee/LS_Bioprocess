@@ -7,7 +7,7 @@ export interface ExperimentConfig {
   scenario: string;
   /** Architecture presets by file name without extension, in report order. */
   presets: string[];
-  /** The preset that is ablated flag by flag (spec section 5: C with exactly one flag off, eight runs). */
+  /** The preset that is ablated flag by flag (spec section 5: C with exactly one flag off, ten runs). */
   ablations_of: string;
   seeds: number[];
 }

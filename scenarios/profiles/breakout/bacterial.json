@@ -1,0 +1,30 @@
+{
+  "schema_version": "1",
+  "profile_id": "bacterial",
+  "kind": "breakout",
+  "description": "Bacterial contamination (spec 11.4, 11.8.2): DO falls to its low alarm and pH falls over a ramp that ends at the first signal, the lag runs from the onset to that signal, and the confirming tests are bioburden and sterility. Bundle A158 (detection: signals first, confirming tests days later) with the origin bundle A157 chosen by the scenario.",
+  "bundle": "A158",
+  "contamination_type": "bacterial",
+  "alarm_signal": "DO",
+  "signals": [
+    { "signal": "DO", "change": "do_alarm_offset_pct" },
+    { "signal": "pH", "change": "ph_change" }
+  ],
+  "tests": [
+    { "test": "bioburden", "turnaround": "bioburden_turnaround_d", "volume": "bioburden_sample_volume_ml" },
+    { "test": "sterility", "turnaround": "sterility_turnaround_d", "volume": "sterility_volume_ml_per_medium", "portions": "sterility_media" }
+  ],
+  "scenario_inputs": {
+    "bioburden_sample_volume_ml": { "unit": "mL", "ref": "A225" }
+  },
+  "params": {
+    "onset_to_signal_lag_h": {"value": 12, "unit": "h", "ref": "A139"},
+    "signal_ramp_h": {"value": 6, "unit": "h", "ref": "A141"},
+    "do_alarm_offset_pct": {"value": -10, "unit": "% air saturation", "ref": "A197"},
+    "ph_change": {"value": -0.3, "unit": "pH", "ref": "A141"},
+    "bioburden_turnaround_d": {"value": 5, "unit": "d", "ref": "A142"},
+    "sterility_turnaround_d": {"value": 14, "unit": "d", "ref": "A143"},
+    "sterility_volume_ml_per_medium": {"value": 20, "unit": "mL", "ref": "A148"},
+    "sterility_media": {"value": 2, "unit": "media", "ref": "A148"}
+  }
+}

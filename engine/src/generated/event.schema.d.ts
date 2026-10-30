@@ -31,7 +31,12 @@ export type Event =
   | SampleReceived
   | AliquotCreated
   | DrawSkippedVolumeBudget
-  | CalibrationRecorded;
+  | CalibrationRecorded
+  | ContaminationOnset
+  | SignalObserved
+  | DeviationOpened
+  | ConfirmSampleDrawn
+  | ConfirmResult;
 export type Time = number;
 export type Ident = string;
 export type Count = number;
@@ -143,16 +148,28 @@ export interface Inoculation {
   unit_id: Ident;
   batch_id: Ident;
   density_e6_per_ml: number;
+  /**
+   * The seed lot this inoculation consumes (break-out batch 2, spec 11.8.5). Present only for a unit named in the topology of a break-out block; absent in every other scenario.
+   */
+  seed_lot_id?: string;
 }
 export interface ProcessEvent {
   type: "process_event";
   t: Time;
   unit_id: Ident;
   batch_id: Ident;
-  kind: "feed" | "temperature_shift" | "alarm" | "harvest";
+  kind: "feed" | "temperature_shift" | "alarm" | "harvest" | "medium_addition" | "equipment_use" | "unit_stopped";
   source: "rule" | "scheduled" | "scripted";
   amount?: number;
   amount_unit?: string;
+  /**
+   * The medium lot a medium_addition consumes (break-out batch 2).
+   */
+  lot_id?: string;
+  /**
+   * The shared equipment item an equipment_use uses (break-out batch 2).
+   */
+  equipment_id?: string;
 }
 export interface SensorTick {
   type: "sensor_tick";
@@ -215,4 +232,76 @@ export interface CalibrationRecorded {
   analyzer: Ident;
   lot_id: Ident;
   drift_before_pct: number;
+}
+/**
+ * Truth only (spec 11.8.2 rule S6): the instant a unit becomes contaminated, with the type and the origin. The whole event is hidden: observe() drops its type, so no recorder ever reads it; only the evaluator does. For a sampling origin origin_id is the sample id of the named draw; for a unit's own equipment it is the unit id.
+ */
+export interface ContaminationOnset {
+  type: "contamination_onset";
+  t: Time;
+  unit_id: Ident;
+  batch_id: Ident;
+  contamination_type: Ident;
+  origin_kind: "seed_lot" | "medium_lot" | "shared_equipment" | "unit_equipment" | "sampling";
+  origin_id: Ident;
+}
+/**
+ * The first process signal of a unit (spec 11.4): the instant the true value of the signal reaches its alarm limit (11.8.2 rule S1). Observable.
+ */
+export interface SignalObserved {
+  type: "signal_observed";
+  t: Time;
+  unit_id: Ident;
+  batch_id: Ident;
+  signal: "pH" | "DO" | "temperature";
+  limit: "low" | "high";
+}
+/**
+ * One deviation per break-out event, opened at the first signal (11.8.2 rule S2). unit_id and batch_id are those of the signalling unit. Observable; the written record (estimated onset, assumed lag) is made by the investigation on the recorded side.
+ */
+export interface DeviationOpened {
+  type: "deviation_opened";
+  t: Time;
+  deviation_id: Ident;
+  unit_id: Ident;
+  batch_id: Ident;
+  trigger: "signal";
+}
+/**
+ * The one confirming sample of a unit, drawn at the first decision instant (11.8.2 rules S2, S3), with one aliquot per confirming test. volume_ul is the sum of the aliquot volumes. A draw that exceeds the volume budget is logged as draw_skipped_volume_budget instead. Observable.
+ */
+export interface ConfirmSampleDrawn {
+  type: "confirm_sample_drawn";
+  t: Time;
+  sample_id: Ident;
+  unit_id: Ident;
+  batch_id: Ident;
+  operator_id: Ident;
+  volume_ul: number;
+  /**
+   * @minItems 1
+   */
+  tests: [
+    {
+      aliquot_id: Ident;
+      test: Ident;
+      volume_ul: number;
+    },
+    ...{
+      aliquot_id: Ident;
+      test: Ident;
+      volume_ul: number;
+    }[]
+  ];
+}
+/**
+ * The result of one confirming test, at the draw plus its turnaround (11.8.2 rule S3). The tests report the truth, so the outcome is observable as a result. No numeric value.
+ */
+export interface ConfirmResult {
+  type: "confirm_result";
+  t: Time;
+  sample_id: Ident;
+  aliquot_id: Ident;
+  test: Ident;
+  outcome: "detected" | "not_detected";
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runScenario } from "../src/run.ts";
-import type { Profile } from "../src/profiles.ts";
+import type { Profile, ProfileKind } from "../src/profiles.ts";
 import { loadScenario } from "../src/scenario.ts";
 import { configOf, lookup, patched, rawScenario, SMALL } from "./support/scenarios.ts";
 
@@ -39,7 +39,7 @@ describe("bay_profiles and analyzer_profiles: ids", () => {
   });
 
   it("Given a lookup that returns a profile of another kind Then the existing message of the profile loader stands", () => {
-    const byIdOnly = (kind: "bioreactor" | "analyzer" | "staff", id: string): unknown => {
+    const byIdOnly = (kind: ProfileKind, id: string): unknown => {
       if (["experienced", "trainee"].includes(id) || kind === "staff") return lookup("staff", id);
       return lookup(id === "bench_manual" ? "bioreactor" : "analyzer", id);
     };
@@ -60,7 +60,7 @@ describe("analyzer_profiles: the length is analyzer_count", () => {
 describe("analyzer_profiles: groups, requests and analytes", () => {
   it("Given two profiles that name the same group Then the load is refused (service time sits on the visit, so one pool cannot serve two profiles)", () => {
     const fast = { ...(lookup("analyzer", AIO) as Profile), profile_id: "allinone_fast" };
-    const withFast = (kind: "bioreactor" | "analyzer" | "staff", id: string): unknown => (id === "allinone_fast" ? fast : lookup(kind, id));
+    const withFast = (kind: ProfileKind, id: string): unknown => (id === "allinone_fast" ? fast : lookup(kind, id));
     const doc = patched(rawScenario("default"), { settings: SMALL, fields: { analyzer_profiles: [AIO, "allinone_fast"] } as never });
     expect(() => loadScenario(doc, withFast)).toThrow("scenario default: analyzer profiles allinone_atline and allinone_fast both name the group AIO; a group is the pool of one stage of one profile, so the names must differ");
   });

@@ -26,7 +26,12 @@
     { "$ref": "#/$defs/sample_received" },
     { "$ref": "#/$defs/aliquot_created" },
     { "$ref": "#/$defs/draw_skipped_volume_budget" },
-    { "$ref": "#/$defs/calibration_recorded" }
+    { "$ref": "#/$defs/calibration_recorded" },
+    { "$ref": "#/$defs/contamination_onset" },
+    { "$ref": "#/$defs/signal_observed" },
+    { "$ref": "#/$defs/deviation_opened" },
+    { "$ref": "#/$defs/confirm_sample_drawn" },
+    { "$ref": "#/$defs/confirm_result" }
   ],
   "$defs": {
     "time": { "type": "integer", "minimum": 0 },
@@ -205,7 +210,8 @@
         "t": { "$ref": "#/$defs/time" },
         "unit_id": { "$ref": "#/$defs/ident" },
         "batch_id": { "$ref": "#/$defs/ident" },
-        "density_e6_per_ml": { "type": "number", "exclusiveMinimum": 0 }
+        "density_e6_per_ml": { "type": "number", "exclusiveMinimum": 0 },
+        "seed_lot_id": { "$ref": "#/$defs/ident", "description": "The seed lot this inoculation consumes (break-out batch 2, spec 11.8.5). Present only for a unit named in the topology of a break-out block; absent in every other scenario." }
       }
     },
     "process_event": {
@@ -218,10 +224,12 @@
         "t": { "$ref": "#/$defs/time" },
         "unit_id": { "$ref": "#/$defs/ident" },
         "batch_id": { "$ref": "#/$defs/ident" },
-        "kind": { "type": "string", "enum": ["feed", "temperature_shift", "alarm", "harvest"] },
+        "kind": { "type": "string", "enum": ["feed", "temperature_shift", "alarm", "harvest", "medium_addition", "equipment_use", "unit_stopped"] },
         "source": { "type": "string", "enum": ["rule", "scheduled", "scripted"] },
         "amount": { "type": "number" },
-        "amount_unit": { "type": "string", "minLength": 1 }
+        "amount_unit": { "type": "string", "minLength": 1 },
+        "lot_id": { "$ref": "#/$defs/ident", "description": "The medium lot a medium_addition consumes (break-out batch 2)." },
+        "equipment_id": { "$ref": "#/$defs/ident", "description": "The shared equipment item an equipment_use uses (break-out batch 2)." }
       }
     },
     "sensor_tick": {
@@ -330,6 +338,98 @@
         "analyzer": { "$ref": "#/$defs/ident" },
         "lot_id": { "$ref": "#/$defs/ident" },
         "drift_before_pct": { "type": "number", "x-visibility": "hidden" }
+      }
+    },
+    "contamination_onset": {
+      "title": "ContaminationOnset",
+      "description": "Truth only (spec 11.8.2 rule S6): the instant a unit becomes contaminated, with the type and the origin. The whole event is hidden: observe() drops its type, so no recorder ever reads it; only the evaluator does. For a sampling origin origin_id is the sample id of the named draw; for a unit's own equipment it is the unit id.",
+      "x-visibility": "hidden",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "unit_id", "batch_id", "contamination_type", "origin_kind", "origin_id"],
+      "properties": {
+        "type": { "type": "string", "const": "contamination_onset" },
+        "t": { "$ref": "#/$defs/time" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" },
+        "contamination_type": { "$ref": "#/$defs/ident" },
+        "origin_kind": { "type": "string", "enum": ["seed_lot", "medium_lot", "shared_equipment", "unit_equipment", "sampling"] },
+        "origin_id": { "$ref": "#/$defs/ident" }
+      }
+    },
+    "signal_observed": {
+      "title": "SignalObserved",
+      "description": "The first process signal of a unit (spec 11.4): the instant the true value of the signal reaches its alarm limit (11.8.2 rule S1). Observable.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "unit_id", "batch_id", "signal", "limit"],
+      "properties": {
+        "type": { "type": "string", "const": "signal_observed" },
+        "t": { "$ref": "#/$defs/time" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" },
+        "signal": { "type": "string", "enum": ["pH", "DO", "temperature"] },
+        "limit": { "type": "string", "enum": ["low", "high"] }
+      }
+    },
+    "deviation_opened": {
+      "title": "DeviationOpened",
+      "description": "One deviation per break-out event, opened at the first signal (11.8.2 rule S2). unit_id and batch_id are those of the signalling unit. Observable; the written record (estimated onset, assumed lag) is made by the investigation on the recorded side.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "deviation_id", "unit_id", "batch_id", "trigger"],
+      "properties": {
+        "type": { "type": "string", "const": "deviation_opened" },
+        "t": { "$ref": "#/$defs/time" },
+        "deviation_id": { "$ref": "#/$defs/ident" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" },
+        "trigger": { "type": "string", "enum": ["signal"] }
+      }
+    },
+    "confirm_sample_drawn": {
+      "title": "ConfirmSampleDrawn",
+      "description": "The one confirming sample of a unit, drawn at the first decision instant (11.8.2 rules S2, S3), with one aliquot per confirming test. volume_ul is the sum of the aliquot volumes. A draw that exceeds the volume budget is logged as draw_skipped_volume_budget instead. Observable.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "sample_id", "unit_id", "batch_id", "operator_id", "volume_ul", "tests"],
+      "properties": {
+        "type": { "type": "string", "const": "confirm_sample_drawn" },
+        "t": { "$ref": "#/$defs/time" },
+        "sample_id": { "$ref": "#/$defs/ident" },
+        "unit_id": { "$ref": "#/$defs/ident" },
+        "batch_id": { "$ref": "#/$defs/ident" },
+        "operator_id": { "$ref": "#/$defs/ident" },
+        "volume_ul": { "type": "number", "exclusiveMinimum": 0 },
+        "tests": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["aliquot_id", "test", "volume_ul"],
+            "properties": {
+              "aliquot_id": { "$ref": "#/$defs/ident" },
+              "test": { "$ref": "#/$defs/ident" },
+              "volume_ul": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "confirm_result": {
+      "title": "ConfirmResult",
+      "description": "The result of one confirming test, at the draw plus its turnaround (11.8.2 rule S3). The tests report the truth, so the outcome is observable as a result. No numeric value.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "t", "sample_id", "aliquot_id", "test", "outcome"],
+      "properties": {
+        "type": { "type": "string", "const": "confirm_result" },
+        "t": { "$ref": "#/$defs/time" },
+        "sample_id": { "$ref": "#/$defs/ident" },
+        "aliquot_id": { "$ref": "#/$defs/ident" },
+        "test": { "$ref": "#/$defs/ident" },
+        "outcome": { "type": "string", "enum": ["detected", "not_detected"] }
       }
     }
   }

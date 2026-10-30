@@ -22,7 +22,7 @@
     "feedback": { "type": "boolean", "default": false, "description": "L5 feeds back into L1 (experiment 2). Absent means false; S1 builds only the open loop." },
     "sampling_plan": { "type": "string", "enum": ["burst", "staggered"] },
     "label_method": { "type": "string", "enum": ["handwritten", "preprinted_barcode", "issued_at_draw"] },
-    "raw_layer": { "type": "boolean", "default": false, "description": "The raw device layer of ADR-0014 (spec section 2.4). Absent means false: every earlier scenario keeps a byte-identical event log. Not a ninth flag." },
+    "raw_layer": { "type": "boolean", "default": false, "description": "The raw device layer of ADR-0014 (spec section 2.4). Absent means false: every earlier scenario keeps a byte-identical event log. Not one of the ten flags." },
     "capture_path": { "type": "string", "enum": ["manual_transcription", "adapter_ingest"], "description": "Overrides the capture path of every preset (spec section 5, 'Capture path'). Read only with raw_layer true; with the layer off a scenario that sets it fails validation, because a silent no-op would mislead." },
     "export_schedule": { "type": "string", "enum": ["window_end", "per_run"], "description": "When an analyzer export reaches the host (A216; the staffed window is A098, spec section 2.4.2): at the end of each staffed window (window_end, the default) or at the instant each result is produced (per_run). Needs raw_layer true. A capture-path contrast holds it fixed so that only the path changes." },
     "controller_log_cut": { "type": "string", "enum": ["daily", "per_row"], "description": "How a controller cuts its log files (A217): one file per record type per day (daily, the default; the file reaches the host at the end of its day) or each row as written (per_row; the row reaches the host at its own stamp). Needs raw_layer true. A capture-path contrast holds it fixed so that only the path changes." },
@@ -94,6 +94,98 @@
           "offset": { "$ref": "profile.schema.json#/$defs/param" },
           "tau": { "$ref": "profile.schema.json#/$defs/param" }
         }
+      }
+    },
+    "breakout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "origin", "topology", "response", "confirm"],
+      "description": "One scripted break-out event (spec 11.4, 11.8; ADR-0013): a hidden contamination with an origin, the shared lots and equipment, the scripted response and the confirming samples. Absent means no event: every earlier scenario keeps a byte-identical event log. Every instant and delay is in hours from scenario start; every number is {value, unit, ref}. `lag` is the time from the onset to the first signal (A139) and `ramp` the length of the linear signal ramp that ends at it (A141), both in hours; absent, the profile's values apply, and the ramp may not exceed the lag. The delays of `response` (A176), the topology (A177) and the inputs the event-type profile names (for the bacterial profile the bioburden volume, A225) have no default and are required: a scenario that omits one is refused, naming it.",
+      "properties": {
+        "profile": { "type": "string", "minLength": 1, "description": "The event-type profile under scenarios/profiles/breakout/ (for example bacterial); data, never branched on by id." },
+        "lag": { "$ref": "profile.schema.json#/$defs/param" },
+        "ramp": { "$ref": "profile.schema.json#/$defs/param" },
+        "origin": {
+          "description": "Where the contamination enters (spec 11.4 origins, 11.8.2 rule S1). seed_lot and medium_lot name a declared lot, shared_equipment a declared item; contaminated_at is the hidden instant from which the item is contaminated. unit_equipment is a unit's own equipment, with a scenario instant. sampling names the draw (a sample id) after which the organism enters the unit.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "lot_id", "contaminated_at"],
+              "properties": { "kind": { "type": "string", "enum": ["seed_lot", "medium_lot"] }, "lot_id": { "type": "string", "minLength": 1 }, "contaminated_at": { "$ref": "profile.schema.json#/$defs/param" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "equipment_id", "contaminated_at"],
+              "properties": { "kind": { "type": "string", "const": "shared_equipment" }, "equipment_id": { "type": "string", "minLength": 1 }, "contaminated_at": { "$ref": "profile.schema.json#/$defs/param" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "unit_id", "at"],
+              "properties": { "kind": { "type": "string", "const": "unit_equipment" }, "unit_id": { "type": "string", "minLength": 1 }, "at": { "$ref": "profile.schema.json#/$defs/param" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "sample_id"],
+              "properties": { "kind": { "type": "string", "const": "sampling" }, "sample_id": { "type": "string", "minLength": 1 } }
+            }
+          ]
+        },
+        "topology": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "A177 (widened to equipment): which units consume which lot or use which equipment item, and when. A seed lot is consumed at the inoculation of its unit (no `at`); a medium lot and an equipment use carry `at`. A unit has at most one seed lot. A consumption or use at or after the end of its unit (a stop or a harvest) leaves no record.",
+          "properties": {
+            "lots": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["lot_id", "kind", "prepared_at"],
+                "properties": { "lot_id": { "type": "string", "minLength": 1 }, "kind": { "type": "string", "enum": ["seed", "medium"] }, "prepared_at": { "$ref": "profile.schema.json#/$defs/param" } }
+              }
+            },
+            "equipment": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["equipment_id", "name"],
+                "properties": { "equipment_id": { "type": "string", "minLength": 1 }, "name": { "type": "string", "minLength": 1 } }
+              }
+            },
+            "consumption": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["unit_id", "lot_id"],
+                "properties": { "unit_id": { "type": "string", "minLength": 1 }, "lot_id": { "type": "string", "minLength": 1 }, "at": { "$ref": "profile.schema.json#/$defs/param" } }
+              }
+            },
+            "use": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["unit_id", "equipment_id", "at"],
+                "properties": { "unit_id": { "type": "string", "minLength": 1 }, "equipment_id": { "type": "string", "minLength": 1 }, "at": { "$ref": "profile.schema.json#/$defs/param" } }
+              }
+            }
+          }
+        },
+        "response": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signal_to_response", "positive_to_hold"],
+          "description": "A176, the two delays, both required with no default and identical across architectures: from the first signal to the scripted response (the stop of each affected unit and the confirming draws), and from a positive result to the hold or quarantine action.",
+          "properties": { "signal_to_response": { "$ref": "profile.schema.json#/$defs/param" }, "positive_to_hold": { "$ref": "profile.schema.json#/$defs/param" } }
+        },
+        "confirm": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "The units that get one confirming sample at the first decision instant (11.8.2 rule S2)." },
+        "inputs": { "type": "object", "additionalProperties": { "$ref": "profile.schema.json#/$defs/param" }, "description": "The scenario inputs the profile declares and gives no default (for the bacterial profile bioburden_sample_volume_ml, A225)." }
       }
     }
   }

@@ -15,7 +15,8 @@ import type { PhLoopConfig, SensorConfig, SensorSeries } from "./sensors.ts";
 const DAY = 86400;
 
 export interface ScriptedEvent {
-  type: "feed" | "alarm";
+  /** `stop` ends the unit at that instant (break-out script, spec 11.8.2 rule S2): no later feed, draw or harvest. The scenario file cannot name it; the break-out script does. */
+  type: "feed" | "alarm" | "stop";
   unit_id: string;
   at_s: number;
 }
@@ -71,6 +72,8 @@ export interface ProcessConfig {
   ph: number;
   sensors: SensorConfig;
   scripted: ScriptedEvent[];
+  /** The seed lot of a unit, by unit id, when the break-out script names one: the inoculation event carries it. Absent: no inoculation does. */
+  seedLots?: Readonly<Record<string, string>>;
   /** The feedback settings of experiment 2 (spec 6.2); absent in every scenario that stays open loop. Nothing in this file reads it. */
   phLoop?: PhLoopConfig;
 }
@@ -208,14 +211,22 @@ const bolus = (c: ProcessConfig, s: State, volume: { l: number }, f: number): nu
 
 const viabilityOf = (s: State): number => (100 * s.x) / (s.x + s.d);
 
-type Kind = "alarm" | "scripted_feed" | "shift" | "decision" | "harvest";
+type Kind = "stop" | "alarm" | "scripted_feed" | "shift" | "decision" | "harvest";
 interface Moment { t: number; rank: number; kind: Kind }
+/** The scripted moments in the order they apply at an equal instant; a stop comes first, so nothing else happens at the instant a unit is stopped. */
+const SCRIPTED: Record<ScriptedEvent["type"], Pick<Moment, "rank" | "kind">> = { stop: { rank: -1, kind: "stop" }, alarm: { rank: 0, kind: "alarm" }, feed: { rank: 1, kind: "scripted_feed" } };
+
+/** The unit id of the reactor at index i, counted from 0: U01, U02, ... */
+export const unitIdOf = (i: number): string => `U${String(i + 1).padStart(2, "0")}`;
+export const batchIdOf = (unit_id: string): string => `B-${unit_id}`;
+/** The instant reactor i is inoculated: the start of its cohort plus its place in the cohort (A188). The scenario loader calls it for the break-out script. */
+export const inoculationInstant = (c: ProcessConfig, i: number): number => Math.floor(i / c.cohortSize) * c.cohortInterval_s + c.inocStart_s + (i % c.cohortSize) * c.inocStep_s;
 
 const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undefined => {
-  const unit_id = `U${String(i + 1).padStart(2, "0")}`;
-  const t0 = Math.floor(i / c.cohortSize) * c.cohortInterval_s + c.inocStart_s + (i % c.cohortSize) * c.inocStep_s;
+  const unit_id = unitIdOf(i);
+  const t0 = inoculationInstant(c, i);
   if (t0 >= c.horizon_s) return undefined;
-  const batch_id = `B-${unit_id}`;
+  const batch_id = batchIdOf(unit_id);
   const shift_s = Math.floor(t0 / DAY) * DAY + c.shiftOffset_s + c.decision_s;
   const end_s = t0 + c.production_s;
   const last = Math.min(end_s, c.horizon_s);
@@ -224,7 +235,7 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
   const moments: Moment[] = [{ t: end_s, rank: 4, kind: "harvest" }];
   for (let day = Math.floor(t0 / DAY); day * DAY + c.decision_s < last; day++) if (day * DAY + c.decision_s > t0) moments.push({ t: day * DAY + c.decision_s, rank: 3, kind: "decision" });
   if (shift_s > t0 && shift_s < last) moments.push({ t: shift_s, rank: 2, kind: "shift" });
-  for (const e of c.scripted) if (e.unit_id === unit_id && e.at_s > t0 && e.at_s < last) moments.push({ t: e.at_s, rank: e.type === "alarm" ? 0 : 1, kind: e.type === "alarm" ? "alarm" : "scripted_feed" });
+  for (const e of c.scripted) if (e.unit_id === unit_id && e.at_s > t0 && e.at_s < last) moments.push({ t: e.at_s, ...SCRIPTED[e.type] });
   moments.sort((a, b) => a.t - b.t || a.rank - b.rank);
 
   const size = Math.ceil((last - t0) / c.step_s) + 1;
@@ -236,8 +247,8 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
   const s: State = { x: c.density, d: dead0, g: c.glucose0, q: c.glutamine0, l: c.lactate0, p: c.titer0 };
   const volume = { l: c.bayVolume_l?.[Math.floor(i / c.baySize)] ?? c.volume_l };
   const mult: Mult = { ...BASE };
-  events.push({ type: "inoculation", t: t0, unit_id, batch_id, density_e6_per_ml: c.density });
-  const process = (t: number, kind: "feed" | "temperature_shift" | "alarm" | "harvest", source: "rule" | "scheduled" | "scripted", amount?: number, amount_unit?: string): void => {
+  events.push({ type: "inoculation", t: t0, unit_id, batch_id, density_e6_per_ml: c.density, ...(c.seedLots?.[unit_id] !== undefined && { seed_lot_id: c.seedLots[unit_id] }) });
+  const process = (t: number, kind: "feed" | "temperature_shift" | "alarm" | "harvest" | "unit_stopped", source: "rule" | "scheduled" | "scripted", amount?: number, amount_unit?: string): void => {
     events.push({ type: "process_event", t, unit_id, batch_id, kind, source, ...(amount !== undefined && { amount, amount_unit }) } as Event);
   };
 
@@ -247,7 +258,11 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
     const t = t0 + k * c.step_s;
     while (m < moments.length && (moments[m] as Moment).t <= t && !done) {
       const mo = moments[m++] as Moment;
-      if (mo.kind === "alarm") process(mo.t, "alarm", "scripted");
+      if (mo.kind === "stop") {
+        process(mo.t, "unit_stopped", "scripted");
+        r.harvested_s = mo.t;
+        done = true;
+      } else if (mo.kind === "alarm") process(mo.t, "alarm", "scripted");
       else if (mo.kind === "scripted_feed") process(mo.t, "feed", "scripted", bolus(c, s, volume, c.bolus), "L");
       else if (mo.kind === "shift") {
         Object.assign(mult, shifted(c));

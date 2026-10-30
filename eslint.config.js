@@ -53,6 +53,12 @@ const RAW_KEY = {
   regex: `(^|/)(raw/key|generated/raw_quirk_key\\.schema)${EXT}$`,
   message: "The raw quirk key is hidden: only engine/src/evaluate, engine/src/experiments/assembly and engine/src/raw may import it (the parser and the recorders never see which quirks were realised).",
 };
+// 2026-10-30 break-out batch 2 (spec 11.8.5 row 2): engine/src/breakout/ holds the hidden script of an event (onsets, origins, the contaminated lots and equipment). It is a truth-side folder
+// (TRUTH_READERS below), and nothing on the recorded side imports it. The first pattern is a relative path whose last two segments are `..` or `src` and the folder; the second is the same
+// import from a new top-level file of engine/src. A local file named breakout.ts is not the folder.
+const BREAKOUT_MESSAGE = "engine/src/breakout/ holds the hidden script of a break-out event: only the truth side (the scenario loader, the run, the evaluator, the experiment assembly) imports it, never the recorded side (record, ingest, inject, export, raw, experiments/arms).";
+const BREAKOUT = { regex: `^(?=\\.)(?:.*/)?(?:\\.\\.|src)/breakout(/|$)`, message: BREAKOUT_MESSAGE };
+const BREAKOUT_FLAT = { regex: "^\\./breakout(/|$)", message: BREAKOUT_MESSAGE };
 const ARMS_ONLY_RECORDED = {
   regex: "(^|/)(oracle|assembly|evaluate)(/|$)",
   message: "experiments/arms sees recorded data only; the oracle arm is the single place that reads truth for a decision.",
@@ -61,7 +67,7 @@ const ARMS_ONLY_RECORDED = {
 const TRUTH_READERS = [
   ...TRUTH.split("|").map((m) => `engine/src/${m}.ts`),
   "engine/src/scenario.ts", "engine/src/trace.ts", "engine/src/mmc.ts", "engine/src/observe.ts",
-  "engine/src/observe/**", "engine/src/evaluate/**", "engine/src/experiments/assembly/**", "engine/src/experiments/oracle/**", "engine/src/generated/**",
+  "engine/src/observe/**", "engine/src/evaluate/**", "engine/src/experiments/assembly/**", "engine/src/experiments/oracle/**", "engine/src/generated/**", "engine/src/breakout/**",
 ];
 
 // 2026-10-30 S3b (docs/design/lab_ui.md section 2): import zones for the lab page. The page (src/ui, src/main.tsx, src/i18n, src/protocol.ts) imports no engine or scenario module; only
@@ -121,19 +127,19 @@ export default tseslint.config(
     // Zone 1, top-level files that are not truth readers: a new flat module may not import a truth module.
     files: ["engine/src/*.ts"],
     ignores: TRUTH_READERS,
-    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, { regex: `^\\./(${TRUTH})${EXT}$`, message: TRUTH_MESSAGE }) },
+    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, { regex: `^\\./(${TRUTH})${EXT}$`, message: TRUTH_MESSAGE }, BREAKOUT_FLAT) },
   },
   {
     // Zone 1, folders: record, ingest, raw, inject, export, experiments/arms and any folder added later.
     files: ["engine/src/*/**/*.ts"],
     ignores: TRUTH_READERS,
-    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS) },
+    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS, BREAKOUT) },
   },
   {
     // Zone 3: the decision code of experiment 2.
     files: ["engine/src/experiments/arms/**/*.ts"],
     rules: {
-      "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, ARMS_ONLY_RECORDED, HIDDEN_EVENT),
+      "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, ARMS_ONLY_RECORDED, HIDDEN_EVENT, BREAKOUT),
     },
   },
   {
@@ -144,7 +150,7 @@ export default tseslint.config(
   {
     // Zone 5, the raw layer: the emitter writes the key. It is not a truth reader, so zone 1 (folders) applies as before; evaluate/** needs no object (it was in no zone but the base).
     files: ["engine/src/raw/**/*.ts"],
-    rules: { "no-restricted-imports": restrict(ANSWER_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS) },
+    rules: { "no-restricted-imports": restrict(ANSWER_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS, BREAKOUT) },
   },
   {
     // Lab page zones (S3b, lab_ui.md section 2), 1: the page.

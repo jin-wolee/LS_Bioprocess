@@ -6,12 +6,12 @@
  */
 
 /**
- * A bioreactor, analyzer or staff profile (data, not code). Every numeric parameter is {value, unit, ref}; ref resolves to a ledger id (ADR-0012). profile_id is a free string: ids of profiles are never enumerated in a schema or in generated types.
+ * A bioreactor, analyzer, staff or break-out event-type profile (data, not code). Every numeric parameter is {value, unit, ref}; ref resolves to a ledger id (ADR-0012). profile_id is a free string: ids of profiles are never enumerated in a schema or in generated types.
  */
 export interface Profile {
   schema_version: "1";
   profile_id: string;
-  kind: "bioreactor" | "analyzer" | "staff";
+  kind: "bioreactor" | "analyzer" | "staff" | "breakout";
   description?: string;
   /**
    * The ledger bundle this profile is (A065 to A073, ADR-0012): the lab reads the bundle grade from it. Data for the page; the engine does not read it.
@@ -28,6 +28,32 @@ export interface Profile {
    */
   containers?: {
     [k: string]: "open" | "closed";
+  };
+  /**
+   * Break-out profiles: the type the event reports in the truth log (spec 11.4). Data: the engine never branches on it.
+   */
+  contamination_type?: string;
+  /**
+   * Break-out profiles: the signal whose true value reaching its alarm limit is the first signal (spec 11.8.2 rule S1). It must be one of `signals`; the sign of its change says low or high.
+   */
+  alarm_signal?: "DO" | "pH";
+  /**
+   * Break-out profiles: the signals that move over the ramp that ends at the first signal, and the param that holds the change of each from its set point (unit % air saturation for DO, pH for pH).
+   *
+   * @minItems 1
+   */
+  signals?: [SignalChange, ...SignalChange[]];
+  /**
+   * Break-out profiles: the confirming tests, in aliquot order. Names refer to keys of params, or (volume, portions) to keys of scenario_inputs.
+   *
+   * @minItems 1
+   */
+  tests?: [ConfirmTest, ...ConfirmTest[]];
+  /**
+   * Break-out profiles: inputs the ledger gives no number for, which the scenario must supply (a scenario without one is refused by name). Each has the unit the engine expects and the ledger id of the entry that describes it.
+   */
+  scenario_inputs?: {
+    [k: string]: ScenarioInput;
   };
   params: {
     [k: string]: Param;
@@ -57,6 +83,29 @@ export interface Analyte {
   noise?: string;
   relative?: boolean;
   limit?: string;
+}
+export interface SignalChange {
+  signal: "DO" | "pH";
+  change: string;
+}
+export interface ConfirmTest {
+  test: string;
+  /**
+   * The param that holds the turnaround, in days.
+   */
+  turnaround: string;
+  /**
+   * The param or scenario input that holds the volume of one portion, in mL.
+   */
+  volume: string;
+  /**
+   * The param that holds how many portions the test takes (unit media); absent: one.
+   */
+  portions?: string;
+}
+export interface ScenarioInput {
+  unit: string;
+  ref: string;
 }
 export interface Param {
   value: number;
