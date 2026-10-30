@@ -234,7 +234,7 @@ Rules (invariants, tested):
 
 ## 4. Profiles
 
-Scenarios pick profiles. Profiles are data under `scenarios/profiles/{bioreactor,analyzer,staff}/`; each numeric parameter is `{value, unit, ref}` with `ref` resolving to a ledger id (ADR-0012). A bundle takes the grade of its weakest component, in the order S, P, D, A, so a bundle with a derived part is D, not S, and one with an unsourced part is A. The bundle grades in the tables below are those of the ledger bundles A065 to A073.
+Scenarios pick profiles, and may name one per bay and one per analyzer (section 4.5). Profiles are data under `scenarios/profiles/{bioreactor,analyzer,staff}/`; each numeric parameter is `{value, unit, ref}` with `ref` resolving to a ledger id (ADR-0012). A bundle takes the grade of its weakest component, in the order S, P, D, A, so a bundle with a derived part is D, not S, and one with an unsourced part is A. The bundle grades in the tables below are those of the ledger bundles A065 to A073.
 
 ### 4.1 Bioreactor
 
@@ -268,6 +268,73 @@ What is sourced is narrow (A058, A059, A060, A047). The effect of training on la
 ### 4.4 Generic engine mechanisms
 
 Multi-visit routing, sequence-dependent setup, volume budget, rate multipliers and delivery order. Setup time per run (`setup_s`) and the transfer between visits (`transfer_s`) are profile data; the HPLC changeover is assumed in section 4.2 and has no citable ledger value yet, so a profile without a stated setup has `setup_s` 0. The extensions add a per-reactor parameter draw, material-lot consumption and an event script (section 11.1). Nothing in the engine branches on a profile id, scenario id or architecture id.
+
+### 4.5 Mixed fleets (ADR-0015)
+
+Status: the fields, the load-time checks and the regression rule follow ADR-0015 as accepted. The routing rule for an analyte that more than one analyzer profile can measure is the open line of that ADR: it is **proposed, awaiting a ruling**, and nothing of it is built. Written in S3c part 1; part 2 builds what is ruled. No result is stated here.
+
+#### 4.5.1 What the engine does today
+
+- One analyzer profile per scenario (`profiles.analyzer`). Its `route` lists stages; a stage has a `group` (a pool of instruments) and the analytes it measures. An analyzer is one instrument per stage, and `analyzer_count` counts analyzers (A022): M analyzers of the split profile are M counters and M metabolite analyzers. Instruments are numbered `AN-1`, `AN-2`, ... stage by stage (`engine/src/run.ts`).
+- Every drawn sample is one L3 request with one visit per stage, in route order. A request has no analyte list of its own: its analytes are those of the stages it visits.
+- L3 keeps one queue per group (first in first out or earliest deadline first, section 2.3) with strict head of line, and gives the head to the lowest-index idle, available analyzer of the group (the S1a contract; fixtures F4 and F6). A visit names one group. Service time, method and transfer time sit on the visit, not on the instrument, and a later visit joins the queue of its group after its transfer time. The core reads no profile.
+- The one analyzer profile is read in four places outside the core: the instruments and visits of a run (`buildL3Input`), what a run measures (`makeMeasure` takes the stage by visit number), the storage condition of the aliquot (the first stage) and the raw layer (`rawSetupFor`, `entryConfigFor`). The one bioreactor profile is read in three: the working volume (L1), the sample volume and its cap per reactor (A057, A207; L2) and the container per analyte (A037; `makeMeasure`).
+- Bays are the reactors in bays of `bay_size`: their number is `reactor_count` over `bay_size`, rounded up, and the last bay may be smaller (A001).
+
+So the case "two profiles can both measure an analyte" cannot arise today.
+
+#### 4.5.2 Scenario fields
+
+| Field | Shape | When absent | Length |
+|---|---|---|---|
+| `bay_profiles` | bioreactor profile ids, bay 1 first | every bay takes `profiles.bioreactor` | the number of bays (4.5.1) |
+| `analyzer_profiles` | analyzer profile ids, analyzer 1 first | every analyzer takes `profiles.analyzer` | `analyzer_count` (A022) |
+
+Both are top-level, optional and additive in `scenario.schema.json` (an array of non-empty strings, at least one), like `bay_controllers`, and need no `raw_layer`. They carry the names of the `RunSpec` fields of `lab_ui.md` section 4. `profiles.bioreactor` and `profiles.analyzer` stay required and are the defaults; `profiles.analyzer` is also the standing menu of 4.5.3. `profiles.staff` stays one per scenario (A201). `bay_profiles` and `bay_controllers` (section 2.4.2) are independent and may be crossed, as labelling and the flags are. A bay profile applies to the reactors of its bay in the three places above; `bay_size` stays one number for every bay (a size per bay is parked, YAGNI).
+
+Instruments are numbered stage by stage and, inside a stage, in the list order of the analyzers that have that stage. A list that repeats one profile gives today's ids, so the `AN-1` of SC5 and the ids in the goldens stay.
+
+#### 4.5.3 Load-time validation
+
+Each check is an error at load, in the style of the `bay_controllers` check (S2f); the lab shows the message verbatim (`lab_ui.md` section 4, rule 4). A scenario with neither field is checked as today.
+
+| Check | Message |
+|---|---|
+| length of `bay_profiles` | `scenario <id>: bay_profiles names <n> bioreactor profile(s) but the scenario has <b> bay(s) (reactor_count <N> in bays of <S>); name one bioreactor profile per bay, bay 1 first (spec section 4.5)` |
+| length of `analyzer_profiles` | `scenario <id>: analyzer_profiles names <n> analyzer profile(s) but analyzer_count is <M>; name one analyzer profile per analyzer, analyzer 1 first (spec section 4.5)` |
+| unknown id | `scenario <id>: <field>[<i>] names the <kind> profile "<x>", which is not in the profile set`; a profile of the wrong kind keeps the message of `loadProfile` |
+| two profiles, one group | `scenario <id>: analyzer profiles <p> and <q> both name the group <g>; a group is the pool of one stage of one profile, so the names must differ` (service time sits on the visit, so one pool cannot serve two profiles) |
+| requested analyte, no analyzer | `scenario <id>: the analyte <a> is requested (<by>) but no analyzer profile in analyzer_profiles measures it; list an analyzer with a profile that does, or remove the request (spec section 4.5)` |
+| one analyte, two profiles | only under routing rule B below: `scenario <id>: the analyte <a> is measured by both <p> (analyzer <i>) and <q> (analyzer <j>); in this build an analyte has one profile (spec section 4.5, routing rule awaiting a ruling)` |
+
+An analyte is requested when it is in the route of `profiles.analyzer` (the whole request today) or when an entry of `stability` names it; `<by>` says which. This is the reading of the ADR-0015 rule "a scenario in which some requested analyte has no analyzer is rejected at load": the request is met when any listed analyzer measures the analyte. An analyte that a listed profile measures beyond the request (the titer of an HPLC beside an all-in-one) is simply measured.
+
+#### 4.5.4 Routing of a request: proposed, awaiting a ruling
+
+Two cases arise only in a mixed fleet. (i) Different profiles measure different analytes: an all-in-one for the routine panel and an HPLC for titer (A069, A071; the HPLC contention of S4 is this case). (ii) The same analyte can be measured by more than one profile: an all-in-one beside the split pair (A069, A070). Case (ii) is the open line of ADR-0015. No scenario of sections 7 and 11.5 needs it.
+
+| | A. Pooled: lowest-index idle, whole route | B. Split by analyte: one profile per analyte | C. Fixed per bay before L3 (habitual analyzer) |
+|---|---|---|---|
+| Rule | a sample takes the complete route of one profile; its first visit goes to the lowest-index idle, available analyzer among those whose profile measures the whole menu (the S1a rule over the fleet); later visits stay in that profile | a sample visits each distinct listed profile once, in the order of first appearance in the list, stage by stage; every analyte has exactly one profile, and an analyte measured by two is refused at load | each bay is bound to one profile; its samples take that profile's complete route, and the S1a rule applies inside the profile's pool |
+| Serves | (ii); (i) cannot be expressed, because a sample takes the route of one profile and so never reaches the second | (i); (ii) is refused at load | (ii); (i) cannot be expressed, because a sample is bound to one profile |
+| Asks of the engine | a visit with alternative groups, and service time, setup and method per instrument instead of per visit; a profile on each analyzer in the trace; a hand fixture first; the trace schema grows, so the parity of the author's `reference/sim_core.py` must follow (author-owned) | a plan (the stage list of the fleet) built at load and used where the one route is used today: `buildL3Input`, `makeMeasure`, the aliquot storage, `rawSetupFor`, `entryConfigFor`; L3 core, trace schema and parity traces untouched | a bay-to-profile map (a new field or a rule), the route per request in `makeMeasure` and in the closed-state check, group names unique per profile (4.5.3); L3 core and trace untouched |
+| Numbers | none | none. No hand-off between profiles is modelled: A106 is the hand-off inside the split profile and none is sourced between an all-in-one and an HPLC, so the transfer between profiles is none; a non-zero one is blocked until the research role adds an entry | none for a fixed bay. The habit share and wait of A034 (85 percent to the habitual analyzer, a wait of up to 10 min; grade A, no source) are not built; any other share is blocked (no id), and the wait needs the dynamic choice of A |
+| Changes in a mixed fleet | utilisation by instrument depends on list order (the first-listed profile fills first); one queue spans the profiles, so no sample waits for one profile while another that can serve it is idle | a sample has one visit per stage of every distinct listed profile, so release waits for the last; the list order is the visit order, so it sets which profile's analytes are measured later after the draw (`hold_time`, data_model section 5) | the load of a profile follows bay sizes, not capacity, so one profile can queue while another idles |
+
+With both fields absent all three leave every output as it is (4.5.5).
+
+**Recommendation: B.** It builds the fleets ADR-0015 names (bench vessels beside a mini-scale bay, an all-in-one beside an HPLC) and the fleet shape of the S4 HPLC contention; it leaves the L3 core, the trace schema, the parity traces and the author's SimPy track alone, which A does not; it needs no number; and it keeps one result per request, analyte and version (data_model section 2) and the noise keys of section 3, rule 3 apart, because the key names the analyte and one analyte on two stages of a sample would draw the same noise twice. It does not serve case (ii): it refuses it with the message above until a scenario needs it (YAGNI). A is the faithful extension of the S1a rule if two profiles should later compete for one analyte; C is cheap but arbitrary. The author rules. Whichever rule stands, every result table states it (ADR-0015, Consequences).
+
+Under B a sample stays one request and one aliquot: the aliquot takes the storage condition of the first stage, as today. A later stage of another condition (the HPLC profile names `frozen`) has no effect, because nothing in the engine reads the storage condition. One aliquot and one request per condition would change the request count behind every denominator of section 8; it is parked and is a point for the ruling.
+
+#### 4.5.5 Regression rule
+
+With both fields absent the effective lists are `profiles.bioreactor` once per bay and `profiles.analyzer` once per analyzer, the plan is today's route, and instrument ids, group names, request and visit ids, aliquot ids and draws are today's. The default scenario's event log stays byte-identical to `tests/golden/default_seed{1,2,3}.trace.jsonl` (ADR-0015; section 11.1, rule 1); the other bundled scenarios have no golden file and are compared by log hash taken before the change. A second, testable form: a scenario that writes both lists out with its own default in every position gives the same log as the scenario without them. Neither the lists nor rule B add a draw or a purpose to the key tuple of section 3, rule 3. `engine_version` is part of the log header (section 3, rule 4): part 2 leaves it as it is, because a bump changes the first line of every golden, and that is a golden change which needs the author's recorded approval (section 8, anti-gaming rule 5). The goldens are checked, never regenerated.
+
+#### 4.5.6 What the lab needs
+
+- **Setup.** The `RunSpec` fields `bay_profiles` and `analyzer_profiles` (`lab_ui.md` section 4) take the shapes of 4.5.2 and replace the scenario's own when present. Their lengths follow N, the bay size and M, which `settings` can change in the same spec: the page rebuilds both lists when one of those changes, keeps picks by position and gives new positions the scenario default. The Worker checks each id against the bundled profiles of the right kind (`invalid_spec` otherwise); the lengths and the checks of 4.5.3 are the engine's and arrive as `engine_error` with the message verbatim. `ready` must offer a profile catalogue (id, kind, bundle A065 to A071 with its grade, and for an analyzer profile its stages and analytes), so that the pickers and the grade chips come from the files. The profile files name their bundle in the `description` text only; an additive `bundle` field is the one-definition way and is a point for part 2. The lists join the shareable link and the printed inputs of a result.
+- **Results.** Utilisation (section 8) is also stated per analyzer profile, in both windows (A098, A074) and with and without setup: the busy time of the profile's instruments over their number times the days times the window, with the profile's bundle grade beside it (A069, A070, A071). The pooled figure stays and, for a fleet of one profile, equals that profile's. It needs a map from instrument to profile (plain data from the assembly, beside `truth.analyzers`) and an additive `by_profile` list in the `utilisation` metric of `schemas/metrics.schema.json`. Utilisation is read from the shared truth run, so it is the same for every architecture and the screen shows it once. A profile with several stages pools its instruments, as the pooled figure does today; no per-instrument figure is shown, because the lowest-index rule loads the first instrument of a group first. For a mixed fleet the page prints the routing rule of the build in words beside the table. No bay-side metric is added (a count of skipped draws per bay profile is the obvious one and is parked).
 
 ## 5. Data architecture = feature flags
 
