@@ -1,6 +1,6 @@
 # 30 — S3 executor brief: lab UI, lineage view, challenge, break-out events
 
-Read `prompts/00_master_build.md` first. Start only after the S2 close is recorded (check `docs/progress.md`, "S2 close (orchestrator)") and ADR-0016, ADR-0017 and ADR-0018 are `Accepted` by the author. The orchestrator splits this brief into batches (S3a, S3b, ...) and sends one at a time, each with the header of `PRINCIPLES.md` section 7; a batch names the steps it covers. Executor: Sonnet, effort xhigh; Opus 5.5 in the cases of `prompts/README.md`.
+Read `prompts/00_master_build.md` first. Start only after the S2 close is recorded (check `docs/progress.md`, "S2 close (orchestrator)") and the author has decided ADR-0016, ADR-0017 and ADR-0018: `Accepted` in the repository, or decided in chat with the decision quoted in the ADR and in `docs/progress.md` and the acceptance file waiting for the author's own commit (2026-10-30). The status lines stay as the author leaves them. The orchestrator splits this brief into batches (S3a, S3b, ...) and sends one at a time, each with the header of `PRINCIPLES.md` section 7; a batch names the steps it covers. Executor: Sonnet, effort xhigh; Opus 5.5 in the cases of `prompts/README.md`.
 
 ## Working principles (mandatory)
 
