@@ -4,6 +4,7 @@ import type { Event } from "./generated/event.schema";
 import { buildInstruments } from "./instrument.ts";
 import type { Instruments } from "./instrument.ts";
 import { makeMeasure } from "./measure.ts";
+import type { StageCfg } from "./measure.ts";
 import { observe, observeSensors } from "./observe.ts";
 import type { ObservableSensorSeries } from "./observe.ts";
 import { runProcess } from "./process.ts";
@@ -41,6 +42,8 @@ export interface ScenarioRun {
   operators: Operator[];
   process: ProcessRun;
   l3Input: L3Input;
+  /** The analyzer profile of each instrument, by instrument id (spec 4.5.6): plain data for the evaluator, which reads utilisation per profile from it. */
+  instrumentProfiles: Record<string, string>;
   runs: L3Run[];
   instruments: Instruments;
 }
@@ -48,9 +51,7 @@ export interface ScenarioRun {
 const buildL3Input = (cfg: ScenarioConfig, samples: readonly SampleRecord[]): L3Input => {
   const a = cfg.analysis;
   const roster = cfg.sampling;
-  const analyzers = a.route
-    .flatMap((stage) => Array.from({ length: a.analyzerCount }, () => stage))
-    .map((stage, i) => ({ id: `AN-${i + 1}`, group: stage.group, initial_method: stage.method_id ?? null }));
+  const analyzers = a.instruments.map(({ id, stage }) => ({ id, group: (a.route[stage] as StageCfg).group, initial_method: (a.route[stage] as StageCfg).method_id ?? null }));
   const windows: L3Window[] = [];
   const days = Math.ceil(cfg.process.horizon_s / DAY);
   for (const an of analyzers) {
@@ -103,6 +104,7 @@ export const runScenario = (cfg: ScenarioConfig, opts: RunOptions = {}): Scenari
     route: cfg.analysis.route,
     effects: cfg.analysis.effects,
     containers: cfg.analysis.containers,
+    ...(cfg.analysis.bayContainers && { containersByUnit: new Map(proc.reactors.map((r) => [r.unit_id, (cfg.analysis.bayContainers as NonNullable<typeof cfg.analysis.bayContainers>)[r.bay - 1] as Record<string, "open" | "closed">])) }),
     rerunP: cfg.analysis.rerunP,
   });
   const l3 = runL3(input, { measure });
@@ -114,5 +116,5 @@ export const runScenario = (cfg: ScenarioConfig, opts: RunOptions = {}): Scenari
   // one log: the header, then L1, L2, the instrument calibrations and the L3 events in time order; at an equal instant the layers keep this order
   const [header, ...l3Events] = l3.events as [Event, ...Event[]];
   const events = [header, ...[...proc.events, ...sampling.events, ...instruments.events, ...l3Events].sort((a, b) => a.t - b.t)];
-  return { events, observable: observe(events), sensors: proc.sensors, observableSensors: observeSensors(proc.sensors), samples: sampling.samples, operators: sampling.operators, process: proc, l3Input: input, runs: l3.runs, instruments };
+  return { events, observable: observe(events), sensors: proc.sensors, observableSensors: observeSensors(proc.sensors), samples: sampling.samples, operators: sampling.operators, process: proc, l3Input: input, instrumentProfiles: Object.fromEntries(cfg.analysis.instruments.map((i) => [i.id, i.profile])), runs: l3.runs, instruments };
 };

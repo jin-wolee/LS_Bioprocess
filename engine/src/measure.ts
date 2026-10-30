@@ -23,6 +23,8 @@ export interface AnalyteCfg {
 }
 
 export interface StageCfg {
+  /** The analyzer profile this stage belongs to (spec 4.5): the plan of a mixed fleet holds stages of several profiles. */
+  profile: string;
   group: string;
   analytes: AnalyteCfg[];
   service_s: number;
@@ -45,6 +47,7 @@ export const routeConfig = (analyzer: Profile): StageCfg[] =>
   (analyzer.route ?? []).map((st) => {
     const params = analyzer.params;
     return {
+      profile: analyzer.profile_id,
       group: st.group,
       service_s: param(params, st.service, "s"),
       ...(st.transfer !== undefined && { transfer_s: param(params, st.transfer, "s") }),
@@ -73,6 +76,8 @@ export interface MeasureDeps {
   route: readonly StageCfg[];
   effects: readonly StabilityEffect[];
   containers: Readonly<Record<string, "open" | "closed">>;
+  /** The containers of the bay profile of a unit (spec 4.5.2); a unit not in the map takes `containers`. */
+  containersByUnit?: ReadonlyMap<string, Readonly<Record<string, "open" | "closed">>>;
   /** Probability that a run in range fails QC and is repeated (A088). */
   rerunP: number;
 }
@@ -85,13 +90,14 @@ export const makeMeasure = (d: MeasureDeps): MeasureFn => {
     const sample = d.samples.get(id);
     if (!sample?.true_state) throw new Error(`request ${id} has no drawn sample`);
     const hold = ctx.start_s - sample.drawn_s;
+    const containers = d.containersByUnit?.get(sample.unit_id) ?? d.containers;
     const instrument = d.instruments.factorAt(ctx.analyzer, ctx.start_s).factor_pct;
     const rk = `${id}#${ctx.visit}`;
     const at = rung.get(rk) ?? 0;
     const factor = stage.ladder[at] ?? 1;
     let over = false;
     const results = stage.analytes.map((a): MeasuredResult => {
-      const st = applyStability(d.effects, a.id, d.containers[a.id] ?? d.containers.default ?? "open", valueOf(sample.true_state as CultureState, a.id), hold);
+      const st = applyStability(d.effects, a.id, containers[a.id] ?? containers.default ?? "open", valueOf(sample.true_state as CultureState, a.id), hold);
       const z = a.noise > 0 ? d.rng.stream([d.seed, id, a.id, ctx.attempt, "noise"]).gaussian() : 0;
       const noise = (a.noiseRelative ? st.value * a.noise : a.noise) * z;
       const value = (a.factor ? st.value * (1 + instrument / 100) : st.value) + noise;

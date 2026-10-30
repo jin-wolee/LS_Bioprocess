@@ -3,6 +3,7 @@
   "profile_id": "trainee",
   "kind": "staff",
   "description": "Trainee operator (spec 4.3; bundle A073, grade A). Multipliers apply to the base values of the experienced profile.",
+  "bundle": "A073",
   "params": {
     "qualified": {"value": 0, "unit": "flag", "ref": "A073"},
     "count_cv_manual_pct": {"value": 2.81, "unit": "%", "ref": "A058"},

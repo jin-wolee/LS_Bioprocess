@@ -3,6 +3,7 @@
   "profile_id": "hplc",
   "kind": "analyzer",
   "description": "HPLC titer on clarified supernatant (spec 4.2; bundle A071, grade A). The column changeover setup_s (A030) applies between two different methods; the profile has one, so no setup is generated until a second method exists. No precision value is in the ledger, so no noise is drawn.",
+  "bundle": "A071",
   "route": [
     {
       "group": "HPLC",

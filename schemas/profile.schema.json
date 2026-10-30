@@ -11,6 +11,7 @@
     "profile_id": { "type": "string", "minLength": 1 },
     "kind": { "type": "string", "enum": ["bioreactor", "analyzer", "staff"] },
     "description": { "type": "string" },
+    "bundle": { "type": "string", "pattern": "^A[0-9]{3}$", "description": "The ledger bundle this profile is (A065 to A073, ADR-0012): the lab reads the bundle grade from it. Data for the page; the engine does not read it." },
     "route": {
       "description": "Analyzer profiles: the visits of one sample, in order. Names in a stage refer to keys of params.",
       "type": "array",

@@ -3,6 +3,7 @@
   "profile_id": "experienced",
   "kind": "staff",
   "description": "Experienced operator (spec 4.3; bundle A072, grade A).",
+  "bundle": "A072",
   "params": {
     "qualified": {"value": 1, "unit": "flag", "ref": "A072"},
     "count_cv_manual_pct": {"value": 2.81, "unit": "%", "ref": "A058"},

@@ -39,6 +39,15 @@ export interface Metrics {
       staffed_window_s: number;
       per_staffed_window: Pair;
       per_24h: Pair;
+      /**
+       * Utilisation per analyzer profile (ADR-0015, spec section 4.5.6), in the order the profiles first appear among the instruments. Present when the evaluator was given the profile of each instrument. The pooled figures above stay; for a fleet of one profile the entry has the same counts.
+       */
+      by_profile?: {
+        profile: string;
+        instruments: number;
+        per_staffed_window: Pair;
+        per_24h: Pair;
+      }[];
     };
     availability: {
       available: Ratio;

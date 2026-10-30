@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { ENGINE_VERSION } from "../../src/trace.ts";
 import { writeText } from "../support/lab_files.ts";
@@ -63,4 +63,31 @@ describe("lab_reference_cli", () => {
     expect(done.stderr).toMatch(/golden summary of seed 2 is missing/);
     expect(existsSync(out)).toBe(false);
   }, 150_000);
+});
+
+describe("lab_reference_cli: where its one write lands (S3b follow-up 6b)", () => {
+  const scripts = readJson<{ scripts: Record<string, string> }>("package.json").scripts;
+  const goldens = resolve(ROOT, "tests", "golden");
+  const inside = (dir: string, file: string): boolean => relative(dir, file) !== "" && !relative(dir, file).startsWith("..") && !isAbsolute(relative(dir, file));
+
+  it("Given the build script that runs the CLI Then the file it is told to write is under dist/ and outside tests/golden", () => {
+    const out = /lab_reference_cli\.ts (\S+)/.exec(scripts["build:lab"] ?? "")?.[1];
+    expect(out, "build:lab names the output path of the CLI").toBeDefined();
+    const target = resolve(ROOT, out as string);
+    expect(inside(resolve(ROOT, "dist"), target)).toBe(true);
+    expect(inside(goldens, target)).toBe(false);
+  });
+
+  it("Given writeText with a path Then it writes exactly there and returns that absolute path, so what the CLI is told is where the file lands", () => {
+    const path = join(scratch, "pin", "reference.json");
+    const written = writeText(path, "{}\n");
+    expect(written).toBe(resolve(path));
+    expect(readFileSync(written, "utf8")).toBe("{}\n");
+    expect(inside(goldens, written)).toBe(false);
+  });
+
+  it("Given a path inside tests/golden Then the check above would say so (the helper tells the two apart)", () => {
+    expect(inside(goldens, join(goldens, "reference.json"))).toBe(true);
+    expect(inside(goldens, join(ROOT, "dist", "lab-public", "reference.json"))).toBe(false);
+  });
 });

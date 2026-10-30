@@ -3,6 +3,7 @@
   "profile_id": "bench_manual",
   "kind": "bioreactor",
   "description": "2 to 5 L glass or single-use vessel, operator draws into a closed container or syringe (spec 4.1; bundle A067, grade D).",
+  "bundle": "A067",
   "containers": {
     "ph": "closed",
     "default": "open"

@@ -3,6 +3,7 @@
   "profile_id": "split_cellcounter_metabolite",
   "kind": "analyzer",
   "description": "A cell counter and a metabolite analyzer, two visits per sample with a hand-off between them (spec 4.2; bundle A070, grade A). The counter has no dilution ladder in A090, so its 15e6 limit (A089) is not applied.",
+  "bundle": "A070",
   "route": [
     {
       "group": "CELL",

@@ -43,6 +43,18 @@ export interface Scenario {
    */
   bay_controllers?: [string, ...string[]];
   /**
+   * The bioreactor profile of each bay, bay 1 first (ADR-0015, spec section 4.5.2). The length is the number of bays, reactor_count over bay_size rounded up. Absent: every bay takes profiles.bioreactor.
+   *
+   * @minItems 1
+   */
+  bay_profiles?: [string, ...string[]];
+  /**
+   * The analyzer profile of each analyzer, analyzer 1 first (ADR-0015, spec section 4.5.2). The length is analyzer_count. Absent: every analyzer takes profiles.analyzer. An analyte has one profile in a fleet (spec section 4.5.4, rule B).
+   *
+   * @minItems 1
+   */
+  analyzer_profiles?: [string, ...string[]];
+  /**
    * The synthetic calendar date of scenario second 0 (a Monday, spec section 2.1), as YYYY-MM-DD; the emitters turn integer seconds into wall-clock text from it. Needs raw_layer true.
    */
   calendar_anchor?: string;

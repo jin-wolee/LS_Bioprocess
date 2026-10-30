@@ -27,9 +27,11 @@ export interface Truth {
   /** The training status of each operator in the truth world (A072, A073). */
   operators: readonly { operator_id: string; qualified: boolean }[];
   analyzers: readonly string[];
+  /** The analyzer profile of each instrument, by instrument id (ADR-0015, spec section 4.5.6); absent in a hand-built world, which then has no per-profile utilisation. */
+  analyzer_profiles?: Readonly<Record<string, string>>;
 }
 
-export const truthFrom = (events: readonly Event[], extras: Pick<Truth, "visits" | "deadlines" | "operators" | "analyzers">): Truth => ({
+export const truthFrom = (events: readonly Event[], extras: Pick<Truth, "visits" | "deadlines" | "operators" | "analyzers" | "analyzer_profiles">): Truth => ({
   events,
   ...extras,
   requests: events.flatMap((e): TruthRequest[] =>
@@ -41,12 +43,13 @@ export const truthFrom = (events: readonly Event[], extras: Pick<Truth, "visits"
   ),
 });
 
-export const truthFromRun = (run: Pick<ScenarioRun, "events" | "samples" | "operators" | "l3Input">): Truth =>
+export const truthFromRun = (run: Pick<ScenarioRun, "events" | "samples" | "operators" | "l3Input"> & Partial<Pick<ScenarioRun, "instrumentProfiles">>): Truth =>
   truthFrom(run.events, {
     visits: Object.fromEntries(run.l3Input.requests.map((r) => [r.request_id, r.visits.length])),
     deadlines: Object.fromEntries(run.samples.filter((s) => s.state !== "skipped").map((s) => [s.sample_id, s.deadline_s])),
     operators: run.operators,
     analyzers: run.l3Input.analyzers.map((a) => a.id),
+    ...(run.instrumentProfiles && { analyzer_profiles: run.instrumentProfiles }),
   });
 
 export interface RequestFacts {

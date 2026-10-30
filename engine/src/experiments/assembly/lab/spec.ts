@@ -1,4 +1,4 @@
-import { ABLATIONS, parseArchitecture } from "../../../record/architecture.ts";
+import { ABLATIONS, FLAG_NAMES, parseArchitecture } from "../../../record/architecture.ts";
 import { checkSeeds } from "../config.ts";
 import { scenarioDoc } from "./setup.ts";
 import type { LabData } from "./setup.ts";
@@ -21,10 +21,13 @@ const KEYS = ["schema_version", "scenario", "settings", "architectures", "seeds"
 
 const refuse = (message: string): SpecCheck => ({ ok: false, message });
 
-/** The ids a spec may name: the presets, and the last one (C, the preset that is ablated flag by flag) with one flag off. The engine branches on no preset id (scenarios_data.test.ts), so C is the last of the list. */
+/**
+ * The ids a spec may name: the presets, and the preset that is ablated flag by flag (C) with one flag off. The engine branches on no preset id (scenarios_data.test.ts), so the
+ * ablated preset is the first one whose eight flags are all on, a fact of the data and not a position in the list; a list without one offers no ablation.
+ */
 export const architectureIds = (data: LabData): string[] => {
   const presets = data.architectures.map(parseArchitecture);
-  const ablated = presets.slice(-1).flatMap((a) => ABLATIONS(a).map((x) => x.config.id));
+  const ablated = presets.filter((a) => FLAG_NAMES.every((f) => a.flags[f])).slice(0, 1).flatMap((a) => ABLATIONS(a).map((x) => x.config.id));
   return [...presets.map((a) => a.id), ...ablated];
 };
 

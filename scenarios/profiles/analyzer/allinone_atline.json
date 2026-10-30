@@ -3,6 +3,7 @@
   "profile_id": "allinone_atline",
   "kind": "analyzer",
   "description": "One all-in-one at-line analyzer, one visit per sample (spec 4.2; bundle A069, grade D). Service 4.5 min (A023).",
+  "bundle": "A069",
   "route": [
     {
       "group": "AIO",

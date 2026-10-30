@@ -1,0 +1,27 @@
+{
+  "fixture": "F8",
+  "title": "Mixed fleet, routing rule B: an all-in-one for the routine panel beside an HPLC for titer (spec section 4.5)",
+  "inputs": {
+    "scenario": "default",
+    "settings": {
+      "reactor_count": 6, "bay_size": 6, "cohort_size": 6, "horizon_days": 8, "production_days": 6,
+      "analyzer_count": 2, "rerun_probability": 0, "lactate_production_pmol_per_cell_d": 0
+    },
+    "analyzer_profiles": ["allinone_atline", "hplc"]
+  },
+  "expected": {
+    "instruments": [
+      {"id": "AN-1", "group": "AIO", "initial_method": null},
+      {"id": "AN-2", "group": "HPLC", "initial_method": "protein_a_titer"}
+    ],
+    "visits": [
+      {"visit": 1, "group": "AIO", "analyzer": "AN-1", "service_s": 270, "setup_s": 0, "transfer_s": 0, "analytes": ["glucose", "glutamine", "lactate", "ph", "vcd", "viability"]},
+      {"visit": 2, "group": "HPLC", "analyzer": "AN-2", "service_s": 60, "setup_s": 0, "transfer_s": 0, "analytes": ["titer"]}
+    ],
+    "results_per_sample_without_a_rerun": 7,
+    "results_per_analyte_per_sample_without_a_rerun": 1,
+    "visits_per_sample": 2,
+    "min_samples_without_a_rerun": 20
+  },
+  "derivation": "The all-in-one profile has one stage in group AIO that measures vcd, viability, glucose, lactate, glutamine and ph with a service time of 270 s (A023). The HPLC profile has one stage in group HPLC that measures titer with a service time of 60 s (A028) and the method protein_a_titer. Rule B: a sample visits each listed profile once, in list order, so visit 1 is the all-in-one and visit 2 the HPLC. Instruments are numbered stage by stage and, inside a stage, in list order: the all-in-one has one stage and the HPLC has one, so AN-1 is the all-in-one and AN-2 the HPLC; the HPLC has its method installed at t0, so no setup is ever needed and setup_s is 0 on both. No profile names a transfer on these stages, so the HPLC visit joins its queue at the instant the all-in-one visit ends (transfer 0). No analyte is measured twice: 6 + 1 = 7 results per sample that has no rerun. Rerun probability and lactate production are 0 so that most samples have no rerun; a sample that over-ranges on glutamine (A089) is rerun and is left out of the check."
+}

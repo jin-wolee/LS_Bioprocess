@@ -14,6 +14,10 @@ export interface Profile {
   kind: "bioreactor" | "analyzer" | "staff";
   description?: string;
   /**
+   * The ledger bundle this profile is (A065 to A073, ADR-0012): the lab reads the bundle grade from it. Data for the page; the engine does not read it.
+   */
+  bundle?: string;
+  /**
    * Analyzer profiles: the visits of one sample, in order. Names in a stage refer to keys of params.
    *
    * @minItems 1

@@ -1,16 +1,18 @@
 import { wholeSeconds } from "./clock.ts";
 import type { Param } from "./generated/profile.schema";
 import type { Scenario } from "./generated/scenario.schema";
+import { loadBays, loadFleet } from "./fleet.ts";
+import type { Instrument } from "./fleet.ts";
 import { instrumentConfig } from "./instrument.ts";
 import type { InstrumentConfig } from "./instrument.ts";
 import { routeConfig } from "./measure.ts";
 import type { StageCfg } from "./measure.ts";
-import { processConfig } from "./process.ts";
+import { processConfig, workingVolume } from "./process.ts";
 import type { CapturePath } from "./raw/types.ts";
 import type { ProcessConfig } from "./process.ts";
 import { checkParams, loadProfile, param, readAll } from "./profiles.ts";
 import type { ProfileLookup } from "./profiles.ts";
-import { samplingConfig } from "./sampling.ts";
+import { drawVolumes, samplingConfig } from "./sampling.ts";
 import type { SamplingConfig } from "./sampling.ts";
 import { stabilityConfig } from "./stability.ts";
 import type { StabilityEffect } from "./stability.ts";
@@ -19,10 +21,15 @@ import type { StabilityEffect } from "./stability.ts";
 // The engine reads no file: the caller passes the parsed scenario and a lookup for the parsed profiles. Nothing here branches on an id.
 
 export interface AnalysisConfig {
-  analyzerCount: number;
-  /** The visits of one sample, in order (the analyzer profile's route). */
+  /** The analyzer profile id of each analyzer, analyzer 1 first (spec 4.5.2). */
+  analyzers: string[];
+  /** The instruments in id order, each with the stage of the plan it serves and its profile. */
+  instruments: Instrument[];
+  /** The visits of one sample, in order: the route of the analyzer profile, or the plan of a mixed fleet (spec 4.5.4, rule B). */
   route: StageCfg[];
   containers: Record<string, "open" | "closed">;
+  /** The containers of each bay when the scenario names a profile per bay (spec 4.5.2); absent: `containers` for every bay. */
+  bayContainers?: Record<string, "open" | "closed">[];
   effects: StabilityEffect[];
   instrument: InstrumentConfig;
   rerunP: number;
@@ -107,10 +114,14 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
   const staff = loadProfile(lookup("staff", sc.profiles.staff), "staff");
   if (!bio.containers?.default) throw new Error(`profile ${bio.profile_id}: containers needs a default entry`);
   const scripted = (sc.scripted_events ?? []).map((e) => ({ type: e.type, unit_id: e.unit_id, at_s: minutes(e.at) }));
-  const proc = processConfig(settings, bio.params, scripted);
+  const base = processConfig(settings, bio.params, scripted);
+  const bays = sc.bay_profiles === undefined ? undefined : loadBays(sc.scenario_id, sc.bay_profiles, { reactors: base.reactors, baySize: base.baySize }, lookup);
+  if (bays && base.phLoop) throw new Error(`scenario ${sc.scenario_id}: bay_profiles cannot be combined with the pH loop of experiment 2, which reads one container for every bay (spec section 4.5)`);
+  const proc = bays ? { ...base, bayVolume_l: bays.map((b) => workingVolume(b.params)) } : base;
   const rawLayer = rawSettings(sc, settings, proc);
   const lots = (sc.lot_changes ?? []).map((l) => ({ analyzer: l.analyzer, at_s: minutes(l.at) }));
   const v = readAll(settings, { analyzers: ["analyzer_count", "analyzers"], rerun: ["rerun_probability", "fraction"], qcStart: ["qc_window_start_min", "min"], qcLength: ["qc_window_length_min", "min"] });
+  const fleet = loadFleet(sc.scenario_id, sc.analyzer_profiles, analyzer, v.analyzers, lookup, routeConfig);
   const plan = oneOf(sc.sampling_plan, ["burst", "staggered"], "burst", "sampling_plan");
   const label = oneOf(sc.label_method, ["handwritten", "preprinted_barcode", "issued_at_draw"], "handwritten", "label_method");
   return {
@@ -120,11 +131,13 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
     feedback: sc.feedback ?? false,
     ...(rawLayer && { raw: rawLayer }),
     process: proc,
-    sampling: samplingConfig(settings, staff.params, bio.params, analyzer, plan, label),
+    sampling: { ...samplingConfig(settings, staff.params, bio.params, (fleet.plan[0] as StageCfg).storage, plan, label), ...(bays && { bays: bays.map((b) => drawVolumes(settings, b.params)) }) },
     analysis: {
-      analyzerCount: v.analyzers,
-      route: routeConfig(analyzer),
+      analyzers: fleet.analyzers,
+      instruments: fleet.instruments,
+      route: fleet.plan,
       containers: bio.containers as Record<string, "open" | "closed">,
+      ...(bays && { bayContainers: bays.map((b) => b.containers as Record<string, "open" | "closed">) }),
       effects: stabilityConfig(sc.stability),
       instrument: instrumentConfig(settings, proc.horizon_s, lots),
       rerunP: v.rerun,

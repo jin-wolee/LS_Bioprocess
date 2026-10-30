@@ -300,6 +300,36 @@
             },
             "per_24h": {
               "$ref": "#/$defs/pair"
+            },
+            "by_profile": {
+              "description": "Utilisation per analyzer profile (ADR-0015, spec section 4.5.6), in the order the profiles first appear among the instruments. Present when the evaluator was given the profile of each instrument. The pooled figures above stay; for a fleet of one profile the entry has the same counts.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "profile",
+                  "instruments",
+                  "per_staffed_window",
+                  "per_24h"
+                ],
+                "properties": {
+                  "profile": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "instruments": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "per_staffed_window": {
+                    "$ref": "#/$defs/pair"
+                  },
+                  "per_24h": {
+                    "$ref": "#/$defs/pair"
+                  }
+                }
+              }
             }
           }
         },

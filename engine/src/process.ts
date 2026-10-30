@@ -66,12 +66,17 @@ export interface ProcessConfig {
   shiftKd: number;
   shiftProd: number;
   volume_l: number;
+  /** The working volume of each bay when the scenario names a profile per bay (spec 4.5.2); absent: `volume_l` for every bay. */
+  bayVolume_l?: readonly number[];
   ph: number;
   sensors: SensorConfig;
   scripted: ScriptedEvent[];
   /** The feedback settings of experiment 2 (spec 6.2); absent in every scenario that stays open loop. Nothing in this file reads it. */
   phLoop?: PhLoopConfig;
 }
+
+/** The working volume of a bioreactor profile, in litres (A002, A104, A110). */
+export const workingVolume = (bioreactor: Params): number => readAll(bioreactor, { volume: ["working_volume_l", "L"] }).volume;
 
 export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedEvent[]): ProcessConfig => {
   const v = readAll(s, {
@@ -89,7 +94,7 @@ export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedE
     ph: ["ph_setpoint", "pH"], cadence: ["sensor_cadence_s", "s"], doSp: ["do_setpoint_pct", "% air saturation"], tempSp: ["temperature_setpoint_c", "C"],
     phSd: ["ph_noise_sd", "pH"], doSd: ["do_noise_sd_pct", "% air saturation"], tempSd: ["temperature_noise_sd_c", "C"], lagMin: ["temperature_lag_min", "min"],
   });
-  const { volume } = readAll(bioreactor, { volume: ["working_volume_l", "L"] });
+  const volume = workingVolume(bioreactor);
   if (!Number.isInteger(v.step) || v.step <= 0) throw new Error("the integration step must be a whole number of seconds, at least 1 (A200)");
   if (!Number.isInteger(v.cadence) || v.cadence <= 0) throw new Error("the sensor cadence must be a whole number of seconds, at least 1 (A100)");
   if (v.cohortSize <= 0) throw new Error("the cohort size must be positive");
@@ -229,7 +234,7 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
   };
   const dead0 = (c.density * (100 - c.viability0)) / c.viability0;
   const s: State = { x: c.density, d: dead0, g: c.glucose0, q: c.glutamine0, l: c.lactate0, p: c.titer0 };
-  const volume = { l: c.volume_l };
+  const volume = { l: c.bayVolume_l?.[Math.floor(i / c.baySize)] ?? c.volume_l };
   const mult: Mult = { ...BASE };
   events.push({ type: "inoculation", t: t0, unit_id, batch_id, density_e6_per_ml: c.density });
   const process = (t: number, kind: "feed" | "temperature_shift" | "alarm" | "harvest", source: "rule" | "scheduled" | "scripted", amount?: number, amount_unit?: string): void => {
