@@ -10,6 +10,7 @@ import type { ObservableEvent } from "../../observe.ts";
 import { emitExport } from "../../raw/emit.ts";
 import type { RawPlan } from "../../raw/emit.ts";
 import type { RawOpportunity } from "../../raw/quirks.ts";
+import type { PhysicalIds } from "../../raw/quirks.ts";
 import { analysisRows } from "../../raw/rows.ts";
 import { deviceDefaults } from "../../raw/types.ts";
 import type { EmittedFile } from "../../raw/key.ts";
@@ -63,6 +64,8 @@ export interface RawPathInput {
   events: readonly ObservableEvent[];
   /** The injector's host receipt time of a result whose instrument stamp was moved (a clock error); the manual path keeps it as the entry time. */
   received_at: Readonly<Record<string, number>>;
+  /** The physical sample of each result event of `events` (physical_ids.ts): every raw draw is keyed by it, never by the label text (S2f F2). */
+  physical: PhysicalIds;
 }
 
 export interface RawPathOutput {
@@ -86,19 +89,21 @@ export const rawPath = (input: RawPathInput): RawPathOutput => {
   for (const id of dialectIds) {
     const dialect = setup.dialects[id];
     if (!dialect) throw new Error(`raw path: the route names the dialect ${id}, which was not supplied`);
-    const rows = analysisRows(events, { dialect, visit_dialects: setup.visits.map((v) => v.dialect), visit_analytes: setup.visits.map((v) => v.analytes), visit_run_s: setup.visits.map((v) => v.run_s), default_dilution: setup.default_dilution });
+    const rows = analysisRows(events, { dialect, visit_dialects: setup.visits.map((v) => v.dialect), visit_analytes: setup.visits.map((v) => v.analytes), visit_run_s: setup.visits.map((v) => v.run_s), default_dilution: setup.default_dilution, physical: input.physical });
     // an instrument whose clock is wrong stamps its rows in its own time; the export schedule runs on the host clock, which the injector hands over for such a result
     const host = (r: AnalysisRow): number => input.received_at[`${r.instrument}/${r.src.request_id}/${r.src.attempt}/${r.src.visit}/${r.values[0]?.analyte}`] ?? r.t_s;
     for (const instrument of unique(rows.map((r) => r.instrument))) {
       const mine = rows.filter((r) => r.instrument === instrument);
       const device: DeviceSettings = { ...deviceDefaults(dialect, instrument), zone_offset_s: setup.zone_offset_s, ...setup.devices?.[instrument] };
-      let previous: AnalysisRow[] = [];
+      let previous: AnalysisRow[] = []; // the rows of the export just before: an overlapping export repeats chosen ones of these, once (S2f F3)
+      let earlier: AnalysisRow[] = []; // every row of the earlier exports: append mode repeats them all
       for (const at of unique(mine.map((r) => setup.export_at(host(r)))).sort((a, b) => a - b)) {
         const now = mine.filter((r) => setup.export_at(host(r)) === at);
-        const e = emitExport({ dialect, device, anchor_epoch_s: setup.anchor_epoch_s, rows: now, previous, export_at: at, plan: { seed, ...setup.plan } });
+        const e = emitExport({ dialect, device, anchor_epoch_s: setup.anchor_epoch_s, rows: now, previous, earlier, export_at: at, plan: { seed, ...setup.plan } });
         files.push(...e.files);
         opportunities.push(...e.opportunities);
-        previous = [...previous, ...now];
+        previous = now;
+        earlier = [...earlier, ...now];
       }
     }
   }
@@ -111,13 +116,13 @@ export const rawPath = (input: RawPathInput): RawPathOutput => {
   ];
   const key: RawKeyContent = {
     files: files.map((f) => ({ file_name: f.file_name, instrument: f.instrument, dialect_id: f.dialect_id, replay_of: f.replay_of, rows: f.key_rows })),
-    entry_errors: [], opportunities: [...opportunities, ...entryOpportunities(seed, events)], not_modelled: notModelled,
+    entry_errors: [], opportunities: [...opportunities, ...entryOpportunities(seed, events, input.physical)], not_modelled: notModelled,
   };
 
   if (input.path === "manual_transcription") {
     const columns = dialectIds.flatMap((id) => (setup.dialects[id] as Dialect).columns);
     const typed = transcribe({
-      seed, events, unit_text: Object.fromEntries(columns.filter((c) => c.kind === "value").map((c) => [c.analyte as string, c.unit_text as string])),
+      seed, events, physical: input.physical, unit_text: Object.fromEntries(columns.filter((c) => c.kind === "value").map((c) => [c.analyte as string, c.unit_text as string])),
       ucum_of: Object.fromEntries(dialectIds.flatMap((id) => Object.entries((setup.dialects[id] as Dialect).units).map(([text, u]) => [text, u.ucum]))), default_dilution: setup.default_dilution,
       ...(setup.entry?.rate !== undefined && { rate: setup.entry.rate }), ...(setup.entry?.forced && { forced: setup.entry.forced }),
     });

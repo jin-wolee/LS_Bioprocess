@@ -18,7 +18,9 @@ export const loadContrast = (configDoc: unknown, p: Patch = {}, seeds?: readonly
   const config = parseContrastConfig(configDoc, evaluation.min_seeds);
   const doc = patched(rawScenario(config.scenario), p);
   doc.raw_layer = true;
-  doc.bay_controllers = config.bay_controllers;
+  // one controller profile per bay (S2f F6): a patched plant with fewer bays (SMALL: one) takes the first profiles of the config only
+  const setting = (name: string): number => ((doc.settings as Record<string, { value: number }>)[name] as { value: number }).value;
+  doc.bay_controllers = config.bay_controllers.slice(0, Math.ceil(setting("reactor_count") / setting("bay_size")));
   doc.calendar_anchor = config.calendar_anchor;
   (doc.settings as Record<string, unknown>).device_zone_h = config.device_zone_h;
   const scenario = loadScenario(doc, lookup);

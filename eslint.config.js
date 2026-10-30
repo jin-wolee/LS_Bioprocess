@@ -14,21 +14,31 @@ const restrict = (...zone) => ["error", { paths: NODE_ONLY, patterns: [NODE_PATT
 const TRUTH = "process|sampling|analysis|measure|instrument|stability|sensors|run";
 const TRUTH_MESSAGE =
   "Truth module: only the observe side, engine/src/evaluate, experiments/assembly and experiments/oracle may import it (the recorded world never reads the truth world).";
+// 2026-10-30 S2f F7: a module specifier may end in .ts, .js (or the m and c variants) or in nothing, and it may reach engine/src through src/ or by going up and down again. Every pattern
+// below takes all of those spellings; the first versions matched `.ts` or no extension only, and `../run.js` or `../../src/run.ts` from a recorded folder passed.
+const EXT = "(\\.[cm]?[jt]s)?";
 const ANSWER_KEY = {
-  regex: "(^|/)evaluate/answer_key(\\.ts)?$",
+  regex: `(^|/)evaluate/answer_key${EXT}$`,
   message: "The error answer key is importable only inside engine/src/evaluate; the injector returns plain data and the assembly writes the key.",
 };
-const TRUTH_IN_FOLDER = { regex: `^(\\.\\./)+(${TRUTH})(\\.ts)?$`, message: TRUTH_MESSAGE };
+// A relative path whose last two segments are `..` or `src` and a truth module. A local file that carries a truth name in a folder of its own (./process.ts, ../record/process.ts) is not one.
+const TRUTH_IN_FOLDER = { regex: `^(?=\\.)(?:.*/)?(?:\\.\\.|src)/(${TRUTH})${EXT}$`, message: TRUTH_MESSAGE };
+// 2026-10-30 S2f F7: the evaluator and the experiment assembly import truth modules (they score against truth and draw the shared truth run), so a recorded folder that imports them reads truth
+// one step removed. experiments/arms has its own, older zone with the same effect.
+const TRUTH_READER_FOLDERS = {
+  regex: "(^|/)(evaluate|experiments/assembly)(/|$)",
+  message: "evaluate/ and experiments/assembly/ read the truth world: the recorded side (record, ingest, inject, export, experiments/arms, raw) never imports them.",
+};
 // 2026-10-29 S2b: the generated Event type still carries the hidden fields (true_value, noise, true_state, ...). The recorded side
 // uses the observable types of observe.ts, in which those fields are removed from the type (S2a Parked, closed here).
 const HIDDEN_EVENT = {
-  regex: "(^|/)generated/event\\.schema(\\.ts)?$",
+  regex: `(^|/)generated/event\\.schema${EXT}$`,
   message: "The generated Event type carries the hidden truth fields: the recorded side uses ObservableEvent from engine/src/observe.ts.",
 };
 // 2026-10-30 S2e1: the raw quirk key is hidden (schemas/raw_quirk_key.schema.json; spec 2.4.1 rule 6): the evaluator is its only reader. Its types live in raw/key.ts; the emitter (raw/**) writes
 // them and the experiment assembly writes the key file. Every other file is refused, the parser and the recorders included. The reader folders get their own zone objects at the end of this file.
 const RAW_KEY = {
-  regex: "(^|/)(raw/key|generated/raw_quirk_key\\.schema)(\\.ts)?$",
+  regex: `(^|/)(raw/key|generated/raw_quirk_key\\.schema)${EXT}$`,
   message: "The raw quirk key is hidden: only engine/src/evaluate, engine/src/experiments/assembly and engine/src/raw may import it (the parser and the recorders never see which quirks were realised).",
 };
 const ARMS_ONLY_RECORDED = {
@@ -78,13 +88,13 @@ export default tseslint.config(
     // Zone 1, top-level files that are not truth readers: a new flat module may not import a truth module.
     files: ["engine/src/*.ts"],
     ignores: TRUTH_READERS,
-    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, { regex: `^\\./(${TRUTH})(\\.ts)?$`, message: TRUTH_MESSAGE }) },
+    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, { regex: `^\\./(${TRUTH})${EXT}$`, message: TRUTH_MESSAGE }) },
   },
   {
     // Zone 1, folders: record, ingest, raw, inject, export, experiments/arms and any folder added later.
     files: ["engine/src/*/**/*.ts"],
     ignores: TRUTH_READERS,
-    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT) },
+    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS) },
   },
   {
     // Zone 3: the decision code of experiment 2.
@@ -101,6 +111,6 @@ export default tseslint.config(
   {
     // Zone 5, the raw layer: the emitter writes the key. It is not a truth reader, so zone 1 (folders) applies as before; evaluate/** needs no object (it was in no zone but the base).
     files: ["engine/src/raw/**/*.ts"],
-    rules: { "no-restricted-imports": restrict(ANSWER_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT) },
+    rules: { "no-restricted-imports": restrict(ANSWER_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS) },
   },
 );

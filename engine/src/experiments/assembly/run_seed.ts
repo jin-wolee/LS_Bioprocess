@@ -18,6 +18,7 @@ import { resolveCapturePath } from "../../record/capture.ts";
 import type { CapturePath } from "../../raw/types.ts";
 import type { EntryConfig } from "../../record/rule_types.ts";
 import { keyFile } from "./key_file.ts";
+import { physicalIds } from "./physical_ids.ts";
 import { rawPath } from "./raw_path.ts";
 import type { RawSetup } from "./raw_path.ts";
 import { rawKeyFile } from "./raw_key_file.ts";
@@ -80,7 +81,7 @@ export const runSeed = (input: SeedInput): SeedOutput => {
   const cells = input.architectures.map((architecture, i) => {
     const out = injected[i] as (typeof injected)[number];
     // the raw layer: the files are emitted from the same rows and draws on both capture paths; the path decides what the recorder is given
-    const captured = input.raw ? rawPath({ setup: input.raw, seed: input.seed, architecture, path: resolveCapturePath(architecture, input.raw.capture_path), events: out.events, received_at: out.received_at }) : null;
+    const captured = input.raw ? rawPath({ setup: input.raw, seed: input.seed, architecture, path: resolveCapturePath(architecture, input.raw.capture_path), events: out.events, received_at: out.received_at, physical: physicalIds(input.events, out.events) }) : null;
     // S2e2: the controller logs. Machine files, so only the adapter path has them (spec 5, "Capture path", rule 3); the layer off, or a layer on with no bay controller, has none
     const controller = captured && input.raw?.controller
       ? controllerPath({ setup: input.raw.controller, anchor_epoch_s: input.raw.anchor_epoch_s, zone_offset_s: input.raw.zone_offset_s, path: captured.path, flags: { ingest_idempotency: architecture.flags.ingest_idempotency }, events: input.events, sensors: input.sensors })

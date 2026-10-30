@@ -5,6 +5,7 @@ import { parseFile } from "../../src/ingest/parse.ts";
 import { newStore } from "../../src/ingest/store.ts";
 import type { ObservableEvent } from "../../src/observe.ts";
 import { emitExport } from "../../src/raw/emit.ts";
+import { physicalIds } from "../../src/experiments/assembly/physical_ids.ts";
 import { analysisRows } from "../../src/raw/rows.ts";
 import { deviceDefaults } from "../../src/raw/types.ts";
 import { ANCHOR, dialectOf } from "../support/raw_fixtures.ts";
@@ -16,8 +17,8 @@ const result = (t: number, request: string, analyte: string, value: number, anal
 
 const roundTrip = (dialectId: string, events: ObservableEvent[], analytes: string[], run_s: number, instrument: string) => {
   const dialect = dialectOf(dialectId);
-  const rows = analysisRows(events, { dialect, visit_dialects: [dialectId], visit_analytes: [analytes], visit_run_s: [run_s], default_dilution: dialectId === "cds_table" ? null : 1 });
-  const file = emitExport({ dialect, device: deviceDefaults(dialect, instrument), anchor_epoch_s: anchorEpoch(ANCHOR), rows, previous: [], export_at: 36000, plan: { seed: 3 } }).files[0];
+  const rows = analysisRows(events, { dialect, visit_dialects: [dialectId], visit_analytes: [analytes], visit_run_s: [run_s], default_dilution: dialectId === "cds_table" ? null : 1, physical: physicalIds(events, events) });
+  const file = emitExport({ dialect, device: deviceDefaults(dialect, instrument), anchor_epoch_s: anchorEpoch(ANCHOR), rows, previous: [], earlier: [], export_at: 36000, plan: { seed: 3 } }).files[0];
   if (!file) throw new Error("no file");
   const entry = adapterEntry(dialect, { instrument, required_analytes: analytes, run_s });
   const out = parseFile(file.text, { entry, file_name: file.file_name, raw_file_id: "RF1", received_at: 36000, anchor_epoch_s: anchorEpoch(ANCHOR), flags: { ingest_idempotency: true, append_only_versions: true }, store: newStore() });

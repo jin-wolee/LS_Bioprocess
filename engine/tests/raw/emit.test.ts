@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { anchorEpoch } from "../../src/calendar.ts";
 import { emitExport } from "../../src/raw/emit.ts";
 import type { ExportInput } from "../../src/raw/emit.ts";
+import { physicalIds } from "../../src/experiments/assembly/physical_ids.ts";
 import { analysisRows } from "../../src/raw/rows.ts";
 import { BANNER, deviceDefaults } from "../../src/raw/types.ts";
 import type { AnalysisRow } from "../../src/raw/types.ts";
@@ -20,10 +21,10 @@ const COUNTER = [result(33000, S[0], "vcd", 12.5), result(33000, S[0], "viabilit
 const CDS = [result(32940, S[0], "titer", 1.2, "HP-1"), result(33180, S[1], "titer", 1.5, "HP-1"), result(33420, S[2], "titer", 1.1, "HP-1")];
 
 const rowsOf = (dialect: string, events: ObservableEvent[], analytes: string[], run_s: number): AnalysisRow[] =>
-  analysisRows(events, { dialect: dialectOf(dialect), visit_dialects: [dialect], visit_analytes: [analytes], visit_run_s: [run_s], default_dilution: dialect === "cds_table" ? null : 1 });
+  analysisRows(events, { dialect: dialectOf(dialect), visit_dialects: [dialect], visit_analytes: [analytes], visit_run_s: [run_s], default_dilution: dialect === "cds_table" ? null : 1, physical: physicalIds(events, events) });
 
 const exportOf = (dialect: string, rows: AnalysisRow[], over: Partial<ExportInput> = {}, instrument = "AN-1") =>
-  emitExport({ dialect: dialectOf(dialect), device: deviceDefaults(dialectOf(dialect), instrument), anchor_epoch_s: anchorEpoch(ANCHOR), rows, previous: [], export_at: 36000, plan: { seed: 7 }, ...over });
+  emitExport({ dialect: dialectOf(dialect), device: deviceDefaults(dialectOf(dialect), instrument), anchor_epoch_s: anchorEpoch(ANCHOR), rows, previous: [], earlier: [], export_at: 36000, plan: { seed: 7 }, ...over });
 
 describe("Step 5 emitter: the text equals the hand-made fixture of each dialect", () => {
   it("Given three analyses on the all-in-one dialect When the export is written Then the file is the clean fixture, line for line", () => {
@@ -75,10 +76,10 @@ describe("Step 5 emitter: banner, determinism, file name, key rows", () => {
 
 describe("Step 5 emitter: keyed quirk opportunities (purpose raw:RQ4) and the quirks it writes", () => {
   const rows = rowsOf("allinone_csv", AIO, ["glucose", "lactate"], 270);
-  it("Given three rows and a previous export When the draws are listed Then each is keyed by sample, visit and attempt and carries purpose raw:RQ4, plus one file-level draw keyed by the export id", () => {
+  it("Given an export of two rows after an export of one When the draws are listed Then each row of this export is keyed by sample, visit and attempt with purpose raw:RQ4, the earlier row's draw is not listed again (S2f F3), plus one file-level draw keyed by the export id", () => {
     const e = exportOf("allinone_csv", rows.slice(1), { previous: rows.slice(0, 1) });
     expect(e.opportunities.map((o) => [o.purpose, o.id])).toEqual([
-      ["raw:RQ4", "U01-D01-1/1/1"], ["raw:RQ4", "U02-D01-1/1/1"], ["raw:RQ4", "U03-D01-1/1/1"], ["raw:RQ4", "AN-1|allinone_csv|36000"],
+      ["raw:RQ4", "U02-D01-1/1/1"], ["raw:RQ4", "U03-D01-1/1/1"], ["raw:RQ4", "AN-1|allinone_csv|36000"],
     ]);
     expect(e.opportunities.every((o) => o.u >= 0 && o.u < 1)).toBe(true);
   });
@@ -98,10 +99,10 @@ describe("Step 5 emitter: keyed quirk opportunities (purpose raw:RQ4) and the qu
     const e = exportOf("allinone_csv", rows.slice(2), { previous: rows.slice(0, 2), plan: { seed: 7, rates: { overlap: 1 } } }).files[0];
     expect(e?.key_rows.map((k) => [k.sample_id, k.repeat])).toEqual([[S[0], true], [S[1], true], [S[2], false]]);
   });
-  it("Given append mode on the device (RQ4) Then all earlier rows are repeated whatever the rate", () => {
+  it("Given append mode on the device (RQ4) Then all earlier rows of the instrument are repeated whatever the rate (`earlier` is every row of the earlier exports, `previous` the export just before)", () => {
     const device = { ...deviceDefaults(dialectOf("counter_csv"), "AN-1"), append: true };
     const r = rowsOf("counter_csv", COUNTER, ["vcd", "viability"], 130);
-    expect(exportOf("counter_csv", r.slice(2), { device, previous: r.slice(0, 2) }).files[0]?.key_rows.map((k) => k.repeat)).toEqual([true, true, false]);
+    expect(exportOf("counter_csv", r.slice(2), { device, earlier: r.slice(0, 2) }).files[0]?.key_rows.map((k) => k.repeat)).toEqual([true, true, false]);
   });
   it("Given range marking on and a glucose of 16 g/L above a limit of 15 g/L at dilution 1 (A089; test-only) Then the cell is blank and the note names analyte and direction (RQ6)", () => {
     const r = rowsOf("allinone_csv", [result(33000, S[0], "glucose", 16), result(33000, S[0], "lactate", 0.8)], ["glucose", "lactate"], 270);

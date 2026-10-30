@@ -44,7 +44,10 @@ export const rawConfigOf = (name: string, p: Patch = {}, over: RawOverrides = {}
   if (over.capture_path) doc.capture_path = over.capture_path;
   if (over.export_schedule) doc.export_schedule = over.export_schedule;
   if (over.controller_log_cut) doc.controller_log_cut = over.controller_log_cut;
-  if (over.bay_controllers !== null) doc.bay_controllers = [...(over.bay_controllers ?? BAY_FAMILIES)];
+  // one controller profile per bay (S2f F6): the default puts the families on the bays in order, so a one-bay variant (SMALL) gets the first family only; an explicit list is taken as given
+  const setting = (name: string): number => ((doc.settings as Record<string, { value: number }>)[name] as { value: number }).value;
+  const bays = Math.ceil(setting("reactor_count") / setting("bay_size"));
+  if (over.bay_controllers !== null) doc.bay_controllers = [...(over.bay_controllers ?? BAY_FAMILIES.slice(0, bays))];
   return loadScenario(doc, lookup);
 };
 

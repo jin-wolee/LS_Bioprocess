@@ -72,7 +72,8 @@ const oneOf = <T extends string>(value: T | undefined, allowed: readonly T[], fa
 const minutes = (p: Param): number => wholeSeconds(param({ x: p }, "x", "min") * 60);
 
 /** The raw-layer settings of a scenario. A setting that is read only with the layer on fails validation with the layer off, because a silent no-op would mislead. */
-const rawSettings = (sc: Scenario, settings: ReturnType<typeof checkParams>, sensors: ProcessConfig["sensors"]): RawSettings | undefined => {
+const rawSettings = (sc: Scenario, settings: ReturnType<typeof checkParams>, proc: Pick<ProcessConfig, "sensors" | "reactors" | "baySize">): RawSettings | undefined => {
+  const sensors = proc.sensors;
   if (sc.raw_layer !== true) {
     for (const name of ["capture_path", "calendar_anchor", "export_schedule", "controller_log_cut", "bay_controllers"] as const) {
       if (sc[name] !== undefined) throw new Error(`scenario ${sc.scenario_id}: the setting ${name} is read only with raw_layer true, and raw_layer is off; remove ${name} or set raw_layer to true (spec section 5, Capture path)`);
@@ -81,6 +82,13 @@ const rawSettings = (sc: Scenario, settings: ReturnType<typeof checkParams>, sen
   }
   if (sc.calendar_anchor === undefined) throw new Error(`scenario ${sc.scenario_id}: raw_layer needs the setting calendar_anchor (spec section 2.4.1, rule 1)`);
   if (settings.device_zone_h === undefined) throw new Error(`scenario ${sc.scenario_id}: raw_layer needs the setting device_zone_h, the zone the instruments are configured with (A161)`);
+  // 2026-10-30 S2f F6: a bay uses one controller profile (spec section 2.4.2). With fewer profiles than bays the units of a later bay had no controller and lost every process value on
+  // adapter_ingest, silently; with more, a profile named a bay that does not exist. The bays are the reactors in bays of bay_size, as the process lays them out (process.ts).
+  const bays = Math.ceil(proc.reactors / proc.baySize);
+  if (sc.bay_controllers !== undefined && sc.bay_controllers.length !== bays) {
+    const n = sc.bay_controllers.length;
+    throw new Error(`scenario ${sc.scenario_id}: bay_controllers names ${n} controller profile${n === 1 ? "" : "s"} but the scenario has ${bays} bay${bays === 1 ? "" : "s"} (reactor_count ${proc.reactors} in bays of ${proc.baySize}); name one controller profile per bay, bay 1 first (spec section 2.4.2)`);
+  }
   return {
     ...(sc.capture_path !== undefined && { capture_path: sc.capture_path }), export_schedule: sc.export_schedule ?? "window_end", controller_log_cut: sc.controller_log_cut ?? "daily",
     ...(sc.bay_controllers !== undefined && { bay_controllers: [...sc.bay_controllers] }), set_points: { pH: sensors.phSp, DO: sensors.doSp, temperature: sensors.tempSp },
@@ -100,7 +108,7 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
   if (!bio.containers?.default) throw new Error(`profile ${bio.profile_id}: containers needs a default entry`);
   const scripted = (sc.scripted_events ?? []).map((e) => ({ type: e.type, unit_id: e.unit_id, at_s: minutes(e.at) }));
   const proc = processConfig(settings, bio.params, scripted);
-  const rawLayer = rawSettings(sc, settings, proc.sensors);
+  const rawLayer = rawSettings(sc, settings, proc);
   const lots = (sc.lot_changes ?? []).map((l) => ({ analyzer: l.analyzer, at_s: minutes(l.at) }));
   const v = readAll(settings, { analyzers: ["analyzer_count", "analyzers"], rerun: ["rerun_probability", "fraction"], qcStart: ["qc_window_start_min", "min"], qcLength: ["qc_window_length_min", "min"] });
   const plan = oneOf(sc.sampling_plan, ["burst", "staggered"], "burst", "sampling_plan");

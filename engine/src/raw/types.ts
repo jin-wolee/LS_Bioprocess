@@ -40,18 +40,22 @@ export const deviceDefaults = (dialect: Dialect, instrument: string): DeviceSett
   units_row: false,
 });
 
-/** The run bookkeeping a file cannot carry: which request, attempt and visit a line renders. The assembly keeps it beside the file; the parser never sees it. */
+/** The run bookkeeping a file cannot carry: which request, attempt, visit and instant a line renders. The assembly keeps it beside the file; the parser never sees it. */
 export interface Source {
   request_id: string;
   attempt: number;
   visit: number;
+  /** The instant of the analysis on the instrument clock (the result event). An analyzer runs one analysis at a time, so with the analyzer it tells two analyses apart that a label error gave the same label, attempt and visit (S2f F1). */
+  t: number;
 }
 
 /** One line of a file before it is written: one analysis (or injection) of a sample. */
 export interface AnalysisRow {
   instrument: string;
-  /** The sample-id text as the operator typed it at the analyzer. */
+  /** The sample-id text as the operator typed it at the analyzer. A label error can make it the text of another tube. */
   sample_id: string;
+  /** The physical sample the row measures (S2f F2): what the quirk draws are keyed by, whatever the label text says. Plain data from the assembly (raw/quirks.ts). */
+  physical_id: string;
   /** The instant of the measurement in seconds of the scenario (the result event). */
   t_s: number;
   /** The instant the row stamp shows, on the instrument clock: t_s, or t_s minus the run time where the stamp is the start (stamp.means). */

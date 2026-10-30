@@ -65,7 +65,9 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags, 
       }),
       state: worst === null ? null : (transit("result", "measured", worst, "rule") as "held" | "quarantined"),
     };
-    if (id === undefined) for (const f of stage) out.validation_finding.push({ rule: f.rule, target: `result:${r.result_id}`, severity: f.severity, action: f.action, status: "open" });
+    // 2026-10-30 S2f F5: an overwrite (id given) puts the new version in the old row, so the stage findings of the version it replaces go and those of the version it holds are written
+    if (id !== undefined) out.validation_finding = out.validation_finding.filter((f) => f.target !== `result:${id}`);
+    for (const f of stage) out.validation_finding.push({ rule: f.rule, target: `result:${r.result_id}`, severity: f.severity, action: f.action, status: "open" });
     return r;
   };
 

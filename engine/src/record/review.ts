@@ -61,6 +61,8 @@ export const reviewPoint = (t: number, roster: Roster, timing: ReviewTiming): nu
 };
 
 const isOpen = (f: ValidationFindingRow): boolean => f.action === "hold" || f.action === "quarantine";
+/** 2026-10-30 S2f F4: an open reject finding (VR-014: the row is not loaded, data_model section 8) is no hold to resolve, but it decides the outcome of a row that is in a state already. */
+const isReject = (f: ValidationFindingRow): boolean => f.action === "reject" && f.status === "open";
 
 /** `log` (optional) collects the state transitions performed, for the data dictionary tests (S2d). */
 export const review = (ds: RecordedDataset, cfg: ReviewConfig, log?: Transition[]): RecordedDataset => {
@@ -74,6 +76,7 @@ export const review = (ds: RecordedDataset, cfg: ReviewConfig, log?: Transition[
   // the rules that hold or quarantine, by the target they concern: `result:<id>` or `sample:<request>`
   const rulesAt = new Map<string, string[]>();
   for (const f of ds.validation_finding) if (isOpen(f)) rulesAt.set(f.target, [...(rulesAt.get(f.target) ?? []), f.rule]);
+  const rejectedAt = new Set(ds.validation_finding.filter(isReject).map((f) => f.target));
   const strict = ds.architecture.flags.available_at;
   const reviewedResults = new Set<string>();
   const reviewedRequests = new Set<string>();
@@ -82,13 +85,15 @@ export const review = (ds: RecordedDataset, cfg: ReviewConfig, log?: Transition[
     if (r.state !== "held" && r.state !== "quarantined") return r; // no hold: not reviewed (review by exception); an end state is final
     const rules = [...(rulesAt.get(`result:${r.result_id}`) ?? []), ...(rulesAt.get(`sample:${r.request_id}`) ?? [])];
     if (rules.length === 0) throw new Error(`review: result ${r.result_id} is ${r.state} but no finding concerns it`);
+    // a row the ingest stage put in a state keeps it when a rule of the validation stage rejects it (validate.ts), so the reject is read here: it is never released
+    const rejected = rejectedAt.has(`result:${r.result_id}`) || rejectedAt.has(`sample:${r.request_id}`);
     const at = reviewPoint(r.ingested_at ?? r.measured_at, cfg.roster, cfg.timing);
     reviewedResults.add(r.result_id);
     reviewedRequests.add(r.request_id);
     // the review performs both steps of the diagram at one instant (under_review has no duration): the row goes to under_review, then the reviewer rejects or the approver releases
     transit("result", r.state, "under_review", "reviewer", log);
     // any rejecting rule wins; a rejected row was never knowable downstream, so it has no available_at
-    return rules.some((rule) => outcomeOf(rule) === "rejected")
+    return rejected || rules.some((rule) => outcomeOf(rule) === "rejected")
       ? { ...r, state: transit("result", "under_review", "rejected", "reviewer", log) as "rejected", reviewed_at: at, available_at: null }
       : { ...r, state: transit("result", "under_review", "released", "approver", log) as "released", reviewed_at: at, available_at: strict ? at : r.available_at };
   });

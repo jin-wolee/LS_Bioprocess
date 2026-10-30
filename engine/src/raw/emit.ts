@@ -16,7 +16,7 @@ export interface RawPlan {
   seed: number;
   /** RQ4 probabilities. Absent: no ledger rate exists (spec 2.4.8), so nothing materialises and a production run reports the quirk as not modelled. Test-only values in fixtures. */
   rates?: { overlap?: number; replay?: number };
-  /** Forced mode (fixtures): indices of the previous export's rows to repeat, a replayed file, and scripted reanalysis rows (RQ5: an index into `rows` and the new row time). */
+  /** Forced mode (fixtures): indices of the rows of `previous`, the export just before, to repeat, a replayed file, and scripted reanalysis rows (RQ5: an index into `rows` and the new row time). */
   forced?: { overlap_rows?: readonly number[]; replay?: boolean; reanalysis?: readonly { row: number; at_s: number }[] };
   /** RQ6: the upper end of the analytical range at dilution 1 by analyte (A089); used with `range_marking`. */
   range_limits?: Readonly<Record<string, number>>;
@@ -28,8 +28,10 @@ export interface ExportInput {
   /** Epoch seconds (UTC) of scenario second 0 (calendar.ts, anchorEpoch). */
   anchor_epoch_s: number;
   rows: readonly AnalysisRow[];
-  /** Rows of the earlier exports of this instrument and dialect: what append mode and an overlapping export repeat. */
+  /** The rows of the export just before this one (same instrument and dialect), without its repeats: the rows an overlapping export may repeat, once (S2f F3). */
   previous: readonly AnalysisRow[];
+  /** Every row of all the earlier exports of this instrument and dialect, without repeats: what append mode repeats in each export. */
+  earlier: readonly AnalysisRow[];
   /** The host clock at the export (seconds of the scenario): the file's received_at. */
   export_at: number;
   plan: RawPlan;
@@ -60,14 +62,13 @@ export const emitExport = (input: ExportInput): Emitted => {
   const exportId = `${device.instrument}|${dialect.dialect_id}|${input.export_at}`;
   const opportunities: RawOpportunity[] = [];
 
-  // RQ4: rows of earlier exports that this export repeats (append mode: all of them; an overlapping export: the drawn or forced ones)
+  // RQ4: rows that this export repeats. Append mode repeats every earlier row in every export. An overlapping export repeats the chosen rows of the export just before, once, and
+  // only there (spec 2.4.3). 2026-10-30 S2f F3: the draw of a row is recorded by the export that first writes it (below); here the same pure draw is only read to decide.
   const lines: Line[] = [];
-  input.previous.forEach((row, i) => {
-    const draw = overlapDraw(plan.seed, row);
-    opportunities.push(draw);
-    const chosen = device.append === true || (plan.forced?.overlap_rows ?? []).includes(i) || (plan.rates?.overlap !== undefined && draw.u < plan.rates.overlap);
-    if (chosen) lines.push({ row, quirks: ["RQ4"], repeat: true, notes: [], blank: new Set() });
-  });
+  const repeated = device.append === true
+    ? input.earlier
+    : input.previous.filter((row, i) => (plan.forced?.overlap_rows ?? []).includes(i) || (plan.rates?.overlap !== undefined && overlapDraw(plan.seed, row).u < plan.rates.overlap));
+  for (const row of repeated) lines.push({ row, quirks: ["RQ4"], repeat: true, notes: [], blank: new Set() });
   for (const row of input.rows) {
     opportunities.push(overlapDraw(plan.seed, row));
     lines.push({ row, quirks: [], repeat: false, notes: [], blank: new Set() });

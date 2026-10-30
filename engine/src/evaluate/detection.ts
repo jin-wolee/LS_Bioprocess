@@ -52,11 +52,14 @@ export const detection = (truth: Truth, ds: RecordedDataset, key: ArchitectureKe
       : evaluable ? null : [...blocked.map((b) => `${b.rule}: ${b.reason}`), ...idle.map((e) => `${e.name}: needs ${e.needs}, which is off`)].join("; ");
     const truthIds = realised(key, type);
     const recorded = new Set(truthIds.map((id) => recordedId(key, id)));
-    const byRule = runnableRules.map((id) => ({ name: id, requests: ds.validation_finding.filter((f) => f.action !== "no-op" && f.rule === id).map((f) => requestOfTarget(ds, f.target)) }));
+    // 2026-10-30 S2f F8: only a finding on a result or on a request is a flag of the type (a finding on a controller source event names no request and would lower the precision)
+    const byRule = runnableRules.map((id) => ({
+      name: id, requests: ds.validation_finding.filter((f) => f.action !== "no-op" && f.rule === id).flatMap((f) => requestOfTarget(ds, f.target) ?? []),
+    }));
     const shown = runnableEvidence.map((e) => ({ name: e.name, requests: new Set(e.requests(ds)) }));
     const flags = byRule.flatMap((d) => d.requests);
-    const flagged = new Set(flags.filter((r): r is string => r !== null));
-    const onRealised = flags.filter((r) => r !== null && recorded.has(r)).length;
+    const flagged = new Set(flags);
+    const onRealised = flags.filter((r) => recorded.has(r)).length;
     const clean = truth.requests.filter((r) => !truthIds.includes(r.request_id));
     const detected = truthIds.filter((id) => flagged.has(recordedId(key, id)) || shown.some((e) => e.requests.has(recordedId(key, id)))).length;
     const common = {

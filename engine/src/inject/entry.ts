@@ -1,6 +1,6 @@
 import type { ObservableEvent } from "../observe.ts";
-import { entryDraw } from "../raw/quirks.ts";
-import type { RawOpportunity } from "../raw/quirks.ts";
+import { entryDraw, physicalOf } from "../raw/quirks.ts";
+import type { PhysicalIds, RawOpportunity } from "../raw/quirks.ts";
 import type { CaptureProvenance } from "../record/types.ts";
 
 // The transcription step of manual_transcription (spec section 5, "Capture path", rules 3 to 5; prompts/20 Step 6): a person reads the instrument screen or printout and
@@ -34,6 +34,8 @@ export interface AppliedEntryError {
 export interface TranscribeInput {
   seed: number;
   events: readonly ObservableEvent[];
+  /** The physical sample of each result event (raw/quirks.ts): the entry draw is keyed by it, not by the label text the operator typed (S2f F2). */
+  physical: PhysicalIds;
   /** The unit text the entry form shows by default per analyte, and the UCUM code of every unit text the form may carry (the dialect data, plain data from the assembly). */
   unit_text: Readonly<Record<string, string>>;
   ucum_of: Readonly<Record<string, string>>;
@@ -64,8 +66,8 @@ export const transposeDigits = (value: number): number => {
 };
 
 /** The entry-error draws of every result row, with no path and no rate: the same list on both capture paths (spec section 5, "Capture path", rule 5). */
-export const entryOpportunities = (seed: number, events: readonly ObservableEvent[]): RawOpportunity[] =>
-  events.flatMap((e) => (e.type === "result_measured" ? [entryDraw(seed, e.request_id, e.analyte, e.attempt)] : []));
+export const entryOpportunities = (seed: number, events: readonly ObservableEvent[], physical: PhysicalIds): RawOpportunity[] =>
+  events.flatMap((e) => (e.type === "result_measured" ? [entryDraw(seed, physicalOf(physical, e), e.analyte, e.attempt)] : []));
 
 export const transcribe = (input: TranscribeInput): Transcribed => {
   const dilutions = new Map<string, number>();
@@ -79,7 +81,7 @@ export const transcribe = (input: TranscribeInput): Transcribed => {
   const events = input.events.map((e): ObservableEvent => {
     if (e.type !== "result_measured") return e;
     const m: Measured = e;
-    const draw = entryDraw(input.seed, m.request_id, m.analyte, m.attempt);
+    const draw = entryDraw(input.seed, physicalOf(input.physical, m), m.analyte, m.attempt);
     const forced = (input.forced ?? []).find((f) => f.request_id === m.request_id && f.analyte === m.analyte && (f.attempt ?? 1) === m.attempt);
     // a drawn opportunity materialises, as a transposed digit pair, only where a rate exists (test-only); the content is fixed so that the rate alone decides
     const swapped = transposeDigits(m.value);

@@ -136,9 +136,6 @@ export const parseControllerRow = (env: ControllerEnv, cells: readonly string[],
 
   const finding = (rule: string, severity: IngestFinding["severity"], action: IngestFinding["action"], target: string, status: IngestFinding["status"]): IngestFinding => ({ rule, severity, action, target, status });
   const source = `source_event:${id}`;
-  // an unresolved stamp (the entry has no zone) is stored and quarantined (VR-024); the instant stays unknown, so no record is built
-  if (stamp.status === "unresolved") return { state: "quarantined", rule_id: "VR-024", source_event_id: id, findings: [finding("VR-024", "error", "quarantine", source, "open")] };
-
   // ingest_idempotency (data_model 7): the key is the controller, the natural key of the line and the content version
   const idempotency_key = `${entry.controller}|${id}|v1`;
   if (env.flags.ingest_idempotency) {
@@ -150,6 +147,10 @@ export const parseControllerRow = (env: ControllerEnv, cells: readonly string[],
     }
     store.keys.set(idempotency_key, { content, canonical_id: `${env.raw_file_id}:${line_no}` });
   }
+
+  // an unresolved stamp (the entry has no zone) is stored and quarantined (VR-024); the instant stays unknown, so no record is built.
+  // 2026-10-30 S2f F8: this comes after the idempotency check, as in the analyzer parser (ingest/row.ts), so a replayed file of unresolved rows is a no-op and not quarantined again
+  if (stamp.status === "unresolved") return { state: "quarantined", rule_id: "VR-024", source_event_id: id, findings: [finding("VR-024", "error", "quarantine", source, "open")] };
 
   // VR-025: a transition the state model does not list, when the instance has an earlier record. The first row seen is accepted (the log may start mid-instance), and a held row
   // does not advance the instance, so the next row is judged against the last accepted state.

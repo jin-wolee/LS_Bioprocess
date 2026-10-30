@@ -85,3 +85,32 @@ describe("the controller profile data", () => {
     expect(isValid(ajv, "controller_profile", { ...doc, stamp: { ...doc.stamp, form: "epoch" } })).toBe(false);
   });
 });
+
+// S2f F6: bay_controllers names one controller profile per bay (spec 2.4.2: "A bay uses one controller profile"). With fewer profiles than bays the units of the later bays had no
+// controller and lost every process value on adapter_ingest, without an error; with more, a profile named a bay that does not exist. Bays are reactor_count in bays of bay_size,
+// the layout of the process (24 reactors in bays of 12 is 2 bays; the SMALL variant, 6 reactors in one bay of 6, is 1).
+describe("S2f F6: bay_controllers has exactly one entry per bay", () => {
+  const SMALL_BAY = { reactor_count: 6, bay_size: 6, cohort_size: 6 };
+  it("Given 2 bays and one profile When the scenario is loaded Then it fails, naming bay_controllers and both counts (1 profile, 2 bays)", () => {
+    expect(() => rawConfigOf("default", { seed: 1 }, { bay_controllers: ["ctrl_neutral"] })).toThrow(/bay_controllers.*1.*2|1.*2.*bay_controllers/);
+    expect(() => rawConfigOf("default", { seed: 1 }, { bay_controllers: ["ctrl_neutral"] })).toThrow(/1 controller profile.* 2 bays/);
+  });
+  it("Given 2 bays and three profiles Then it fails too (3 profiles, 2 bays)", () => {
+    expect(() => rawConfigOf("default", { seed: 1 }, { bay_controllers: ["ctrl_neutral", "ctrl_bench", "ctrl_neutral"] })).toThrow(/3 controller profiles.* 2 bays/);
+  });
+  it("Given 1 bay (6 reactors in a bay of 6) and two profiles Then it fails (2 profiles, 1 bay), and with one profile the scenario loads", () => {
+    expect(() => rawConfigOf("default", { seed: 1, settings: SMALL_BAY }, { bay_controllers: ["ctrl_neutral", "ctrl_bench"] })).toThrow(/2 controller profiles.* 1 bay\b/);
+    expect(rawConfigOf("default", { seed: 1, settings: SMALL_BAY }, { bay_controllers: ["ctrl_bench"] }).raw?.bay_controllers).toEqual(["ctrl_bench"]);
+  });
+  it("Given 25 reactors in bays of 12 (a third bay with one reactor) Then three profiles are needed", () => {
+    const three = { reactor_count: 25, bay_size: 12 };
+    expect(() => rawConfigOf("default", { seed: 1, settings: three }, { bay_controllers: ["ctrl_neutral", "ctrl_bench"] })).toThrow(/2 controller profiles.* 3 bays/);
+    expect(rawConfigOf("default", { seed: 1, settings: three }, { bay_controllers: ["ctrl_neutral", "ctrl_bench", "ctrl_neutral"] }).raw?.bay_controllers?.length).toBe(3);
+  });
+  it("Given one profile per bay Then the scenario loads as before", () => {
+    expect(rawConfigOf("default", { seed: 1 }).raw?.bay_controllers).toEqual(["ctrl_neutral", "ctrl_bench"]);
+  });
+  it("Given a layer-on scenario with no bay_controllers Then there is nothing to count and it loads", () => {
+    expect(rawConfigOf("default", { seed: 1 }, { bay_controllers: null }).raw?.bay_controllers).toBeUndefined();
+  });
+});

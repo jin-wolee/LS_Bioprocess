@@ -16,7 +16,13 @@ type ProcessEvent = Extract<ObservableEvent, { type: "process_event" }>;
 /** All process values first (in the order of the sensor series), then the set points of the same signals. The temperature set point steps to the shift value from the tick at or after the shift. */
 export const tagSeries = (sensors: readonly ObservableSensorSeries[], events: readonly ObservableEvent[], sp: SetPoints): TagSeries[] => {
   const shifts = new Map<string, ProcessEvent>();
-  for (const e of events) if (e.type === "process_event" && e.kind === "temperature_shift") shifts.set(e.unit_id, e);
+  for (const e of events) {
+    if (e.type !== "process_event" || e.kind !== "temperature_shift") continue;
+    // 2026-10-30 S2f F8: the map holds one shift per unit (every scenario has one batch per unit, so one shift); a second one would silently replace the first and log a wrong set point
+    const first = shifts.get(e.unit_id);
+    if (first) throw new Error(`controller series: the unit ${e.unit_id} has a second temperature shift (at ${first.t} and at ${e.t}); the set point of a unit follows one shift, and a second batch on a unit is not modelled`);
+    shifts.set(e.unit_id, e);
+  }
   const pv: TagSeries[] = sensors.map((s) => ({ unit: s.unit_id, signal: s.signal, role: "PV", t0_s: s.t0_s, cadence_s: s.cadence_s, n: s.n, at: (j) => s.pv[j] as number }));
   const setPoint = (s: ObservableSensorSeries): ((j: number) => number) => {
     if (s.signal !== "temperature") return () => sp[s.signal];

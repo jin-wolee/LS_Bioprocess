@@ -3,6 +3,7 @@ import { anchorEpoch } from "../../src/calendar.ts";
 import { entryConfigFor } from "../../src/experiments/assembly/raw_setup.ts";
 import { rawPath } from "../../src/experiments/assembly/raw_path.ts";
 import type { RawPathOutput, RawSetup } from "../../src/experiments/assembly/raw_path.ts";
+import { physicalIds } from "../../src/experiments/assembly/physical_ids.ts";
 import { runSeed } from "../../src/experiments/assembly/run_seed.ts";
 import type { SeedOutput } from "../../src/experiments/assembly/run_seed.ts";
 import { transcribe, transposeDigits } from "../../src/inject/entry.ts";
@@ -32,7 +33,7 @@ const setup = (over: Partial<RawSetup> = {}): RawSetup => ({
   entry: { forced: [{ kind: "value", request_id: "S2", analyte: "glucose", typed_value: 1.5 }, { kind: "unit", request_id: "S3", analyte: "glucose", typed_unit: "mmol/L" }] }, ...over,
 });
 const through = (path: CapturePath): { out: RawPathOutput; rows: Record<string, unknown>[]; findings: string[][] } => {
-  const out = rawPath({ setup: setup(), seed: 9, architecture: C, path, events, received_at: {} });
+  const out = rawPath({ setup: setup(), seed: 9, architecture: C, path, events, received_at: {}, physical: physicalIds(events, events) });
   const ds = validate({ ...record({ events: out.events, sensors: [], received_at: out.received_at, qualifications: VALID_QUALIFICATIONS, capture: out.capture }, C), ...(out.tables && { raw: out.tables }) }, { hold_limit_s: 1800, entry: entryConfigFor(ALLINONE, DIALECTS) }).dataset;
   return {
     out,
@@ -80,7 +81,7 @@ describe("one sample through both paths (an all-in-one file of three rows, C's f
 });
 
 describe("the transcription step", () => {
-  const input = { seed: 3, events, unit_text: { glucose: "g/L" }, ucum_of: { "g/L": "g/L", "mmol/L": "mmol/L" }, default_dilution: 1 };
+  const input = { seed: 3, events, physical: physicalIds(events, events), unit_text: { glucose: "g/L" }, ucum_of: { "g/L": "g/L", "mmol/L": "mmol/L" }, default_dilution: 1 };
   it("Given a wrong digit is the pair of the first two digits swapped Then 5.1 is typed as 1.5, 12.5 as 21.5, 0.8 as 8 (leading 0 and 8 swap), and a one-digit value stays", () => {
     expect([transposeDigits(5.1), transposeDigits(12.5), transposeDigits(0.8), transposeDigits(6)]).toEqual([1.5, 21.5, 8, 6]);
   });
@@ -92,11 +93,11 @@ describe("the transcription step", () => {
   it("Given a test-only rate of 0 and no forced errors (a production run: no ledger rate) Then nothing is typed wrongly and the class is reported as not modelled", () => {
     const t = transcribe({ ...input, rate: 0 });
     expect(t.applied).toEqual([]);
-    expect(rawPath({ setup: setup({ entry: {} }), seed: 9, architecture: C, path: "manual_transcription", events, received_at: {} }).key.not_modelled).toEqual(["raw_rq4_overlap", "raw_rq4_replay", "entry_value", "entry_unit", "entry_dilution"]);
+    expect(rawPath({ setup: setup({ entry: {} }), seed: 9, architecture: C, path: "manual_transcription", events, received_at: {}, physical: physicalIds(events, events) }).key.not_modelled).toEqual(["raw_rq4_overlap", "raw_rq4_replay", "entry_value", "entry_unit", "entry_dilution"]);
   });
   it("Given the draws of the step Then they are keyed per result row with purpose error:result_entry and are the same list on both paths", () => {
-    const a = rawPath({ setup: setup(), seed: 9, architecture: C, path: "adapter_ingest", events, received_at: {} }).key.opportunities;
-    const m = rawPath({ setup: setup(), seed: 9, architecture: C, path: "manual_transcription", events, received_at: {} }).key.opportunities;
+    const a = rawPath({ setup: setup(), seed: 9, architecture: C, path: "adapter_ingest", events, received_at: {}, physical: physicalIds(events, events) }).key.opportunities;
+    const m = rawPath({ setup: setup(), seed: 9, architecture: C, path: "manual_transcription", events, received_at: {}, physical: physicalIds(events, events) }).key.opportunities;
     expect(m).toEqual(a);
     expect(m.filter((o) => o.purpose === "error:result_entry").map((o) => o.id)).toEqual(["S1/glucose/1", "S2/glucose/1", "S3/glucose/1"]);
     expect(m.filter((o) => o.purpose === "raw:RQ4").length).toBeGreaterThan(0);

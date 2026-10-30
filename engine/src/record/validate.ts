@@ -35,7 +35,12 @@ export const requestOfTarget = (ds: RecordedDataset, target: string): string | n
   const id = rest.join(":");
   if (kind === "sample") return id;
   if (kind === "result") return ds.result.find((r) => r.result_id === id)?.request_id ?? null;
-  if (kind === "source_event") return id.split("/")[1] ?? null; // analyzer/request/attempt/visit/analyte
+  if (kind === "source_event") {
+    // analyzer/request/attempt/visit/analyte names a request. Any other source event (a controller's tag and stamp, S2e2; the parser's own id, which holds the row stamp, whose slashes are
+    // a date separator) names none: 2026-10-30 S2f F8, so that such a finding is no flag of a request-level error type (evaluate/detection.ts)
+    const parts = id.split("/");
+    return parts.length === 5 && /^\d+$/.test(parts[2] as string) && /^\d+$/.test(parts[3] as string) ? (parts[1] as string) : null;
+  }
   return null;
 };
 
@@ -65,7 +70,9 @@ export const validate = (ds: RecordedDataset, cfg: RuleConfig, log?: Transition[
     if (kind === "result" || kind === "sample") raise(`${kind}:${rest.join(":")}`, STATE_OF[f.action]);
   }
   const result: ResultRow[] = ds.result.map((r) => {
-    if (r.state !== null) return r; // already put in a state by the ingest stage (S2e1): the finding of that stage stays, the state is not moved twice
+    // already put in a state by the ingest stage (S2e1): the finding of that stage stays, the state is not moved twice. A reject finding that this stage raises on such a row (VR-014) is
+    // written above and decides at the review, which never releases a row with an open reject finding (2026-10-30 S2f F4; the table of data_model section 6 has no quarantined -> rejected edge)
+    if (r.state !== null) return r;
     const own = states.get(`result:${r.result_id}`);
     const request = states.get(`sample:${r.request_id}`);
     const state = own && request ? (RANK[own] >= RANK[request] ? own : request) : (own ?? request ?? null);

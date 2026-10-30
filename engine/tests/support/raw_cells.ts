@@ -1,5 +1,6 @@
 import { anchorEpoch } from "../../src/calendar.ts";
 import { entryConfigFor } from "../../src/experiments/assembly/raw_setup.ts";
+import { physicalIds } from "../../src/experiments/assembly/physical_ids.ts";
 import { rawPath } from "../../src/experiments/assembly/raw_path.ts";
 import type { RawPathOutput, RawSetup } from "../../src/experiments/assembly/raw_path.ts";
 import type { EntryError } from "../../src/inject/entry.ts";
@@ -94,7 +95,7 @@ export interface RawRan {
 /** Run one row through one configuration on one path: capture step, recorder, validation rules. No truth, no key reader, no evaluator. */
 export const runRaw = (row: RawCellRow, config: Architecture, path: CapturePath): RawRan => {
   const setup = { ...BASE_SETUP("2030-01-07"), ...row.setup };
-  const out = rawPath({ setup, seed: 5, architecture: config, path, events: row.events, received_at: {} });
+  const out = rawPath({ setup, seed: 5, architecture: config, path, events: row.events, received_at: {}, physical: physicalIds(row.events, row.events) });
   const recorded = record({ events: out.events, sensors: [], received_at: out.received_at, qualifications: VALID_QUALIFICATIONS, capture: out.capture }, config);
   const withRaw: RecordedDataset = out.tables ? { ...recorded, raw: out.tables } : recorded;
   const { dataset } = validate(withRaw, { ...row.rules, entry: entryConfigFor(ALLINONE, DIALECTS) });

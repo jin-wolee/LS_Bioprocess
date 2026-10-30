@@ -18,9 +18,11 @@ export interface Bridged {
 
 export const bridge = (events: readonly ObservableEvent[], outputs: readonly ParseOutput[], manifests: ReadonlyMap<string, Manifest>): Bridged => {
   const keyOf = (analyzer: string, request: string, attempt: number, visit: number, analyte: string): string => `${analyzer}/${request}/${attempt}/${visit}/${analyte}`;
+  // 2026-10-30 S2f F1: the slot of a result event also names its instant, as the row of the file does (raw/rows.ts), so two analyses with one label, attempt and visit keep a slot each
+  const slotKey = (analyzer: string, request: string, attempt: number, visit: number, analyte: string, t: number): string => `${keyOf(analyzer, request, attempt, visit, analyte)}/${t}`;
   const slot = new Map<string, number>();
   events.forEach((e, i) => {
-    if (e.type === "result_measured" && !slot.has(keyOf(e.analyzer, e.request_id, e.attempt, e.visit, e.analyte))) slot.set(keyOf(e.analyzer, e.request_id, e.attempt, e.visit, e.analyte), i);
+    if (e.type === "result_measured" && !slot.has(slotKey(e.analyzer, e.request_id, e.attempt, e.visit, e.analyte, e.t))) slot.set(slotKey(e.analyzer, e.request_id, e.attempt, e.visit, e.analyte, e.t), i);
   });
   const placed = new Map<number, Measured[]>();
   const provenance: Record<string, CaptureProvenance> = {};
@@ -46,7 +48,7 @@ export const bridge = (events: readonly ObservableEvent[], outputs: readonly Par
         continue;
       }
       const key = keyOf(r.envelope.source_system, p.sample_id, src.attempt, src.visit, p.analyte);
-      const at = slot.get(keyOf(r.envelope.source_system, src.request_id, src.attempt, src.visit, p.analyte));
+      const at = slot.get(slotKey(r.envelope.source_system, src.request_id, src.attempt, src.visit, p.analyte, src.t));
       if (at === undefined) continue;
       placed.set(at, [...(placed.get(at) ?? []), { type: "result_measured", t: p.measured_at, request_id: p.sample_id, attempt: src.attempt, visit: src.visit, analyzer: r.envelope.source_system, analyte: p.analyte, value: p.value }]);
       provenance[key] = {

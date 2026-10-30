@@ -197,3 +197,76 @@ describe("The Node-only ban of engine/src still holds inside every zone (no exis
     expect(found.map((m) => m.rule).sort()).toEqual(["no-restricted-globals", "no-restricted-properties"]);
   });
 });
+
+// S2f F7: the zones without bypasses (invariant 1). The patterns matched only `^(../)+name(.ts)?$`, so a recorded folder could reach a truth module or the raw quirk key with a `.js`
+// extension, through `src/`, or through the evaluator or the assembly (which import truth). Each spelling below was accepted before; each is planted in every recorded folder and
+// must be refused, while the readers keep their access and the legitimate imports keep working.
+describe("S2f F7: no bypass of the truth, key and reader zones from a recorded folder", () => {
+  /** One level deeper than BLOCKED: the same spelling, as seen from a sub-folder. */
+  const spellings = (dir: string, m: string): string[] => [`${up(dir)}${m}.js`, `${up(dir)}${m}`, `${up(dir)}../src/${m}.ts`, `${up(dir)}../src/${m}.js`, `${up(dir)}../src/${m}`, `./${up(dir)}${m}.ts`];
+
+  for (const dir of BLOCKED) {
+    it.each(TRUTH)(`${dir}/ importing %s by .js, with no extension, through src/ or with a leading ./ is an error`, async (m) => {
+      for (const spec of spellings(dir, m)) {
+        const found = restricted(await messages(importOf(spec), `engine/src/${dir}/planted.ts`));
+        expect(found.some((f) => /truth/i.test(f.text)), spec).toBe(true);
+      }
+    });
+  }
+
+  it.each(["../run.js", "../../src/run.ts", "../sensors.js"])("record/ importing %s (the bypasses found by the S2 adversary) is an error", async (spec) => {
+    expect(restricted(await messages(importOf(spec), "engine/src/record/planted.ts")).some((f) => /truth/i.test(f.text)), spec).toBe(true);
+  });
+
+  const KEYS = (dir: string): string[] => [`${up(dir)}raw/key.js`, `${up(dir)}../src/raw/key.ts`, `${up(dir)}generated/raw_quirk_key.schema.js`];
+  it.each(["ingest", "ingest/adapters", "record", "inject", "export", "experiments/arms", "experiments/oracle", "observe"])("%s/ importing the raw quirk key by .js or through src/ is an error", async (dir) => {
+    for (const spec of KEYS(dir)) expect(restricted(await messages(importOf(spec), `engine/src/${dir}/planted.ts`)).some((f) => /raw quirk key/i.test(f.text)), spec).toBe(true);
+  });
+  it.each(["evaluate", "experiments/assembly", "raw"])("%s/ keeps its access to the raw quirk key, .js spelling included", async (dir) => {
+    for (const spec of KEYS(dir)) expect(restricted(await messages(importOf(spec), `engine/src/${dir}/planted.ts`)), spec).toEqual([]);
+  });
+
+  it.each(["../evaluate/answer_key.js", "../evaluate/answer_key"])("record/ importing the answer key as %s is an error", async (spec) => {
+    expect(restricted(await messages(importOf(spec), "engine/src/record/planted.ts")).some((f) => /answer key/i.test(f.text)), spec).toBe(true);
+  });
+  it("record/ importing the hidden Event type as generated/event.schema.js is an error", async () => {
+    expect(restricted(await messages(importOf("../generated/event.schema.js"), "engine/src/record/planted.ts")).some((f) => /hidden/i.test(f.text))).toBe(true);
+  });
+
+  // the evaluator and the assembly import truth modules, so a recorded folder that imports them reads truth by one step more
+  const READERS_OF_TRUTH = ["evaluate/truth.ts", "evaluate/truth.js", "evaluate/truth", "evaluate/evaluate.ts", "experiments/assembly/from_run.ts", "experiments/assembly/from_run.js", "experiments/assembly/run_seed"] as const;
+  for (const dir of ["record", "ingest", "ingest/adapters", "inject", "export", "raw"] as const) {
+    it.each(READERS_OF_TRUTH)(`${dir}/ importing %s is an error (the recorded side never imports the evaluator or the assembly)`, async (target) => {
+      const found = restricted(await messages(importOf(`${up(dir)}${target}`), `engine/src/${dir}/planted.ts`));
+      expect(found.some((f) => /evaluate.*experiments\/assembly|recorded side/i.test(f.text)), target).toBe(true);
+    });
+  }
+  it.each(["evaluate/truth.ts", "experiments/assembly/from_run.ts"])("experiments/arms importing %s is still an error (its own zone)", async (target) => {
+    expect(restricted(await messages(importOf(`../../${target}`), "engine/src/experiments/arms/planted.ts")).length).toBeGreaterThan(0);
+  });
+
+  it("readers keep their access: the evaluator, the assembly and the oracle import truth modules by .js and through src/, and the evaluator and the assembly import each other", async () => {
+    for (const dir of ALLOWED) {
+      for (const m of TRUTH) for (const spec of [`${up(dir)}${m}.js`, `${up(dir)}../src/${m}.ts`]) expect(restricted(await messages(importOf(spec), `engine/src/${dir}/planted.ts`)), `${dir} ${spec}`).toEqual([]);
+    }
+    expect(restricted(await messages(importOf("../../evaluate/truth.ts"), "engine/src/experiments/assembly/planted.ts"))).toEqual([]);
+    expect(restricted(await messages(importOf("../experiments/assembly/from_run.ts"), "engine/src/evaluate/planted.ts"))).toEqual([]);
+  });
+
+  it("a new top-level file of engine/src importing a truth module as ./run.js is an error, and the existing flat modules keep their imports", async () => {
+    expect(restricted(await messages(importOf("./run.js"), "engine/src/planted.ts")).some((f) => /truth/i.test(f.text))).toBe(true);
+    expect(restricted(await messages(importOf("./sensors.js"), "engine/src/scenario.ts"))).toEqual([]);
+  });
+
+  it("legitimate imports keep working: the observable types, the recorded modules and a local module that happens to carry a truth name", async () => {
+    for (const dir of BLOCKED) {
+      for (const ok of ["observe.js", "observe", "record/types.ts", "record/types.js", "trace.ts", "generated/architecture.schema", "generated/architecture.schema.js"]) {
+        expect(restricted(await messages(importOf(`${up(dir)}${ok}`), `engine/src/${dir}/planted.ts`)), `${dir} ${ok}`).toEqual([]);
+      }
+    }
+    for (const spec of ["./process.ts", "./process.js", "./deep/measure.ts", "../record/process.ts", "../ingest/run.ts"]) {
+      expect(restricted(await messages(importOf(spec), "engine/src/record/planted.ts")), spec).toEqual([]);
+    }
+    expect(restricted(await messages(importOf("./key.js"), "engine/src/ingest/planted.ts"))).toEqual([]);
+  });
+});
