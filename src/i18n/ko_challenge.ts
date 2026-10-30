@@ -27,6 +27,7 @@ export const koChallenge: Record<keyof typeof enChallenge, string> = {
   "challenge.announced.sample": "기록이 틀린 시료를 찾으세요. 시료를 열어 기록이 그 시료에 대해 저장한 행을 본 뒤 추측하세요.",
   "challenge.announced.decision": "틀린 입력으로 내려진 결정을 찾으세요. 결정을 시간순으로 읽고, 시료를 열어 그 행을 본 뒤 추측하세요.",
   "challenge.record.heading": "살펴보는 기록",
+  "challenge.ubiquitous": "이 기록의 모든 시료에는 같은 구조적 오류가 있습니다: {type}. 이 오류는 시료를 서로 구별해 주지 못하므로, 여기에 해당해도 추측을 배경으로 채점하지 않습니다.",
   "challenge.record.samples": "시료",
   "challenge.record.results": "결과",
   "challenge.record.findings": "기록 자체 규칙의 발견 사항",

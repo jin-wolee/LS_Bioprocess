@@ -230,3 +230,25 @@ def row_shape_problems(record) -> list[str]:
     """Every row of a table of the record has the same keys, so no row carries a mark that the others lack."""
     return [f"the rows of {name} do not all have the same keys" for name, rows in record.items()
             if isinstance(rows, list) and rows and all(isinstance(r, dict) for r in rows) and len({tuple(sorted(r)) for r in rows}) > 1]
+
+
+# the types on every sample of a record, typed from the flag table: with audit_trail off (A) the operator is absent for every sample, so each carries the unattributable record
+TYPED_UBIQUITOUS = {"a_manual": ["unattributable_record"]}
+
+
+def ubiquitous_problems(shown, record, noted, reveal) -> list[str]:
+    """The ruling of 2026-10-30 (lab_ui.md section 9): a structural type on every sample of the record is named once on the screen (`noted`, the types the page shows) and never makes a guess
+    `background`; so a wrong guess in A is a miss unless the sample carries another structural error."""
+    types = record.get("ubiquitous")
+    if not isinstance(types, list):
+        return [f"{shown}: the record has no ubiquitous list"]
+    problems = []
+    typed = TYPED_UBIQUITOUS.get(shown)
+    if typed is not None and types != typed:
+        problems.append(f"{shown}: the record names ubiquitous {types}, the typed list says {typed}")
+    if noted != types:
+        problems.append(f"{shown}: the page notes {noted}, the record names {types}")
+    score = reveal.get("score") or {}
+    if score.get("result") == "background" and score.get("background_type") in types:
+        problems.append(f"{shown}: scored background for {score['background_type']}, a type on every sample of the record")
+    return problems

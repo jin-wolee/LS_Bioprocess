@@ -1,4 +1,4 @@
-import { DRAWN_TYPES } from "../../../inject/types.ts";
+import { DRAWN_TYPES, ERROR_TYPES } from "../../../inject/types.ts";
 import type { ForcedError, MaterialisedError } from "../../../inject/types.ts";
 import type { Architecture } from "../../../record/architecture.ts";
 import type { RecordedDataset } from "../../../record/types.ts";
@@ -32,6 +32,8 @@ export interface SampleChallenge {
   run: ScenarioRun;
   /** The shown architecture's record of the planted run. */
   ds: RecordedDataset;
+  /** The structural types on every sample of the shown record (`ubiquitousOf`): left out of `background`. */
+  ubiquitous: string[];
   /** The records the reveal compares: the presets A, B and C in order, then the shown architecture when it is an ablation of C. */
   compared: Architecture[];
 }
@@ -40,6 +42,15 @@ export type SampleStart = { ok: true; challenge: SampleChallenge; announced_type
 
 /** The deciding flag of each drawn type (ADR-0005's flag table): the one whose state decides whether the error arises. */
 export const DECIDING_FLAG = { label_error: "system_issued_id", unit_rekey: "write_time_keys", duplicate_replay: "ingest_idempotency" } as const;
+
+const isStructural = (type: string): boolean => !(DRAWN_TYPES as readonly string[]).includes(type);
+
+/** The structural types that every sample of the record carries (docs/design/lab_ui.md section 9, the author's ruling of 2026-10-30), in the order of `ERROR_TYPES`. None for a record with no sample. */
+export const ubiquitousOf = (materialised: readonly MaterialisedError[], sampleIds: readonly string[]): string[] => {
+  const on = new Map<string, Set<string>>();
+  for (const m of materialised) if (isStructural(m.type)) on.set(m.type, (on.get(m.type) ?? new Set<string>()).add(m.sample_id));
+  return sampleIds.length === 0 ? [] : ERROR_TYPES.filter((t) => sampleIds.every((id) => on.get(t)?.has(id)));
+};
 
 /**
  * Plant one error and record the run under the shown architecture. The caller has checked the spec, the seed and that `shown` names an architecture. The planted error enters the run through
@@ -56,7 +67,8 @@ export const startSampleChallenge = (data: LabData, spec: RunSpec, seed: number,
   const planted: SeedInput = { ...input, forced: [plant] };
   const ds = runSeed(planted).datasets[shown] as RecordedDataset;
   const materialised = materialisedOf(planted)[shown] ?? [];
-  return { ok: true, challenge: { variant: "sample", shown, plant, materialised, input: planted, run, ds, compared: comparedWith(data, shown) }, announced_type: type, record: recordViewOf(ds) };
+  const ubiquitous = ubiquitousOf(materialised, ds.sample.map((s) => s.sample_id));
+  return { ok: true, challenge: { variant: "sample", shown, plant, materialised, input: planted, run, ds, ubiquitous, compared: comparedWith(data, shown) }, announced_type: type, record: recordViewOf(ds, ubiquitous) };
 };
 
 /** The drill-down of section 8 for one sample of the shown record, without truth, verdicts or realised errors; null for an id the record does not hold. */
@@ -67,7 +79,7 @@ export const hasSample = (c: SampleChallenge, sample_id: string): boolean => c.d
 
 const scoreOf = (c: SampleChallenge, guess: string): Score => {
   if (affectedOf(c.plant).includes(guess)) return { result: "hit" };
-  const structural = c.materialised.find((m) => m.sample_id === guess && !(DRAWN_TYPES as readonly string[]).includes(m.type));
+  const structural = c.materialised.find((m) => m.sample_id === guess && isStructural(m.type) && !c.ubiquitous.includes(m.type));
   return structural ? { result: "background", background_type: structural.type } : { result: "miss" };
 };
 

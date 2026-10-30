@@ -108,6 +108,17 @@ function StartPanel({ ready, state, form, setForm, onStart }: { ready: ReadyInfo
   );
 }
 
+/** The structural types the record carries on every sample (lab_ui.md section 9, the author's ruling of 2026-10-30): named once as a fact of the record, never on a single guess. */
+export function UbiquitousNote({ types }: { types: string[] }) {
+  return types.length === 0 ? null : (
+    <div class="notice" data-note="ubiquitous">
+      {types.map((type) => (
+        <T key={type} as="p" k="challenge.ubiquitous" data-ubiquitous={type} parts={{ type: <ErrorTypeName type={type} /> }} />
+      ))}
+    </div>
+  );
+}
+
 function Playing({ ready, state, active, actions }: { ready: ReadyInfo; state: State; active: ActiveChallenge; actions: ChallengeActions }) {
   const footer: ResultFooter = { kind: "simulation_result", scenario: active.scenario, seeds: [active.seed], engine_version: ready.engine_version, architectures: [active.shown], inputs: active.inputs, check: state.check.state };
   const busy = state.challenge.busy !== null;
@@ -145,6 +156,7 @@ function Playing({ ready, state, active, actions }: { ready: ReadyInfo; state: S
             <Label>{active.shown}</Label>
           </dd>
         </dl>
+        {!decision && <UbiquitousNote types={(active.record as RecordView).ubiquitous} />}
         {!active.reveal && (
           <p>
             <button id="challenge-giveup" type="button" disabled={busy} onClick={actions.onGiveUp}>

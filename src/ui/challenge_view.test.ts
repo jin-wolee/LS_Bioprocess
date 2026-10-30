@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { en } from "../i18n/en.ts";
 import { ko } from "../i18n/ko.ts";
-import { Challenge } from "./Challenge.tsx";
+import { Challenge, UbiquitousNote } from "./Challenge.tsx";
 import { defaultChallengeForm } from "./challenge_form.ts";
 import { READY } from "./fixture.ts";
 import { initial } from "./state.ts";
@@ -44,5 +44,24 @@ describe("the honour-system sentence", () => {
     const keys = walk(tree).filter((n) => typeof n.type === "function" && "k" in n.props).map((n) => n.props.k);
     expect(keys).toContain("challenge.honour");
     expect(walk(tree).some((n) => "data-reveal" in n.props)).toBe(false);
+  });
+});
+
+describe("the type on every sample (lab_ui.md section 9, the author's ruling of 2026-10-30)", () => {
+  const sentences = (types: string[]) => walk(UbiquitousNote({ types })).filter((n) => typeof n.type === "function" && n.props.k === "challenge.ubiquitous");
+
+  it("Given two types Then the record names each once, in the order given, as a sentence of the dictionary", () => {
+    expect(sentences(["unattributable_record", "planned_vs_actual"]).map((n) => n.props["data-ubiquitous"])).toEqual(["unattributable_record", "planned_vs_actual"]);
+  });
+
+  it("Given none Then nothing is on the screen", () => {
+    expect(UbiquitousNote({ types: [] })).toBeNull();
+  });
+
+  it("Given the English text Then it says that every sample carries the type and that a guess is not scored background for it, and the Korean text says the same without a number", () => {
+    for (const part of ["Every sample", "{type}", "background"]) expect(en["challenge.ubiquitous"]).toContain(part);
+    expect(ko["challenge.ubiquitous"]).toMatch(/모든 시료/);
+    expect(ko["challenge.ubiquitous"]).toMatch(/배경/);
+    expect(ko["challenge.ubiquitous"]).not.toMatch(/\d/);
   });
 });

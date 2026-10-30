@@ -3,7 +3,8 @@
 `lineage_sc3`: Given SC3, seed 1 and the rule pick, the three answers and verdicts the page draws for A, B and C equal the read-only fixture of the single-sample trace.
 `challenge`: Given a started challenge, nothing the Worker sends before the guess carries the plant (nor, in the decision variant, an affected decision); after the guess the reveal holds `prevented`,
 `invisible` or `detected` for A, B and C equal to the hand-typed cell of the planted type; a guess on a decision of the affected set reads `hit`; and the lineage of a run that is an unrevealed
-challenge is refused with `locked` and opens after the guess. Every message of the Worker is recorded by a wrapper of the Worker class (qa_lab_browser.RECORD_JS).
+challenge is refused with `locked` and opens after the guess; a type that the record carries on every sample is noted once on the page and never scores `background` (A: the unattributable
+record, so a wrong guess there is a `miss`; the ruling of 2026-10-30, section 9). Every message of the Worker is recorded by a wrapper of the Worker class (qa_lab_browser.RECORD_JS).
 """
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ from pathlib import Path
 
 from qa_checks import Result
 from qa_lab_browser import RECORD_JS, go, open_lab, show_lineage, start_challenge, wait_final
-from qa_lab_helpers import lineage_answer_problems, message_problems, outcome_problems, row_shape_problems
+from qa_lab_helpers import lineage_answer_problems, message_problems, outcome_problems, row_shape_problems, ubiquitous_problems
 
 REPO = Path(__file__).resolve().parents[1]
 FIXTURE = REPO / "tests" / "fixtures" / "trace" / "single_sample_trace.json"
@@ -76,6 +77,7 @@ def play_sample(page, shown: str, with_lock: bool = False) -> tuple[list[str], s
         problems.append(f"{shown}: the reveal is on the page before the guess")
     sent = messages(page)[start:]
     record = next(m["record"] for m in sent if m["type"] == "challenge_ready")
+    noted = page.eval_on_selector_all("[data-note=ubiquitous] [data-ubiquitous]", "els => els.map(e => e.dataset.ubiquitous)")
     if with_lock:
         problems += lock_problems(page, record, seed)
         go(page, "challenge")
@@ -88,6 +90,7 @@ def play_sample(page, shown: str, with_lock: bool = False) -> tuple[list[str], s
     if announced != reveal["planted"]["type"]:
         problems.append(f"{shown}: announced {announced}, planted {reveal['planted']['type']}")
     problems += [f"{shown}: {p}" for p in outcome_problems(reveal) + message_problems(sent, reveal["planted"]["affected"]) + row_shape_problems(record)]
+    problems += ubiquitous_problems(shown, record, noted, reveal)
     cell = ABLATION_CELLS.get(shown)
     if cell:
         got = next((p for p in reveal["per_architecture"] if p["architecture"] == shown), None)
@@ -149,8 +152,8 @@ def check_challenge(browser, url) -> Result:
         wait_final(page)
         go(page, "challenge")
         decision = page.query_selector("#challenge-variant-decision") is not None
-        # the three drawn types, each shown in a record that does not prevent it; the first game also checks the lock of the lineage view
-        for i, shown in enumerate(["c_context_minus_system_issued_id", "b_lims_lite", "c_context_minus_ingest_idempotency"]):
+        # the three drawn types, each shown in a record that does not prevent it, then A (the unattributable record is on every sample and never background); the first game also checks the lock of the lineage view
+        for i, shown in enumerate(["c_context_minus_system_issued_id", "b_lims_lite", "c_context_minus_ingest_idempotency", "a_manual"]):
             found, note = play_sample(page, shown, with_lock=i == 0)
             problems += found
             notes.append(note)

@@ -166,6 +166,8 @@ export interface RecordView {
   results: { request_id: string; analyte: string; version: number; value: number; measured_at: number; available_at: number | null; state: string | null }[];
   findings: { rule: string; target: string; severity: string; status: string }[];
   audit_events: { audit_id: string; request_id: string; analyte: string; at: number; old_value: number; new_value: number; old_version: number; new_version: number }[];
+  /** The structural error types the record carries on every sample: never scored `background`, named once on the screen. */
+  ubiquitous: string[];
 }
 export interface DecisionRecordView {
   architecture: string;

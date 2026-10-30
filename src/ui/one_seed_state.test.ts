@@ -7,7 +7,7 @@ import type { State } from "./state.ts";
 // answers; a refusal of the lineage (`locked`) is the problem of the Lineage screen, not of the run in flight; the reveal exists on the page only after the guess or the give-up.
 
 const view = { sample: { sample_id: "S1", unit_id: "U1", picked_by: "reader" }, truth: { unit_id: "U1", sampled_at: 1, context: { feed_epoch: 0, batch_phase: "before_shift" } }, columns: [] } as LineageView;
-const record = { architecture: "a_manual", flags_on: [], samples: [], results: [], findings: [], audit_events: [] } as RecordView;
+const record = { architecture: "a_manual", flags_on: [], samples: [], results: [], findings: [], audit_events: [], ubiquitous: [] } as RecordView;
 const reveal = { planted: { type: "label_error", affected: ["S1", "S2"], detail: {} }, score: null, per_architecture: [], lineage: view } as Reveal;
 const META = { variant: "sample" as const, scenario: "default", seed: 7, shown: "a_manual" };
 

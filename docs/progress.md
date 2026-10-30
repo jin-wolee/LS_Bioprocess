@@ -1985,3 +1985,33 @@ Impossible without a source, stated rather than designed around: mycoplasma ammo
 - The executor's mutations, five of five caught: the planted id in `challenge_ready`, `lineage` answering during a challenge, B's second answer changed, a guess of the neighbour scored as a miss, the decision pick keyed by the label.
 - Notes accepted: the realised errors come from a second call of `inject` (run_seed.ts was outside the brief), pinned equal to the key by a test, to be replaced by the `materialised` field of `SeedOutput` that lab_ui.md section 5 names when a batch may touch run_seed.ts; the SC3 id guard left the engine (the engine names no scenario id), the SC8 id is read from the bundled documents; three existing tests changed with the behaviour, listed in the entry.
 - To the author: in A every sample carries the structural error "unattributable record" (A has no `audit_trail`), so by the scoring rule of section 9 every wrong guess in A scores `background`, never `miss`.
+
+## 2026-10-30 — S3e follow-up: the background score (executor, uncommitted)
+
+**Result**: the sample challenge no longer scores `background` for a structural type that the shown record carries on every one of its samples (the author's ruling, chat, 2026-10-30: "모든 시료에 있는 유형은 빼기 (Recommended)"). Nothing committed. Stage S3, TDD + KISS plus AHA, SRP, Small Batches; no HITL gate touched.
+
+**Spec first**: `lab_ui.md` section 9 ("How a guess is scored") states the exclusion and the note on the screen, quotes the ruling, and adds `ubiquitous: string[]` to `RecordView`. The decision variant is not changed by the ruling and the section says so.
+
+**Red, then green** (each red for the stated reason)
+- Engine `challenge_sample.test.ts`: red 4 of 5 new or changed tests (A scored `background` for the unattributable record; `RecordView.ubiquitous` did not exist), the lost-rerun test already green (a non-ubiquitous type stays `background`, as before); green 5 of 5. Typed from the flag table: A (`audit_trail` off) names `unattributable_record`, and a wrong guess on a sample with only that scores `miss`; a sample with a lost rerun scores `background` naming `lost_rerun`; B names `planned_vs_actual`; the two ablations of C name nothing.
+- `challenge_view.test.ts`: red (`UbiquitousNote` did not exist), green 3 of 3 (one sentence per type, nothing for none, English and Korean texts). The parity test of `i18n.test.ts` covers `challenge.ubiquitous` in both languages.
+- `tests/test_qa_lab.py`: red 4 of 4 (`ubiquitous_problems` did not exist), green 4 of 4.
+
+**Mutation** (scratch copy of `challenge_sample.ts`, restored, `diff` clean): count the ubiquitous types as `background` again (drop `!c.ubiquitous.includes(m.type)` in `scoreOf`): 2 unit tests fail (A and B), and the QA check `challenge` FAILs on the page ("b_lims_lite: scored background for planned_vs_actual, a type on every sample of the record").
+
+**Done**: `uv run pytest -q` (329 passed), `check_docs --all` (0 failures), `bash scripts/check_all.sh --manual --lab` PASS (the whole Vitest run is 143 files and 5999 tests; `tsc` and eslint clean). The QA `challenge` check now also plays A: "a_manual: unit_rekey, miss" (the old rule gave `background`), and compares the types the page notes with the list of the record.
+
+**Paths**: engine `lab/{challenge_sample,challenge_types,record_view}.ts`; page `src/{protocol.ts,ui/Challenge.tsx,i18n/en_challenge.ts,i18n/ko_challenge.ts}`; tests `engine/tests/lab/challenge_sample.test.ts`, `src/ui/{challenge_view,one_seed_state}.test.ts`, `tests/test_qa_lab.py`; QA `scripts/qa_lab_helpers.py`, `scripts/qa_lab_one_seed.py`; docs `lab_ui.md` section 9.
+
+**Choices and notes for the orchestrator**
+1. The rule is general and not a rule about A: B carries `planned_vs_actual` on every sample (a plan is stored for each; 45 of 45 in the small run, and the QA game in B on the default run is a `miss` where it was `background`), so a wrong guess in B on a sample with only that is now a `miss` too, and the screen notes "Planned versus actual time" for B. The brief said "B and C as before"; the ruling as quoted does not name A alone, so it is applied to every record, and a sample with another structural error (lost rerun, feed in the gap) is `background` as before.
+2. "Every eligible sample" is read as every sample of the shown record (every one the reader can guess).
+3. `lab_ui.md` section 19, item 8 still holds the old sentence about A (every unaffected guess in A is `background`); the brief allowed only section 9, so section 9 says it replaces that reading. The orchestrator may want to correct item 8.
+4. The decision variant is untouched: a wrong decision in A is still `background` with `unattributable_record` (`challenge_decision.ts`, its test at line 84). The ruling named the sample challenge; the author may want the same there.
+5. `ubiquitous` travels inside `record` of `challenge_ready`; it follows from the flags and the stream and not from the plant, and the closed list of forbidden keys is unchanged.
+
+## 2026-10-30 — S3e follow-up review: the background score (orchestrator)
+
+**Verdict**: PASS, no rework. The author ruled "모든 시료에 있는 유형은 빼기 (Recommended)": a structural type that the shown record carries on every eligible sample no longer scores `background`, and the challenge screen states once that every record of A is unattributable. The rule is general, so B's `planned_vs_actual` (on every sample of B) is excluded as well; the brief's "B and C as before" was the orchestrator's slip, and the ruling stands as written. Executor: Sonnet xhigh.
+- Orchestrator run: `check_all --manual --lab` PASS; the QA `challenge` row now reads `miss` for the wrong guesses of A, B and the ablations. The executor's mutation (ubiquitous types counted again) fails two unit tests and the QA check.
+- The orchestrator rewrote item 8 of lab_ui.md section 19, which still said that every wrong guess in A is `background` (outside the executor's paths).

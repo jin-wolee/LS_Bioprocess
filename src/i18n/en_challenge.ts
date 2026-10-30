@@ -26,6 +26,7 @@ export const enChallenge = {
   "challenge.announced.sample": "Find the sample whose record is wrong. Open a sample to see the rows the record stores for it, then guess.",
   "challenge.announced.decision": "Find the decision that was made on the wrong input. Read the decisions in time order, open a sample to see its rows, then guess.",
   "challenge.record.heading": "The record you are searching",
+  "challenge.ubiquitous": "Every sample of this record carries the same structural error: {type}. It does not tell one sample from another, so a guess is not scored as background for it.",
   "challenge.record.samples": "Samples",
   "challenge.record.results": "Results",
   "challenge.record.findings": "Findings of the record's own rules",

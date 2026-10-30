@@ -110,15 +110,46 @@ describe("A label error shown in C minus system_issued_id (the only type that re
   });
 });
 
+// The author's ruling of 2026-10-30 (docs/design/lab_ui.md section 9, "모든 시료에 있는 유형은 빼기"): a structural type that the shown record carries on every one of its samples tells no sample from
+// another, so it is not `background`; the record names it once (`RecordView.ubiquitous`). The expectations are typed from the flag table: with audit_trail off (A) the operator is absent for every
+// sample, so every sample carries the type unattributable_record; B stores a plan for each sample, so each carries planned_vs_actual; a record with every flag of C but one has no structural type
+// on every sample.
+const structuralOf = (s: ReturnType<typeof started>, id: string): string[] => s.challenge.materialised.filter((m) => m.sample_id === id && !(DRAWN_TYPES as readonly string[]).includes(m.type)).map((m) => m.type);
+const unaffected = (s: ReturnType<typeof started>, id: string): boolean => id !== s.challenge.plant.sample_id && id !== s.challenge.plant.detail?.as_id;
+
 describe("A guess on a structural error of the shown record", () => {
-  it("Given A shown (every flag off, so the sample is unattributable: audit_trail is off) and a guess that is not affected Then it is background and the reveal names the type", () => {
+  it("Given A shown (audit_trail is off, so every sample is unattributable) Then the record names that one type as on every sample", () => {
+    expect(started("a_manual").record.ubiquitous).toEqual(["unattributable_record"]);
+  }, 60_000);
+
+  it("Given A and a guess that is not affected on a sample whose only structural error is the unattributable record Then it is a miss, not background", () => {
     const s = started("a_manual");
-    const affected = new Set([s.challenge.plant.sample_id, s.challenge.plant.detail?.as_id]);
-    const structural = (id: string): string[] => s.challenge.materialised.filter((m) => m.sample_id === id && !(DRAWN_TYPES as readonly string[]).includes(m.type)).map((m) => m.type);
-    // typed from the flag table: with audit_trail off the operator is absent, so a sample that nothing else touches carries exactly the type unattributable_record
-    const plain = s.record.samples.find((x) => !affected.has(x.sample_id) && structural(x.sample_id).join() === "unattributable_record");
+    const plain = s.record.samples.find((x) => unaffected(s, x.sample_id) && structuralOf(s, x.sample_id).join() === "unattributable_record");
     expect(plain, "a sample with only the by-construction error of A").toBeDefined();
-    expect(revealSample(s.challenge, (plain as { sample_id: string }).sample_id).score).toEqual({ result: "background", background_type: "unattributable_record" });
+    expect(revealSample(s.challenge, (plain as { sample_id: string }).sample_id).score).toEqual({ result: "miss" });
+  }, 60_000);
+
+  it("Given A and a guess that is not affected on a sample that also carries a lost rerun (a type not on every sample) Then it is background and the reveal names the lost rerun", () => {
+    const s = started("a_manual");
+    const rerun = s.record.samples.find((x) => unaffected(s, x.sample_id) && structuralOf(s, x.sample_id).includes("lost_rerun"));
+    expect(rerun, "a sample of A with a lost rerun").toBeDefined();
+    expect(revealSample(s.challenge, (rerun as { sample_id: string }).sample_id).score).toEqual({ result: "background", background_type: "lost_rerun" });
+  }, 60_000);
+
+  it("Given B shown (a plan is stored for every sample) Then the record names planned_vs_actual, a sample with only that is a miss, and a sample with a lost rerun is background", () => {
+    const s = started("b_lims_lite");
+    expect(s.record.ubiquitous).toEqual(["planned_vs_actual"]);
+    const only = s.record.samples.find((x) => unaffected(s, x.sample_id) && structuralOf(s, x.sample_id).join() === "planned_vs_actual");
+    expect(only, "a sample of B with only the plan").toBeDefined();
+    expect(revealSample(s.challenge, (only as { sample_id: string }).sample_id).score).toEqual({ result: "miss" });
+    const rerun = s.record.samples.find((x) => unaffected(s, x.sample_id) && structuralOf(s, x.sample_id).includes("lost_rerun"));
+    expect(rerun, "a sample of B with a lost rerun").toBeDefined();
+    expect(revealSample(s.challenge, (rerun as { sample_id: string }).sample_id).score).toEqual({ result: "background", background_type: "lost_rerun" });
+  }, 60_000);
+
+  it("Given C minus a flag shown (its structural errors are prevented or on some samples only) Then the record names no type as on every sample", () => {
+    expect(started("c_context_minus_system_issued_id").record.ubiquitous).toEqual([]);
+    expect(started("c_context_minus_ingest_idempotency").record.ubiquitous).toEqual([]);
   }, 60_000);
 });
 

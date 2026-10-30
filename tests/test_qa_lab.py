@@ -369,3 +369,29 @@ def test_row_shape_problems_names_a_table_whose_rows_do_not_all_have_the_same_ke
     assert qc.row_shape_problems(ok) == []
     marked = {"samples": [{"a": 1, "b": 2}, {"a": 3, "b": 4, "planted": True}]}
     assert qc.row_shape_problems(marked) == ["the rows of samples do not all have the same keys"]
+
+
+# ---------- the type on every sample (lab_ui.md section 9, the author's ruling of 2026-10-30) ----------
+def test_ubiquitous_problems_accepts_a_with_the_one_type_typed_from_the_flag_table_noted_once_and_a_miss():
+    # A has no audit_trail, so every sample is unattributable by construction; the page notes it once and a wrong guess is a miss
+    a = {"ubiquitous": ["unattributable_record"]}
+    assert qc.ubiquitous_problems("a_manual", a, ["unattributable_record"], {"score": {"result": "miss"}}) == []
+
+
+def test_ubiquitous_problems_names_the_old_rule_a_wrong_guess_in_a_scored_background_for_the_type_on_every_sample():
+    a = {"ubiquitous": ["unattributable_record"]}
+    got = qc.ubiquitous_problems("a_manual", a, ["unattributable_record"], {"score": {"result": "background", "background_type": "unattributable_record"}})
+    assert got == ["a_manual: scored background for unattributable_record, a type on every sample of the record"]
+
+
+def test_ubiquitous_problems_lets_another_type_be_background_and_a_hit_or_a_give_up_pass():
+    a = {"ubiquitous": ["unattributable_record"]}
+    assert qc.ubiquitous_problems("a_manual", a, ["unattributable_record"], {"score": {"result": "background", "background_type": "lost_rerun"}}) == []
+    assert qc.ubiquitous_problems("a_manual", a, ["unattributable_record"], {"score": {"result": "hit"}}) == []
+    assert qc.ubiquitous_problems("a_manual", a, ["unattributable_record"], {"score": None}) == []
+
+
+def test_ubiquitous_problems_names_a_record_that_lacks_the_list_a_wrong_type_for_a_and_a_note_that_differs_from_the_list():
+    assert qc.ubiquitous_problems("b_lims_lite", {}, [], {"score": {"result": "miss"}}) == ["b_lims_lite: the record has no ubiquitous list"]
+    assert qc.ubiquitous_problems("a_manual", {"ubiquitous": []}, [], {"score": {"result": "miss"}}) == ["a_manual: the record names ubiquitous [], the typed list says ['unattributable_record']"]
+    assert qc.ubiquitous_problems("b_lims_lite", {"ubiquitous": ["planned_vs_actual"]}, [], {"score": {"result": "miss"}}) == ["b_lims_lite: the page notes [], the record names ['planned_vs_actual']"]
