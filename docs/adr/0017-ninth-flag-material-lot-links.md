@@ -1,5 +1,5 @@
 # ADR-0017: Ninth flag: material lot links (amends ADR-0005)
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-30
 ## Context
 
@@ -50,4 +50,4 @@ Proposed: option 1.
 > Chose "9번째 플래그 추가 (Recommended)" (chat, 2026-10-30, asked how the record keeps lot links for SC12)
 
 ## Decider's note
-_(author only — Claude never writes here)_
+Decided by the author in chat on 2026-10-30: "수락 (Recommended)" (presets A off, B off, C on).

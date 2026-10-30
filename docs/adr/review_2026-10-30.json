@@ -1,0 +1,22 @@
+{
+  "0016": {
+    "status": "Accepted",
+    "chosen_option": "옵션 2 수락 (Recommended)",
+    "decider_note": "Decided by the author in chat on 2026-10-30: \"옵션 2 수락 (Recommended)\", after the Node 24 measurement and the speed measurement of option 5."
+  },
+  "0017": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in chat on 2026-10-30: \"수락 (Recommended)\" (presets A off, B off, C on)."
+  },
+  "0018": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in chat on 2026-10-30: \"수락 (Recommended)\" (Preact, the newest release at least two weeks old when S3 installs it)."
+  },
+  "0019": {
+    "status": "Accepted",
+    "chosen_option": "수락 (Recommended)",
+    "decider_note": "Decided by the author in chat on 2026-10-30: \"수락 (Recommended)\", after the S3m results (the same log hash in Node, Chromium, Firefox and WebKit; the goldens changed in float fields only)."
+  }
+}

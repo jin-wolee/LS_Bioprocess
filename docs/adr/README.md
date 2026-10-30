@@ -28,9 +28,9 @@ Each record states a context, at least two real options, a proposed decision, it
 | [0013](0013-scope-extensions-cell-lines-modes-breakout-events.md) | Scope extensions: cell-line profiles, operating modes and break-out events | Accepted |
 | [0014](0014-equipment-output-adapters-from-public-docs.md) | Equipment output adapters modeled on public documentation | Accepted |
 | [0015](0015-mixed-fleets-profiles-per-bay-and-analyzer.md) | Mixed fleets: profiles per bay and per analyzer | Accepted |
-| [0016](0016-runtime-flag-against-v8-miscompile.md) | Runtime flag against a V8 miscompile that breaks determinism | Proposed |
-| [0017](0017-ninth-flag-material-lot-links.md) | Ninth flag: material lot links (amends ADR-0005) | Proposed |
-| [0018](0018-lab-ui-stack-preact.md) | Lab UI stack: Preact, with the engine in a Web Worker | Proposed |
-| [0019](0019-deterministic-math-across-js-engines.md) | Deterministic maths across JavaScript engines | Proposed |
+| [0016](0016-runtime-flag-against-v8-miscompile.md) | Runtime flag against a V8 miscompile that breaks determinism | Accepted |
+| [0017](0017-ninth-flag-material-lot-links.md) | Ninth flag: material lot links (amends ADR-0005) | Accepted |
+| [0018](0018-lab-ui-stack-preact.md) | Lab UI stack: Preact, with the engine in a Web Worker | Accepted |
+| [0019](0019-deterministic-math-across-js-engines.md) | Deterministic maths across JavaScript engines | Accepted |
 
 Keep this table in step with the files. A status other than `Proposed` appears here only after the author's own commit.

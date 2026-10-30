@@ -1,5 +1,5 @@
 # ADR-0019: Deterministic maths across JavaScript engines
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-30
 ## Context
 
@@ -46,4 +46,4 @@ Proposed: option 2.
 > Chose "결정적 수학 함수로 교체" over "2단 검사 유지 (Recommended)" (chat, 2026-10-30; the option text named the golden regeneration it needs)
 
 ## Decider's note
-_(author only — Claude never writes here)_
+Decided by the author in chat on 2026-10-30: "수락 (Recommended)", after the S3m results (the same log hash in Node, Chromium, Firefox and WebKit; the goldens changed in float fields only).

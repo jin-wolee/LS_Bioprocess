@@ -1,5 +1,5 @@
 # ADR-0018: Lab UI stack: Preact, with the engine in a Web Worker
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-30
 ## Context
 
@@ -46,4 +46,4 @@ Proposed: option 1.
 > Chose "Preact (Recommended)" (chat, 2026-10-30, asked which UI library the lab uses)
 
 ## Decider's note
-_(author only — Claude never writes here)_
+Decided by the author in chat on 2026-10-30: "수락 (Recommended)" (Preact, the newest release at least two weeks old when S3 installs it).

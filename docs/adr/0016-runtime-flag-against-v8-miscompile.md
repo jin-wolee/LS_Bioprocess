@@ -1,5 +1,5 @@
 # ADR-0016: Runtime flag against a V8 miscompile that breaks determinism
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-30
 ## Context
 
@@ -62,4 +62,4 @@ Proposed: option 2.
 > Chose "옵션 5 측정 후 결정" (chat, 2026-10-30, after the Node 24 measurement)
 
 ## Decider's note
-_(author only — Claude never writes here)_
+Decided by the author in chat on 2026-10-30: "옵션 2 수락 (Recommended)", after the Node 24 measurement and the speed measurement of option 5.
