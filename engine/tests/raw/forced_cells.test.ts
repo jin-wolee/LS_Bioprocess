@@ -3,19 +3,19 @@ import { CONFIGS, CONFIG_NAMES } from "../support/cells.ts";
 import { RAW_EXPECTED } from "../support/raw_cell_tables.ts";
 import { RAW_ROWS, cellsOfRaw, runRaw } from "../support/raw_cells.ts";
 
-// Step 6: the forced-error cells of the matrix rows marked (raw) and (manual), through A, B, C and each single-flag ablation of C, once per capture path. The expected cells are
+// Step 6: the forced-error cells of the matrix rows marked (raw) and (manual), through A, B, C and each single-flag ablation of C (ten), once per capture path. The expected cells are
 // typed by hand in raw_cell_tables.ts. A (raw) row on manual_transcription and a (manual) row on adapter_ingest read "not_applicable", never zero.
 
 describe("forced-error cells per capture path", () => {
-  it("Given the table Then it has a row for every forced row and eleven cells per path", () => {
+  it("Given the table Then it has a row for every forced row and thirteen cells per path", () => {
     expect(Object.keys(RAW_EXPECTED).sort()).toEqual(RAW_ROWS.map((r) => r.name).sort());
-    for (const e of Object.values(RAW_EXPECTED)) expect([e.adapter_ingest.length, e.manual_transcription.length]).toEqual([11, 11]);
-    expect(CONFIG_NAMES.length).toBe(11);
+    for (const e of Object.values(RAW_EXPECTED)) expect([e.adapter_ingest.length, e.manual_transcription.length]).toEqual([13, 13]);
+    expect(CONFIG_NAMES.length).toBe(13);
   });
 
   for (const row of RAW_ROWS) {
     for (const path of ["adapter_ingest", "manual_transcription"] as const) {
-      it(`Given "${row.name}" on ${path} When it is run through A, B, C and the eight ablations Then the cells are as typed by hand`, () => {
+      it(`Given "${row.name}" on ${path} When it is run through A, B, C and the ten ablations Then the cells are as typed by hand`, () => {
         expect(cellsOfRaw(row, path)).toEqual((RAW_EXPECTED[row.name] as (typeof RAW_EXPECTED)[string])[path]);
       });
     }

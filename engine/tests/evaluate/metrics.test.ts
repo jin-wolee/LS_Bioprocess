@@ -15,7 +15,7 @@ import { readJson } from "../support/paths.ts";
 import { A, CONFIG, WORLD, emptyDataset, seedInput } from "../support/eval_fixture.ts";
 
 // S2b Step 3: every metric of spec section 8, with its denominator, against the hand-built world of eval_fixture.ts. All expected numbers are
-// derived by hand from that file's header; none is read back from the evaluator. Architecture A has no flag; C has all eight.
+// derived by hand from that file's header; none is read back from the evaluator. Architecture A has no flag; C has all ten (the ninth and tenth are read by nothing here).
 
 const out = runSeed(seedInput());
 const [cellA, cellC] = out.cells as [(typeof out.cells)[number], (typeof out.cells)[number]];

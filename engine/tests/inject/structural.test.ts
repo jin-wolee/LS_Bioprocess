@@ -21,7 +21,7 @@ const pairs = (flags: FlagName[], events = STREAM) =>
 const CELLS: [string, FlagName[], string[]][] = [
   ["A (no flag)", on(), ["feed_in_gap:S1", "lost_rerun:S2", "unattributable_record:S1", "unattributable_record:S2", "unattributable_record:S3"]],
   ["B (system_issued_id, ingest_idempotency, audit_trail)", on("system_issued_id", "ingest_idempotency", "audit_trail"), ["feed_in_gap:S1", "lost_rerun:S2", "planned_vs_actual:S1", "planned_vs_actual:S2", "planned_vs_actual:S3"]],
-  ["C (all eight)", ALL, []],
+  ["C (all ten)", ALL, []],
   ["C minus two_clocks", minus("two_clocks"), ["feed_in_gap:S1", "planned_vs_actual:S1", "planned_vs_actual:S2", "planned_vs_actual:S3"]],
   ["C minus append_only_versions", minus("append_only_versions"), ["lost_rerun:S2"]],
   ["C minus audit_trail", minus("audit_trail"), ["unattributable_record:S1", "unattributable_record:S2", "unattributable_record:S3"]],

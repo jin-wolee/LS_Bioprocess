@@ -11,7 +11,7 @@ import type { StreamKey } from "../../src/rng.ts";
 import { runScenario } from "../../src/run.ts";
 import { loadScenario } from "../../src/scenario.ts";
 import { canonicalJsonl } from "../../src/trace.ts";
-import { ELEVEN, PRESETS } from "../support/open_loop_setup.ts";
+import { ALL_ARCHS, PRESETS } from "../support/open_loop_setup.ts";
 import { readJson } from "../support/paths.ts";
 import { SMALL, lookup, patched, rawScenario } from "../support/scenarios.ts";
 import type { Json } from "../support/schemas.ts";
@@ -202,8 +202,8 @@ describe("SC8 recorded structure: the record the arms read does not depend on th
     const cfg = input().scenario;
     const run = runScenario({ ...cfg, seed: 3, feedback: false });
     const shifted = { ...run, events: run.events.map((e) => (e.type === "result_measured" && e.analyte === "ph" ? { ...e, value: e.value + 0.5 } : e)) };
-    const a = buildShared(run, cfg, 3, { architectures: ELEVEN.slice(0, 3), evaluation: EVAL, rng: createRng() });
-    const b = buildShared(shifted, cfg, 3, { architectures: ELEVEN.slice(0, 3), evaluation: EVAL, rng: createRng() });
+    const a = buildShared(run, cfg, 3, { architectures: ALL_ARCHS.slice(0, 3), evaluation: EVAL, rng: createRng() });
+    const b = buildShared(shifted, cfg, 3, { architectures: ALL_ARCHS.slice(0, 3), evaluation: EVAL, rng: createRng() });
     const strip = <T extends { value: number }>(rows: T[]): T[] => rows.map((r) => ({ ...r, value: 0 }));
     for (const id of ["a_manual", "b_lims_lite", "c_context"]) {
       const ra = a.structure[id]?.dataset.result ?? [];

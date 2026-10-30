@@ -12,7 +12,7 @@ import type { ResultRow } from "../../src/record/types.ts";
 import { createRng } from "../../src/rng.ts";
 import { runScenario } from "../../src/run.ts";
 import { loadScenario } from "../../src/scenario.ts";
-import { ELEVEN, PRESETS } from "../support/open_loop_setup.ts";
+import { ALL_ARCHS, PRESETS } from "../support/open_loop_setup.ts";
 import { readJson } from "../support/paths.ts";
 import { SMALL, lookup, patched, rawScenario } from "../support/scenarios.ts";
 
@@ -24,8 +24,8 @@ import { SMALL, lookup, patched, rawScenario } from "../support/scenarios.ts";
 // The production rule of a label error takes the next draw as the id the label reads, so the plant is U01-D01-2 labelled as U04-D01-2.
 
 const EVAL = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
-const A = ELEVEN[0]!;
-const C_MINUS = ELEVEN[3]!; // c_context_minus_system_issued_id: the other seven flags on
+const A = ALL_ARCHS[0]!;
+const C_MINUS = ALL_ARCHS[3]!; // c_context_minus_system_issued_id: the other nine flags on
 const scenario = loadScenario(patched(rawScenario("sc08_ph_restandardisation"), { settings: { ...SMALL, technique_error_probability: 0.5 } }), lookup);
 const run = runScenario({ ...scenario, seed: 3, feedback: false });
 const PLANT: ForcedError = { type: "label_error", sample_id: "U01-D01-2", detail: { as_id: "U04-D01-2" } };

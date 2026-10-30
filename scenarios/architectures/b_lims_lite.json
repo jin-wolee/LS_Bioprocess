@@ -9,7 +9,9 @@
     "append_only_versions": false,
     "write_time_keys": false,
     "ingest_idempotency": true,
-    "audit_trail": true
+    "audit_trail": true,
+    "material_lot_links": false,
+    "equipment_links": true
   },
   "labelling": "preprinted_barcode",
   "capture_path": "adapter_ingest"

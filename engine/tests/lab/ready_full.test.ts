@@ -6,7 +6,7 @@ import { decisionData } from "./decision_data.ts";
 // docs/design/lab_ui.md section 4 and spec section 4.5.6: the full `ready` payload. Expected values are typed by hand from the preset table of spec section 5, the evaluation
 // file, the experiment config and the profile files (bundle ids A065 to A073); the lab function is not their source.
 
-const FLAGS = ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail"];
+const FLAGS = ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail", "material_lot_links", "equipment_links"];
 const data = labData();
 const ready = readyOf(data);
 
@@ -38,8 +38,9 @@ describe("ready: what the Setup page is built from", () => {
       "a_manual:SD", "b_lims_lite:S-", "c_context:--",
       "c_context_minus_system_issued_id:SD", "c_context_minus_two_clocks:--", "c_context_minus_available_at:--", "c_context_minus_instrument_state_snapshot:--",
       "c_context_minus_append_only_versions:--", "c_context_minus_write_time_keys:S-", "c_context_minus_ingest_idempotency:S-", "c_context_minus_audit_trail:--",
+      "c_context_minus_material_lot_links:--", "c_context_minus_equipment_links:--",
     ]);
-    expect(shown(ready).map((x) => x.slice(-2))).toEqual(["S-", "S-", "--", "S-", "--", "--", "--", "--", "S-", "S-", "--"]); // no SC8 bundle: no decision variant
+    expect(shown(ready).map((x) => x.slice(-2))).toEqual(["S-", "S-", "--", "S-", "--", "--", "--", "--", "S-", "S-", "--", "--", "--"]); // no SC8 bundle: no decision variant
   });
 
   it("Given a build without the SC8 bundle Then only the sample variant is offered (the page never assumes a variant exists)", () => {
@@ -58,10 +59,10 @@ describe("ready: presets and the ablations of C", () => {
     expect(ready.presets.map((p) => p.ablated_flag)).toEqual([null, null, null, ...FLAGS]);
   });
 
-  it("Given the preset table of spec section 5 Then A has no flag on, B has system_issued_id, ingest_idempotency and audit_trail on, C has all eight", () => {
+  it("Given the preset table of spec section 5 Then A has no flag on, B has system_issued_id, ingest_idempotency, audit_trail and equipment_links on, C has all ten", () => {
     const on = (id: string): string[] => Object.entries(ready.presets.find((p) => p.id === id)?.flags ?? {}).filter(([, v]) => v).map(([k]) => k);
     expect(on("a_manual")).toEqual([]);
-    expect(on("b_lims_lite")).toEqual(["system_issued_id", "ingest_idempotency", "audit_trail"]);
+    expect(on("b_lims_lite")).toEqual(["system_issued_id", "ingest_idempotency", "audit_trail", "equipment_links"]);
     expect(on("c_context")).toEqual(FLAGS);
   });
 

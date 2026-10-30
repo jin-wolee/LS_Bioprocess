@@ -11,27 +11,27 @@ import { runScenario } from "../../src/run.ts";
 import { canonicalJson, logHash } from "../../src/trace.ts";
 import { SMALL, configOf } from "../support/scenarios.ts";
 import { makeEvalAjv, validates } from "../support/eval_schemas.ts";
-import { ELEVEN, ELEVEN_IDS, STAFF, openLoopInput } from "../support/open_loop_setup.ts";
+import { ALL_ARCHS, ALL_IDS, STAFF, openLoopInput } from "../support/open_loop_setup.ts";
 import { REVIEW } from "../support/review_setup.ts";
 
-// S2c2, experiment 1 (spec section 6.1): one truth run per seed, shared by A, B, C and the eight ablations of C. Structural relations only
+// S2c2, experiment 1 (spec section 6.1): one truth run per seed, shared by A, B, C and the ten ablations of C. Structural relations only
 // (00 section 2 item 8): nothing here asserts a size, a sign or an ordering of a metric. Seeds are test-only values.
 
 const SEEDS = [11, 12];
 const input = openLoopInput(SEEDS);
 const truthOf = (seed: number) => runScenario({ ...input.scenario, seed });
 
-describe("Open loop: one truth run per seed, eleven architectures", () => {
+describe("Open loop: one truth run per seed, thirteen architectures", () => {
   let out: OpenLoopResult;
   beforeAll(async () => {
     out = await runOpenLoop(input);
   });
 
-  it("Given two seeds Then the result lists the seeds in order, and per seed one cell for each of the eleven architectures in the order of the list", () => {
+  it("Given two seeds Then the result lists the seeds in order, and per seed one cell for each of the thirteen architectures in the order of the list", () => {
     expect(out.seeds).toEqual(SEEDS);
     expect(out.outcomes.map((o) => o.seed)).toEqual(SEEDS);
     for (const o of out.outcomes) {
-      expect(o.cells.map((c) => c.architecture)).toEqual(ELEVEN_IDS);
+      expect(o.cells.map((c) => c.architecture)).toEqual(ALL_IDS);
       for (const c of o.cells) expect(c.seed).toBe(o.seed);
     }
   });
@@ -58,7 +58,7 @@ describe("Open loop: one truth run per seed, eleven architectures", () => {
   });
 
   it("Given the run is repeated with the architectures in the reverse order Then each architecture has the same cell and the same key slice (no state passes between architectures)", async () => {
-    const reversed = await runOpenLoop({ ...input, architectures: [...ELEVEN].reverse() });
+    const reversed = await runOpenLoop({ ...input, architectures: [...ALL_ARCHS].reverse() });
     for (const [i, o] of reversed.outcomes.entries()) {
       const forward = out.outcomes[i];
       expect(o.truth_log_hash).toBe(forward?.truth_log_hash);
@@ -69,13 +69,13 @@ describe("Open loop: one truth run per seed, eleven architectures", () => {
   });
 });
 
-describe("Open loop: the truth log_hash is identical across all eleven architectures, for every seed", () => {
-  it("Given each architecture alone Then its truth log_hash equals that of the eleven together and that of an independent run of the scenario", async () => {
+describe("Open loop: the truth log_hash is identical across all thirteen architectures, for every seed", () => {
+  it("Given each architecture alone Then its truth log_hash equals that of the thirteen together and that of an independent run of the scenario", async () => {
     const together = await runOpenLoop(input);
     for (const [i, seed] of SEEDS.entries()) {
       const independent = await logHash(truthOf(seed).events);
       expect(together.outcomes[i]?.truth_log_hash).toBe(independent);
-      for (const arch of ELEVEN) {
+      for (const arch of ALL_ARCHS) {
         const alone = await runOpenLoop({ ...input, architectures: [arch] });
         expect(alone.outcomes[i]?.truth_log_hash, `${arch.id} seed ${seed}`).toBe(independent);
       }
@@ -106,14 +106,14 @@ describe("Open loop: the error opportunities are common to all architectures", (
     const out = await runOpenLoop(openLoopInput([seed], { staff: high }));
     const key = JSON.parse(out.outcomes[0]?.key_text ?? "{}") as { architectures: Record<string, { errors: { type: string; sample_id: string; detail: { as_id: string } }[] }> };
     const labels = (arch: string) => (key.architectures[arch]?.errors ?? []).filter((e) => e.type === "label_error").map((e) => ({ sample_id: e.sample_id, as_id: e.detail.as_id }));
-    for (const id of ELEVEN_IDS) expect(labels(id), id).toEqual(id === "a_manual" || id === "c_context_minus_system_issued_id" ? expected : []);
+    for (const id of ALL_IDS) expect(labels(id), id).toEqual(id === "a_manual" || id === "c_context_minus_system_issued_id" ? expected : []);
   });
 });
 
 describe("Open loop: detection never re-draws and never re-measures", () => {
   const seed = SEEDS[0] as number;
   const run = truthOf(seed);
-  const seedInput = seedInputFromRun(run, { scenario_id: "default-small", staff: STAFF, evaluation: input.evaluation, architectures: ELEVEN, days: 8, review: REVIEW });
+  const seedInput = seedInputFromRun(run, { scenario_id: "default-small", staff: STAFF, evaluation: input.evaluation, architectures: ALL_ARCHS, days: 8, review: REVIEW });
 
   it("Given the pipeline ran Then the observable events, the sensors and the truth handed to it are unchanged", () => {
     const before = structuredClone({ events: seedInput.events, sensors: seedInput.sensors, truth: seedInput.truth.events });
@@ -124,7 +124,7 @@ describe("Open loop: detection never re-draws and never re-measures", () => {
   it("Given the pipeline ran Then the key of each architecture is what the injector alone returns for it (recording, validation and the evaluator add nothing to it)", () => {
     const key = JSON.parse(runSeed(seedInput).key_text) as { architectures: Record<string, { errors: unknown[] }> };
     const events = observeEvents(run.events);
-    for (const arch of ELEVEN) {
+    for (const arch of ALL_ARCHS) {
       const alone = inject({ seed, architecture: arch, events, label_rate_by_operator: Object.fromEntries(run.operators.map((o) => [o.operator_id, labelErrorRate(STAFF)])) });
       expect(canonicalJson(key.architectures[arch.id]?.errors), arch.id).toBe(canonicalJson(alone.materialised));
     }

@@ -68,4 +68,12 @@ export const enNotes = {
   "flag.audit_trail.on": "who, when and what changed is kept, with the operator",
   "flag.audit_trail.off": "no history of a change",
   "flag.audit_trail.effect": "unattributable records",
+  "flag.material_lot_links.label": "Material lot links",
+  "flag.material_lot_links.on": "an inoculation or a medium or feed addition stores the lot id as a key, so the record links a lot to the batches that used it",
+  "flag.material_lot_links.off": "no link; at most a free-text lot name that a query cannot join",
+  "flag.material_lot_links.effect": "the other batches that shared a lot cannot be reached after a contamination; with no contamination event selected, C without this flag equals C",
+  "flag.equipment_links.label": "Equipment links",
+  "flag.equipment_links.on": "a use of an equipment item stores the item id as a key, so the record links the item to the batches that used it",
+  "flag.equipment_links.off": "no link; at most a free-text equipment name that a query cannot join",
+  "flag.equipment_links.effect": "the other batches that used the same equipment item cannot be reached after a contamination; with no contamination event selected, C without this flag equals C",
 } as const;

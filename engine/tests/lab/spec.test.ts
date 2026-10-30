@@ -121,8 +121,8 @@ describe("architectureIds: the preset that is ablated comes from the data, not f
   const [a, b, c] = data.architectures as [unknown, unknown, unknown];
   const ablations = (d: typeof data): string[] => architectureIds(d).filter((id) => id.includes("_minus_"));
 
-  it("Given A, B and C in the bundled order Then the eight ablations are those of C, the preset with all eight flags on", () => {
-    expect(ablations(data)).toHaveLength(8);
+  it("Given A, B and C in the bundled order Then the ten ablations are those of C, the preset with all ten flags on", () => {
+    expect(ablations(data)).toHaveLength(10);
     expect(ablations(data).every((id) => id.startsWith("c_context_minus_"))).toBe(true);
   });
 

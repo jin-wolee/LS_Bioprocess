@@ -11,7 +11,7 @@ import type { StreamKey } from "../../src/rng.ts";
 import { runScenario } from "../../src/run.ts";
 import { loadScenario } from "../../src/scenario.ts";
 import { loadClosedLoop } from "../support/experiment2.ts";
-import { ELEVEN } from "../support/open_loop_setup.ts";
+import { ALL_ARCHS } from "../support/open_loop_setup.ts";
 import { readJson } from "../support/paths.ts";
 import { SMALL, lookup, patched, rawScenario } from "../support/scenarios.ts";
 
@@ -27,9 +27,9 @@ import { SMALL, lookup, patched, rawScenario } from "../support/scenarios.ts";
 // At 201600 U01's newest row is U01-D01-2's (closed, hold 1122 s: used by every architecture); at 203400 U03's newest row is U03-D01-2's (open: skipped by every architecture).
 
 const EVAL = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
-const A: Architecture = ELEVEN[0]!;
-const C: Architecture = ELEVEN[2]!;
-const C_MINUS: Architecture = ELEVEN[3]!; // c_context_minus_system_issued_id
+const A: Architecture = ALL_ARCHS[0]!;
+const C: Architecture = ALL_ARCHS[2]!;
+const C_MINUS: Architecture = ALL_ARCHS[3]!; // c_context_minus_system_issued_id
 const scenario = loadScenario(patched(rawScenario("sc08_ph_restandardisation"), { settings: { ...SMALL, technique_error_probability: 0.5 } }), lookup);
 const run = runScenario({ ...scenario, seed: 3, feedback: false });
 const loopOf = (architecture: Architecture, forced?: readonly ForcedError[]): DecisionLoop =>

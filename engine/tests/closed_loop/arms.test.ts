@@ -16,7 +16,7 @@ import { ROOT } from "../support/paths.ts";
 //   S3  closed, drawn 3000, run starts 3600 (hold 600 s),  result at 3900, 6.980
 //   S4  closed, drawn 5000, run starts 7000 (hold 2000 s), result at 7200, 7.020   (closed, hold above the limit)
 //   S5  open,   drawn 6000, run starts 6300 (hold 300 s),  result at 6500, 7.060   (open, short hold)
-// A, B and C hold the same rows; they differ by their flags (A none, B system_issued_id, ingest_idempotency and audit_trail, C all eight), so only C stores sampled_at and with it a hold time.
+// A, B and C hold the same rows; they differ by their flags (A none, B system_issued_id, ingest_idempotency and audit_trail, C all ten; the ninth and tenth are read by nothing here), so only C stores sampled_at and with it a hold time.
 // The limit is 1800 s (A046 as test input) and the open-sample offset the modelled variant subtracts is 0.04 (A041 as test input).
 
 const OPTS: ArmOptions = { hold_limit_s: 1800, bias_handling: "exclude", open_offset: 0.04 };

@@ -39,7 +39,7 @@ analytes:
 # ---- the recorded dataset (engine/src/record/types.ts) -----------------------------------------------------------------------------------------------------------------------------
 dataset:
   tables: [sample, analysis_request, run, instrument_state, result, audit_event, qualification, source_event, validation_finding, ingest_conflict, batch, process_event]
-  other: {architecture: "id, flags and labelling of the architecture that recorded the dataset", historian: "series (entity historian_series) and late rows (entity historian_value)", capture: "raw layer only: the capture path of the dataset ({path}); absent with the layer off", raw: "adapter_ingest only: the raw-side tables adapter, raw_file, raw_record and parse_error (data_model section 16.1) and, with a controller on a bay, the controller records alarm_event and batch_phase_record (section 16.4)"}
+  other: {architecture: "id, the ten flags and labelling of the architecture that recorded the dataset (spec section 5; material_lot_links and equipment_links, ADR-0017 and ADR-0020, are read only with a break-out event, so a dataset without one is the same with either on or off)", historian: "series (entity historian_series) and late rows (entity historian_value)", capture: "raw layer only: the capture path of the dataset ({path}); absent with the layer off", raw: "adapter_ingest only: the raw-side tables adapter, raw_file, raw_record and parse_error (data_model section 16.1) and, with a controller on a bay, the controller records alarm_event and batch_phase_record (section 16.4)"}
 
 entities:
   sample:

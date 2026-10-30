@@ -9,8 +9,8 @@ import { CONFIGS, run } from "../support/cells.ts";
 import type { CellRow } from "../support/cells.ts";
 
 // S3e, `outcomeOf` (docs/design/lab_ui.md section 5): the classification of a planted error in one recorded dataset. The oracle is the set of hand-typed expected cells of S2
-// (engine/tests/support/cell_tables.ts, typed from the hypothesis matrix before any run): the hand-built streams of the three drawn types are run through the 11 configurations (A, B, C and
-// the eight ablations of C) and the function must give the typed cell for each, from the injector's realised list and the record only.
+// (engine/tests/support/cell_tables.ts, typed from the hypothesis matrix before any run): the hand-built streams of the three drawn types are run through the 13 configurations (A, B, C and
+// the ten ablations of C) and the function must give the typed cell for each, from the injector's realised list and the record only.
 
 const asCell = (o: Outcome): Cell => (o.outcome === "detected" ? `detected:${o.evidence.join("+")}` : o.outcome);
 
@@ -23,7 +23,7 @@ const cases: [string, CellRow, readonly Cell[]][] = [
 
 describe("outcomeOf against the hand-typed cells of S2", () => {
   for (const [name, row, expected] of cases) {
-    it(`Given the ${name} in each of the eleven configurations Then the outcome and its evidence equal the typed cell`, () => {
+    it(`Given the ${name} in each of the thirteen configurations Then the outcome and its evidence equal the typed cell`, () => {
       const planted = (row.forced ?? [])[0] ?? ({ type: "duplicate_replay", sample_id: "S1" } as ForcedError);
       const got = CONFIGS.map((c) => {
         const { out, ds } = run(row, c.config);

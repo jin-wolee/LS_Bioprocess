@@ -21,7 +21,7 @@ import { readJson } from "./paths.ts";
 const preset = (name: string): Architecture => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
 const C = preset("c_context");
 
-/** The 11 configurations in table order: A, B, C, then C minus system_issued_id ... C minus audit_trail (the order of the flag table). */
+/** The 13 configurations in table order: A, B, C, then C minus system_issued_id ... C minus equipment_links (the order of the flag table). */
 export const CONFIGS: { name: string; config: Architecture }[] = [
   { name: "A", config: preset("a_manual") },
   { name: "B", config: preset("b_lims_lite") },

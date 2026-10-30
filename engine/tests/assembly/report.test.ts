@@ -208,7 +208,7 @@ describe("Stochastic report: two real seeds of the small default scenario (struc
   });
 
   it("Then every architecture has the seed count and, on every row, the spread fields (median, lo, hi) and the seed counts", () => {
-    expect(report.architectures.length).toBe(11);
+    expect(report.architectures.length).toBe(13);
     for (const a of report.architectures) {
       expect(a.n_seeds).toBe(2);
       for (const r of a.rows) {
@@ -221,11 +221,17 @@ describe("Stochastic report: two real seeds of the small default scenario (struc
     }
   });
 
-  it("Then the roles are three presets and eight ablations, one per flag", () => {
+  it("Then the roles are three presets and ten ablations, one per flag", () => {
     expect(report.architectures.filter((a) => a.role === "preset").map((a) => a.id)).toEqual(["a_manual", "b_lims_lite", "c_context"]);
     expect(report.architectures.filter((a) => a.role === "ablation").map((a) => a.ablated_flag)).toEqual([
       "system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail",
+      "material_lot_links", "equipment_links",
     ]);
+  });
+
+  it.each(["material_lot_links", "equipment_links"])("Then the block of C without %s equals the block of C in every row: no break-out event exists and nothing reads the flag (ADR-0017, ADR-0020)", (flag) => {
+    const rows = (id: string) => report.architectures.find((a) => a.id === id)?.rows;
+    expect(rows(`c_context_minus_${flag}`)).toEqual(rows("c_context"));
   });
 
   it("Then the types without a ledger rate (unit re-key, clock error, replayed file) are not_modelled in every architecture, with no number (never realised 0)", () => {

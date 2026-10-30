@@ -8,7 +8,7 @@ import { CONFIGS } from "./support/cells.ts";
 import { eventsOf } from "./support/sc_run.ts";
 import { runOf } from "./support/scenarios.ts";
 
-// SC1 Ordinary Tuesday (spec 7): what disappears on an ordinary day? The default scenario, seed 1, recorded under A, B, C and the eight ablations of C
+// SC1 Ordinary Tuesday (spec 7): what disappears on an ordinary day? The default scenario, seed 1, recorded under A, B, C and the ten ablations of C
 // (prompts/20 Step 4). Structural relations only (spec section 8, anti-gaming rule 8): that every configuration is produced from one truth run, that the
 // truth log is the same one whatever the recorder does with it, and that every cell counts the same requests. No ordering of the architectures is asserted.
 
@@ -27,13 +27,13 @@ describe("SC1 ordinary Tuesday", () => {
     }
   }, 120_000);
 
-  it("Given the ordinary-day scenario When A, B, C and the eight ablations are recorded Then there are eleven datasets, each named after its configuration", () => {
-    expect(outputs.length).toBe(11);
+  it("Given the ordinary-day scenario When A, B, C and the ten ablations are recorded Then there are thirteen datasets, each named after its configuration", () => {
+    expect(outputs.length).toBe(13);
     expect(outputs.map((o) => Object.keys(o.datasets))).toEqual(CONFIGS.map((c) => [c.config.id]));
     expect(outputs.map((o, i) => o.datasets[(CONFIGS[i] as (typeof CONFIGS)[number]).config.id]?.architecture.id)).toEqual(CONFIGS.map((c) => c.config.id));
   });
 
-  it("Given the same truth run When each configuration has been injected, recorded, validated and evaluated Then the truth log_hash is identical after every one of the eleven", () => {
+  it("Given the same truth run When each configuration has been injected, recorded, validated and evaluated Then the truth log_hash is identical after every one of the thirteen", () => {
     expect(hashBefore).toMatch(/^[0-9a-f]{64}$/);
     expect(hashesAfter).toEqual(CONFIGS.map(() => hashBefore));
   });

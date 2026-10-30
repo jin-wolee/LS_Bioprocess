@@ -32,7 +32,7 @@ describe("SC1 ordinary Tuesday with the raw layer on", () => {
     }
   }, 240_000);
 
-  it("Given the ordinary-day scenario with the layer on When A, B, C and the eight ablations are recorded each on its default path Then there are eleven datasets", () => {
+  it("Given the ordinary-day scenario with the layer on When A, B, C and the ten ablations are recorded each on its default path Then there are thirteen datasets", () => {
     expect(outs.map((o) => Object.keys(o.datasets))).toEqual(CONFIGS.map((c) => [c.config.id]));
     expect(outs.every((o) => (Object.values(o.datasets)[0]?.result.length ?? 0) > 1000)).toBe(true);
   });

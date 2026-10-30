@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { FLAG_NAMES } from "../../src/record/architecture.ts";
+import { CORE_FLAG_NAMES, FLAG_NAMES } from "../../src/record/architecture.ts";
 import type { FlagName } from "../../src/record/architecture.ts";
 import { record } from "../../src/record/recorder.ts";
 import type { QualificationInput } from "../../src/record/types.ts";
 import { SENSORS, STREAM, arch } from "../support/record_fixture.ts";
 
 // S2b, orchestrator decision 1 and ruling R1 (data_model section 14, question 7): a row-creation stamp is stored whenever a system writes the
-// rows, that is whenever at least one of the eight flags is on; the all-off configuration (architecture A, the spreadsheet) stores none, so
+// rows, that is whenever at least one of the eight flags of ADR-0005 is on (the lot and equipment links of ADR-0017 and ADR-0020 read nothing without a break-out event and do not count, spec 11.8.6); the all-off configuration (architecture A, the spreadsheet) stores none, so
 // `ingested_at` is null and the rules that read it (VR-003, VR-004) are not evaluable for A. In layer-off runs the stamp equals the stamp of the
 // observable event (no ingestion delay is modelled before the raw layer). The column does not hang on one flag: ablating `ingest_idempotency`
 // from C must not also remove clock detection. A clock error makes the event stamp differ from the host receipt time; the injector hands the
@@ -26,7 +26,7 @@ describe("ingested_at of a result row", () => {
     expect(stamps(["system_issued_id", "ingest_idempotency", "audit_trail"])).toEqual([2000, 9000, 10000]);
   });
 
-  it("Given C (all eight flags) Then four rows store the event stamps 2000, 6500, 9000, 10000", () => {
+  it("Given C (all ten flags) Then four rows store the event stamps 2000, 6500, 9000, 10000", () => {
     expect(stamps(ALL)).toEqual([2000, 6500, 9000, 10000]);
   });
 
@@ -36,8 +36,12 @@ describe("ingested_at of a result row", () => {
     expect(stamps(without)).toEqual(flag === "append_only_versions" ? [2000, 9000, 10000] : [2000, 6500, 9000, 10000]);
   });
 
-  it.each(FLAG_NAMES)("Given only %s on (one flag is enough to make a system) Then the rows store their stamps", (flag) => {
+  it.each(CORE_FLAG_NAMES)("Given only %s on (one flag is enough to make a system) Then the rows store their stamps", (flag) => {
     expect(stamps([flag]).every((x) => x !== null)).toBe(true);
+  });
+
+  it.each(["material_lot_links", "equipment_links"] as const)("Given only %s on Then no row stores a stamp: with no break-out event nothing reads the flag, so it makes no system that writes the rows", (flag) => {
+    expect(stamps([flag])).toEqual([null, null, null]);
   });
 
   it("Given the host received the S1 result at 1500 while the event is stamped 2000 Then S1 stores 1500 beside its measured_at 2000 and the others keep their event stamps", () => {

@@ -25,7 +25,7 @@ Rows are the real rows of the recorders for the sample (tables and columns of da
 <!-- trace-table:begin -->
 | | truth | a_manual | b_lims_lite | c_context |
 |---|---|---|---|---|
-| flags on | - | none | `audit_trail`, `ingest_idempotency`, `system_issued_id` | `append_only_versions`, `audit_trail`, `available_at`, `ingest_idempotency`, `instrument_state_snapshot`, `system_issued_id`, `two_clocks`, `write_time_keys` |
+| flags on | - | none | `audit_trail`, `equipment_links`, `ingest_idempotency`, `system_issued_id` | `append_only_versions`, `audit_trail`, `available_at`, `equipment_links`, `ingest_idempotency`, `instrument_state_snapshot`, `material_lot_links`, `system_issued_id`, `two_clocks`, `write_time_keys` |
 | labelling | - | handwritten | preprinted_barcode | issued_at_draw |
 | **Q1 which unit?** (`sample.unit_id`) | U03 | U03: **correct** | U03: **correct** | U03: **correct** |
 | **Q2 which `sampled_at`?** (`sample.sampled_at`) | 899841 (day 10 09:57:21) | null: **unanswerable** | null: **unanswerable** | 899841: **correct** |

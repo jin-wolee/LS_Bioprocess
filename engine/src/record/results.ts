@@ -1,4 +1,5 @@
 import type { ObservableEvent } from "../observe.ts";
+import { CORE_FLAG_NAMES } from "./architecture.ts";
 import type { FlagName } from "./architecture.ts";
 import { transit } from "./transitions.ts";
 import type { AuditEventRow, CaptureInput, IngestConflictRow, ResultRow, SourceEventRow, ValidationFindingRow } from "./types.ts";
@@ -11,7 +12,7 @@ import type { AuditEventRow, CaptureInput, IngestConflictRow, ResultRow, SourceE
 //                        the rerun overwrites the rows in place and the earlier value is gone. A replay is an insert on every architecture.
 //   available_at         the row carries the stamp of its event as the instant it became knowable; a row that the review step releases gets the review point
 //                        instead (record/review.ts).
-//   ingested_at          a row-creation stamp is stored whenever a system writes the rows, i.e. at least one flag is on (storesIngestedAt); the all-off
+//   ingested_at          a row-creation stamp is stored whenever a system writes the rows, i.e. at least one of the eight flags of ADR-0005 is on (storesIngestedAt); the all-off
 //                        configuration, the spreadsheet, stores none (S2b, data_model section 7). It does not hang on one flag.
 //   audit_trail          a rerun that replaces an earlier attempt is an audit event with the old and the new value, kept even when the earlier
 //                        row is overwritten.
@@ -20,8 +21,8 @@ import type { AuditEventRow, CaptureInput, IngestConflictRow, ResultRow, SourceE
 type Measured = Extract<ObservableEvent, { type: "result_measured" }>;
 type Flags = Record<FlagName, boolean>;
 
-/** A row-creation stamp exists where a system writes the rows: any of the eight flags on. Architecture A (all off) stores none. */
-export const storesIngestedAt = (flags: Flags): boolean => Object.values(flags).some(Boolean);
+/** A row-creation stamp exists where a system writes the rows: any of the eight flags of ADR-0005 on. Architecture A (all off) stores none. The lot and equipment links read nothing without a break-out event, so they do not count. */
+export const storesIngestedAt = (flags: Flags): boolean => CORE_FLAG_NAMES.some((f) => flags[f]);
 
 /** The version of the content of a source event. The observable stream carries one, so the key is the same for a replay and for a changed value. */
 const CONTENT_VERSION = 1;

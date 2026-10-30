@@ -1,15 +1,21 @@
 import type { Architecture } from "../generated/architecture.schema";
 
-// An architecture is eight flags and a labelling method (spec section 5, ADR-0005). The engine reads no files, so the JSON of a preset
+// An architecture is ten flags and a labelling method (spec section 5; ADR-0005, ADR-0017, ADR-0020). The engine reads no files, so the JSON of a preset
 // is checked here with the same rules as schemas/architecture.schema.json (a test compares the two on the same bad documents).
 
 export type { Architecture };
 export type FlagName = keyof Architecture["flags"];
 
-/** The eight flags in the order of the flag table of spec section 5. There is no ninth. */
-export const FLAG_NAMES = [
+/** The eight flags of ADR-0005. Where a system writes the rows (a row-creation stamp) is decided by these alone. */
+export const CORE_FLAG_NAMES = [
   "system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail",
 ] as const satisfies readonly FlagName[];
+
+/**
+ * The ten flags in the order of the flag table of spec section 5. There is no eleventh. The last two, the lot links of ADR-0017 and the equipment links of ADR-0020, are read only
+ * where lots and equipment items exist (spec 11.8, the break-out extension): with no such event nothing reads them and no recorded value changes.
+ */
+export const FLAG_NAMES = [...CORE_FLAG_NAMES, "material_lot_links", "equipment_links"] as const satisfies readonly FlagName[];
 
 const LABELLING = ["handwritten", "preprinted_barcode", "issued_at_draw"] as const;
 const SYSTEMS = ["lims", "mes_ebr"] as const;
@@ -32,7 +38,7 @@ export const parseArchitecture = (doc: unknown): Architecture => {
   if (doc.source_of_record !== undefined && !SYSTEMS.includes(doc.source_of_record as (typeof SYSTEMS)[number])) fail(`source_of_record must be one of ${SYSTEMS.join(", ")}`);
   const flags = doc.flags;
   if (!isRecord(flags)) return fail("flags must be an object");
-  for (const k of Object.keys(flags)) if (!(FLAG_NAMES as readonly string[]).includes(k)) fail(`flags.${k} is not one of the eight flags (there is no ninth)`);
+  for (const k of Object.keys(flags)) if (!(FLAG_NAMES as readonly string[]).includes(k)) fail(`flags.${k} is not one of the ten flags (there is no eleventh)`);
   for (const f of FLAG_NAMES) if (typeof flags[f] !== "boolean") fail(`flags.${f} must be a boolean`);
   return structuredClone(doc) as unknown as Architecture;
 };
@@ -43,5 +49,5 @@ export const ablate = (cfg: Architecture, flag: FlagName): Architecture => {
   return { ...cfg, id: `${cfg.id}_minus_${flag}`, flags: { ...cfg.flags, [flag]: false } };
 };
 
-/** One ablation per flag, in the order of the flag table (spec section 5: C with exactly one flag off, eight runs). */
+/** One ablation per flag, in the order of the flag table (spec section 5: C with exactly one flag off, ten runs). */
 export const ABLATIONS = (cfg: Architecture): { flag: FlagName; config: Architecture }[] => FLAG_NAMES.map((flag) => ({ flag, config: ablate(cfg, flag) }));

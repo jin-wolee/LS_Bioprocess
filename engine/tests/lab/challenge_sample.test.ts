@@ -39,7 +39,7 @@ describe("A label error shown in C minus system_issued_id (the only type that re
     expect(s.record.samples.length).toBeGreaterThan(20);
     expect(s.record.results.length).toBeGreaterThan(s.record.samples.length);
     expect(s.record.flags_on).not.toContain("system_issued_id");
-    expect(s.record.flags_on).toHaveLength(7);
+    expect(s.record.flags_on).toHaveLength(9);
   });
 
   it("Given the same seed twice Then the same plant and the same record (the plant is a function of the seed)", () => {

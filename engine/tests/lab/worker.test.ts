@@ -14,7 +14,7 @@ import { readJson } from "../support/paths.ts";
 
 const data = labData();
 const NODE = { version: "v0.0.0", flags: ["--no-maglev-escape-analysis"] };
-const FLAGS = ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail"];
+const FLAGS = ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail", "material_lot_links", "equipment_links"];
 const home = { schema_version: "1", scenario: "default", settings: {}, architectures: [], seeds: [1] };
 
 let reference: Reference;

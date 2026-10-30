@@ -6,7 +6,7 @@
  */
 
 /**
- * A data architecture: the eight independent feature flags of docs/design/simulation_spec.md section 5 (ADR-0005) and the labelling method. Presets A, B and C are data under scenarios/architectures/. There is no ninth flag: an unknown key under flags is rejected, and a new flag needs its own Proposed ADR.
+ * A data architecture: the ten independent feature flags of docs/design/simulation_spec.md section 5 (ADR-0005; the ninth and tenth, ADR-0017 and ADR-0020) and the labelling method. Presets A, B and C are data under scenarios/architectures/. There is no eleventh flag: an unknown key under flags is rejected, and a new flag needs its own Proposed ADR.
  */
 export interface Architecture {
   schema_version: "1";
@@ -44,13 +44,21 @@ export interface Architecture {
      * On: who, when and what changed, with operator id. Off: no history.
      */
     audit_trail: boolean;
+    /**
+     * On: an inoculation or a medium or feed addition stores the lot id as a key, and the recorder writes the consumed_in and seeded_from edges (ADR-0017). Off: no edge, at most a free-text lot name. Read only where lots exist (the break-out extension).
+     */
+    material_lot_links: boolean;
+    /**
+     * On: an equipment_use event stores the equipment id as a key, and the recorder writes the used_in edge (ADR-0020). Off: no edge, at most a free-text equipment name. Read only where equipment items exist (the break-out extension).
+     */
+    equipment_links: boolean;
   };
   /**
    * The L2 labelling method (spec section 2.2); set independently of the flags.
    */
   labelling: "handwritten" | "preprinted_barcode" | "issued_at_draw";
   /**
-   * How a result an instrument has produced becomes a record (spec section 5, 'Capture path'; ADR-0014): typed by hand from the screen or printout, or parsed from the raw device file. A setting, not a ninth flag. The preset default (A manual_transcription, B and C adapter_ingest) is inert while the scenario's raw_layer is off; a scenario may override it.
+   * How a result an instrument has produced becomes a record (spec section 5, 'Capture path'; ADR-0014): typed by hand from the screen or printout, or parsed from the raw device file. A setting, not a flag. The preset default (A manual_transcription, B and C adapter_ingest) is inert while the scenario's raw_layer is off; a scenario may override it.
    */
   capture_path?: "manual_transcription" | "adapter_ingest";
   /**

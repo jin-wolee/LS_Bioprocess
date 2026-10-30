@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { evaluationSettings } from "../../src/evaluate/config.ts";
 import { parseExperimentConfig } from "../../src/experiments/assembly/config.ts";
 import { loadExperiment } from "../support/experiment1.ts";
-import { ELEVEN_IDS } from "../support/open_loop_setup.ts";
+import { ALL_IDS } from "../support/open_loop_setup.ts";
 import { readJson } from "../support/paths.ts";
 
 // S2c2: the seed list of experiment 1 is written in config before any run (prompts/20 Step 4, A103), and a short or date-shaped list fails here.
@@ -34,11 +34,11 @@ describe("Experiment 1 config: the seed list is written first", () => {
 });
 
 describe("Experiment 1 config: what the runner loads from it", () => {
-  it("Then the open-loop input has the whole seed list, the default scenario and the eleven architectures in the order A, B, C, then the ablations of C", () => {
+  it("Then the open-loop input has the whole seed list, the default scenario and the thirteen architectures in the order A, B, C, then the ablations of C", () => {
     const { input, head } = loadExperiment(doc);
     expect(input.seeds).toEqual(doc.seeds);
     expect(input.scenario.scenario_id).toBe("default");
-    expect(input.architectures.map((a) => a.id)).toEqual(ELEVEN_IDS);
+    expect(input.architectures.map((a) => a.id)).toEqual(ALL_IDS);
     expect(head).toEqual({ experiment_id: "experiment1", min_seeds: 20, ablations_of: "c_context" });
   });
 });

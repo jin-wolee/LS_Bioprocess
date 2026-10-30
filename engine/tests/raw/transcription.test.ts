@@ -20,7 +20,7 @@ import { readJson } from "../support/paths.ts";
 import { DIALECTS, rawConfigOf, rawInputOf } from "../support/raw_run.ts";
 import { SMALL, lookup } from "../support/scenarios.ts";
 
-// Step 6: the transcription step of manual_transcription and the sample taken through both paths (spec section 5, "Capture path"; test-only values and ids). C's flags (all eight on).
+// Step 6: the transcription step of manual_transcription and the sample taken through both paths (spec section 5, "Capture path"; test-only values and ids). C's flags (all ten on).
 // Instants are seconds of the scenario, day 0 the synthetic Monday 2030-01-07.
 
 const C = parseArchitecture(readJson("scenarios", "architectures", "c_context.json"));

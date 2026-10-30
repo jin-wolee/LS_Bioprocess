@@ -11,16 +11,16 @@ COLLECT_FLAGS_JS = """() => ({
   lists: [...document.querySelectorAll('[data-flag-list]')].map(l => ({name: l.dataset.flagList, arch: l.dataset.architecture || '', flags: [...l.querySelectorAll('[data-flag]')].map(e => e.dataset.flag)})),
 })"""
 
-# The Worker answers `ready` with one flag more, as it will once ADR-0017 is built (material_lot_links: A off, B off, C on, and its ablation). The page is not changed for it: every list that
-# exists must show the ninth flag, and a flag the dictionary has no entries for shows its name.
-NINTH_FLAG_JS = """(() => {
-  const NINTH = 'material_lot_links';
+# The Worker answers `ready` with one flag more: a synthetic name that no engine has (a real flag's name would be listed twice once the engine has it, as material_lot_links is since ADR-0017),
+# on in C and off in A and B, with its ablation. The page is not changed for it: every list that exists must show the extra flag, and a flag the dictionary has no entries for shows its name.
+EXTRA_FLAG_JS = """(() => {
+  const EXTRA = 'synthetic_extra_flag';
   const patch = (d) => {
     if (!d || d.type !== 'ready') return d;
-    const presets = d.presets.map(p => ({...p, flags: {...p.flags, [NINTH]: p.id === 'c_context'}}));
+    const presets = d.presets.map(p => ({...p, flags: {...p.flags, [EXTRA]: p.id === 'c_context'}}));
     const c = presets.find(p => p.id === 'c_context');
-    presets.push({...c, id: 'c_context_minus_' + NINTH, role: 'ablation', ablated_flag: NINTH, flags: {...c.flags, [NINTH]: false}});
-    return {...d, flags: [...d.flags, NINTH], presets};
+    presets.push({...c, id: 'c_context_minus_' + EXTRA, role: 'ablation', ablated_flag: EXTRA, flags: {...c.flags, [EXTRA]: false}});
+    return {...d, flags: [...d.flags, EXTRA], presets};
   };
   const Original = window.Worker;
   window.Worker = class extends Original {
@@ -50,12 +50,12 @@ def check_flags(browser, url) -> Result:
     """Each list of flags on screen has exactly the flags of `ready.flags`: with the real Worker (the flags of today) and with a Worker that sends one flag more."""
     problems: list[str] = []
     counts = []
-    for label, script in (("engine", None), ("one flag more", NINTH_FLAG_JS)):
+    for label, script in (("engine", None), ("one flag more", EXTRA_FLAG_JS)):
         with open_lab(browser, url, init_script=script) as (page, errors, _):
             wait_final(page)
             seen = flag_lists(page)
         found = flag_list_problems(seen["lists"], seen["expected"]) + [f"no list {n}" for n in missing_flag_lists(seen["lists"])]
-        if label != "engine" and "material_lot_links" not in seen["expected"]:
+        if label != "engine" and "synthetic_extra_flag" not in seen["expected"]:
             found.append("the patched Worker did not reach the page")
         problems += [f"{label}: {p}" for p in found + [f"console: {e[:100]}" for e in errors]]
         counts.append(f"{label}: {len(seen['lists'])} lists of {len(seen['expected'])} flags")

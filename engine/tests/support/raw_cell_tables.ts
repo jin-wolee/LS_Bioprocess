@@ -1,3 +1,4 @@
+import { plusLinks } from "./cell_tables.ts";
 import type { RawCell } from "./raw_cells.ts";
 
 // The expected cells of the (raw) and (manual) rows, typed by hand from the hypothesis matrix (spec section 5), the rule table ("Detection rules and the flags they need") and the
@@ -5,9 +6,9 @@ import type { RawCell } from "./raw_cells.ts";
 // (600 s, test-only); VR-004 has no tolerance in these fixtures, so it is not evaluable; VR-024, VR-005 and VR-006 are ingest-stage or entry-stage rules that every architecture on
 // the path runs; VR-013 reads the typed dilution against the method's ladder (1, 2, 4; A090). No expected value is read from the engine.
 // Column order, as in cell_tables.ts: A, B, C, then C minus system_issued_id, two_clocks, available_at, instrument_state_snapshot, append_only_versions, write_time_keys,
-// ingest_idempotency, audit_trail.
+// ingest_idempotency, audit_trail, material_lot_links, equipment_links (the last two equal C's: no break-out event, nothing reads them).
 
-const ALL = (cell: RawCell): RawCell[] => Array<RawCell>(11).fill(cell);
+const ALL = (cell: RawCell): RawCell[] => Array<RawCell>(13).fill(cell);
 const D = (rule: string): RawCell => `detected:${rule}`;
 const NA = ALL("not_applicable");
 
@@ -19,10 +20,10 @@ export interface RawExpected {
 /** By row name (see RAW_ROWS). */
 export const RAW_EXPECTED: Record<string, RawExpected> = {
   // detected by VR-003 wherever a row-creation stamp is stored (B, C and the ablations), invisible in A (no stamp, so the rule is not evaluable)
-  "timestamp misread: the misread instant lies later than receipt": { adapter_ingest: ["invisible", ...Array<RawCell>(10).fill(D("VR-003"))], manual_transcription: NA },
+  "timestamp misread: the misread instant lies later than receipt": { adapter_ingest: ["invisible", ...Array<RawCell>(12).fill(D("VR-003"))], manual_transcription: NA },
   // detected by VR-002 wherever sampled_at is stored (two_clocks: C and every ablation but C minus two_clocks), invisible in A, B and C minus two_clocks
   "timestamp misread: the misread instant lies before the draw": {
-    adapter_ingest: ["invisible", "invisible", D("VR-002"), D("VR-002"), "invisible", D("VR-002"), D("VR-002"), D("VR-002"), D("VR-002"), D("VR-002"), D("VR-002")], manual_transcription: NA,
+    adapter_ingest: plusLinks(["invisible", "invisible", D("VR-002"), D("VR-002"), "invisible", D("VR-002"), D("VR-002"), D("VR-002"), D("VR-002"), D("VR-002"), D("VR-002")]), manual_transcription: NA,
   },
   // the misread instant still lies between the draw and receipt: nothing shows it
   "timestamp misread: a minute-truncated stamp still between the draw and receipt": { adapter_ingest: ALL("invisible"), manual_transcription: NA },

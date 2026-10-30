@@ -33,8 +33,8 @@ const ok = (r: LineageResult): { view: LineageView; sample_ids: string[] } => {
 // the flags of each preset, in the order of the engine's flag list (ready.flags), typed from the trace table of single_sample_trace.md
 const FLAGS_ON: Record<string, string[]> = {
   a_manual: [],
-  b_lims_lite: ["system_issued_id", "ingest_idempotency", "audit_trail"],
-  c_context: ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail"],
+  b_lims_lite: ["system_issued_id", "ingest_idempotency", "audit_trail", "equipment_links"],
+  c_context: ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail", "material_lot_links", "equipment_links"],
 };
 
 describe("SC3 lineage, seed 1, the pick rule of S2d", () => {

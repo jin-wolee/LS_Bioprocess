@@ -9,7 +9,9 @@
     "append_only_versions": true,
     "write_time_keys": true,
     "ingest_idempotency": true,
-    "audit_trail": true
+    "audit_trail": true,
+    "material_lot_links": true,
+    "equipment_links": true
   },
   "labelling": "issued_at_draw",
   "capture_path": "adapter_ingest"

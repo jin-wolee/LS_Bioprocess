@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FLAG_NAMES } from "../../src/record/architecture.ts";
+import { CORE_FLAG_NAMES } from "../../src/record/architecture.ts";
 import { resultsAsOf } from "../../src/record/asof.ts";
 import { auditChange, bridgingOffset, holdContext, lotOffset } from "../../src/record/evidence.ts";
 import { ATTRIB_CELLS, FEED_CELLS, FLAG_SHOWN_BY, LABEL_CELLS, LATE_CELLS, LOT_CELLS, REKEY_CELLS, REPLAY_CELLS, RERUN_CELLS } from "../support/cell_tables.ts";
@@ -44,7 +44,7 @@ describe("Duplicate or replayed file: the idempotency log (a VR-008 information 
 
 describe("Late correction: what an as-of read at the decision time (2500) returns for S1's glucose", () => {
   const read = (name: string) => resultsAsOf(at(LATE, name).ds, DECISION_AT).filter((r) => r.request_id === "S1" && r.analyte === "glucose").map((r) => r.value);
-  it.each(["C", "C-system_issued_id", "C-two_clocks", "C-instrument_state_snapshot", "C-write_time_keys", "C-ingest_idempotency", "C-audit_trail"])(
+  it.each(["C", "C-system_issued_id", "C-two_clocks", "C-instrument_state_snapshot", "C-write_time_keys", "C-ingest_idempotency", "C-audit_trail", "C-material_lot_links", "C-equipment_links"])(
     "Given %s (available_at and append_only_versions on) Then the read returns the pre-correction 5.1",
     (name) => expect(read(name)).toEqual([5.1]),
   );
@@ -133,19 +133,22 @@ describe("Label error and clock error: what the records hold", () => {
   });
 });
 
-describe("Every flag changes at least one cell when it is ablated from C (a flag that changes none would be dead code)", () => {
+describe("Every flag of ADR-0005 changes at least one cell when it is ablated from C (a flag that changes none would be dead code); the ninth and tenth change none without a break-out event", () => {
   const TABLES: Record<string, readonly (string | null)[]> = {
     label_error: LABEL_CELLS, feed_in_gap: FEED_CELLS, unit_rekey: REKEY_CELLS, duplicate_replay: REPLAY_CELLS, lost_rerun: RERUN_CELLS,
     lot_effect: LOT_CELLS, late_correction: LATE_CELLS, unattributable_record: ATTRIB_CELLS,
   };
   const C = CONFIG_NAMES.indexOf("C");
-  it.each(FLAG_NAMES)("Given the hand-typed tables Then C minus %s differs from C in the row that shows it", (flag) => {
+  it.each(CORE_FLAG_NAMES)("Given the hand-typed tables Then C minus %s differs from C in the row that shows it", (flag) => {
     const table = TABLES[FLAG_SHOWN_BY[flag]] as readonly (string | null)[];
     expect(table[CONFIG_NAMES.indexOf(`C-${flag}`)]).not.toBe(table[C]);
   });
-  it.each(FLAG_NAMES)("Given the recorders Then C minus %s differs from C in at least one cell of the rows run", (flag) => {
-    const rows = [LABEL, FEED, REKEY, CLOCK, REPLAY, RERUN, INSTRUMENT, LOT, LATE, ATTRIB, TECHNIQUE];
-    const changed = rows.filter((row) => classify(row, config(`C-${flag}`)) !== classify(row, config("C")));
+  const ROWS = [LABEL, FEED, REKEY, CLOCK, REPLAY, RERUN, INSTRUMENT, LOT, LATE, ATTRIB, TECHNIQUE];
+  it.each(CORE_FLAG_NAMES)("Given the recorders Then C minus %s differs from C in at least one cell of the rows run", (flag) => {
+    const changed = ROWS.filter((row) => classify(row, config(`C-${flag}`)) !== classify(row, config("C")));
     expect(changed.length, `${flag} changed no cell`).toBeGreaterThan(0);
+  });
+  it.each(["material_lot_links", "equipment_links"])("Given the recorders Then C minus %s equals C in every cell of the rows run: no break-out event exists, so nothing reads the flag (ADR-0017, ADR-0020)", (flag) => {
+    for (const row of ROWS) expect(classify(row, config(`C-${flag}`))).toBe(classify(row, config("C")));
   });
 });

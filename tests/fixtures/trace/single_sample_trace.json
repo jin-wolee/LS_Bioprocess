@@ -22,8 +22,10 @@
         "append_only_versions": false,
         "audit_trail": false,
         "available_at": false,
+        "equipment_links": false,
         "ingest_idempotency": false,
         "instrument_state_snapshot": false,
+        "material_lot_links": false,
         "system_issued_id": false,
         "two_clocks": false,
         "write_time_keys": false
@@ -202,8 +204,10 @@
         "append_only_versions": false,
         "audit_trail": true,
         "available_at": false,
+        "equipment_links": true,
         "ingest_idempotency": true,
         "instrument_state_snapshot": false,
+        "material_lot_links": false,
         "system_issued_id": true,
         "two_clocks": false,
         "write_time_keys": false
@@ -385,8 +389,10 @@
         "append_only_versions": true,
         "audit_trail": true,
         "available_at": true,
+        "equipment_links": true,
         "ingest_idempotency": true,
         "instrument_state_snapshot": true,
+        "material_lot_links": true,
         "system_issued_id": true,
         "two_clocks": true,
         "write_time_keys": true

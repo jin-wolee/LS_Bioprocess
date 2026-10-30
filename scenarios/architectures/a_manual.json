@@ -9,7 +9,9 @@
     "append_only_versions": false,
     "write_time_keys": false,
     "ingest_idempotency": false,
-    "audit_trail": false
+    "audit_trail": false,
+    "material_lot_links": false,
+    "equipment_links": false
   },
   "labelling": "handwritten",
   "capture_path": "manual_transcription"

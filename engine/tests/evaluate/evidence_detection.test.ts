@@ -13,7 +13,7 @@ import { makeEvalAjv, validates } from "../support/eval_schemas.ts";
 // "Notes from S2c1") under the orchestrator ruling of 2026-10-29: evidence raises no alarm, so an evidence detector has a recall (the share of realised
 // errors whose request carries the evidence) and no precision and no false-alarm rate: those two read "not applicable", never a number.
 // The hand world is that of eval_fixture.ts. Its four requests: S1, S2 (a rerun: attempt 1 read 3.2 and failed QC, attempt 2 read 3.4), S3, and S4 (a draw refused
-// by the volume budget). Architecture A has no flag, B has system_issued_id, ingest_idempotency and audit_trail, C has all eight. Expected values are typed by hand.
+// by the volume budget). Architecture A has no flag, B has system_issued_id, ingest_idempotency and audit_trail, C has all ten (the ninth and tenth are read by nothing here). Expected values are typed by hand.
 //   Lost rerun on S2: realised in A and in B (the rerun overwrites, append_only_versions is off), prevented in C. The evidence is the audit event of the result key,
 //   which needs audit_trail: A cannot show it, B shows it, C keeps an audit event for the rerun too (every change is audited), but nothing is lost there.
 

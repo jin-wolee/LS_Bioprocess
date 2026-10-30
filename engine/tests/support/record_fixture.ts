@@ -74,7 +74,7 @@ export const WITH_SKIP: ObservableEvent[] = [
   { type: "draw_skipped_volume_budget", t: 11100, sample_id: "S4", unit_id: "U2", batch_id: "B-U2", volume_ul: 200, cumulative_ul: 3000 },
 ];
 
-/** Eight flags, all off. */
+/** Ten flags, all off. */
 export const NO_FLAGS: Record<FlagName, boolean> = Object.fromEntries(FLAG_NAMES.map((f) => [f, false])) as Record<FlagName, boolean>;
 
 /** An architecture with exactly the named flags on (labelling is not read by the recorder). */
