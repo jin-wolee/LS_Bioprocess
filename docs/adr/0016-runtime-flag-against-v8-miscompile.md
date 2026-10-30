@@ -28,7 +28,7 @@ Invariant 2 of the project says a run is deterministic: the same seed gives the 
    - Con: protects one site; the same pattern exists in other hot loops (`capture_contrast.ts`, `aggregate.ts`, `evaluate/closed_loop.ts`).
 5. **`--no-maglev` (the whole mid-tier compiler).**
    - Pro: removes the tier that holds the faulty pass.
-   - Con: broader than needed, with an unmeasured speed cost.
+   - Con: broader than needed, and slower. Measured on 2026-10-30 at the author's request (Node v25.6.1, five interleaved rounds, medians, a shared machine at load 7 to 9): the first run of the default scenario in a process takes 122 ms against 113 ms with no flag and 110 ms with the flag of option 2; the experiment 2 runner (two seeds) takes 459 ms against 426 and 421 ms; warm runs of the default scenario are equal (88, 87 and 86 ms). So option 5 costs about 8 percent on cold and short runs, and option 2 costs nothing measurable.
 
 ## Decision
 
@@ -48,7 +48,7 @@ Proposed: option 2.
 
 ## Evidence
 
-- Measurements: `docs/progress.md`, "2026-10-30 — S2e2 review (orchestrator)", item Determinism; the S2c3 entry of the same file for the first sighting; the Node 24 canary run in the S2g review entry of the same file.
+- Measurements: `docs/progress.md`, "2026-10-30 — S2e2 review (orchestrator)", item Determinism; the S2c3 entry of the same file for the first sighting; the Node 24 canary run and the speed measurement of option 5 in the S2g review entry of the same file.
 - Code: `engine/src/experiments/assembly/closed_loop_arm.ts:110`, `engine/src/evaluate/closed_loop.ts:25`, `engine/tests/support/determinism_cli.ts`.
 - Decisions it builds on: ADR-0003 (engine in a Web Worker); invariant 2 of `CLAUDE.md`.
 - No `S###` or `A###` applies: the evidence is the project's own measurement of its runtime, not a domain number.
@@ -58,6 +58,8 @@ Proposed: option 2.
 > Chose "플래그 고정 + ADR 제안 (Recommended)" and "초안만 작성 (Recommended)" (chat, 2026-10-30)
 
 > Chose "Node 24 측정 후 결정" (chat, 2026-10-30, asked to decide ADR-0016)
+
+> Chose "옵션 5 측정 후 결정" (chat, 2026-10-30, after the Node 24 measurement)
 
 ## Decider's note
 _(author only — Claude never writes here)_
