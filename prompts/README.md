@@ -62,6 +62,7 @@ prompts/00_master_build.md, prompts/<NN>_<name>.md, and .guardrails.local.txt (n
 Scope: <paths you may create or edit>. Everything else is out of scope.
 Report (at most 300 words): files with line counts; commands run with output tails;
 structure-only paths and behaviour paths as two lists; deviations from the brief; Parked ideas; Blocked items.
+Send the report once, with SendMessage; your final reply is one line ("Report sent."), because the idle notice repeats it.
 Tool budget: about <N> calls.
 ```
 
