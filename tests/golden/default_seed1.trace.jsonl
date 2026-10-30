@@ -1,4 +1,4 @@
-{"engine_version":"0.1.0","schema_version":"1","seed":1,"t":0,"type":"log_header"}
+{"engine_version":"0.2.0","schema_version":"1","seed":1,"t":0,"type":"log_header"}
 {"analyzer":"AN-1","drift_before_pct":0,"lot_id":"LOT-1","t":0,"type":"calibration_recorded"}
 {"analyzer":"AN-2","drift_before_pct":0,"lot_id":"LOT-1","t":0,"type":"calibration_recorded"}
 {"analyzer":"AN-1","drift_before_pct":0.009206002027511054,"lot_id":"LOT-1","t":7200,"type":"calibration_recorded"}

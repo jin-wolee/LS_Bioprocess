@@ -16,9 +16,9 @@
       "initial_method": "M1"
     }
   ],
-  "engine_version": "0.1.0",
+  "engine_version": "0.2.0",
   "expected_result": {
-    "engine_version": "0.1.0",
+    "engine_version": "0.2.0",
     "runs": [
       {
         "analyzer": "AN-3",

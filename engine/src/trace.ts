@@ -4,7 +4,7 @@ import type { TraceResult } from "./generated/trace_result.schema";
 
 // Export and log identity: the trace a core loop reads, the result it returns, and the canonical form the log hash covers.
 
-export const ENGINE_VERSION = "0.1.0";
+export const ENGINE_VERSION = "0.2.0";
 
 const byCode = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 

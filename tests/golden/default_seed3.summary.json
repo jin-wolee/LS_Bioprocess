@@ -1,5 +1,5 @@
 {
-  "engine_version": "0.1.0",
+  "engine_version": "0.2.0",
   "event_count": 7287,
   "event_counts": {
     "aliquot_created": 398,
@@ -21,7 +21,7 @@
     "visit_finished": 403,
     "visit_started": 403
   },
-  "log_hash": "ae58d62f6c086a8f215587edd95dec45a5956c3f3c805b25dec656605cf0e1e8",
+  "log_hash": "4b9edc4d8675e13b6bcfd898e15810d06e2f7ab67266be367b77e3f03d4ebabb",
   "schema_version": "1",
   "seed": 3
 }
