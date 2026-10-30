@@ -69,6 +69,7 @@ Tool budget: about <N> calls.
 3. Parallel executors only on disjoint path sets declared in their briefs; two executors never edit `package.json`, `pyproject.toml`, `eslint.config.js` or `scripts/check_all.sh` at the same time.
 4. When the report arrives, verify on disk (`90_review_rubric.md`, Procedure). One rework round at most. After PASS, commit and report to the author; no extra verification rounds.
 5. Each session ends with a `docs/progress.md` entry written by the executor: date, what changed, evidence, Parked, Open questions. The orchestrator checks that it exists.
+6. The Stop hook defers its gate while a batch runs: the orchestrator writes `.claude/.batch-running` (batch name and start time) when it sends a batch and removes it after its own `bash scripts/check_all.sh --manual` run. A marker left behind shows as a deferral line on every turn.
 
 ## Report format (executors)
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 
 import pytest
@@ -139,6 +140,106 @@ def test_hook_never_loops_when_already_continuing_because_of_it(lab):
     lab.write("notes.md", f"{BANNED}\n")
     assert stop_hook(lab, active=True).returncode == 0
     assert runs(lab) == 0
+
+
+# ---------- hook mode: the batch marker defers the gate ----------
+# While an executor batch runs the orchestrator keeps .claude/.batch-running (batch name and start time); the Stop hook then prints one line and
+# leaves the gate to the orchestrator's `check_all.sh --manual`. It touches no state, so the first turn after the marker is gone runs the gate.
+BATCH = "marker maintenance, started 2026-10-30 15:16"
+
+
+def marker(lab, text: str = BATCH):
+    return lab.write(".claude/.batch-running", text + "\n")
+
+
+def unreadable_marker(lab):
+    path = marker(lab)
+    path.chmod(0)
+    return path
+
+
+def test_the_batch_marker_is_ignored_by_git(lab):
+    marker(lab)
+    assert lab.git("check-ignore", "-q", ".claude/.batch-running").returncode == 0
+
+
+def test_hook_defers_while_the_batch_marker_exists_and_runs_nothing(lab):
+    lab.write("notes.md", f"{BANNED}\n")  # the gate would block on this
+    (lab.root / ".claude").mkdir(exist_ok=True)
+    (lab.root / ".claude/.dirty").touch()
+    marker(lab)
+    r = stop_hook(lab)
+    assert r.returncode == 0, output(r)
+    assert r.stdout == ""
+    lines = r.stderr.splitlines()
+    assert len(lines) == 1, r.stderr
+    assert BATCH in lines[0] and "check_all.sh --manual" in lines[0] and "deferred" in lines[0]
+    assert runs(lab) == 0
+    assert not (lab.root / ".claude/.last-check").exists()
+    assert (lab.root / ".claude/.dirty").exists()
+
+
+def test_the_deferral_leaves_a_recorded_state_alone(lab):
+    assert stop_hook(lab).returncode == 0
+    recorded = (lab.root / ".claude/.last-check").read_text()
+    lab.write("notes.md", "a\n")
+    marker(lab)
+    assert stop_hook(lab).returncode == 0
+    assert (lab.root / ".claude/.last-check").read_text() == recorded
+    assert runs(lab) == 1
+
+
+@pytest.mark.parametrize("make", [lambda lab: marker(lab, ""), lambda lab: marker(lab, "\n  \n"), unreadable_marker], ids=["empty", "blank", "unreadable"])
+def test_an_empty_or_unreadable_marker_still_defers_and_says_so(lab, make):
+    if make is unreadable_marker and os.geteuid() == 0:
+        pytest.skip("root reads a mode-0 file")
+    lab.write("notes.md", f"{BANNED}\n")
+    make(lab)
+    r = stop_hook(lab)
+    assert r.returncode == 0, output(r)
+    lines = r.stderr.splitlines()
+    assert len(lines) == 1 and "empty or unreadable" in lines[0] and "deferred" in lines[0], r.stderr
+    assert runs(lab) == 0
+    assert not (lab.root / ".claude/.last-check").exists()
+
+
+@pytest.mark.parametrize("flags", [("--manual",), ("--manual", "--lab"), ("--lab",)])
+def test_manual_and_lab_ignore_the_batch_marker(lab, flags):
+    qa_lab_stub(lab)
+    marker(lab)
+    r = check_all(lab, *flags, stdin=json.dumps({"stop_hook_active": False}))
+    assert r.returncode == 0, output(r)
+    assert "deferred" not in output(r)
+    assert runs(lab) == 1
+    assert lab_runs(lab) == (1 if "--lab" in flags else 0)
+    lab.write("notes.md", f"{BANNED}\n")
+    assert check_all(lab, *flags, stdin=json.dumps({"stop_hook_active": False})).returncode == (1 if "--manual" in flags else 2)
+
+
+@pytest.mark.parametrize("dirty", [True, False], ids=["dirty-marker", "edits-through-bash"])
+def test_the_first_turn_after_the_marker_is_removed_runs_the_gate(lab, dirty):
+    lab.write("notes.md", "fine\n")
+    if dirty:
+        (lab.root / ".claude").mkdir(exist_ok=True)
+        (lab.root / ".claude/.dirty").touch()
+    marker(lab)
+    assert stop_hook(lab).returncode == 0
+    assert runs(lab) == 0
+    (lab.root / ".claude/.batch-running").unlink()
+    r = stop_hook(lab)
+    assert r.returncode == 0, output(r)
+    assert runs(lab) == 1
+    assert (lab.root / ".claude/.last-check").read_text().strip()
+    assert not (lab.root / ".claude/.dirty").exists()
+
+
+def test_after_the_marker_is_removed_the_hook_blocks_on_what_the_batch_broke(lab):
+    lab.write("notes.md", f"{BANNED}\n")
+    marker(lab)
+    assert stop_hook(lab).returncode == 0
+    (lab.root / ".claude/.batch-running").unlink()
+    r = stop_hook(lab)
+    assert r.returncode == 2 and "notes.md" in r.stderr
 
 
 # ---------- checks it runs ----------

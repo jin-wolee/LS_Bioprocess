@@ -2,9 +2,10 @@
 docs/private/
 .guardrails.local.txt
 
-# local state written by hooks
+# local state written by hooks (and the batch marker the orchestrator writes)
 .claude/settings.local.json
 .claude/.dirty
+.claude/.batch-running
 .claude/.bootstrap-done
 
 # toolchains / build output

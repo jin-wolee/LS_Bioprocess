@@ -4,7 +4,9 @@
 #              .claude/.dirty exists (Write/Edit hooks set it) or the repo state differs from the one stored after the
 #              last green check (.claude/.last-check; this catches edits made through Bash).
 #              Exit 2 = Claude keeps going and sees stderr; exit 0 = allow stop.
-#   --manual   Ignore stdin, stop_hook_active and stored state: always run, print a summary, exit 0 (PASS) or 1 (FAIL).
+#              While .claude/.batch-running exists (the orchestrator writes the batch name and start time there for the length of an executor batch) it prints one line
+#              and exits 0 without running anything or touching .dirty and .last-check, so the first turn after the marker is removed runs the gate.
+#   --manual   Ignore stdin, stop_hook_active, stored state and the batch marker: always run, print a summary, exit 0 (PASS) or 1 (FAIL).
 #   --lab      Also run the end-to-end checks of the lab page (scripts/qa_lab.py: builds the lab, then headless Chromium, Firefox and WebKit; about a minute). Never part of the
 #              Stop hook, which passes no flag; the S3 batches use `--manual --lab` (docs/design/lab_ui.md section 12).
 set -u
@@ -38,6 +40,11 @@ if [ $MANUAL -eq 0 ]; then
 try: print(str(json.load(sys.stdin).get("stop_hook_active", False)).lower())
 except Exception: print("false")')"
   [ "$ACTIVE" = "true" ] && exit 0        # already continuing because of this hook: never loop
+  if [ $LAB -eq 0 ] && [ -e .claude/.batch-running ]; then  # an executor batch is running: leave state alone, the gate is the orchestrator's
+    BATCH="$({ tr -s '[:space:]' ' ' < .claude/.batch-running; } 2>/dev/null)"; BATCH="${BATCH# }"; BATCH="${BATCH% }"
+    echo "check_all: gate deferred while an executor batch runs (${BATCH:-.claude/.batch-running is empty or unreadable}); the orchestrator runs 'bash scripts/check_all.sh --manual' before it commits." >&2
+    exit 0
+  fi
   STATE="$(state_hash)"
   LAST="$(cat .claude/.last-check 2>/dev/null)"
   if [ ! -f .claude/.dirty ] && [ -n "$STATE" ] && [ "$STATE" = "$LAST" ]; then exit 0; fi  # nothing changed

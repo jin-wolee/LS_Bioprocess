@@ -45,7 +45,7 @@ ALLOW_PUSH=1 git push ...                             # author only
 ## Hooks (`.claude/settings.json`)
 - SessionStart prints the last progress entry and every `Proposed` ADR.
 - PreToolUse: `guard_bash.py` blocks publishing commands; `guard_tools.py` blocks GitHub write tools, the headed browser and user-owned paths.
-- PostToolUse runs `check_docs.py --hook` on the edited file. Stop runs `check_all.sh` once per turn in which the working tree changed; `--manual` runs the same gate on demand.
+- PostToolUse runs `check_docs.py --hook` on the edited file. Stop runs `check_all.sh` once per turn in which the working tree changed; `--manual` runs the same gate on demand. The Stop hook defers (one line, nothing run) while `.claude/.batch-running` exists.
 - Git: `pre-commit` checks staged content, `pre-push` needs `ALLOW_PUSH=1` and scans the whole history.
 
 ## Docs map
