@@ -16,6 +16,7 @@ import type { Transition } from "../../src/record/transitions.ts";
 import type { QualificationInput, RecordedDataset, RecorderInput } from "../../src/record/types.ts";
 import { validate } from "../../src/record/validate.ts";
 import { VALID_QUALIFICATIONS, byTime } from "./cell_stream.ts";
+import { FX12A, FX12A_MASTER, FX12A_SPARE, FX12E, FX12E_MASTER } from "./breakout_streams.ts";
 import { CONFIGS } from "./cells.ts";
 import { REVIEW } from "./review_setup.ts";
 import { SENSORS, STREAM, WITH_CONFLICT, WITH_HARVEST, WITH_REPLAY, WITH_SKIP } from "./record_fixture.ts";
@@ -63,8 +64,10 @@ const walk = (v: unknown): void => {
 };
 
 const TABLES = ["sample", "analysis_request", "run", "instrument_state", "result", "audit_event", "qualification", "source_event", "validation_finding", "ingest_conflict", "batch", "process_event"] as const;
+const BREAKOUT_TABLES = ["material_lot", "equipment", "lineage_edge", "deviation", "quality_hold"] as const;
 const take = (ds: RecordedDataset): void => {
   for (const t of TABLES) for (const row of ds[t]) add(t, row);
+  for (const t of BREAKOUT_TABLES) for (const row of ds[t] ?? []) add(t, row);
   for (const series of ds.historian.series) add("historian_series", series);
   for (const row of ds.historian.late) add("historian_value", row);
   // S2e1: the raw-side tables of an adapter_ingest dataset (data_model section 16.1)
@@ -110,6 +113,17 @@ for (const v of VARIANTS) {
       const ctx = contextAsOf(reviewed, r, AS_OF);
       if (ctx) add("process_context", ctx);
     }
+  }
+}
+
+// break-out batch 3 (data_model 15.6): FX12a and FX12e as hand-built streams, recorded under every architecture with the master data of their topology, then the rules and the review. The export is
+// not run on them: a confirming result has a test and no unit, and export/rows.ts is outside this batch.
+for (const [events, breakout] of [[FX12A, FX12A_MASTER], [FX12A, FX12A_SPARE], [FX12E, FX12E_MASTER]] as const) {
+  for (const c of CONFIGS) {
+    const recorded = record({ events, sensors: [], qualifications: VALID_QUALIFICATIONS, breakout }, c.config, log);
+    const validated = validate(recorded, { hold_limit_s: 3600, late_tolerance_s: 600, clock_tolerance_s: 900 }, log);
+    take(validated.dataset);
+    take(review(validated.dataset, REVIEW, log));
   }
 }
 

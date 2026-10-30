@@ -1,5 +1,6 @@
 import type { Metrics } from "../generated/metrics.schema";
 import { resultsAsOf } from "../record/asof.ts";
+import { hasValue } from "../record/types.ts";
 import type { RecordedDataset } from "../record/types.ts";
 import { recordedId } from "./answer_key.ts";
 import type { ArchitectureKey } from "./answer_key.ts";
@@ -31,7 +32,7 @@ export const phantomEffect = (truth: Truth, ds: RecordedDataset, key: Architectu
     if (!prev || e.attempt >= prev.attempt) finalTruth.set(e.request_id, { attempt: e.attempt, analyzer: e.analyzer, value: e.true_value });
   }
   const recorded = new Map<string, number>();
-  for (const r of resultsAsOf(ds, NOW)) if (r.analyte === c.analyte && !recorded.has(r.request_id)) recorded.set(r.request_id, r.value);
+  for (const r of resultsAsOf(ds, NOW).filter(hasValue)) if (r.analyte === c.analyte && !recorded.has(r.request_id)) recorded.set(r.request_id, r.value);
   const a: { truth: number; rec: number }[] = [];
   const b: { truth: number; rec: number }[] = [];
   for (const [id, t] of finalTruth) {

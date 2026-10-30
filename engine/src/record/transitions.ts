@@ -1,4 +1,4 @@
-// The state machines of data_model section 6 as a guard (S2d, Step 9). The recorder, the validation rules and the review change a row's state only through `transit`, which refuses a
+// The state machines of data_model section 6 as a guard (S2d, Step 9), and those of 15.2 (material lot, equipment, quality hold, deviation; break-out batch 3). The recorder, the validation rules and the review change a row's state only through `transit`, which refuses a
 // transition that is not in the table and a role that may not cause it. The table is the same as `state_machines` in docs/design/data_dictionary.yaml; tests/test_data_dictionary.py
 // compares the two, so the dictionary and the code cannot drift apart.
 //
@@ -11,7 +11,7 @@
 
 export const ROLES = ["sampler", "analyst", "reviewer", "approver", "administrator", "rule"] as const;
 export type Role = (typeof ROLES)[number];
-export type Entity = "sample" | "result" | "alarm_event" | "batch_phase_record";
+export type Entity = "sample" | "result" | "alarm_event" | "batch_phase_record" | "material_lot" | "equipment" | "quality_hold" | "deviation";
 
 export interface Edge {
   from: string;
@@ -92,6 +92,38 @@ export const MACHINES: Readonly<Record<Entity, readonly Edge[]>> = {
     { from: "stopped", to: "resetting", by: ["analyst"] },
     { from: "aborted", to: "resetting", by: ["analyst"] },
     { from: "resetting", to: "idle", by: ["rule"] },
+  ],
+  // Break-out batch 3, data_model 15.2. The text gives states and their order and draws no diagram, so every step is basis `default`: a step that follows from a fact (a lot used, a hold placed, a
+  // result in) takes `rule`; registering a lot as available or discarding it is master data (`administrator`); a person's decision on a hold or a closing record is the `reviewer`. A lot or an item
+  // under a hold goes back to the state it held when the hold is released; quarantine is final in S3 (no source for a return).
+  material_lot: [
+    { from: "prepared", to: "available", by: ["administrator"] },
+    { from: "available", to: "in_use", by: ["rule"] },
+    { from: "in_use", to: "consumed", by: ["rule"] },
+    { from: "in_use", to: "discarded", by: ["administrator"] },
+    { from: "available", to: "on_hold", by: ["rule"] },
+    { from: "in_use", to: "on_hold", by: ["rule"] },
+    { from: "on_hold", to: "quarantined", by: ["rule"] },
+    { from: "on_hold", to: "available", by: ["reviewer"] },
+    { from: "on_hold", to: "in_use", by: ["reviewer"] },
+  ],
+  equipment: [
+    { from: "in_service", to: "on_hold", by: ["rule"] },
+    { from: "on_hold", to: "quarantined", by: ["rule"] },
+    { from: "on_hold", to: "in_service", by: ["reviewer"] },
+  ],
+  quality_hold: [
+    { from: "placed", to: "under_test", by: ["rule"] },
+    { from: "under_test", to: "released", by: ["reviewer"] },
+    { from: "under_test", to: "quarantined", by: ["rule"] },
+    { from: "quarantined", to: "rejected", by: ["reviewer"] },
+    { from: "released", to: "closed", by: ["rule"] },
+    { from: "rejected", to: "closed", by: ["rule"] },
+  ],
+  deviation: [
+    { from: "opened", to: "contained", by: ["rule"] },
+    { from: "contained", to: "concluded", by: ["rule"] },
+    { from: "concluded", to: "closed", by: ["reviewer"] },
   ],
 };
 

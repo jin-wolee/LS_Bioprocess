@@ -1,4 +1,5 @@
 import { resultsAsOf } from "../../record/asof.ts";
+import { hasValue } from "../../record/types.ts";
 import type { RecordedDataset } from "../../record/types.ts";
 
 // 2026-10-30 S2c3, experiment 2 (spec 6.2): the decision code of arms A, B and C. It sees a recorded dataset and a time, nothing else (eslint zone 3: no truth
@@ -41,6 +42,7 @@ export const recordedContext = (ds: RecordedDataset, sampleId: string): { contai
  */
 export const decideReadjust = (ds: RecordedDataset, t: number, since: number, opts: ArmOptions): Decision => {
   const newest = resultsAsOf(ds, t)
+    .filter(hasValue)
     .filter((r) => r.analyte === "ph" && r.measured_at <= t && r.measured_at > since)
     .sort((a, b) => b.measured_at - a.measured_at || (a.result_id < b.result_id ? -1 : 1))[0];
   if (!newest) return { action: "none" };

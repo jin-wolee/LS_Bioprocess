@@ -1,6 +1,8 @@
+import { routineOf } from "./rule_types.ts";
 import type { Rule, RuleConfig } from "./rule_types.ts";
 import { ENTRY_RULES } from "./rules_entry.ts";
 import { KEY_RULES } from "./rules_keys.ts";
+import { LOT_RULES } from "./rules_lots.ts";
 import { QC_RULES } from "./rules_qc.ts";
 import { TIME_RULES } from "./rules_time.ts";
 import { transit } from "./transitions.ts";
@@ -11,6 +13,8 @@ import type { RecordedDataset, ResultRow, ResultState, ValidationFindingRow } fr
 // (hold, quarantine, reject) and write a finding; they never edit a value, a time or an id. A rule whose fields the architecture does not
 // store is not evaluable and is listed as such. Detection never causes a re-draw or a re-measure (spec section 8, anti-gaming rule 4).
 // Rules not here: VR-001, VR-005, VR-006, VR-007, VR-013, VR-016 to VR-018 (no matrix row of S2b reads them, or they need the raw layer, units or lineage).
+// Break-out batch 3: the rules of the routine catalogue see routine rows only (`routineOf`: a confirming sample, request, run and result enter none of them), and VR-021 (rules_lots.ts) is added for a
+// dataset that has the extension's tables, as the rules on a typed entry are added for the manual path; with none it is neither run nor listed as not evaluable.
 // VR-012 (run QC failed) is here since the S2 review step. A held or quarantined row is resolved by the review step (record/review.ts), which runs after the rules.
 
 export type { Rule, RuleConfig };
@@ -49,14 +53,16 @@ export const validate = (ds: RecordedDataset, cfg: RuleConfig, log?: Transition[
   const not_evaluable: Validation["not_evaluable"] = [];
   const found: ValidationFindingRow[] = [];
   // S2e1: VR-005, VR-006 and VR-013 read a typed entry, so they run only on the manual_transcription path of the raw layer (spec section 5, rule table)
-  const rules = ds.capture?.path === "manual_transcription" ? [...RULES, ...ENTRY_RULES].sort((a, b) => (a.id < b.id ? -1 : 1)) : RULES;
+  const added = [...(ds.capture?.path === "manual_transcription" ? ENTRY_RULES : []), ...(ds.lineage_edge !== undefined ? LOT_RULES : [])];
+  const rules = added.length > 0 ? [...RULES, ...added].sort((a, b) => (a.id < b.id ? -1 : 1)) : RULES;
+  const seen = routineOf(ds);
   for (const rule of rules) {
-    const reason = rule.unmet(ds, cfg);
+    const reason = rule.unmet(seen, cfg);
     if (reason !== null) {
       not_evaluable.push({ rule: rule.id, reason });
       continue;
     }
-    for (const target of rule.check(ds, cfg)) found.push({ rule: rule.id, target, severity: rule.severity, action: rule.action, status: "open" });
+    for (const target of rule.check(seen, cfg)) found.push({ rule: rule.id, target, severity: rule.severity, action: rule.action, status: "open" });
   }
   // the most severe action wins on a row; a source_event target changes no row (the original stays)
   const states = new Map<string, RuleState>();

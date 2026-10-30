@@ -2,8 +2,10 @@ import type { ObservableEvent, ObservableSensorSeries } from "../observe.ts";
 import type { RawTables } from "../ingest/canonical.ts";
 import type { CapturePath } from "../raw/types.ts";
 import type { Architecture } from "./architecture.ts";
+import type { BreakoutInput, DeviationRow, EquipmentRow, LineageEdgeRow, MaterialLotRow, QualityHoldRow } from "./breakout_types.ts";
 
 export type { CapturePath };
+export type { BreakoutInput, DeviationRow, DeviationState, EquipmentRow, EquipmentState, HoldState, LineageEdgeRow, LotState, MaterialLotRow, QualityHoldRow } from "./breakout_types.ts";
 
 // The recorded dataset of one architecture (data_model section 2). Column names are data_model's. A column an architecture cannot
 // know is null (data_model principle 7), never absent, so a test can state "stored" as "not null". Times are integer seconds of
@@ -69,6 +71,12 @@ export interface RecorderInput {
   plan?: { controls?: Readonly<Record<string, string>>; containers?: Readonly<Record<string, string>> };
   /** S2e1: the capture path and the provenance of each result; absent with the raw layer off, which leaves every row and column as before. */
   capture?: CaptureInput;
+  /**
+   * Break-out batch 3 (data_model 15.6): the master data of the scenario topology, from the assembly. Its presence says the scenario has a `breakout` block: only then the dataset gains the tables
+   * `material_lot`, `equipment`, `lineage_edge`, `deviation` and `quality_hold` and the break-out columns, and the recorder reads the break-out events. Absent, those events are ignored and no table or
+   * column exists (absent, not null), so a dataset without a break-out block is as before.
+   */
+  breakout?: BreakoutInput;
 }
 
 export interface SampleRow {
@@ -99,6 +107,8 @@ export interface SampleRow {
 export interface AnalysisRequestRow {
   request_id: string;
   control_id: string | null;
+  /** Break-out only (data_model 15.1): a confirming test is asked of a confirming sample; the rules and the section 8 metrics count routine requests only. Absent without a break-out block. */
+  purpose?: "routine" | "confirmatory";
 }
 
 export interface RunRow {
@@ -139,7 +149,8 @@ export interface ResultRow {
   /** Rank of the attempt among the attempts recorded for (request, analyte). Overwrite in place (append_only_versions off) keeps 1. */
   version: number;
   run_id: string;
-  value: number;
+  /** Null for a row that carries no number: a confirming result has an `outcome` instead (K18, break-out batch 3). Every routine row has a value; `hasValue` narrows. */
+  value: number | null;
   measured_at: number;
   /** available_at only: the stamp of the observable result event (S2a models no ingestion or review delay). */
   available_at: number | null;
@@ -165,7 +176,13 @@ export interface ResultRow {
    * Null from the recorder: only a rule or the review sets it, and never changes a value.
    */
   state: ResultState | null;
+  /** Break-out only (data_model 15.1, K18): what a confirming test found; set exactly on the results of confirmatory requests, where `value` is null. Null on a routine result; absent without a break-out block. */
+  outcome?: "detected" | "not_detected" | null;
 }
+
+/** A result row that carries a number: every routine result. The readers of values (rules, evidence, the arms, the evaluator) take their rows through this. */
+export type ValuedResult = ResultRow & { value: number };
+export const hasValue = (r: ResultRow): r is ValuedResult => r.value !== null;
 
 /** `held` and `quarantined` wait for the review; `rejected` (by a rule at ingest or by the review) and `released` are the end states (data_model section 6). */
 export type ResultState = "held" | "quarantined" | "rejected" | "released";
@@ -217,6 +234,8 @@ export interface BatchRow {
   unit_id: string;
   inoculated_at: number;
   harvested_at: number | null;
+  /** Break-out only, material_lot_links only (data_model 15.6, K17): the seed lot of the inoculation, as a key; null with the flag off. Absent without a break-out block. */
+  seed_lot_id?: string | null;
 }
 
 export interface ProcessEventRow {
@@ -228,6 +247,10 @@ export interface ProcessEventRow {
   amount: number | null;
   source: string;
   ingested_at: number;
+  /** Break-out only, material_lot_links only: the medium lot of a `medium_addition`, as a key; null otherwise. Absent without a break-out block. */
+  lot_id?: string | null;
+  /** Break-out only, equipment_links only: the equipment item of an `equipment_use`, as a key; null otherwise. Absent without a break-out block. */
+  equipment_id?: string | null;
 }
 
 /**
@@ -262,6 +285,12 @@ export interface RecordedDataset {
   ingest_conflict: IngestConflictRow[];
   batch: BatchRow[];
   process_event: ProcessEventRow[];
+  /** The five tables below exist only when the recorder was given break-out master data (`RecorderInput.breakout`); absent, not empty, without a break-out block. */
+  material_lot?: MaterialLotRow[];
+  equipment?: EquipmentRow[];
+  lineage_edge?: LineageEdgeRow[];
+  deviation?: DeviationRow[];
+  quality_hold?: QualityHoldRow[];
   historian: {
     /** The online series, kept columnar like the engine's (about 1.4 million values for the default scenario). A tick is a row with tag `unit.signal`, `ts` = its stamp and `ingested_at` = `ts`. */
     series: readonly ObservableSensorSeries[];

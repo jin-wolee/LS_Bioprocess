@@ -36,5 +36,21 @@ export interface Rule {
   check: (ds: RecordedDataset, cfg: RuleConfig) => string[];
 }
 
+/**
+ * The dataset as the routine catalogue sees it (break-out batch 3, spec 11.8.2 rule S10): a confirming sample is not a routine request, so its sample, request, runs and results enter no rule of the
+ * catalogue (VR-009, VR-010 and VR-020 among them, and VR-011, which an external-lab run with no instrument state would trip). The same dataset, unchanged, when there is none.
+ */
+export const routineOf = (ds: RecordedDataset): RecordedDataset => {
+  const confirming = new Set(ds.analysis_request.filter((r) => r.purpose === "confirmatory").map((r) => r.request_id));
+  if (confirming.size === 0) return ds;
+  return {
+    ...ds,
+    sample: ds.sample.filter((s) => !confirming.has(s.sample_id)),
+    analysis_request: ds.analysis_request.filter((r) => !confirming.has(r.request_id)),
+    run: ds.run.filter((r) => !confirming.has(r.request_id)),
+    result: ds.result.filter((r) => !confirming.has(r.request_id)),
+  };
+};
+
 export const TWO_CLOCKS = (ds: RecordedDataset): string | null => (ds.architecture.flags.two_clocks ? null : "sampled_at is not stored (two_clocks off)");
 export const bySampleId = (ds: RecordedDataset) => new Map(ds.sample.map((s) => [s.sample_id, s]));

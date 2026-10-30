@@ -1,5 +1,6 @@
 import { recordedContext } from "../arms/closed_loop.ts";
 import type { Decision } from "../arms/closed_loop.ts";
+import { hasValue } from "../../record/types.ts";
 import type { RecordedDataset } from "../../record/types.ts";
 
 // 2026-10-30 S3d (lab_ui.md sections 5 and 9): the decision log of an arm, asked for by the lab and by nothing else. One entry per readjustment slot: the instant, what the arm did and
@@ -43,6 +44,7 @@ export const loggedDecision = (unit_id: string, t: number, d: Decision, ds: Reco
   const head = { decision_id: `${unit_id}@${t}`, unit_id, t };
   if (d.action === "none") return { ...head, action: "none", onto: null, reason: null, read: null };
   const row = ds.result
+    .filter(hasValue)
     .filter((r) => r.analyte === "ph" && r.request_id === d.sample_id && r.measured_at === d.measured_at)
     .sort((a, b) => (a.result_id < b.result_id ? -1 : 1))[0];
   if (!row) throw new Error(`closed loop: the decision ${head.decision_id} read a row of ${d.sample_id} measured at ${d.measured_at}, which the arm's rows do not hold`);

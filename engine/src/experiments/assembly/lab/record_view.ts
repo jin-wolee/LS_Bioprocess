@@ -1,4 +1,5 @@
 import { FLAG_NAMES } from "../../../record/architecture.ts";
+import { hasValue } from "../../../record/types.ts";
 import type { RecordedDataset } from "../../../record/types.ts";
 import type { RecordView } from "./challenge_types.ts";
 
@@ -16,7 +17,7 @@ export const recordViewOf = (ds: RecordedDataset, ubiquitous: string[]): RecordV
   architecture: ds.architecture.id,
   flags_on: flagsOn(ds),
   samples: sampleRows(ds),
-  results: ds.result.map((r) => ({ request_id: r.request_id, analyte: r.analyte, version: r.version, value: r.value, measured_at: r.measured_at, available_at: r.available_at, state: r.state })),
+  results: ds.result.filter(hasValue).map((r) => ({ request_id: r.request_id, analyte: r.analyte, version: r.version, value: r.value, measured_at: r.measured_at, available_at: r.available_at, state: r.state })),
   findings: findingRows(ds),
   audit_events: ds.audit_event.map((a) => ({ audit_id: a.audit_id, request_id: a.request_id, analyte: a.analyte, at: a.at, old_value: a.old_value, new_value: a.new_value, old_version: a.old_version, new_version: a.new_version })),
   ubiquitous,

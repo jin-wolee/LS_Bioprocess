@@ -12,6 +12,9 @@
 # The raw device layer (data_model section 16) is described in two steps: the analyzer side since S2e1 (adapter, raw_file, raw_record, parse_error and the new columns of result) and the controller
 # side since S2e2 (historian_value with its layer-on columns, alarm_event, batch_phase_record and their state machines). `raw_layer` at the end lists the columns of section 16.2 that no run
 # emits yet; it is a marked placeholder for them, not an entry.
+# The break-out extension (data_model sections 15.1, 15.2 and 15.6; break-out batch 3) adds the entities material_lot, equipment, lineage_edge and deviation, the columns purpose, outcome, seed_lot_id, lot_id and
+# equipment_id of the earlier tables, the confirming tests as master data and the machines of 15.2. They exist in a dataset only when the recorder was given the master data of a scenario with a break-out block
+# (absent, not null, otherwise). quality_hold is described and not yet emitted: the investigation of batch 4 places the holds, and its entry flips to emitted then.
 
 dictionary_version: "1"
 data_model: docs/design/data_model.md
@@ -36,10 +39,15 @@ analytes:
   titer: {unit: "g/L", ledger: A210, description: "product titer"}
   ph: {unit: "[pH]", ledger: A198, description: "pH on its scale"}
 
+# ---- master data: the confirming tests of the break-out events (data_model 15.1, method kind). A confirming result carries the test in its `analyte` column and an outcome instead of a value ------------
+confirming_tests:
+  bioburden: {ledger: A142, description: "bioburden (plate count), asked of a confirming sample after a signal"}
+  sterility: {ledger: A143, description: "sterility, two media (A148)"}
+
 # ---- the recorded dataset (engine/src/record/types.ts) -----------------------------------------------------------------------------------------------------------------------------
 dataset:
-  tables: [sample, analysis_request, run, instrument_state, result, audit_event, qualification, source_event, validation_finding, ingest_conflict, batch, process_event]
-  other: {architecture: "id, the ten flags and labelling of the architecture that recorded the dataset (spec section 5; material_lot_links and equipment_links, ADR-0017 and ADR-0020, are read only with a break-out event, so a dataset without one is the same with either on or off)", historian: "series (entity historian_series) and late rows (entity historian_value)", capture: "raw layer only: the capture path of the dataset ({path}); absent with the layer off", raw: "adapter_ingest only: the raw-side tables adapter, raw_file, raw_record and parse_error (data_model section 16.1) and, with a controller on a bay, the controller records alarm_event and batch_phase_record (section 16.4)"}
+  tables: [sample, analysis_request, run, instrument_state, result, audit_event, qualification, source_event, validation_finding, ingest_conflict, batch, process_event, material_lot, equipment, lineage_edge, deviation]
+  other: {quality_hold: "break-out only (data_model 15.1, 15.6): the table of holds and quarantines exists, empty, in a dataset with the break-out tables; the investigation of break-out batch 4 places the rows (entity quality_hold, emitted: false until then)", architecture: "id, the ten flags and labelling of the architecture that recorded the dataset (spec section 5; material_lot_links and equipment_links, ADR-0017 and ADR-0020, are read only with a break-out event, so a dataset without one is the same with either on or off). The five break-out tables (material_lot, equipment, lineage_edge, deviation, quality_hold) are members of a dataset only when the recorder was given the master data of a scenario with a break-out block; without it they are absent, not empty", historian: "series (entity historian_series) and late rows (entity historian_value)", capture: "raw layer only: the capture path of the dataset ({path}); absent with the layer off", raw: "adapter_ingest only: the raw-side tables adapter, raw_file, raw_record and parse_error (data_model section 16.1) and, with a controller on a bay, the controller records alarm_event and batch_phase_record (section 16.4)"}
 
 entities:
   sample:
@@ -63,6 +71,7 @@ entities:
     columns:
       - {name: request_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key; equal to the sample id in this engine (one request per sample)"}
       - {name: control_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "shared by the requests that measure one bridging material; null for an ordinary request"}
+      - {name: purpose, type: string, nullable: false, unit: null, values: [routine, confirmatory], time: neither, visibility: observable, default: null, description: "break-out only (data_model 15.1): a confirmatory request is a confirming test asked of a confirming sample, one request per sample (the request id is the sample id) with one result per test; the validation rules and the section 8 metrics count routine requests only (spec 11.8.2 rule S10). Absent without a break-out block"}
   run:
     emitted: true
     description: "one pass of a sample through an instrument (data_model section 2)"
@@ -70,8 +79,8 @@ entities:
       - {name: run_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key: request, attempt and visit"}
       - {name: request_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the request the run served"}
       - {name: attempt, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "1 for the first run, higher for a rerun"}
-      - {name: visit, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the visit on the route of the request (one per analyzer of a split profile)"}
-      - {name: analyzer_name, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the analyzer as free text, as seen on the event; stored whatever instrument_state_snapshot says"}
+      - {name: visit, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the visit on the route of the request (one per analyzer of a split profile); for a confirming sample, the position of the test among its tests (one run per test)"}
+      - {name: analyzer_name, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the analyzer as free text, as seen on the event; stored whatever instrument_state_snapshot says. A confirming test runs on `external_lab` (data_model 15.1), which has no instrument link"}
       - {name: instrument_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "instrument_state_snapshot only"}
       - {name: instrument_state_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "instrument_state_snapshot only: the state valid at the run start"}
       - {name: started_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the instant the run began, after any setup (run_started_at, data_model section 5)"}
@@ -93,11 +102,11 @@ entities:
     columns:
       - {name: result_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key of the row"}
       - {name: request_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the request, under the id the record holds its results by (a label error moves it)"}
-      - {name: analyte, type: string, nullable: false, unit: null, values: [vcd, viability, glucose, glutamine, lactate, titer, ph], time: neither, visibility: observable, default: null, description: "analyte code; its unit is in the master data `analytes`"}
+      - {name: analyte, type: string, nullable: false, unit: null, values: [vcd, viability, glucose, glutamine, lactate, titer, ph, bioburden, sterility], time: neither, visibility: observable, default: null, description: "analyte code; its unit is in the master data `analytes`. For a confirming result (break-out only) the test that was run, from the master data `confirming_tests`; it has no unit"}
       - {name: version, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "rank of the attempt among the attempts recorded for (request, analyte); an overwrite in place keeps 1"}
       - {name: run_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "K2: a result cannot exist without a run"}
-      - {name: value, type: number, nullable: false, unit: null, unit_by: analyte, values: null, time: neither, visibility: observable, default: null, description: "the value in the canonical unit of its analyte (the engine works in the canonical units until the raw layer keeps an original unit)"}
-      - {name: measured_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "K2: the instant the measurement ended; a wrong instrument clock makes it wrong in the record (A049)"}
+      - {name: value, type: number, nullable: true, unit: null, unit_by: analyte, values: null, time: neither, visibility: observable, default: null, description: "the value in the canonical unit of its analyte (the engine works in the canonical units until the raw layer keeps an original unit); null exactly on a confirming result, which carries an outcome instead (K18)"}
+      - {name: measured_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "K2: the instant the measurement ended; a wrong instrument clock makes it wrong in the record (A049); for a confirming test the read-out, the draw plus the turnaround (A142, A143)"}
       - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only: when this version became knowable; a released row has the review point; a rejected row has none"}
       - {name: supersedes, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "append_only_versions only: the result_id this version replaces"}
       - {name: ingested_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the instant the system wrote the row; null in architecture A, where no system writes the rows (data_model section 7)"}
@@ -110,6 +119,7 @@ entities:
       - {name: unit_ucum, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "raw layer only: the UCUM code of the unit the row was read or typed in (VR-005 compares its dimension with the analyte's)"}
       - {name: dilution_factor, type: number, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: {value: 1, ledger: A090}, description: "raw layer only: the dilution ratio of the file or of the typed entry; null when it was left out (VR-013 on a typed entry)"}
       - {name: time_resolution_s, type: integer, nullable: true, unit: s, values: {min: 1}, time: neither, visibility: observable, default: null, description: "raw layer only: the resolution of the stamp the row was read from (one minute for the counter dialect, A166); null on a typed entry"}
+      - {name: outcome, type: string, nullable: true, unit: null, values: [detected, not_detected], time: neither, visibility: observable, default: null, description: "break-out only (data_model 15.1, K18): what a confirming test found; set exactly on the results of confirmatory requests, null on a routine result. The tests report the truth, except that the nucleic-acid test finds only what its target covers (A146). Absent without a break-out block"}
   audit_event:
     emitted: true
     description: "audit_trail only: one row per change of a result (a rerun that replaces an earlier attempt); data_model section 2, supporting entities"
@@ -144,7 +154,7 @@ entities:
     description: "one finding of a validation rule (data_model section 8); a rule changes a state and never a value"
     columns:
       - {name: rule, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "rule id (VR-002 ... VR-026, VR-008b)"}
-      - {name: target, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "result:<result_id>, sample:<sample_id>, source_event:<source_event_id> or, raw layer, file:<raw_file_id>"}
+      - {name: target, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "result:<result_id>, sample:<sample_id>, source_event:<source_event_id> or, raw layer, file:<raw_file_id>; break-out, VR-021: process_event:<event_id> or batch:<batch_id> (a finding on one of these changes no row, so the review does not see it)"}
       - {name: severity, type: string, nullable: false, unit: null, values: [info, warning, error], time: neither, visibility: observable, default: null, description: "severity of the rule"}
       - {name: action, type: string, nullable: false, unit: null, values: [no-op, hold, quarantine, reject], time: neither, visibility: observable, default: null, description: "the action of the rule; a no-op is the harmless replay (VR-008)"}
       - {name: status, type: string, nullable: false, unit: null, values: [open, resolved], time: neither, visibility: observable, default: null, description: "state of the finding itself: open until the review resolves it; a no-op is resolved at once"}
@@ -227,6 +237,7 @@ entities:
       - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit that hosts the batch"}
       - {name: inoculated_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the instant of the inoculation event"}
       - {name: harvested_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the instant of the harvest event; null while the batch is open"}
+      - {name: seed_lot_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "break-out only (data_model 15.6, K17): the seed lot of the inoculation, as a key, stored under material_lot_links (with the edge seeded_from); null with the flag off. Absent without a break-out block"}
   process_event:
     emitted: true
     description: "one event in a batch (data_model section 2); ingested at its own stamp"
@@ -234,11 +245,75 @@ entities:
       - {name: event_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
       - {name: batch_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch"}
       - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit"}
-      - {name: kind, type: string, nullable: false, unit: null, values: [feed, temperature_shift, alarm, harvest], time: neither, visibility: observable, default: null, description: "type of the event; feeds are discrete (A010)"}
+      - {name: kind, type: string, nullable: false, unit: null, values: [feed, temperature_shift, alarm, harvest, medium_addition, equipment_use, unit_stopped], time: neither, visibility: observable, default: null, description: "type of the event; feeds are discrete (A010). medium_addition, equipment_use and unit_stopped (break-out) are recorded by every architecture; the lot and the item they name are stored only under their flag (columns lot_id and equipment_id)"}
       - {name: occurred_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the event"}
       - {name: amount, type: number, nullable: true, unit: null, unit_by: kind, unit_map: {feed: L, temperature_shift: Cel}, values: null, time: neither, visibility: observable, default: null, description: "a bolus in litres, a set point in degrees Celsius; null when the event carries none"}
       - {name: source, type: string, nullable: false, unit: null, values: [rule, scheduled, scripted], time: neither, visibility: observable, default: null, description: "what caused the event: a rule, the schedule, or a scripted scenario event"}
       - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "equal to occurred_at: no ingestion delay is modelled before the raw layer"}
+      - {name: lot_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "break-out only (data_model 15.6): the medium lot of a medium_addition, as a key, stored under material_lot_links (with the edge consumed_in); null otherwise. Absent without a break-out block"}
+      - {name: equipment_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "break-out only (data_model 15.6, K19): the shared equipment item of an equipment_use, as a key, stored under equipment_links (with the edge used_in); null otherwise. Absent without a break-out block"}
+  material_lot:
+    emitted: true
+    description: "break-out only (data_model 15.1, 15.6): one lot of seed or medium of the scenario topology; stored under material_lot_links for every lot of the topology (the table is empty with the flag off). A lot is a key the plant carries, not a quantity: `quantity` is null in S3"
+    columns:
+      - {name: lot_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
+      - {name: kind, type: string, nullable: false, unit: null, values: [seed, medium], time: neither, visibility: observable, default: null, description: "seed or medium; kind feed is in the closed list of data_model 15.1 and no scenario uses it (routine feeds carry no lot id in S3)"}
+      - {name: cell_line_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "seed lots only, null in S3: the cell line waits for S4 (data_model 15.1)"}
+      - {name: prepared_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "when the lot was prepared: master data of the scenario topology"}
+      - {name: quantity, type: number, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "null in S3: no ledger entry gives a lot size and nothing reads it"}
+      - {name: parent_lot_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "stored and not walked; null in S3 (the N-1 seed train is S4, A155)"}
+      - {name: state, type: string, nullable: false, unit: null, values: [prepared, available, in_use, consumed, discarded, on_hold, quarantined], time: neither, visibility: observable, default: null, description: "state of the lot machine (state_machines.material_lot): the recorder registers every lot as available and puts a lot that some event consumed in use; on_hold and quarantined are set while a quality_hold covers it (batch 4)"}
+  equipment:
+    emitted: true
+    description: "break-out only (data_model 15.1, 15.6): one shared item of equipment (a transfer line, a connection set, a shared vessel) that more than one unit uses; stored under equipment_links for every item of the topology (the table is empty with the flag off). A unit's own equipment is the unit and has no row"
+    columns:
+      - {name: equipment_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
+      - {name: name, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the name of the item, master data of the scenario topology"}
+      - {name: state, type: string, nullable: false, unit: null, values: [in_service, on_hold, quarantined], time: neither, visibility: observable, default: null, description: "state of the equipment machine (state_machines.equipment): in service; on_hold and quarantined while a quality_hold covers it (batch 4). Cleaning and return to service are not modelled (no source)"}
+  lineage_edge:
+    emitted: true
+    description: "break-out only (data_model 15.6): the edges consumed_in and seeded_from under material_lot_links and used_in under equipment_links, written in stream order. No row exists for any other relation in S3. The earlier lineage of the recorded tables is read by key (sample, request, result)"
+    columns:
+      - {name: edge_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key: E1, E2, ... in stream order"}
+      - {name: from_kind, type: string, nullable: false, unit: null, values: [material_lot, equipment], time: neither, visibility: observable, default: null, description: "the kind of what the edge starts from (data_model section 14, question 6, for the new rows)"}
+      - {name: from_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the lot or equipment item"}
+      - {name: to_kind, type: string, nullable: false, unit: null, values: [batch, process_event], time: neither, visibility: observable, default: null, description: "the kind of what the edge ends at: the batch for seeded_from, the process event for consumed_in and used_in"}
+      - {name: to_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch or process event"}
+      - {name: relation, type: string, nullable: false, unit: null, values: [consumed_in, seeded_from, used_in], time: neither, visibility: observable, default: null, description: "consumed_in: lot to the medium_addition, one edge per lot and batch, to the first use; seeded_from: seed lot to the batch, named from the target's side; used_in: equipment item to the equipment_use, one edge per use"}
+      - {name: occurred_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the instant of the event the edge records"}
+      - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only: the stamp of the event (no ingestion delay is modelled); null otherwise"}
+  deviation:
+    emitted: true
+    description: "break-out only (data_model 15.1, 15.6): one written record of an unplanned event, one per event, opened at the first signal in every architecture. The estimated onset, the assumed lag and the closing are made by the investigation of batch 4, so they are null from the recorder"
+    columns:
+      - {name: deviation_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
+      - {name: batch_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch of the signalling unit (a column the recorder adds to the list of data_model 15.6; the investigation starts from it)"}
+      - {name: opened_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the first signal"}
+      - {name: opened_by, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only: the role that opened the deviation (reviewer). The stream names no person, so the record holds the role of data_model section 6 and not an identity; null otherwise"}
+      - {name: trigger, type: string, nullable: false, unit: null, values: [signal, test_result], time: neither, visibility: observable, default: null, description: "what opened it; only a signal in S3"}
+      - {name: estimated_onset, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "the signal time minus the assumed lag, a decision setting and not truth; null from the recorder"}
+      - {name: assumed_lag, type: integer, nullable: true, unit: s, values: null, time: neither, visibility: observable, default: null, description: "the lag the investigation assumed, a duration; null from the recorder"}
+      - {name: state, type: string, nullable: false, unit: null, values: [opened, contained, concluded, closed], time: neither, visibility: observable, default: null, description: "state of the deviation machine (state_machines.deviation); the recorder writes opened, the initial state"}
+      - {name: closed_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "null from the recorder"}
+      - {name: closed_by, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only; null from the recorder"}
+      - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only: the stamp of the deviation_opened event"}
+  quality_hold:
+    emitted: false
+    description: "break-out only (data_model 15.1, 15.6): one hold or quarantine placed on one item. The table exists, empty, in a dataset with the break-out tables; the investigation of break-out batch 4 places the rows, and this entry flips to emitted then. `placed_by`, `released_by` and `reason` are null without audit_trail and `available_at` is stored only with its flag"
+    columns:
+      - {name: hold_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
+      - {name: deviation_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "K15: every hold references a deviation"}
+      - {name: target_kind, type: string, nullable: false, unit: null, values: [batch, material_lot, equipment, result], time: neither, visibility: observable, default: null, description: "what the hold covers; a lot target exists only with material_lot_links and an equipment target only with equipment_links (the item is a key)"}
+      - {name: target_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch, lot, equipment item or result"}
+      - {name: kind, type: string, nullable: false, unit: null, values: [hold, quarantine], time: neither, visibility: observable, default: null, description: "a hold, or a quarantine after a positive confirming result; named quality_hold so it does not clash with the validation action hold of data_model section 8"}
+      - {name: state, type: string, nullable: false, unit: null, values: [placed, under_test, released, quarantined, rejected, closed], time: neither, visibility: observable, default: null, description: "state of the hold machine (state_machines.quality_hold)"}
+      - {name: placed_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the placement"}
+      - {name: placed_by, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only"}
+      - {name: reason, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only"}
+      - {name: released_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "null while the hold stands"}
+      - {name: released_by, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only"}
+      - {name: outcome, type: string, nullable: true, unit: null, values: [released, rejected], time: neither, visibility: observable, default: null, description: "how the hold ended; null while it stands"}
+      - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only"}
   historian_series:
     emitted: true
     description: "the online sensor series kept columnar (about a million values for the default scenario); a tick is the row `<unit>.<signal>`, ts, value, with ingested_at equal to ts"
@@ -462,6 +537,56 @@ state_machines:
       - {from: stopped, to: resetting, by: [analyst], basis: default}
       - {from: aborted, to: resetting, by: [analyst], basis: default}
       - {from: resetting, to: idle, by: [rule], basis: default}
+
+  # Break-out batch 3, data_model 15.2. The text gives the states and their order and draws no diagram, so every step is basis `default`: a step that follows from a fact (a lot used, a hold placed, a result in)
+  # takes `rule`; registering a lot as available or discarding it is master data (`administrator`); a person's decision on a hold, or closing the written record, is the `reviewer`. A lot or an item under a hold
+  # goes back to the state it held when the hold is released; quarantine is final in S3 (no source for a return). The recorder writes a lot as available and, once an event consumed it, in use; an item in service;
+  # a deviation opened. The holds, and with them the side states, are the investigation of batch 4 (quality_hold is not emitted yet).
+  material_lot:
+    initial: prepared
+    terminal: [consumed, discarded, quarantined]
+    emitted_states: [available, in_use]
+    null_means: "not applicable: every row carries its state"
+    transitions:
+      - {from: prepared, to: available, by: [administrator], basis: default}
+      - {from: available, to: in_use, by: [rule], basis: default}
+      - {from: in_use, to: consumed, by: [rule], basis: default}
+      - {from: in_use, to: discarded, by: [administrator], basis: default}
+      - {from: available, to: on_hold, by: [rule], basis: default}
+      - {from: in_use, to: on_hold, by: [rule], basis: default}
+      - {from: on_hold, to: quarantined, by: [rule], basis: default}
+      - {from: on_hold, to: available, by: [reviewer], basis: default}
+      - {from: on_hold, to: in_use, by: [reviewer], basis: default}
+  equipment:
+    initial: in_service
+    terminal: [quarantined]
+    emitted_states: [in_service]
+    null_means: "not applicable: every row carries its state"
+    transitions:
+      - {from: in_service, to: on_hold, by: [rule], basis: default}
+      - {from: on_hold, to: quarantined, by: [rule], basis: default}
+      - {from: on_hold, to: in_service, by: [reviewer], basis: default}
+  quality_hold:
+    initial: placed
+    terminal: [closed]
+    emitted_states: []
+    null_means: "not applicable: every row carries its state"
+    transitions:
+      - {from: placed, to: under_test, by: [rule], basis: default}
+      - {from: under_test, to: released, by: [reviewer], basis: default}
+      - {from: under_test, to: quarantined, by: [rule], basis: default}
+      - {from: quarantined, to: rejected, by: [reviewer], basis: default}
+      - {from: released, to: closed, by: [rule], basis: default}
+      - {from: rejected, to: closed, by: [rule], basis: default}
+  deviation:
+    initial: opened
+    terminal: [closed]
+    emitted_states: [opened]
+    null_means: "not applicable: every row carries its state"
+    transitions:
+      - {from: opened, to: contained, by: [rule], basis: default}
+      - {from: contained, to: concluded, by: [rule], basis: default}
+      - {from: concluded, to: closed, by: [reviewer], basis: default}
 
 # ---- placeholder: the columns of data_model 16.2 that no run emits yet (ADR-0014) ------------------------------------------------------------------------------------------------------
 # Not entries. S2e1 described the analyzer side and S2e2 the controller side (the entries and the two state machines above). These columns of section 16.2 are not emitted by any recorder yet:

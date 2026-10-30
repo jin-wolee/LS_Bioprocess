@@ -26,7 +26,7 @@ const injected = inject({ seed: 9, architecture: { id: A.id, flags: A.flags }, e
 const setup: RawSetup = {
   dialects: DIALECTS, anchor_epoch_s: anchorEpoch("2030-01-07"), zone_offset_s: 0, default_dilution: 1, export_at: () => 5000, visits: [{ dialect: "allinone_csv", analytes: ["glucose"], run_s: 270 }],
 };
-const through = (path: CapturePath): { out: RawPathOutput; results: { request_id: string; value: number; measured_at: number }[] } => {
+const through = (path: CapturePath): { out: RawPathOutput; results: { request_id: string; value: number | null; measured_at: number }[] } => {
   const out = rawPath({ setup, seed: 9, architecture: A, path, events: injected.events, received_at: injected.received_at, physical: physicalIds(clean, injected.events) });
   const ds = record({ events: out.events, sensors: [], received_at: out.received_at, qualifications: VALID_QUALIFICATIONS, capture: out.capture }, A);
   return { out, results: ds.result.map((r) => ({ request_id: r.request_id, value: r.value, measured_at: r.measured_at })) };

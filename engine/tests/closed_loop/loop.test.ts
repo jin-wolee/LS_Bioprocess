@@ -204,7 +204,7 @@ describe("SC8 recorded structure: the record the arms read does not depend on th
     const shifted = { ...run, events: run.events.map((e) => (e.type === "result_measured" && e.analyte === "ph" ? { ...e, value: e.value + 0.5 } : e)) };
     const a = buildShared(run, cfg, 3, { architectures: ALL_ARCHS.slice(0, 3), evaluation: EVAL, rng: createRng() });
     const b = buildShared(shifted, cfg, 3, { architectures: ALL_ARCHS.slice(0, 3), evaluation: EVAL, rng: createRng() });
-    const strip = <T extends { value: number }>(rows: T[]): T[] => rows.map((r) => ({ ...r, value: 0 }));
+    const strip = <T extends { value: number | null }>(rows: T[]): T[] => rows.map((r) => ({ ...r, value: 0 }));
     for (const id of ["a_manual", "b_lims_lite", "c_context"]) {
       const ra = a.structure[id]?.dataset.result ?? [];
       expect(ra.length).toBeGreaterThan(0);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bridgingOffset, lotOffset } from "../src/record/evidence.ts";
+import { hasValue } from "../src/record/types.ts";
 import type { RecordedDataset } from "../src/record/types.ts";
 import { BASE, byTime, calibration, inoculation, sampleWithRun } from "./support/cell_stream.ts";
 import { CONFIGS, run } from "./support/cells.ts";
@@ -53,7 +54,7 @@ const WITHOUT_LINK = ["A", "B", "C-instrument_state_snapshot"];
 
 /** Mean of the recorded values of the ordinary samples of one bay, with an optional per-run correction. */
 const bayMean = (d: RecordedDataset, unit: string, shift: (runId: string) => number): number => {
-  const rows = d.result.filter((r) => r.analyte === "glucose" && d.sample.some((s) => s.sample_id === r.request_id && s.unit_id === unit && r.request_id in TRUE));
+  const rows = d.result.filter(hasValue).filter((r) => r.analyte === "glucose" && d.sample.some((s) => s.sample_id === r.request_id && s.unit_id === unit && r.request_id in TRUE));
   return rows.reduce((sum, r) => sum + r.value - shift(r.run_id), 0) / rows.length;
 };
 const groupEffect = (d: RecordedDataset, shift: (runId: string) => number = () => 0): number => bayMean(d, "U2", shift) - bayMean(d, "U1", shift);
@@ -76,7 +77,7 @@ describe("SC4 new lot on AN-2: a bias between analyzers", () => {
   it("Given the noise-free fixture When it is recorded Then AN-1 results equal the true values and AN-2 results exceed them by exactly the injected bias (0.5)", () => {
     const d = ds(BETWEEN, "C");
     const analyzer = new Map(d.run.map((r) => [r.run_id, r.analyzer_name]));
-    for (const r of d.result.filter((x) => x.request_id in TRUE)) expect(r.value - (analyzer.get(r.run_id) === "AN-2" ? BIAS : 0), r.request_id).toBe(TRUE[r.request_id]);
+    for (const r of d.result.filter(hasValue).filter((x) => x.request_id in TRUE)) expect(r.value - (analyzer.get(r.run_id) === "AN-2" ? BIAS : 0), r.request_id).toBe(TRUE[r.request_id]);
   });
 
   it.each(NAMES)("Given %s Then the bias enters the group effect: recorded 0.0 where the truth is -0.5, a phantom of exactly 0.5", (name) => {
@@ -98,7 +99,7 @@ describe("SC4 new lot on AN-2: a reagent lot step on AN-2", () => {
   it("Given the noise-free fixture When it is recorded Then results on AN-2 after the step exceed the true values by exactly the injected step (0.5) and every other result equals its true value", () => {
     const d = ds(LOT_STEP, "C");
     const late = new Set(["S3", "S4", "B2"]);
-    for (const r of d.result.filter((x) => x.request_id in TRUE || x.request_id.startsWith("B"))) {
+    for (const r of d.result.filter(hasValue).filter((x) => x.request_id in TRUE || x.request_id.startsWith("B"))) {
       const truth = r.request_id === "B1" || r.request_id === "B2" ? 4.0 : (TRUE[r.request_id] as number);
       expect(r.value - (late.has(r.request_id) ? BIAS : 0), r.request_id).toBe(truth);
     }

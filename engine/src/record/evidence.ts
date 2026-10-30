@@ -1,3 +1,4 @@
+import { hasValue } from "./types.ts";
 import type { AuditEventRow, RecordedDataset } from "./types.ts";
 
 // The named evidence checks of the hypothesis matrix (spec section 5, "Detected by" entries that are not rules; S2b ruling, scored in S2c1). Each
@@ -11,7 +12,7 @@ export const auditChange = (ds: RecordedDataset, request: string, analyte: strin
 const controlRows = (ds: RecordedDataset, controlId: string) => {
   const runs = new Map(ds.run.map((r) => [r.run_id, r]));
   const requests = ds.analysis_request.filter((r) => r.control_id === controlId).map((r) => r.request_id);
-  return requests.flatMap((request) => ds.result.filter((r) => r.request_id === request).flatMap((r) => (runs.has(r.run_id) ? [{ ...r, run: runs.get(r.run_id) as NonNullable<ReturnType<typeof runs.get>> }] : [])));
+  return requests.flatMap((request) => ds.result.filter(hasValue).filter((r) => r.request_id === request).flatMap((r) => (runs.has(r.run_id) ? [{ ...r, run: runs.get(r.run_id) as NonNullable<ReturnType<typeof runs.get>> }] : [])));
 };
 
 export interface BridgingOffset {

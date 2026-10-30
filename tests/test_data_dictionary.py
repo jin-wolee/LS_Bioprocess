@@ -82,7 +82,9 @@ def test_hidden_columns_are_exactly_the_hidden_fields_of_the_event_schema(d: dic
 
 def test_analytes_master_data_is_the_unit_table_of_the_export(d: dict, engine: dict) -> None:
     assert {a: v["unit"] for a, v in d["analytes"].items()} == engine["analyte_units"]
-    assert set(columns(d, "result")["analyte"]["values"]) == set(d["analytes"])
+    # a confirming result (break-out batch 3) carries the test it ran in `analyte`; the tests have no unit and are master data of their own
+    assert set(columns(d, "result")["analyte"]["values"]) == set(d["analytes"]) | set(d["confirming_tests"])
+    assert not set(d["analytes"]) & set(d["confirming_tests"])
 
 
 def test_the_controller_side_of_the_raw_layer_is_described_as_entries_and_the_rest_stays_a_marked_placeholder(d: dict, engine: dict) -> None:
@@ -194,7 +196,7 @@ def test_the_state_machines_are_well_formed(d: dict) -> None:
 
 def test_the_transition_table_of_the_code_is_the_one_of_the_dictionary(d: dict, engine: dict) -> None:
     as_set = lambda ts: {(t["from"], t["to"], tuple(sorted(t["by"]))) for t in ts}  # noqa: E731
-    assert set(engine["transition_table"]) == set(d["state_machines"]) == {"sample", "result", "alarm_event", "batch_phase_record"}
+    assert set(engine["transition_table"]) == set(d["state_machines"]) == {"sample", "result", "alarm_event", "batch_phase_record", "material_lot", "equipment", "quality_hold", "deviation"}
     for entity in d["state_machines"]:
         assert as_set(d["state_machines"][entity]["transitions"]) == as_set(engine["transition_table"][entity]), entity
     assert set(engine["roles"]) == set(d["roles"])
@@ -248,7 +250,60 @@ def test_the_transitions_the_pipeline_performs_are_the_ones_the_design_gives_it(
         ("result", "held", "under_review", "reviewer"), ("result", "quarantined", "under_review", "reviewer"),
         ("result", "under_review", "released", "approver"), ("result", "under_review", "rejected", "reviewer"),
         ("sample", "planned", "skipped", "rule"),
+        # break-out batch 3 (data_model 15.2): the recorder registers a lot as available (master data) and puts a lot that an event consumed in use
+        ("material_lot", "prepared", "available", "administrator"), ("material_lot", "available", "in_use", "rule"),
     }
+
+
+# ---- the break-out extension (data_model 15.1, 15.2, 15.6; break-out batch 3) ---------------------------------------------------------------------------------------------------------
+
+BREAKOUT_TABLES = ["material_lot", "equipment", "lineage_edge", "deviation"]
+
+
+def test_the_break_out_tables_are_entries_and_the_table_of_holds_waits_for_the_investigation(d: dict, engine: dict) -> None:
+    assert set(BREAKOUT_TABLES) <= set(d["dataset"]["tables"])
+    assert all(d["entities"][t]["emitted"] for t in BREAKOUT_TABLES)
+    # the holds are placed by the investigation of batch 4: the table exists, empty, so it is a dataset member but no entity is emitted yet
+    assert "quality_hold" in d["dataset"]["other"] and "quality_hold" not in d["dataset"]["tables"]
+    assert d["entities"]["quality_hold"]["emitted"] is False and "quality_hold" not in engine["tables"]
+    assert "quality_hold" in engine["tables"]["dataset"]
+    # the columns the extension adds to the earlier tables (data_model 15.6), absent without a break-out block
+    assert "purpose" in columns(d, "analysis_request") and set(columns(d, "analysis_request")["purpose"]["values"]) == {"routine", "confirmatory"}
+    assert "outcome" in columns(d, "result") and columns(d, "result")["value"]["nullable"] is True
+    assert "seed_lot_id" in columns(d, "batch") and {"lot_id", "equipment_id"} <= set(columns(d, "process_event"))
+    assert {"medium_addition", "equipment_use", "unit_stopped"} <= set(columns(d, "process_event")["kind"]["values"])
+
+
+def test_the_break_out_states_the_recorder_writes_belong_to_their_machines_and_are_declared(d: dict, engine: dict) -> None:
+    # the recorder writes the initial state of a row (deviation opened, equipment in_service) or the state its machine reaches by a transition it performs (lot: available, in_use)
+    for entity in ("material_lot", "equipment", "deviation"):
+        machine = d["state_machines"][entity]
+        seen = set(engine["tables"][entity]["state"]["values"])
+        assert seen <= {t["to"] for t in machine["transitions"]} | {machine["initial"]}, entity
+        assert seen == set(machine["emitted_states"]), f"{entity}: declared emitted_states differ from what the runs emitted"
+    assert d["state_machines"]["quality_hold"]["emitted_states"] == []
+
+
+def test_the_state_machines_of_data_model_15_2_have_the_states_and_the_order_of_the_text(d: dict) -> None:
+    # typed by hand from the text of data_model 15.2: "prepared, available, in use, consumed or discarded; side states on hold and quarantined", "in service; side states on hold and quarantined",
+    # "placed, under test, then released or converted to quarantine and rejected; closed with its deviation", "opened, contained, concluded, closed"
+    states = lambda e: {s for t in d["state_machines"][e]["transitions"] for s in (t["from"], t["to"])}  # noqa: E731
+    assert states("material_lot") == {"prepared", "available", "in_use", "consumed", "discarded", "on_hold", "quarantined"}
+    assert states("equipment") == {"in_service", "on_hold", "quarantined"}
+    assert states("quality_hold") == {"placed", "under_test", "released", "quarantined", "rejected", "closed"}
+    assert states("deviation") == {"opened", "contained", "concluded", "closed"}
+    chain = {(t["from"], t["to"]) for t in d["state_machines"]["deviation"]["transitions"]}
+    assert chain == {("opened", "contained"), ("contained", "concluded"), ("concluded", "closed")}
+    # a person decides on a hold and closes the written record; a fact (a lot used, a hold placed) takes the automatic actor
+    lot = {(t["from"], t["to"]): t["by"] for t in d["state_machines"]["material_lot"]["transitions"]}
+    assert lot[("available", "in_use")] == ["rule"] and lot[("prepared", "available")] == ["administrator"] and lot[("on_hold", "available")] == ["reviewer"]
+    assert {(t["from"], t["to"]): t["by"] for t in d["state_machines"]["deviation"]["transitions"]}[("concluded", "closed")] == ["reviewer"]
+
+
+def test_a_finding_of_vr_021_has_a_target_the_dictionary_describes(d: dict) -> None:
+    # VR-021 writes a finding on a process_event or a batch (data_model 15.6); the engine tests (engine/tests/record/breakout_rules.test.ts) fire it on a hand-built dataset
+    text = columns(d, "validation_finding")["target"]["description"]
+    assert "process_event:" in text and "batch:" in text
 
 
 def test_the_transitions_no_run_performs_are_listed_so_the_gap_is_visible(d: dict, engine: dict) -> None:

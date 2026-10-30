@@ -45,6 +45,7 @@ export const plantStream = (seed: number, architecture: Pick<Architecture, "id" 
     stands.set(key, seen === undefined || seen?.sample_id === sample_id ? { sample_id, run_id: `${sample_id}/${e.attempt}/${e.visit}` } : null);
   }
   const standsFor = (row: ResultRow): StandsFor => {
+    if (row.value === null) throw new Error(`closed loop: the recorded pH row ${row.result_id} carries no value (a confirming result, which no pH row is)`);
     const at = stands.get(keyOf(row.run_id, row.analyte, row.measured_at, row.value));
     if (at === undefined) throw new Error(`closed loop: the recorded pH row ${row.result_id} is made from no result event of the injected stream`);
     if (at === null) throw new Error(`closed loop: two results of different samples were filed under ${row.request_id} at the same instant with the same value; the row ${row.result_id} cannot be told from the other`);
