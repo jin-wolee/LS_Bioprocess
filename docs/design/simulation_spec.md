@@ -296,12 +296,12 @@ Instruments are numbered stage by stage and, inside a stage, in the list order o
 
 #### 4.5.3 Load-time validation
 
-Each check is an error at load, in the style of the `bay_controllers` check (S2f); the lab shows the message verbatim (`lab_ui.md` section 4, rule 4). A scenario with neither field is checked as today.
+Each check is an error at load, in the style of the `bay_controllers` check (S2f); the lab shows the message verbatim (`lab_ui.md` section 4, rule 4). A scenario with neither field is checked as today. In the two length messages a count of 1 is written in the singular (`1 bioreactor profile`, `1 bay`, `1 analyzer profile`) and any other count in the plural, as `plural` in `engine/src/fleet.ts` prints them.
 
 | Check | Message |
 |---|---|
-| length of `bay_profiles` | `scenario <id>: bay_profiles names <n> bioreactor profile(s) but the scenario has <b> bay(s) (reactor_count <N> in bays of <S>); name one bioreactor profile per bay, bay 1 first (spec section 4.5)` |
-| length of `analyzer_profiles` | `scenario <id>: analyzer_profiles names <n> analyzer profile(s) but analyzer_count is <M>; name one analyzer profile per analyzer, analyzer 1 first (spec section 4.5)` |
+| length of `bay_profiles` | `scenario <id>: bay_profiles names <n> bioreactor profiles but the scenario has <b> bays (reactor_count <N> in bays of <S>); name one bioreactor profile per bay, bay 1 first (spec section 4.5)` |
+| length of `analyzer_profiles` | `scenario <id>: analyzer_profiles names <n> analyzer profiles but analyzer_count is <M>; name one analyzer profile per analyzer, analyzer 1 first (spec section 4.5)` |
 | unknown id | `scenario <id>: <field>[<i>] names the <kind> profile "<x>", which is not in the profile set`; a profile of the wrong kind keeps the message of `loadProfile` |
 | two profiles, one group | `scenario <id>: analyzer profiles <p> and <q> both name the group <g>; a group is the pool of one stage of one profile, so the names must differ` (service time sits on the visit, so one pool cannot serve two profiles) |
 | requested analyte, no analyzer | `scenario <id>: the analyte <a> is requested (it is in the route of profiles.analyzer, <p>) but no analyzer profile in analyzer_profiles measures it; list an analyzer with a profile that does, or change profiles.analyzer (spec section 4.5)` |
