@@ -32,6 +32,6 @@ Each record states a context, at least two real options, a proposed decision, it
 | [0017](0017-ninth-flag-material-lot-links.md) | Ninth flag: material lot links (amends ADR-0005) | Accepted |
 | [0018](0018-lab-ui-stack-preact.md) | Lab UI stack: Preact, with the engine in a Web Worker | Accepted |
 | [0019](0019-deterministic-math-across-js-engines.md) | Deterministic maths across JavaScript engines | Accepted |
-| [0020](0020-tenth-flag-equipment-links.md) | Tenth flag: equipment links (amends ADR-0005) | Proposed |
+| [0020](0020-tenth-flag-equipment-links.md) | Tenth flag: equipment links (amends ADR-0005) | Accepted |
 
 Keep this table in step with the files. A status other than `Proposed` appears here only after the author's own commit.

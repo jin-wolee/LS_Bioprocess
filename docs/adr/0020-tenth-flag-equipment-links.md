@@ -1,5 +1,5 @@
 # ADR-0020: Tenth flag: equipment links (amends ADR-0005)
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-30
 ## Context
 
@@ -48,4 +48,4 @@ Proposed: option 2 (the author's choice in chat).
 > Chose "B도 켜고 수락" (chat, 2026-10-30, asked to decide ADR-0020 with the presets A off, B off, C on)
 
 ## Decider's note
-_(author only — Claude never writes here)_
+Decided by the author in chat on 2026-10-30: "B도 켜고 수락" (presets A off, B on, C on).
