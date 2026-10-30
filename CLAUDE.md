@@ -26,7 +26,7 @@ honest comparison, not a prediction about any real plant.
 7. Headless browsers only (`mcp__playwright-headless__*` or the QA scripts), and always close them.
 8. Python dependencies through `uv` only (never pip, conda or base). Node through `npm` with exact versions.
 9. Synthetic data only. Never claim real plant data, and never state simulation results before they exist.
-10. Work split: the orchestrator verifies, orders rework and commits; executors (Sonnet, xhigh) build and never commit. Every brief starts with the header from `prompts/PRINCIPLES.md` (stage + principle combination + HITL gates).
+10. Work split: the orchestrator verifies, orders rework and commits; executors build and never commit. Executors run Sonnet xhigh by default and Opus 5.5 xhigh in the cases listed in `prompts/README.md` (a fix to an invariant across several modules, work that still fails after one rework round, a stalled executor's remaining work). Every brief starts with the header from `prompts/PRINCIPLES.md` (stage + principle combination + HITL gates).
 11. Source of truth, highest first: ADRs, `docs/design/*`, `schemas/*`, `prompts/*`. Prompts carry process and pointers; if a prompt and a design file disagree, the design wins.
 12. "Done" means `uv run pytest -q`, `uv run --frozen python scripts/check_docs.py --all` and `bash scripts/check_all.sh --manual` all pass.
 

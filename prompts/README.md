@@ -31,7 +31,7 @@ Highest first: ADRs → `docs/design/*` → `schemas/*` → `prompts/*`. Prompts
 | Role | Model and effort | Does | Never does |
 |---|---|---|---|
 | Orchestrator | strongest available (Opus-class or above), judges itself | reads `docs/progress.md`, writes the brief, spawns executors, verifies on disk, applies `90_review_rubric.md`, orders rework, commits locally after PASS | bulk-write deliverables, accept a self-report as evidence |
-| Executor | Sonnet, effort `xhigh` | builds exactly the brief; TDD; reports with evidence | commit, push, edit author-owned files, add scope |
+| Executor | Sonnet, effort `xhigh`; Opus 5.5, effort `xhigh`, in the cases below | builds exactly the brief; TDD; reports with evidence | commit, push, edit author-owned files, add scope |
 | `fact-checker` | Sonnet, `xhigh` | compares a claim with the source text, fan-out per claim | decide; the orchestrator judges |
 | `sim-adversary` | Opus, `high` | tries to break model validity and the metrics | write code |
 | External reviewers | codex and agy via `91_external_review.md` | independent findings on identical input | edit anything |
@@ -39,12 +39,19 @@ Highest first: ADRs → `docs/design/*` → `schemas/*` → `prompts/*`. Prompts
 
 Set `model` and `effort` explicitly on every agent call; an unset model inherits the orchestrator's. Every brief starts with the header from `PRINCIPLES.md` section 7.
 
+**When an executor runs on Opus 5.5.** Three cases, decided by the author on 2026-10-30; everything else stays on Sonnet:
+1. A fix that restores an invariant across several modules (example: the S2f fixes, which touch raw, ingest, inject, record, evaluate and the lint zones at once).
+2. Work that still fails the gate after the one rework round; the remaining work goes to an Opus executor instead of a second Sonnet round.
+3. A stalled executor: no file change and no report for an hour while no process of its runs. The orchestrator stops it, asks for a handover, and an Opus executor finishes from the working tree.
+
+The brief, the scope and the rule against commits stay the same; the progress entry names the model.
+
 **When to call `sim-adversary`.** Twice: at the end of S1b (the complete S1 engine) and at the end of S2, after the rubric (`90`, sections A-K) leaves no blocker or major and before the verdict is PASS. Give it the engine or deliverable paths and the contract, not the orchestrator's verdict. Its findings join the same single rework round. It is not called mid-session, and not in later sessions unless their brief says so.
 
 ## Handing a prompt to an executor
 
 1. Read the last entry of `docs/progress.md` and the `Proposed` ADRs. Confirm the previous gate passed. Record `git rev-parse HEAD` as the base commit.
-2. Build the brief from this template and send it to a fresh executor (an agent call with `model: sonnet`, `effort: xhigh`, or a new session started at the repo root):
+2. Build the brief from this template and send it to a fresh executor (an agent call with `model: sonnet`, `effort: xhigh`, or `model: opus` in the cases above, or a new session started at the repo root):
 
 ```
 You are the executor for <session>. Work in the repo root. Never run git commit or push.
