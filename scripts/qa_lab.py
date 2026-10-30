@@ -18,7 +18,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 from qa_checks import Result
 from qa_infographic import guarded, serve
-from qa_lab_checks import check_check, check_contrast, check_engines, check_ko, check_load, check_matrix, check_numbers, check_size, check_time
+from qa_lab_checks import check_check, check_contrast, check_engines, check_flags, check_ko, check_load, check_matrix, check_numbers, check_results, check_size, check_time
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -60,7 +60,9 @@ def main(argv=None) -> int:
                        guarded("time", lambda: check_time(browser, url)),
                        guarded("check", lambda: check_check(browser, url, args.root)),
                        guarded("engines", lambda: check_engines(pw, url)),
+                       guarded("results", lambda: check_results(browser, url)),
                        guarded("numbers", lambda: check_numbers(browser, url)),
+                       guarded("flags", lambda: check_flags(browser, url)),
                        guarded("ko", lambda: check_ko(browser, url)),
                        guarded("matrix", lambda: check_matrix(browser, url, args.out)),
                        guarded("contrast", lambda: check_contrast(browser, url, args.root))]

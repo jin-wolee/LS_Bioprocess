@@ -1,0 +1,13 @@
+{
+  "description": "The bundle (A065 to A073) that each bundled profile file names in its `bundle` field, one entry per profile file. scripts/lab_ledger.py puts into the ledger view the ids it finds under a `ref` key of the shipped JSON, and it does not read `bundle`, so without this list the grade chip of a bundle would be missing from the Setup pickers. engine/tests/lab/data.test.ts holds the list equal to the profile files; the list can go when the script reads `bundle`.",
+  "bundles": [
+    {"ref": "A065"},
+    {"ref": "A067"},
+    {"ref": "A068"},
+    {"ref": "A069"},
+    {"ref": "A070"},
+    {"ref": "A071"},
+    {"ref": "A072"},
+    {"ref": "A073"}
+  ]
+}

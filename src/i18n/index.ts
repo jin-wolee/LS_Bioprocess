@@ -12,6 +12,12 @@ const STORAGE_KEY = "lab.lang";
 export const text = (lang: Lang, key: Key, params: Readonly<Record<string, string>> = {}): string =>
   DICTIONARIES[lang][key].replace(/\{(\w+)\}/g, (placeholder: string, name: string) => params[name] ?? placeholder);
 
+/** The text of a key with its {placeholders} left in, for a screen that fills them with elements (a label, an input with its id). */
+export const template = (lang: Lang, key: Key): string => DICTIONARIES[lang][key];
+
+/** Whether the dictionary has a key: a flag, a metric or an error type the engine adds later has none until its entries are written, and the screen then shows the name. */
+export const hasKey = (key: string): key is Key => key in en;
+
 /** The saved language, or English: the default is always English (ADR-0006). localStorage can be blocked, so every access is in try/catch. */
 export const savedLang = (): Lang => {
   try {

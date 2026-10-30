@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { homeRun } from "../../src/experiments/assembly/lab/home.ts";
+import { checkRunSpec } from "../../src/experiments/assembly/lab/spec.ts";
 import { scenarioInfos } from "../../src/experiments/assembly/lab/ready.ts";
 import { readJson } from "../support/paths.ts";
 import { labData } from "../support/lab_data.ts";
@@ -8,7 +9,11 @@ import { labData } from "../support/lab_data.ts";
 // Expected values come from the golden summaries, which the S1b batch wrote once from a recorded command; the lab function is not their source.
 
 const data = labData();
-const home = (over: Record<string, unknown> = {}): unknown => ({ schema_version: "1", scenario: "default", settings: {}, architectures: [], seeds: [1], ...over });
+const home = (over: Record<string, unknown> = {}) => {
+  const checked = checkRunSpec({ schema_version: "1", scenario: "default", settings: {}, architectures: [], seeds: [1], ...over }, data);
+  if (!checked.ok) throw new Error(`the spec of the test is invalid: ${checked.message}`);
+  return checked.spec;
+};
 
 interface Golden {
   event_count: number;
@@ -26,7 +31,6 @@ describe("homeRun: the summary of one run", () => {
     const plain = homeRun(data, home());
     const small = homeRun(data, home({ settings: { reactor_count: 6, bay_size: 6, cohort_size: 6 } }));
     if (!plain.ok || !small.ok) throw new Error("both runs must be accepted");
-    expect(small.spec.settings).toEqual({ reactor_count: 6, bay_size: 6, cohort_size: 6 });
     expect(small.summary.events).toBeLessThan(plain.summary.events);
     // 24 reactors in cohorts of 6 and 6 reactors in one cohort of 6: the inoculation events are 24 and 6 (one per reactor)
     expect(plain.summary.event_counts.inoculation).toBe(24);
@@ -39,16 +43,8 @@ describe("homeRun: the summary of one run", () => {
 });
 
 describe("homeRun: what the Home form refuses", () => {
-  it("Given an invalid spec Then the run is refused with the message of the check and nothing runs", () => {
-    expect(homeRun(data, home({ scenario: "nope" }))).toMatchObject({ ok: false, message: expect.stringMatching(/unknown scenario/) });
-  });
-
-  it("Given architectures in the spec Then this build refuses the form (Results arrive with Step 3)", () => {
-    expect(homeRun(data, home({ architectures: ["a_manual"] }))).toMatchObject({ ok: false, message: expect.stringMatching(/Home form only/) });
-  });
-
-  it("Given two seeds Then this build refuses the form", () => {
-    expect(homeRun(data, home({ seeds: [1, 2] }))).toMatchObject({ ok: false, message: expect.stringMatching(/Home form only/) });
+  it("Given two seeds and no architecture Then the form is refused: a run that records nothing counts the events of one run", () => {
+    expect(homeRun(data, home({ seeds: [1, 2] }))).toMatchObject({ ok: false, message: expect.stringMatching(/exactly one seed/) });
   });
 
   it("Given a value the scenario itself rejects When the run is made Then the engine's exception reaches the caller with its English message (rule 4 of section 4)", () => {
@@ -61,7 +57,7 @@ describe("scenarioInfos: the inputs the page shows with their ids", () => {
 
   it("Given the bundled data Then the scenario default is listed with its description and profiles from the file", () => {
     const file = readJson<{ description: string; profiles: Record<string, string> }>("scenarios", "default.json");
-    expect(info.map((s) => s.id)).toEqual(["default"]);
+    expect(info.map((s) => s.id)).toEqual(["default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down"]);
     expect(info[0]?.description).toBe(file.description);
     expect(info[0]?.profiles).toEqual(file.profiles);
   });

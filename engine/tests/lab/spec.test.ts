@@ -44,8 +44,8 @@ describe("checkRunSpec: invalid_spec", () => {
     expect(refused({ ...home, schema_version: "2" })).toMatch(/schema_version must be "1"/);
   });
 
-  it.each(["sc02_shift_burst", "", 3, "../default"])("Given the scenario %j, which is not bundled, Then it is refused and the bundled ids are named", (scenario) => {
-    expect(refused({ ...home, scenario })).toMatch(/unknown scenario.*bundled: default/);
+  it.each(["sc08_ph_restandardisation", "", 3, "../default"])("Given the scenario %j, which is not offered, Then it is refused and the bundled ids are named", (scenario) => {
+    expect(refused({ ...home, scenario })).toMatch(/unknown scenario.*bundled: default, sc02_shift_burst, sc03_feed_in_gap, sc05_one_analyzer_down/);
   });
 
   it("Given a setting that is not in the scenario Then it is refused by name", () => {
@@ -84,6 +84,36 @@ describe("checkRunSpec: invalid_spec", () => {
   it("Given a missing field Then it is refused by name", () => {
     expect(refused(without(home, "seeds"))).toMatch(/seeds must be a list/);
     expect(refused(without(home, "architectures"))).toMatch(/architectures must be a list/);
+  });
+});
+
+describe("checkRunSpec: the profile lists and the capture path (spec section 4.5.6)", () => {
+  const listed = { ...home, settings: { reactor_count: 6, bay_size: 3 }, bay_profiles: ["bench_manual", "pilot"], analyzer_profiles: ["allinone_atline", "hplc"], capture_path: "adapter_ingest" };
+
+  it("Given both lists and a capture path Then the spec is accepted with the fields as sent (their lengths are the engine's check, not this one)", () => {
+    expect(checkRunSpec(listed, data)).toEqual({ ok: true, spec: listed });
+    expect(checkRunSpec({ ...home, bay_profiles: ["pilot"] }, data)).toMatchObject({ ok: true });
+  });
+
+  it("Given a spec without the new fields Then it is returned without them (absent stays absent)", () => {
+    const checked = checkRunSpec(home, data);
+    expect(checked.ok && Object.keys(checked.spec).sort()).toEqual(["architectures", "scenario", "schema_version", "seeds", "settings"]);
+  });
+
+  it.each([
+    ["an unknown bioreactor profile", { bay_profiles: ["bench_manual", "no_such"] }, /bay_profiles\[1\] names "no_such", which is not a bundled bioreactor profile/],
+    ["an analyzer profile in the bay list (the wrong kind)", { bay_profiles: ["hplc"] }, /bay_profiles\[0\] names "hplc", which is not a bundled bioreactor profile/],
+    ["a bioreactor profile in the analyzer list", { analyzer_profiles: ["allinone_atline", "pilot"] }, /analyzer_profiles\[1\] names "pilot", which is not a bundled analyzer profile/],
+    ["a staff profile in the analyzer list", { analyzer_profiles: ["experienced"] }, /analyzer_profiles\[0\].*not a bundled analyzer profile/],
+    ["a controller profile (not offered by the lab)", { bay_profiles: ["ctrl_bench"] }, /not a bundled bioreactor profile/],
+    ["a list that is not a list", { analyzer_profiles: "hplc" }, /analyzer_profiles must be a list/],
+    ["an empty list", { bay_profiles: [] }, /bay_profiles must name at least one profile/],
+    ["an id that is not a string", { bay_profiles: [3] }, /bay_profiles\[0\] names 3/],
+    ["a path to a file", { analyzer_profiles: ["../hplc"] }, /not a bundled analyzer profile/],
+    ["a capture path that does not exist", { capture_path: "email" }, /capture_path must be one of manual_transcription, adapter_ingest/],
+    ["a capture path that is not text", { capture_path: 1 }, /capture_path must be one of/],
+  ])("Given %s Then it is refused by name", (_name, extra, message) => {
+    expect(refused({ ...home, ...extra })).toMatch(message);
   });
 });
 

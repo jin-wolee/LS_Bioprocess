@@ -145,3 +145,97 @@ def test_number_offenders_ignores_whitespace_and_empty_nodes():
 def test_the_lab_sweeps_four_themes_and_two_viewports():
     assert [t[0] for t in qc.LAB_THEMES] == ["light", "dark", "auto-light", "auto-dark"]
     assert qc.VIEWPORTS == {"1440": (1440, 900), "390": (390, 844)}
+
+
+# ---------- the flags check (lab_ui.md section 11) ----------
+FLAGS = ["system_issued_id", "two_clocks", "audit_trail"]
+
+
+def test_flag_list_problems_is_empty_when_every_list_has_exactly_the_flags_of_ready():
+    lists = [{"name": "setup-matrix", "flags": ["system_issued_id", "two_clocks", "audit_trail"]}, {"name": "notes-table", "flags": ["audit_trail", "two_clocks", "system_issued_id"]}]
+    assert qc.flag_list_problems(lists, FLAGS) == []
+
+
+def test_flag_list_problems_names_a_list_that_lacks_a_flag():
+    problems = qc.flag_list_problems([{"name": "results-legend", "flags": ["system_issued_id", "two_clocks"]}], FLAGS)
+    assert len(problems) == 1 and "results-legend" in problems[0] and "lacks audit_trail" in problems[0]
+
+
+def test_flag_list_problems_names_a_list_that_has_a_flag_ready_does_not():
+    problems = qc.flag_list_problems([{"name": "setup-matrix", "flags": [*FLAGS, "ninth"]}], FLAGS)
+    assert len(problems) == 1 and "names ninth" in problems[0]
+
+
+def test_flag_list_problems_names_a_flag_listed_twice():
+    problems = qc.flag_list_problems([{"name": "setup-matrix", "flags": [*FLAGS, "two_clocks"]}], FLAGS)
+    assert len(problems) == 1 and "twice" in problems[0] and "two_clocks" in problems[0]
+
+
+def test_flag_list_problems_fails_when_there_is_no_list_at_all():
+    assert qc.flag_list_problems([], FLAGS) == ["no list of flags (data-flag-list) on the screens checked"]
+
+
+def test_the_lists_the_flags_check_expects_are_the_ones_that_exist_now():
+    assert qc.EXPECTED_FLAG_LISTS == ["setup-matrix", "setup-ablation", "results-legend", "notes-table"]
+
+
+def test_missing_flag_lists_reports_an_expected_list_that_is_not_on_the_page():
+    lists = [{"name": "setup-matrix", "flags": FLAGS}, {"name": "notes-table", "flags": FLAGS}]
+    assert qc.missing_flag_lists(lists) == ["setup-ablation", "results-legend"]
+
+
+# ---------- the label-error sentence (lab_ui.md section 10) ----------
+SENTENCE = (
+    "Without system_issued_id, a label error is not detected here. A conflict of the duplicate-file check (VR-008b) cannot tell a replayed file from two analyses that a label error gave the same "
+    "label, and the double-label check (VR-009) looks for two different ids, so the error appears as false alarms of the type duplicate_replay. The numbers are shown as they are."
+)
+
+
+def test_label_error_sentence_is_the_one_of_the_design_note():
+    assert qc.LABEL_ERROR_SENTENCE == SENTENCE
+
+
+def test_label_sentence_ok_ignores_white_space_and_the_code_marks():
+    assert qc.label_sentence_ok(SENTENCE)
+    assert qc.label_sentence_ok("  " + SENTENCE.replace(". ", ".\n  ") + " ")
+    assert not qc.label_sentence_ok(SENTENCE.replace("not detected", "detected"))
+    assert not qc.label_sentence_ok("")
+
+
+# ---------- no text that orders the architectures ----------
+def test_ordering_words_finds_words_that_rank_or_declare_a_winner_and_nothing_else():
+    assert qc.ordering_words("A is the best record; C wins and ranks first") == ["best", "wins", "ranks"]
+    assert qc.ordering_words("the median of the spread across seeds, no single score") == []
+
+
+def test_ordering_words_matches_whole_words_only():
+    assert qc.ordering_words("a better-known bestiary rankine") == ["better"]
+
+
+# ---------- recall beside precision and the false-alarm rate (spec section 8, rule 3) ----------
+def test_detection_order_problems_accepts_recall_then_precision_then_false_alarm():
+    groups = [{"type": "label_error", "figures": ["recall", "precision", "false_alarm", "realised"]}, {"type": "lost_rerun", "figures": ["recall", "false_alarm"]}]
+    assert qc.detection_order_problems(groups) == []
+
+
+def test_detection_order_problems_names_a_type_with_precision_and_no_recall():
+    problems = qc.detection_order_problems([{"type": "feed_in_gap", "figures": ["precision", "false_alarm"]}])
+    assert len(problems) == 1 and "feed_in_gap" in problems[0] and "no recall" in problems[0]
+
+
+def test_detection_order_problems_names_a_type_where_precision_comes_before_recall():
+    problems = qc.detection_order_problems([{"type": "label_error", "figures": ["precision", "recall", "false_alarm"]}])
+    assert len(problems) == 1 and "before" in problems[0]
+
+
+def test_detection_order_problems_fails_when_no_detection_block_exists():
+    assert qc.detection_order_problems([]) == ["no detection block on the Results screen"]
+
+
+# ---------- the small run of the end-to-end path ----------
+def test_the_small_run_is_two_seeds_of_the_list_with_architectures_a_and_c():
+    assert qc.SMALL_RUN == {"seeds": 2, "architectures": ["a_manual", "c_context"]}
+
+
+def test_screens_are_the_four_that_exist_now():
+    assert qc.SCREENS == ["home", "setup", "results", "notes"]

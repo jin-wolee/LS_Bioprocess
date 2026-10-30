@@ -6,7 +6,7 @@ import { ENGINE_NODE_FLAGS } from "./engine/tests/support/node_flags.ts";
 // V8 flags. engine/tests/node_flags.test.ts fails if a worker lacks them.
 export default defineConfig({
   test: {
-    include: ["engine/tests/**/*.test.ts"],
+    include: ["engine/tests/**/*.test.ts", "src/**/*.test.ts"],
     environment: "node",
     execArgv: [...ENGINE_NODE_FLAGS],
   },

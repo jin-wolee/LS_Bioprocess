@@ -1,10 +1,20 @@
 // English texts of the lab (docs/design/lab_ui.md section 10): the source of the dictionary. A flat object, keys by screen, {name} placeholders. src/i18n/ko.ts is typed against it, so a
 // missing Korean key is a type error. A text holds no digit: every number on the page is an input with a ledger id (<Ref>), a simulation result (<ResultBlock>) or a label (invariant 3).
 // Strings that come from the engine (error messages, the reason of the check) are data and are shown verbatim in a lang="en" element under a translated label.
-export const en = {
+import { enNotes } from "./en_notes.ts";
+import { enResults } from "./en_results.ts";
+import { enSetup } from "./en_setup.ts";
+
+export const enBase = {
   "app.title": "Sample Lineage Lab",
   "app.footer": "Synthetic data. Simulation results under the inputs shown; not a prediction of a real plant.",
   "app.loading": "Starting the engine in a Worker.",
+
+  "nav.label": "Screens",
+  "nav.home": "Home",
+  "nav.setup": "Setup",
+  "nav.results": "Results",
+  "nav.notes": "Notes",
 
   "controls.lang.label": "Language",
   "controls.lang.switch": "한국어",
@@ -60,6 +70,8 @@ export const en = {
   "error.invalid_spec": "The run request was refused:",
   "error.engine_error": "The engine stopped with this message:",
   "error.worker": "The Worker could not start or stopped:",
+  "error.cancelled": "The run was stopped between two seeds:",
+  "error.heading.cancelled": "The run was cancelled",
 
   "grade.S": "sourced",
   "grade.P": "proxy",
@@ -67,5 +79,7 @@ export const en = {
   "grade.A": "assumed",
   "grade.provisional": "provisional",
 } as const;
+
+export const en = { ...enBase, ...enSetup, ...enResults, ...enNotes } as const;
 
 export type Key = keyof typeof en;

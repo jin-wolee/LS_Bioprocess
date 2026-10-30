@@ -1,8 +1,11 @@
 import { checkError, makeDeps, runCheck } from "../../engine/src/experiments/assembly/lab/check.ts";
 import { homeRun } from "../../engine/src/experiments/assembly/lab/home.ts";
 import { readyOf } from "../../engine/src/experiments/assembly/lab/ready.ts";
+import { runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
-import type { CheckDetail, CheckState, ErrorCode, Response } from "../protocol.ts";
+import { checkRunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
+import type { RunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
+import type { CheckDetail, CheckState, ErrorCode, ResultFooter, Response } from "../protocol.ts";
 import { LAB_DATA } from "./data.ts";
 
 // The Worker entry (docs/design/lab_ui.md section 4): the only file of src/ with value imports from engine/, and only from engine/src/experiments/assembly/lab/. The page sends a request of plain
@@ -24,6 +27,12 @@ const PENDING: CheckDetail = { runs_ms: [], truth: [], repeats_equal: false, cel
 export const createWorker = (post: (message: Response) => void, env: WorkerEnv) => {
   const ready = readyOf(env.data);
   let check: { state: CheckState; detail: CheckDetail } = { state: "pending", detail: PENDING };
+  /** The runs that are queued or running, and those a `cancel` named. A run is read for its flag between seeds. */
+  const open = new Set<number>();
+  const cancelled = new Set<number>();
+  /** Runs are answered one at a time, in the order they were asked for: how many are not finished, and the last one asked for. */
+  let unfinished = 0;
+  let last: Promise<void> = Promise.resolve();
 
   const fail = (id: number | null, code: ErrorCode, message: string): void => post({ type: "error", id, code, message });
 
@@ -40,27 +49,64 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     post({ type: "check", ...check });
   };
 
-  const run = (id: number, spec: unknown): void => {
+  const footerOf = (spec: RunSpec, inputs: ResultFooter["inputs"]): ResultFooter => ({
+    kind: "simulation_result",
+    scenario: spec.scenario,
+    seeds: spec.seeds,
+    engine_version: ready.engine_version,
+    architectures: spec.architectures,
+    inputs,
+    ...(spec.bay_profiles && { bay_profiles: spec.bay_profiles }),
+    ...(spec.analyzer_profiles && { analyzer_profiles: spec.analyzer_profiles }),
+    ...(spec.capture_path && { capture_path: spec.capture_path }),
+    check: check.state,
+  });
+
+  /** One run, from the queue: the Home form (no architecture) or the full run, seed by seed. */
+  const answer = async (id: number, spec: RunSpec): Promise<void> => {
     try {
-      const out = homeRun(env.data, spec);
-      if (!out.ok) return fail(id, "invalid_spec", out.message);
-      post({
-        type: "result",
-        id,
-        summary: out.summary,
-        footer: { kind: "simulation_result", scenario: out.spec.scenario, seeds: out.spec.seeds, engine_version: ready.engine_version, architectures: out.spec.architectures, inputs: [], check: check.state },
-      });
+      if (cancelled.has(id)) return fail(id, "cancelled", "the run was cancelled before it started");
+      if (spec.architectures.length === 0) {
+        const out = homeRun(env.data, spec);
+        if (!out.ok) return fail(id, "invalid_spec", out.message);
+        return post({ type: "result", id, summary: out.summary, footer: footerOf(spec, []) });
+      }
+      const out = await runLab(env.data, spec, { onProgress: (done, total) => post({ type: "progress", id, done, total }), isCancelled: () => cancelled.has(id) });
+      if (!out.ok) return fail(id, "cancelled", `the run was cancelled after ${out.done} of ${spec.seeds.length} seeds`);
+      post({ type: "result", id, report: out.report, utilisation: out.utilisation, footer: footerOf(spec, out.inputs) });
     } catch (e) {
       fail(id, "engine_error", e instanceof Error ? e.message : String(e));
+    } finally {
+      open.delete(id);
+      cancelled.delete(id);
+      unfinished -= 1;
     }
   };
 
-  const onMessage = (message: unknown): void => {
+  const run = (id: number, raw: unknown): Promise<void> | void => {
+    const checked = checkRunSpec(raw, env.data);
+    if (!checked.ok) return fail(id, "invalid_spec", checked.message);
+    open.add(id);
+    // a run asked for when none is unfinished starts at once (so one asked for while the check is pending is answered with `pending`); a later one waits for the one before it
+    const idle = unfinished === 0;
+    unfinished += 1;
+    const mine = idle ? answer(id, checked.spec) : last.then(() => answer(id, checked.spec));
+    last = mine;
+    return mine;
+  };
+
+  const onMessage = (message: unknown): Promise<void> | void => {
     if (typeof message !== "object" || message === null || Array.isArray(message)) return fail(null, "invalid_spec", "a request must be an object with a type");
     const { type, id, spec } = message as { type?: unknown; id?: unknown; spec?: unknown };
     const requestId = typeof id === "number" ? id : null;
     if (type === "run" && requestId !== null) return run(requestId, spec);
     if (type === "run") return fail(null, "invalid_spec", "a run request needs a numeric id");
+    if (type === "cancel" && requestId !== null) {
+      // a cancel for a run that is not queued or running has nothing to stop
+      if (open.has(requestId)) cancelled.add(requestId);
+      return;
+    }
+    if (type === "cancel") return fail(null, "invalid_spec", "a cancel request needs a numeric id");
     return fail(requestId, "invalid_spec", `unknown request type ${JSON.stringify(type)}`);
   };
 
@@ -80,6 +126,6 @@ if (typeof document === "undefined" && typeof self !== "undefined") {
       return response.json();
     },
   });
-  scope.addEventListener("message", (event) => worker.onMessage(event.data));
+  scope.addEventListener("message", (event) => void worker.onMessage(event.data));
   void worker.start();
 }

@@ -1,11 +1,20 @@
-import type { Key } from "./en.ts";
+import type { Key, enBase } from "./en.ts";
+import { koNotes } from "./ko_notes.ts";
+import { koResults } from "./ko_results.ts";
+import { koSetup } from "./ko_setup.ts";
 
 // Korean texts (ADR-0006: English first, Korean on a toggle). Typed Record<Key, string>, so a missing key is a type error. The Korean text introduces no number, claim or source that the
 // English text lacks (engine/tests/lab/i18n.test.ts). Terms follow infographic/src/i18n.js where one exists there (the grades, the provisional chip).
-export const ko: Record<Key, string> = {
+const koBase: Record<keyof typeof enBase, string> = {
   "app.title": "샘플 계보 랩",
   "app.footer": "합성 데이터입니다. 표시된 입력 아래의 시뮬레이션 결과이며 실제 공장에 대한 예측이 아닙니다.",
   "app.loading": "Worker에서 엔진을 시작하는 중입니다.",
+
+  "nav.label": "화면",
+  "nav.home": "홈",
+  "nav.setup": "설정",
+  "nav.results": "결과",
+  "nav.notes": "노트",
 
   "controls.lang.label": "언어",
   "controls.lang.switch": "English",
@@ -61,6 +70,8 @@ export const ko: Record<Key, string> = {
   "error.invalid_spec": "실행 요청이 거부되었습니다:",
   "error.engine_error": "엔진이 다음 메시지와 함께 멈췄습니다:",
   "error.worker": "Worker를 시작하지 못했거나 멈췄습니다:",
+  "error.cancelled": "실행이 시드 사이에서 중단되었습니다:",
+  "error.heading.cancelled": "실행이 취소되었습니다",
 
   "grade.S": "출처 확인",
   "grade.P": "대리지표",
@@ -68,3 +79,5 @@ export const ko: Record<Key, string> = {
   "grade.A": "가정",
   "grade.provisional": "잠정",
 };
+
+export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes };

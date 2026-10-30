@@ -1,8 +1,8 @@
 import { CheckPanel } from "./CheckPanel.tsx";
 import { ErrorBlock } from "./ErrorBlock.tsx";
-import { Ref } from "./Ref.tsx";
 import { ResultBlock } from "./ResultBlock.tsx";
-import { displayedCheck } from "./state.ts";
+import { ScenarioInputs } from "./ScenarioInputs.tsx";
+import { HOME_ID, displayedCheck } from "./state.ts";
 import type { State } from "./state.ts";
 import { Label, T } from "./T.tsx";
 
@@ -10,6 +10,7 @@ import { Label, T } from "./T.tsx";
 
 export function Home({ state }: { state: State }) {
   const scenario = state.ready?.scenarios.find((s) => s.id === "default");
+  const problem = state.problem && (state.problem.id === HOME_ID || state.problem.id === null) ? state.problem : null;
   return (
     <>
       <section aria-labelledby="home-heading">
@@ -33,31 +34,18 @@ export function Home({ state }: { state: State }) {
       <section id="run" aria-labelledby="run-heading">
         <T as="h2" k="home.run.heading" id="run-heading" />
         <T as="p" k="home.run.lead" />
-        {state.problem && <ErrorBlock problem={state.problem} />}
-        {state.result ? (
-          <ResultBlock footer={state.result.footer} summary={state.result.summary} check={displayedCheck(state.result.footer.check, state.check.state)} />
+        {problem && <ErrorBlock problem={problem} />}
+        {state.home ? (
+          <ResultBlock footer={state.home.footer} summary={state.home.summary} check={displayedCheck(state.home.footer.check, state.check.state)} />
         ) : (
-          !state.problem && <T as="p" k="home.run.pending" />
+          !problem && <T as="p" k="home.run.pending" />
         )}
       </section>
 
       <section id="inputs" aria-labelledby="inputs-heading">
         <T as="h2" k="home.inputs.heading" id="inputs-heading" />
         <T as="p" k="home.inputs.lead" />
-        {scenario && (
-          <ul class="inputs">
-            {scenario.settings.map((s) => (
-              <li key={s.name}>
-                <code class="input-name">
-                  <Label>{s.name}</Label>
-                </code>
-                <Ref ids={[s.ref]}>
-                  {s.value} {s.unit}
-                </Ref>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ScenarioInputs scenario={scenario} />
       </section>
     </>
   );

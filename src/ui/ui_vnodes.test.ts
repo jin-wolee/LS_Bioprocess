@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ErrorBlock } from "../../../src/ui/ErrorBlock.tsx";
-import { Ref } from "../../../src/ui/Ref.tsx";
+import { ErrorBlock } from "./ErrorBlock.tsx";
+import { Ref } from "./Ref.tsx";
 
 // Preact elements are plain objects, so a component that uses no hook can be called and its output inspected without a DOM. These tests check the two page-side rules of the design that the
 // Worker tests cannot: an engine message is shown verbatim in a lang="en" element (section 4, rule 4), and an input carries its ledger id, grade and provisional chip (section 6).
@@ -26,7 +26,7 @@ describe("ErrorBlock", () => {
   const message = "scenario default: the cohort size must be positive (A188)";
 
   it("Given an engine message Then it is shown verbatim in a pre element with lang=en, as a label", () => {
-    const pre = walk(ErrorBlock({ problem: { code: "engine_error", message } })).find((n) => n.type === "pre");
+    const pre = walk(ErrorBlock({ problem: { id: 4, code: "engine_error", message } })).find((n) => n.type === "pre");
     expect(pre?.props.lang).toBe("en");
     expect(pre?.props.children).toBe(message);
     expect(pre?.props["data-label"]).toBe(true);
@@ -37,12 +37,18 @@ describe("ErrorBlock", () => {
     ["engine_error", "error.engine_error"],
     ["worker", "error.worker"],
   ] as const)("Given the code %s Then the sentence above the message is the dictionary key %s, translated, and the heading is error.heading", (code, key) => {
-    const keys = keysOf(ErrorBlock({ problem: { code, message } }));
+    const keys = keysOf(ErrorBlock({ problem: { id: 4, code, message } }));
     expect(keys).toEqual(["error.heading", key]);
   });
 
+  it("Given a cancel Then the heading says the run was cancelled, not that the engine reported a problem, and the message is shown as sent", () => {
+    const tree = ErrorBlock({ problem: { id: 4, code: "cancelled", message: "the run was cancelled after 1 of 3 seeds" } });
+    expect(keysOf(tree)).toEqual(["error.heading.cancelled", "error.cancelled"]);
+    expect(walk(tree).find((n) => n.type === "pre")?.props.children).toBe("the run was cancelled after 1 of 3 seeds");
+  });
+
   it("Given a problem Then the block is an alert that names the code", () => {
-    const root = ErrorBlock({ problem: { code: "invalid_spec", message } }) as unknown as VNode;
+    const root = ErrorBlock({ problem: { id: 4, code: "invalid_spec", message } }) as unknown as VNode;
     expect(root.props.role).toBe("alert");
     expect(root.props["data-problem"]).toBe("invalid_spec");
   });

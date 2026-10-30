@@ -27,3 +27,9 @@ export const gradeOf = (ids: readonly string[]): Grade | null => {
 };
 
 export const knownId = (id: string): boolean => id in assumptions || id in sources;
+
+/** The numeric range the ledger gives an id ([low, high]), or null when the range is a word (fixed, bundle, n/a) or the id is not in the view. */
+export const rangeOf = (id: string): [number, number] | null => {
+  const range = assumptions[id]?.range;
+  return Array.isArray(range) && range.length === 2 && range.every((v) => typeof v === "number") ? [range[0] as number, range[1] as number] : null;
+};

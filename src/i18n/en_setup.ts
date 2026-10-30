@@ -1,0 +1,70 @@
+// English texts of the Setup screen (docs/design/lab_ui.md sections 3, 10 and 11). Part of the dictionary of en.ts; no digit in a text: a number is an input with a ledger id (<Ref>), a
+// simulation result or a label, and reaches a text through a {placeholder} that the screen fills with such an element.
+export const enSetup = {
+  "setup.heading": "Choose what to run",
+  "setup.lead": "Pick a scenario, the size of the plant, the profile of every bay and analyzer, the data architectures to record under, the capture path and the seeds. The page then asks the engine in the Worker for a run and shows what each record can reconstruct.",
+  "setup.scenario.label": "Scenario",
+  "setup.scenario.description": "What the scenario file says:",
+
+  "setup.plant.heading": "Size of the plant",
+  "setup.n.label": "Bioreactors (N)",
+  "setup.baysize.label": "Bioreactors per bay",
+  "setup.m.label": "Analyzers (M)",
+  "setup.range.note": "A value outside the ledger range of its id is allowed and gets a warning: read the result as outside the range the sources cover.",
+  "setup.warn.range": "{value} is outside the ledger range of {id}, which is {low} to {high}.",
+  "setup.warn.integer": "Enter a whole number of one or more.",
+
+  "setup.bays.heading": "Bioreactor profile of each bay",
+  "setup.bays.lead": "Bay {first} comes first. The number of bays is the number of bioreactors divided by the bay size, rounded up.",
+  "setup.bay": "Bay {n}",
+  "setup.analyzers.heading": "Analyzer profile of each analyzer",
+  "setup.analyzers.lead": "Analyzer {first} comes first. Mixed lists follow routing rule B: every analyte has exactly one profile, and a sample visits each listed profile once, in list order.",
+  "setup.analyzer": "Analyzer {n}",
+  "setup.lists.note": "Changing N, the bay size or M rebuilds both lists. A pick is kept by position and a new position takes the default of the scenario.",
+  "setup.profile.bundle": "bundle",
+  "setup.profile.measures": "measures",
+  "setup.profile.none": "no analyzer profile is bundled",
+
+  "setup.arch.heading": "Architectures to record",
+  "setup.arch.lead": "Every selected architecture records the same truth run, seed by seed. A, B and C are presets; the picker below adds C with exactly one flag off.",
+  "setup.arch.ablation": "C with one flag off",
+  "setup.arch.ablation.none": "none",
+  "setup.arch.none": "Select at least one architecture to run.",
+
+  "setup.capture.heading": "Capture path",
+  "setup.capture.label": "Capture path for every architecture",
+  "setup.capture.default": "each preset keeps its own path",
+  "setup.capture.manual_transcription": "manual_transcription: a person types the result from the screen or printout",
+  "setup.capture.adapter_ingest": "adapter_ingest: the raw device file is parsed",
+  "setup.capture.note": "Naming a path switches the raw device layer on. It adds no truth event: the truth run stays the same.",
+  "dialect.sentence": "synthetic formats modeled on public documentation",
+
+  "setup.seeds.heading": "Seeds",
+  "setup.seeds.lead": "Whole numbers, separated by commas. The default is the first seeds of the list of the open-loop experiment, written before any run. A seed of your own must be a neutral integer: no repeat, and none that reads like a date.",
+  "setup.seeds.label": "Seeds",
+  "setup.seeds.count": "How many seeds of the list to use",
+  "setup.seeds.parse": "Some of the seeds are not whole numbers.",
+  "setup.seeds.below": "The seed minimum of {min} is not reached: the report will say that this is not a comparison.",
+
+  "setup.flags.heading": "What each architecture keeps",
+  "setup.flags.lead": "Each flag is on or off in each architecture. The list of flags comes from the engine, so the page never counts them.",
+  "setup.flags.flag": "Flag",
+  "setup.flags.labelling": "Labelling method",
+  "setup.flags.capture": "Capture path of the preset",
+
+  "setup.inputs.heading": "Inputs of the scenario",
+  "setup.inputs.lead": "Every input carries the id of its entry in the assumption ledger and the grade of that entry. A dashed chip marks an input whose sources are not all re-read yet.",
+
+  "setup.run.heading": "Run the engine",
+  "setup.run.button": "Run",
+  "setup.run.running": "Running",
+  "setup.run.cancel": "Cancel",
+  "setup.run.lead": "The engine runs one seed at a time in the Worker. Cancel is read between seeds.",
+  "setup.run.progress": "Seeds done: {done} of {total}",
+  "setup.run.cancelled": "The run was cancelled.",
+
+  "setup.link.heading": "Link to this setup",
+  "setup.link.lead": "The link holds the setup and never a result. Opening it fills this form; press Run to see the result.",
+  "setup.link.label": "Link",
+  "setup.link.engine": "This link was made with engine version {made}; this page runs engine version {current}. The run goes ahead with the current engine.",
+} as const;

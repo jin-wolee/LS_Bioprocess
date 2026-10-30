@@ -29,7 +29,9 @@ const setup = (over: Partial<WorkerEnv> = {}) => {
   return { posted, worker };
 };
 const real = (): Partial<WorkerEnv> => ({ fetchReference: async () => reference });
-const send = (worker: ReturnType<typeof createWorker>, message: unknown): void => worker.onMessage(message);
+const send = (worker: ReturnType<typeof createWorker>, message: unknown): void => {
+  void worker.onMessage(message);
+};
 const last = (posted: Response[]): Response => posted[posted.length - 1] as Response;
 
 describe("start-up", () => {
@@ -47,8 +49,21 @@ describe("start-up", () => {
     expect(ready.engine_version).toBe(ENGINE_VERSION);
     expect(ready.schema_version).toBe("1");
     expect(ready.flags).toEqual(FLAGS);
-    expect(ready.scenarios.map((s) => s.id)).toEqual(["default"]);
+    expect(ready.scenarios.map((s) => s.id)).toEqual(["default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down"]);
     expect(ready.scenarios[0]?.settings[0]).toEqual({ name: "reactor_count", value: 24, unit: "reactors", ref: "A001" });
+  });
+
+  it("Given the ready message Then it is the full payload of the design: minimum seeds, seed list, presets with the ablations of C, evaluation inputs, profile catalogue, no challenge variant", async () => {
+    const { posted, worker } = setup();
+    await worker.start();
+    const ready = posted[0];
+    if (ready?.type !== "ready") throw new Error("the first message must be ready");
+    expect(ready.min_seeds).toBe(20);
+    expect(ready.seed_list).toHaveLength(30);
+    expect(ready.presets).toHaveLength(3 + FLAGS.length);
+    expect(ready.evaluation.map((e) => e.ref)).toEqual(["A097", "A098", "A046", "A103"]);
+    expect(ready.profiles).toHaveLength(8);
+    expect(ready.challenge_variants).toEqual([]);
   });
 
   it("Given the real reference Then the check detail holds three equal truth hashes, equal repeats and cells, and five timed runs", async () => {
@@ -115,13 +130,15 @@ describe("the `run` request in its Home form", () => {
 
 describe("invalid_spec", () => {
   it.each([
-    ["a scenario that is not bundled", { ...home, scenario: "sc02_shift_burst" }, /unknown scenario/],
+    ["a scenario that is not bundled", { ...home, scenario: "sc08_ph_restandardisation" }, /unknown scenario/],
     ["a setting the scenario lacks", { ...home, settings: { nope: 1 } }, /unknown setting "nope"/],
     ["a seed that is date-shaped", { ...home, seeds: [20260101] }, /date-shaped/],
     ["an architecture that does not exist", { ...home, architectures: ["z"] }, /unknown architecture/],
     ["a key outside the spec (a way to ask for the truth log)", { ...home, events: true }, /unknown key "events"/],
-    ["architectures, which this build does not answer yet", { ...home, architectures: ["a_manual"] }, /Home form only/],
-    ["two seeds, which this build does not answer yet", { ...home, seeds: [1, 2] }, /Home form only/],
+    ["two seeds and no architecture (nothing is recorded)", { ...home, seeds: [1, 2] }, /exactly one seed/],
+    ["a profile that is not bundled in the bay list", { ...home, bay_profiles: ["no_such"] }, /bay_profiles\[0\] names "no_such"/],
+    ["an analyzer profile in the bay list", { ...home, bay_profiles: ["hplc"] }, /not a bundled bioreactor profile/],
+    ["a capture path that does not exist", { ...home, capture_path: "fax" }, /capture_path must be one of/],
     ["no spec at all", undefined, /spec must be an object/],
   ])("Given %s When the run is asked for Then the answer is invalid_spec with the request id and nothing ran", async (_name, spec, text) => {
     const { posted, worker } = setup();
@@ -140,7 +157,7 @@ describe("the request envelope", () => {
     ["a list", []],
     ["an object without a type", { id: 1, spec: home }],
     ["a request type this build does not know", { type: "lineage", id: 2, spec: home }],
-    ["a cancel, which arrives with Step 3", { type: "cancel", id: 3 }],
+    ["a cancel without a numeric id", { type: "cancel", id: "3" }],
   ])("Given %s Then the answer is invalid_spec", async (_name, message) => {
     const { posted, worker } = setup();
     await worker.start();

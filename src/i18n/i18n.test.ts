@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { en } from "../../../src/i18n/en.ts";
-import { ko } from "../../../src/i18n/ko.ts";
+import { en } from "./en.ts";
+import { ko } from "./ko.ts";
 
 // docs/design/lab_ui.md section 10: English is the source, Korean follows (ADR-0006: the Korean text introduces no number, claim or source). A missing Korean key is also a type error
 // (ko.ts is typed Record<keyof typeof en, string>); this test is the runtime half and checks what a type cannot: placeholders, ledger ids and digits per key.

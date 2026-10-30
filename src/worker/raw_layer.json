@@ -1,0 +1,6 @@
+{
+  "schema_version": "1",
+  "description": "The lab's own inputs for the raw device layer, switched on when a run names a capture path (docs/design/lab_ui.md section 4). The calendar date is the synthetic Monday of scenario second 0 and carries no claim about a real date. The zone the instruments are configured with is a scenario input of the layer (A161); the lab sets it to the zone of the host, so no offset arises from the zone.",
+  "calendar_anchor": "2030-01-07",
+  "device_zone_h": {"value": 0, "unit": "h", "ref": "A161"}
+}

@@ -158,6 +158,52 @@
       ],
       "provisional": true
     },
+    "A025": {
+      "grade": "S",
+      "range": [
+        80,
+        130
+      ],
+      "unit": "s",
+      "sources": [
+        "S005"
+      ],
+      "provisional": true
+    },
+    "A028": {
+      "grade": "S",
+      "range": [
+        1.0,
+        4.0
+      ],
+      "unit": "min",
+      "sources": [
+        "S026"
+      ],
+      "provisional": true
+    },
+    "A029": {
+      "grade": "S",
+      "range": [
+        5,
+        50
+      ],
+      "unit": "uL",
+      "sources": [
+        "S026"
+      ],
+      "provisional": true
+    },
+    "A030": {
+      "grade": "A",
+      "range": [
+        30,
+        120
+      ],
+      "unit": "min",
+      "sources": [],
+      "provisional": false
+    },
     "A032": {
       "grade": "A",
       "range": [
@@ -301,6 +347,16 @@
       ],
       "provisional": true
     },
+    "A062": {
+      "grade": "A",
+      "range": [
+        1,
+        5
+      ],
+      "unit": "factor",
+      "sources": [],
+      "provisional": false
+    },
     "A063": {
       "grade": "A",
       "range": [
@@ -321,6 +377,72 @@
       "sources": [],
       "provisional": false
     },
+    "A065": {
+      "grade": "D",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S010",
+        "S011",
+        "S007"
+      ],
+      "provisional": true
+    },
+    "A067": {
+      "grade": "D",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S013",
+        "S016",
+        "S001"
+      ],
+      "provisional": true
+    },
+    "A068": {
+      "grade": "A",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S013",
+        "S036"
+      ],
+      "provisional": true
+    },
+    "A069": {
+      "grade": "D",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S001",
+        "S002",
+        "S003",
+        "S007"
+      ],
+      "provisional": true
+    },
+    "A070": {
+      "grade": "A",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S005",
+        "S006",
+        "S001",
+        "S003"
+      ],
+      "provisional": true
+    },
+    "A071": {
+      "grade": "A",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S026",
+        "S037"
+      ],
+      "provisional": true
+    },
     "A072": {
       "grade": "A",
       "range": "bundle",
@@ -330,6 +452,27 @@
         "S022"
       ],
       "provisional": true
+    },
+    "A073": {
+      "grade": "A",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S024",
+        "S025",
+        "S022"
+      ],
+      "provisional": true
+    },
+    "A076": {
+      "grade": "A",
+      "range": [
+        1,
+        3
+      ],
+      "unit": "factor",
+      "sources": [],
+      "provisional": false
     },
     "A077": {
       "grade": "S",
@@ -517,6 +660,16 @@
       ],
       "provisional": true
     },
+    "A096": {
+      "grade": "A",
+      "range": [
+        1,
+        8
+      ],
+      "unit": "h",
+      "sources": [],
+      "provisional": false
+    },
     "A097": {
       "grade": "A",
       "range": [
@@ -544,6 +697,13 @@
       "sources": [],
       "provisional": false
     },
+    "A102": {
+      "grade": "A",
+      "range": "n/a",
+      "unit": "clock time",
+      "sources": [],
+      "provisional": false
+    },
     "A103": {
       "grade": "A",
       "range": [
@@ -554,6 +714,40 @@
       "sources": [],
       "provisional": false
     },
+    "A104": {
+      "grade": "A",
+      "range": [
+        50,
+        250
+      ],
+      "unit": "L",
+      "sources": [
+        "S036",
+        "S013"
+      ],
+      "provisional": true
+    },
+    "A106": {
+      "grade": "A",
+      "range": [
+        0,
+        5
+      ],
+      "unit": "min",
+      "sources": [],
+      "provisional": false
+    },
+    "A107": {
+      "grade": "D",
+      "range": "n/a",
+      "unit": "s and uL",
+      "sources": [
+        "S005",
+        "S001",
+        "S003"
+      ],
+      "provisional": true
+    },
     "A109": {
       "grade": "S",
       "range": [
@@ -563,6 +757,123 @@
       "unit": "g/L",
       "sources": [
         "S056"
+      ],
+      "provisional": true
+    },
+    "A110": {
+      "grade": "S",
+      "range": [
+        10,
+        15
+      ],
+      "unit": "mL",
+      "sources": [
+        "S010",
+        "S011"
+      ],
+      "provisional": true
+    },
+    "A160": {
+      "grade": "P",
+      "range": "units row on or off",
+      "unit": "layout",
+      "sources": [
+        "S086",
+        "S038"
+      ],
+      "provisional": true
+    },
+    "A161": {
+      "grade": "A",
+      "range": "3 orders x 3 separators x 2 clock styles",
+      "unit": "format",
+      "sources": [
+        "S003",
+        "S004",
+        "S038"
+      ],
+      "provisional": true
+    },
+    "A162": {
+      "grade": "P",
+      "range": "unit options per the manual table in section 3.5.3.1",
+      "unit": "text",
+      "sources": [
+        "S003",
+        "S038",
+        "S086"
+      ],
+      "provisional": true
+    },
+    "A163": {
+      "grade": "A",
+      "range": "n/a",
+      "unit": "category",
+      "sources": [
+        "S003",
+        "S004"
+      ],
+      "provisional": true
+    },
+    "A164": {
+      "grade": "S",
+      "range": "fixed",
+      "unit": "d",
+      "sources": [
+        "S003",
+        "S004"
+      ],
+      "provisional": true
+    },
+    "A165": {
+      "grade": "S",
+      "range": "field set",
+      "unit": "fields",
+      "sources": [
+        "S003",
+        "S004"
+      ],
+      "provisional": true
+    },
+    "A166": {
+      "grade": "P",
+      "range": "32 headers in the fixture",
+      "unit": "layout",
+      "sources": [
+        "S086",
+        "S085",
+        "S084"
+      ],
+      "provisional": true
+    },
+    "A167": {
+      "grade": "S",
+      "range": "append on or off",
+      "unit": "mode",
+      "sources": [
+        "S084",
+        "S085"
+      ],
+      "provisional": true
+    },
+    "A168": {
+      "grade": "P",
+      "range": "template-driven column choice",
+      "unit": "layout",
+      "sources": [
+        "S088",
+        "S090",
+        "S091"
+      ],
+      "provisional": true
+    },
+    "A169": {
+      "grade": "P",
+      "range": "n/a",
+      "unit": "category",
+      "sources": [
+        "S089",
+        "S090"
       ],
       "provisional": true
     },
@@ -719,6 +1030,13 @@
       "sources": [],
       "provisional": false
     },
+    "A205": {
+      "grade": "A",
+      "range": "start 08:00 to 14:00; length per A096 (1 to 8 h)",
+      "unit": "clock time, h",
+      "sources": [],
+      "provisional": false
+    },
     "A206": {
       "grade": "A",
       "range": "n/a",
@@ -802,7 +1120,13 @@
     "S003": {
       "verification": "agent-read"
     },
+    "S004": {
+      "verification": "agent-read"
+    },
     "S005": {
+      "verification": "agent-read"
+    },
+    "S006": {
       "verification": "agent-read"
     },
     "S007": {
@@ -826,6 +1150,9 @@
     "S015": {
       "verification": "agent-read"
     },
+    "S016": {
+      "verification": "agent-read"
+    },
     "S017": {
       "verification": "main-reread"
     },
@@ -841,7 +1168,13 @@
     "S023": {
       "verification": "agent-read"
     },
+    "S024": {
+      "verification": "agent-read"
+    },
     "S025": {
+      "verification": "agent-read"
+    },
+    "S026": {
       "verification": "agent-read"
     },
     "S036": {
@@ -849,6 +1182,9 @@
     },
     "S037": {
       "verification": "snippet"
+    },
+    "S038": {
+      "verification": "agent-read"
     },
     "S053": {
       "verification": "agent-read"
@@ -858,6 +1194,27 @@
     },
     "S056": {
       "verification": "agent-read"
+    },
+    "S084": {
+      "verification": "agent-read"
+    },
+    "S085": {
+      "verification": "agent-read"
+    },
+    "S086": {
+      "verification": "agent-read"
+    },
+    "S088": {
+      "verification": "snippet"
+    },
+    "S089": {
+      "verification": "snippet"
+    },
+    "S090": {
+      "verification": "snippet"
+    },
+    "S091": {
+      "verification": "snippet"
     },
     "S099": {
       "verification": "agent-read"
