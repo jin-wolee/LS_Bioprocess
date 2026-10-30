@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resultsAsOf } from "../../src/record/asof.ts";
 import { REVIEW_OUTCOME, review, reviewPoint } from "../../src/record/review.ts";
 import type { ReviewConfig } from "../../src/record/review.ts";
+import { ENTRY_RULES } from "../../src/record/rules_entry.ts";
 import { RULES } from "../../src/record/validate.ts";
 import type { RecordedDataset, ResultRow, ValidationFindingRow } from "../../src/record/types.ts";
 import { emptyDataset } from "../support/eval_fixture.ts";
@@ -87,9 +88,9 @@ describe("One review outcome per rule: a fixed policy of the rule id (A213, A214
     expect(out.validation_finding.map((f) => f.rule)).toEqual([rule]); // the finding is kept
   });
 
-  it("The policy table names exactly the rules that hold or quarantine a result row: the rules of the catalogue except VR-008b (no row), VR-014 (rejects at ingest)", () => {
-    expect(Object.keys(REVIEW_OUTCOME).sort()).toEqual(["VR-002", "VR-003", "VR-004", "VR-009", "VR-010", "VR-011", "VR-012", "VR-015", "VR-019", "VR-020"]);
-    const catalogue = RULES.filter((r) => r.action !== "reject" && r.id !== "VR-008b").map((r) => r.id).sort();
+  it("The policy table names exactly the rules that hold or quarantine a result row: the rules of the catalogue and the entry rules (A218) except VR-008b (no row), VR-014 (rejects at ingest)", () => {
+    expect(Object.keys(REVIEW_OUTCOME).sort()).toEqual(["VR-002", "VR-003", "VR-004", "VR-005", "VR-006", "VR-009", "VR-010", "VR-011", "VR-012", "VR-013", "VR-015", "VR-019", "VR-020"]);
+    const catalogue = [...RULES, ...ENTRY_RULES].filter((r) => r.action !== "reject" && r.id !== "VR-008b").map((r) => r.id).sort();
     expect(catalogue).toEqual(Object.keys(REVIEW_OUTCOME).sort());
   });
 

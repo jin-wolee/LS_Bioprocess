@@ -5,7 +5,7 @@ import type { RecordedDataset, ResultRow, ValidationFindingRow } from "./types.t
 // The review step (data_model section 6, state diagram; section 7, "Review step and VR-012 decided in the S2 review step"). After the validation rules a row is
 // `held` or `quarantined`; the review resolves it to `released` or `rejected`. Until S2c2 a hold never ended, so a long hold excluded a request for ever.
 //
-// The reviewer sees the record only (invariant 1): the outcome is a fixed policy of the rule id (A213, A214), never a judgement from the value or from truth. It never
+// The reviewer sees the record only (invariant 1): the outcome is a fixed policy of the rule id (A213, A214, A218), never a judgement from the value or from truth. It never
 // triggers a re-draw or a re-measure (spec section 8, anti-gaming rule 4), so recollection is not modelled. A rejected row keeps its value, is never available and is
 // still in every denominator. Reviewer capacity is not modelled (a favourable assumption, A215). The review writes no finding and edits no value, no id and no
 // measurement stamp; it sets `state`, `reviewed_at` and `available_at` of a held row and the `status` of the findings it resolves.
@@ -33,11 +33,13 @@ export type Outcome = "released" | "rejected";
 
 /**
  * The outcome per rule id: every rule that holds or quarantines a result row (VR-008b changes no row, VR-014 rejects at ingest and is final). Rejected, grade P
- * (A213): VR-010, VR-012, VR-009. Released with the finding kept and no timestamp corrected, grade A (A214): the others. A rule without an entry is an error.
+ * (A213): VR-010, VR-012, VR-009. Rejected, grade A (A218, the author ruled so on 2026-10-30): the entry rules VR-005, VR-006, VR-013. Released with the finding kept
+ * and no timestamp corrected, grade A (A214): the others. A rule without an entry is an error. VR-024, VR-025 and VR-026 need none: a record with no instant or no value
+ * has no result row and a controller row never reaches `review()`, so their findings stay open.
  */
 export const REVIEW_OUTCOME: Readonly<Record<string, Outcome>> = {
-  "VR-002": "released", "VR-003": "released", "VR-004": "released", "VR-009": "rejected", "VR-010": "rejected",
-  "VR-011": "released", "VR-012": "rejected", "VR-015": "released", "VR-019": "released", "VR-020": "released",
+  "VR-002": "released", "VR-003": "released", "VR-004": "released", "VR-005": "rejected", "VR-006": "rejected", "VR-009": "rejected", "VR-010": "rejected",
+  "VR-011": "released", "VR-012": "rejected", "VR-013": "rejected", "VR-015": "released", "VR-019": "released", "VR-020": "released",
 };
 
 const DAY = 86400;
