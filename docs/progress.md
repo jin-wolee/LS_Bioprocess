@@ -1265,3 +1265,60 @@ The majority output of the two sets is the same (sha256 prefix acdb9cfdc718). So
 **Parked**: on `adapter_ingest` the bridge keys `provenance` and `received_at` (and `raw/rows.ts` its dilution map, `raw_path.ts` its host clock) by label, as the recorder keys its source event, so two analyses with one label share one provenance entry (design question; it matters once the trace shows a raw line). VR-008b conflicts raised by the analyzer parser name no request after F8c; resolving them through `ingest_conflict.request_id` matters only once a replay or overlap rate exists.
 
 **Open (held by the orchestrator)**: the review-outcome list for the author (VR-005, VR-006, VR-013, VR-024, VR-025, VR-026); ADR-0016 awaits the author; next: `scripts/check_all.sh` keeps Vitest's failing-test lines in its summary (one Stop-hook failure printed no test name), then the S2 close.
+
+## 2026-10-30 — Maintenance: check_all summary names failing tests (executor, uncommitted)
+
+**Result**: the summary of `scripts/check_all.sh` (the `--manual` output and the Stop hook's stderr) now keeps Vitest's indented failure lines: ` FAIL  <file> > <suite> > <test>` for a failed test, ` FAIL  <file> [ <file> ]` for a file that did not load, and the count lines ` Test Files`, `      Tests`, `     Errors` when they report a failure. A passing run adds none of Vitest's lines. Base commit 5232a0d, nothing committed; touched `scripts/check_all.sh` (one `grep` pattern and one comment line), `tests/test_check_all.py` (+6 tests, +1 helper, 3 captured shapes) and this entry. No `package.json`, engine file, ADR, ledger or schema touched; no new dependency.
+
+**Cause**: line 55 filtered the collected output with `^(FAIL|WARN)|check_docs|ERR`. Vitest prints its failure lines with one leading space, so the pattern never matched them; the 2026-10-30 Stop-hook run kept only `FAIL  npm run check failed (exit 1)`.
+
+**What Vitest 5.0.5 prints inside `npm run -s check`, output captured** (scratch project outside the repository, symlinked `node_modules`, planted failures; no TTY, so no colour codes)
+| Case | Lines that matter |
+|---|---|
+| a test fails | ` FAIL  engine/tests/bad.test.ts > suite alpha > inner > fails on purpose` (one space, `FAIL`, two spaces, path, ` > ` between suite names); above it the tree (` ❯ file (4 tests \| 1 failed \| 1 todo)`, `       × name 2ms`) and the `⎯⎯ Failed Tests 1 ⎯⎯` rule; below it the message (`AssertionError: ...`) and a code frame |
+| a file does not load, a test times out | ` FAIL  engine/tests/importfail.test.ts [ engine/tests/importfail.test.ts ]`; ` FAIL  engine/tests/timeout.test.ts > slow` with `Error: Test timed out in 50ms.`; `⎯⎯ Failed Suites 1 ⎯⎯` |
+| counts, failing | ` Test Files  1 failed \| 1 passed (2)`, `      Tests  1 failed \| 3 passed \| 1 todo (5)`, and with an unhandled rejection `     Errors  1 error`, then `   Start at  11:03:03` and `   Duration  89ms (...)` |
+| counts, passing | ` RUN  v5.0.5 <dir>`, ` Test Files  1 passed (1)`, `      Tests  1 passed (1)`, `Start at`, `Duration`; no per-test line (the non-TTY reporter lists only failed files) |
+| lint error | `<absolute file path>`, then `  1:7  error  'unused' is assigned a value but never used  @typescript-eslint/no-unused-vars`, then `✖ 3 problems (3 errors, 0 warnings)`; exit 1 |
+| typecheck error | `engine/src/tsbad.ts(1,14): error TS2322: Type 'string' is not assignable to type 'number'.`; exit 2 |
+
+With `FORCE_COLOR=1` every one of these lines starts with ANSI escape codes (` FAIL ` becomes `ESC[41mESC[1m FAIL ...`), and the pattern would miss them again; the hook environment sets no colour variable (the incident's own lines had none), so this is noted, not handled.
+
+**Red, then green** (`uv run pytest -q tests/test_check_all.py`)
+| Step | State | Result |
+|---|---|---|
+| 1 | six new tests, old filter | `4 failed, 20 passed`: the four tests that look for the failing test's name and the count lines in the `--manual` output and in the hook's stderr (exit 2), each with two captured shapes; the other two (bounded at 41 lines for 100 failures, a passing run prints no Vitest line) are guards that held under the old filter |
+| 2 | filter changed to `^(FAIL\|WARN)\|^ +(FAIL \|(Test Files\|Tests\|Errors) .*(failed\|error))\|check_docs\|ERR`, `head -40` kept | `24 passed` |
+
+The new pattern run over live scratch output (a timed-out test, then a passing run) kept ` FAIL  engine/tests/timeout.test.ts > slow`, ` Test Files  1 failed | 1 passed (2)`, `      Tests  1 failed | 1 passed (2)`, and nothing for the passing run.
+
+**Mutation** (scratch copy of `scripts/`, `tests/` and the project files, restored, `diff -r` clean against the repository)
+- the old pattern put back: 4 of 24 tests fail (the four above)
+- `head -40` dropped: 1 of 24 fails (the bounded test)
+- every indented line kept (`^ +`): 5 of 24 fail (the four, plus the passing-run test)
+
+**Rework** (the orchestrator's one round, same brief: R1 lint and type errors, R2 the cap; the same two files, no other path)
+- Captured shapes (scratch project, planted errors, output piped): tsc 6.0.3 prints one line per error, `engine/src/ts_a.ts(1,14): error TS2322: Type 'string' is not assignable to type 'number'.`, relative path, no count line, `npm run check` exits 2. eslint 10.13.0 (stylish) prints a blank line, the file path unindented on a line of its own, then `  2:7  error    <message>  <rule>` and `  3:1  warning  <message>  <rule>` lines under it (the level word padded to the longer one), a blank line between files, then `✖ 8 problems (6 errors, 2 warnings)` and an indented `N errors and 0 warnings potentially fixable with the `--fix` option.`; a run with warnings only prints the file, the warning line and `✖ 1 problem (0 errors, 1 warning)` and exits 0.
+- Change (`scripts/check_all.sh`): the `grep ... | head -40` became one `awk` pass (no new dependency). Printed without a cap: each step's `FAIL  <step> failed (exit N)`, the `FAIL  Math.random found ...` line, the Vitest count lines, and eslint's `✖` line when it counts at least one error. Counted against a cap of 40, in output order: everything the first round kept (` FAIL ` lines, `FAIL`/`WARN`/`check_docs`/`ERR` lines), tsc's `error TS####:` lines, and eslint's `l:c  error` lines with their file path, printed once before the first error of the file (a file with only warnings never prints its path; warning lines never print). When lines are cut, a last line `(N more lines not shown)` gives the number.
+- Numbers: at most 40 detail lines, plus 3 step verdicts, the Math.random line, 3 Vitest count lines, 1 eslint count line and the note, 49 lines, plus the `check_all --manual: FAIL` line or the hook's hint: 50.
+- Red then green: with the first-round filter 7 of 31 failed (tsc and eslint, each in the `--manual` output and the hook's stderr; the eslint path-before-its-first-error test; the cap test in both modes), 24 passed; with the new filter 31 passed. The old 100-failure test became the cap test (`--manual` and hook): it finds `npm run check failed`, both count lines and the Math.random line among 100 failed tests, at most 40 ` FAIL ` lines, and the note's number plus the shown lines equals 100. Two guards held before and after: a passing Vitest run and a warnings-only eslint run add nothing.
+- Mutation (scratch copy, restored, `diff -r` clean; failures out of 31): no tsc pattern 2; the eslint error rule off 3; warnings kept 3; the path printed on every error line 1; the `✖` line always kept 1; fixed lines capped too 2; no cut note 2; no cap 2. The filter as it was before the first round 11; the first-round filter 7.
+- Live check: the new filter over the real captures kept all six eslint error lines with their two file paths and the `✖ 8 problems` line, all three tsc lines, and the Vitest timeout test with its two count lines; the warnings-only and the passing captures gave nothing.
+
+**Gates** (run in this order after the last edit)
+- `uv run pytest -q` -> `226 passed, 76 deselected` (base 213, +13: 6 in the first round, 7 in the rework)
+- `uv run --frozen python scripts/check_docs.py --all` -> `539 files, 0 failure(s), 0 warning(s)`
+- `bash scripts/check_all.sh --manual` -> PASS (printing the `check_docs` line and `check_all --manual: PASS`; its `npm run check` is untouched by this change)
+
+**Not done / found and left** (nothing here was silently dropped)
+- Before the rework a lint or typecheck failure of `npm run check` was invisible in the summary (lowercase `error`, which the case-sensitive `ERR` does not match) and the cap cut the verdict and count lines; both are closed by the rework above.
+- Not kept: Vitest's message line (`AssertionError: ...`) and code frame, tsc's continuation lines of a long message, eslint's rule-fix hint; the test name, file and line, and the eslint rule name are enough to go to the place.
+- With `FORCE_COLOR` set, Vitest and eslint lines start with ANSI codes and the patterns miss them (see above); the Stop-hook environment sets none.
+
+## 2026-10-30 — Maintenance review: check_all summary (orchestrator)
+
+**Verdict**: PASS after one rework round. A failed gate now says what failed: the summary of `scripts/check_all.sh` keeps Vitest's failing-test lines, tsc's `error TS` lines and eslint's error lines with their file, and never cuts the step verdicts, the Math.random line or the count lines; the detail lines are capped at 40 with a note of how many were cut. Executor: Sonnet xhigh. Rework: the first round fixed Vitest only and left lint and type errors invisible and the verdict line inside the cap; both are in the rework.
+- Orchestrator runs: `uv run pytest -q` 226 passed; `check_docs --all` 0 failures; `check_all --manual` PASS. End to end on a scratch copy: a planted type error and a planted lint error, run through the real `tsc` and `eslint` and then the new summary, print the file and line of each error, eslint's `✖` line and the `FAIL  npm run check failed` line. Orchestrator mutation: the eslint path tracking removed -> 3 of 31 tests of `tests/test_check_all.py` fail; restored, `cmp` clean.
+- Left as a note: with `FORCE_COLOR` set the lines start with colour codes and the patterns miss them; the hook environment sets none.
+
+**Open (held by the orchestrator)**: unchanged from the S2f review; next, the S2 close.

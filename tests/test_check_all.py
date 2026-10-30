@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -167,3 +168,233 @@ def test_math_random_outside_source_or_in_tests_is_ignored(lab):
         lab.write(rel, "const x = Math.random();\n")
     r = check_all(lab, "--manual")
     assert r.returncode == 0, output(r)
+
+
+# ---------- the summary names the failing Vitest tests ----------
+# What Vitest 5.0.5 prints inside `npm run -s check` when its output is captured (no TTY, so no colour codes). The failure lines
+# start with a space, which the summary filter once dropped (a Stop-hook run printed "npm run check failed" and no test name).
+# Paths are made up; the second capture is trimmed (code frames and stack lines cut).
+VITEST_ONE_TEST_FAILS = """
+ RUN  v5.0.5 /work/repo
+
+ ❯ engine/tests/bad.test.ts (4 tests | 1 failed | 1 todo) 4ms
+   ❯ suite alpha (4)
+     ❯ inner (2)
+       × fails on purpose 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  engine/tests/bad.test.ts > suite alpha > inner > fails on purpose
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ engine/tests/bad.test.ts:8:54
+      8|     it("fails on purpose", () => { expect(add(1, 1)).toBe(3); });
+       |                                                      ^
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 3 passed | 1 todo (5)
+   Start at  11:03:03
+   Duration  89ms (transform 53%, import 24%, tests 13%, worker 9%)
+"""
+VITEST_FILE_AND_TEST_FAIL = """
+ RUN  v5.0.5 /work/repo
+
+ ❯ engine/tests/importfail.test.ts (0 test)
+ ❯ engine/tests/timeout.test.ts (1 test | 1 failed) 53ms
+   × slow 52ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  engine/tests/importfail.test.ts [ engine/tests/importfail.test.ts ]
+Error: Cannot find module '../src/missing.ts' imported from /work/repo/engine/tests/importfail.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  engine/tests/timeout.test.ts > slow
+Error: Test timed out in 50ms.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+
+
+ Test Files  2 failed | 2 passed (4)
+      Tests  1 failed | 2 passed (3)
+     Errors  1 error
+   Start at  11:04:55
+   Duration  134ms (tests 70%, import 15%, worker 9%)
+"""
+VITEST_ALL_PASS = """
+ RUN  v5.0.5 /work/repo
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  11:03:19
+   Duration  188ms (worker 65%, import 20%, transform 10%, tests 5%)
+"""
+# The other two steps of `npm run check` (rework, same Vitest 5.0.5 / tsc 6.0.3 / eslint 10.13.0 captures, trimmed): tsc prints one line per error with
+# its file, eslint (stylish) prints the file path on a line of its own, the problem lines under it, then a count line.
+TSC_ERRORS = """engine/src/ts_a.ts(1,14): error TS2322: Type 'string' is not assignable to type 'number'.
+engine/src/ts_a.ts(3,14): error TS2741: Property 'b' is missing in type '{ a: number; }' but required in type 'P'.
+engine/src/ts_b.ts(2,14): error TS2322: Type 'number' is not assignable to type 'string'.
+"""
+ESLINT_ERRORS_AND_WARNINGS = """
+/work/repo/engine/src/lint_a.ts
+  2:7  error    'unused' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  3:1  warning  Unexpected console statement                 no-console
+  5:1  error    Unexpected var, use let or const instead     no-var
+
+/work/repo/engine/src/lint_c.ts
+  1:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/work/repo/engine/src/lint_warn_only.ts
+  2:1  warning  Unexpected console statement  no-console
+
+✖ 5 problems (3 errors, 2 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+"""
+ESLINT_WARNINGS_ONLY = """
+/work/repo/engine/src/lint_warn_only.ts
+  2:1  warning  Unexpected console statement  no-console
+
+✖ 1 problem (0 errors, 1 warning)
+"""
+# name -> (what the fake check prints, lines the summary must hold, text it must not hold)
+VITEST_NOISE = ["Duration", "Start at", " RUN "]  # the run header and timing lines are not part of the summary
+CHECK_FAILURES = {
+    "vitest-one-test": (
+        VITEST_ONE_TEST_FAILS,
+        [
+            " FAIL  engine/tests/bad.test.ts > suite alpha > inner > fails on purpose",
+            " Test Files  1 failed | 1 passed (2)",
+            "      Tests  1 failed | 3 passed | 1 todo (5)",
+        ],
+        VITEST_NOISE,
+    ),
+    "vitest-file-and-test": (
+        VITEST_FILE_AND_TEST_FAIL,
+        [
+            " FAIL  engine/tests/importfail.test.ts [ engine/tests/importfail.test.ts ]",
+            " FAIL  engine/tests/timeout.test.ts > slow",
+            " Test Files  2 failed | 2 passed (4)",
+            "      Tests  1 failed | 2 passed (3)",
+            "     Errors  1 error",
+        ],
+        VITEST_NOISE,
+    ),
+    "tsc": (TSC_ERRORS, TSC_ERRORS.splitlines(), []),
+    "eslint": (
+        ESLINT_ERRORS_AND_WARNINGS,
+        [
+            "/work/repo/engine/src/lint_a.ts",
+            "  2:7  error    'unused' is assigned a value but never used  @typescript-eslint/no-unused-vars",
+            "  5:1  error    Unexpected var, use let or const instead     no-var",
+            "/work/repo/engine/src/lint_c.ts",
+            "  1:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any",
+            "✖ 5 problems (3 errors, 2 warnings)",
+        ],
+        ["warning  Unexpected", "no-console", "lint_warn_only"],  # warnings stay out, and so does the path of a file that has only warnings
+    ),
+}
+
+
+def fake_check(lab, check_output: str, exit_code: int) -> None:
+    """A `check` script that prints what the steps of `npm run check` printed and exits like it does."""
+    lab.write("check_output.txt", check_output)
+    lab.write("package.json", json.dumps({"scripts": {"check": f"cat check_output.txt; exit {exit_code}"}}))
+
+
+@pytest.mark.parametrize("name", CHECK_FAILURES)
+def test_manual_summary_names_what_failed_in_npm_run_check(lab, name):
+    shape, expected, absent = CHECK_FAILURES[name]
+    fake_check(lab, shape, 1)
+    r = check_all(lab, "--manual")
+    assert r.returncode == 1, output(r)
+    assert "npm run check failed" in r.stdout
+    lines = r.stdout.splitlines()
+    for line in expected:
+        assert line in lines, r.stdout
+    for text in absent:
+        assert text not in r.stdout
+
+
+@pytest.mark.parametrize("name", CHECK_FAILURES)
+def test_hook_stderr_names_what_failed_in_npm_run_check(lab, name):
+    shape, expected, absent = CHECK_FAILURES[name]
+    fake_check(lab, shape, 1)
+    r = stop_hook(lab)
+    assert r.returncode == 2, output(r)
+    lines = r.stderr.splitlines()
+    for line in expected:
+        assert line in lines, r.stderr
+    for text in absent:
+        assert text not in r.stderr
+
+
+def test_an_eslint_file_path_comes_right_before_its_first_error_line(lab):
+    fake_check(lab, ESLINT_ERRORS_AND_WARNINGS, 1)
+    lines = check_all(lab, "--manual").stdout.splitlines()
+    for path, first_error in [
+        ("/work/repo/engine/src/lint_a.ts", "  2:7  error    'unused' is assigned a value but never used  @typescript-eslint/no-unused-vars"),
+        ("/work/repo/engine/src/lint_c.ts", "  1:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any"),
+    ]:
+        assert lines.index(path) + 1 == lines.index(first_error)
+    assert lines.count("/work/repo/engine/src/lint_a.ts") == 1  # one path line per file, not one per error
+
+
+# The cap (rework R2): 40 lines of per-test and per-error detail; the lines that say which gate failed are never cut.
+SUMMARY_CAP = 40
+SUMMARY_FIXED_MAX = 10  # at most: 3 step verdicts, the Math.random line, 3 Vitest count lines, eslint's count line, the "more lines" notice, the manual verdict or the hook's hint
+
+
+@pytest.mark.parametrize("mode", ["manual", "hook"])
+def test_the_cap_cuts_detail_lines_and_keeps_the_fixed_ones(lab, mode):
+    lab.write("src/a.ts", "const x = Math.random();\n")
+    many = "\n".join(f" FAIL  engine/tests/bad.test.ts > suite > fails {i}" for i in range(100))
+    fake_check(lab, many + "\n Test Files  1 failed (1)\n      Tests  100 failed (100)\n", 1)
+    r = check_all(lab, "--manual") if mode == "manual" else stop_hook(lab)
+    text = r.stdout if mode == "manual" else r.stderr
+    lines = text.splitlines()
+    assert r.returncode == (1 if mode == "manual" else 2), output(r)
+    for fixed in (" Test Files  1 failed (1)", "      Tests  100 failed (100)"):
+        assert fixed in lines, text
+    assert any("npm run check failed" in line for line in lines), text
+    assert any("Math.random found" in line for line in lines), text
+    shown = [line for line in lines if line.startswith(" FAIL  engine/tests/")]
+    assert 0 < len(shown) <= SUMMARY_CAP
+    notice = [m.group(1) for m in map(re.compile(r"\((\d+) more lines not shown\)").fullmatch, lines) if m]
+    assert notice and len(shown) + int(notice[0]) == 100, text  # the notice counts what the cap cut
+    assert len(lines) <= SUMMARY_CAP + SUMMARY_FIXED_MAX, text
+
+
+def test_a_passing_vitest_run_adds_nothing_to_the_summary(lab):
+    fake_check(lab, VITEST_ALL_PASS, 0)
+    r = check_all(lab, "--manual")
+    assert r.returncode == 0, output(r)
+    for passing_line in ("Test Files", "Tests ", "passed", *VITEST_NOISE):
+        assert passing_line not in r.stdout
+    assert stop_hook(lab).returncode == 0
+
+
+def test_eslint_warnings_alone_add_nothing_to_the_summary(lab):
+    fake_check(lab, ESLINT_WARNINGS_ONLY, 0)
+    r = check_all(lab, "--manual")
+    assert r.returncode == 0, output(r)
+    for text in ("lint_warn_only", "no-console", "problem"):
+        assert text not in r.stdout
+    assert stop_hook(lab).returncode == 0

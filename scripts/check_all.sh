@@ -52,7 +52,17 @@ if [ -n "$RANDOM_HITS" ]; then
   OUT="$OUT"$'\n'"FAIL  Math.random found in engine/src or src (use the seeded PRNG): $(printf '%s' "$RANDOM_HITS" | tr '\n' ' ')"; RC=1
 fi
 
-SHOWN="$(printf '%s\n' "$OUT" | grep -E '^(FAIL|WARN)|check_docs|ERR' | head -40)"
+# The summary. Never cut: each step's "FAIL  <step> failed", the Math.random line and the count lines (Vitest's, eslint's when it counts errors), so a failed gate
+# always says which one. Cut after 40 lines, with a note of how many: the lines that name a failure. Vitest indents its own (" FAIL  <file> > <test>"); eslint prints
+# the file path on a line of its own before its "  l:c  error  ..." lines, so the path is kept once per file with an error; tsc prints "file(l,c): error TS####". Warnings stay out.
+SHOWN="$(printf '%s\n' "$OUT" | awk -v cap=40 '
+  function keep(line) { if (++n <= cap) print line }
+  /^[^ ]/ { path = $0 }
+  /^FAIL  (.* failed \(exit [0-9]+\)|Math\.random found)/ || /^ +(Test Files|Tests|Errors) .*(failed|error)/ || /^✖ .*\([1-9][0-9]* errors?,/ { print; next }
+  /^(FAIL|WARN)/ || /check_docs/ || /ERR/ || /^ +FAIL / || /error TS[0-9]+:/ { keep($0); next }
+  /^ +[0-9]+:[0-9]+ +error / { if (path != seen) { keep(path); seen = path } keep($0) }
+  END { if (n > cap) print "(" (n - cap) " more lines not shown)" }
+')"
 if [ $MANUAL -eq 1 ]; then
   [ -n "$SHOWN" ] && printf '%s\n' "$SHOWN"
   if [ $RC -ne 0 ]; then echo "check_all --manual: FAIL"; exit 1; fi
