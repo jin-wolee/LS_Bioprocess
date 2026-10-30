@@ -1805,3 +1805,11 @@ assumptions:
     grade: A
     sources: []
     notes: "Range is a pair of design variants, as in A176, A215 and A216, not a measured spread. No source gives how a controller cuts its log files; spec 2.4.2 names the daily cut. The scenario setting controller_log_cut takes daily (default) or per_row. The two variants change when a controller row reaches the host, so a capture-path contrast holds the controller timing equal on the two paths, as A216 does for the analyzer: the linkage-alone block runs per_row (each row reaches the host at its own stamp, as the manual path's historian value does) and the timing-sensitivity block runs daily."
+  - id: A218
+    name: review_outcome_entry_rules
+    default: "rejected at review (the value is kept, the row is never available): VR-005 unit of the wrong dimension, VR-006 physically impossible value, VR-013 dilution factor missing or implausible. A fixed policy per rule id; any rejecting rule on a row wins"
+    range: "rejected for all three; no probability and no releasing variant is built"
+    unit: category
+    grade: A
+    sources: []
+    notes: "No source gives the outcome for these rules (they are rules of the simulator). The three rules name an identified cause in the value as recorded: a unit of another dimension (VR-005), a value outside the physical range of the analyte (VR-006), a dilution factor that the method needs and the row lacks or does not offer (VR-013). This is the direction of A213: rejection when a result is clearly attributable to an identified cause (S127 4.8), as for the hold-time rule and the QC outcome there. The reviewer sees the record only, so the outcome is a policy of the rule id, as in A213 and A214, and a rejected row stays in the data and in every denominator (as A213)."
