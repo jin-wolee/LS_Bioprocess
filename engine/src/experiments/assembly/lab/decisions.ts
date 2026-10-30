@@ -1,6 +1,7 @@
 import type { EvaluationSettings } from "../../../evaluate/config.ts";
 import type { ForcedError, MaterialisedError } from "../../../inject/types.ts";
 import type { Architecture } from "../../../record/architecture.ts";
+import type { RecordedDataset } from "../../../record/types.ts";
 import { createRng } from "../../../rng.ts";
 import { runScenario } from "../../../run.ts";
 import type { ScenarioRun } from "../../../run.ts";
@@ -63,6 +64,13 @@ export const runDecisionLoop = (input: DecisionLoopInput): DecisionLoop => {
   };
   TRUTH.set(loop, { architecture: architecture.id, shared, drawn: run.events.flatMap((e) => (e.type === "sample_drawn" ? [e.sample_id] : [])) });
   return loop;
+};
+
+/** The record the loop's decisions were taken on: the architecture's recorded dataset of the lab run, with placeholder pH values (data_model section 7, "Experiment 2"). Recorded rows only. */
+export const recordOf = (loop: DecisionLoop): RecordedDataset => {
+  const dataset = truthOf(loop).shared.structure[loop.architecture]?.dataset;
+  if (!dataset) throw new Error(`decision loop: no record of ${loop.architecture}`);
+  return dataset;
 };
 
 /**

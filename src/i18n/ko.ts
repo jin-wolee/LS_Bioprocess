@@ -1,4 +1,6 @@
 import type { Key, enBase } from "./en.ts";
+import { koChallenge } from "./ko_challenge.ts";
+import { koLineage } from "./ko_lineage.ts";
 import { koNotes } from "./ko_notes.ts";
 import { koResults } from "./ko_results.ts";
 import { koSetup } from "./ko_setup.ts";
@@ -14,6 +16,8 @@ const koBase: Record<keyof typeof enBase, string> = {
   "nav.home": "홈",
   "nav.setup": "설정",
   "nav.results": "결과",
+  "nav.lineage": "계보",
+  "nav.challenge": "챌린지",
   "nav.notes": "노트",
 
   "controls.lang.label": "언어",
@@ -71,6 +75,7 @@ const koBase: Record<keyof typeof enBase, string> = {
   "error.engine_error": "엔진이 다음 메시지와 함께 멈췄습니다:",
   "error.worker": "Worker를 시작하지 못했거나 멈췄습니다:",
   "error.cancelled": "실행이 시드 사이에서 중단되었습니다:",
+  "error.locked": "이 실행이 열린 챌린지라서 요청이 거절되었습니다:",
   "error.heading.cancelled": "실행이 취소되었습니다",
 
   "grade.S": "출처 확인",
@@ -80,4 +85,4 @@ const koBase: Record<keyof typeof enBase, string> = {
   "grade.provisional": "잠정",
 };
 
-export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes };
+export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge };

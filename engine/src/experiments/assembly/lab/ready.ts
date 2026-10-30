@@ -1,10 +1,14 @@
 import { evaluationSettings } from "../../../evaluate/config.ts";
+import { prevented } from "../../../inject/catalogue.ts";
 import { FLAG_NAMES } from "../../../record/architecture.ts";
 import { ENGINE_VERSION } from "../../../trace.ts";
 import { parseExperimentConfig } from "../config.ts";
+import { decisionSeeds } from "./challenge_decision.ts";
+import { offeredTypes } from "./challenge_plant.ts";
 import { evaluationRefs, presetInfos, profileInfos } from "./catalogue.ts";
 import type { PresetInfo, ProfileInfo, RefValue } from "./catalogue.ts";
 import { scenarioDoc } from "./setup.ts";
+import { architecturesOf } from "./spec.ts";
 import type { LabData } from "./setup.ts";
 
 // What the Worker tells the page at start-up, as plain data (docs/design/lab_ui.md section 4, `ready`): the engine version, the schema version, the flags the engine has (the page never
@@ -30,8 +34,12 @@ export interface Ready {
   profiles: ProfileInfo[];
   presets: PresetInfo[];
   evaluation: RefValue[];
-  /** The variants of the challenge this build offers; none until Step 4. */
+  /** The variants of the challenge this build offers: the sample variant always, the decision variant when the build bundles SC8 (`LabData.decision`). */
   challenge_variants: ("sample" | "decision")[];
+  /** The seed list of experiment 2 (A103), the neutral integers the decision variant offers; empty when the variant is not offered. */
+  decision_seed_list: number[];
+  /** Which records each variant of the challenge can show, per preset and ablation: the sample variant needs a drawn type the record does not prevent, the decision variant a label error it does not prevent. */
+  challenge_records: { id: string; sample: boolean; decision: boolean }[];
 }
 
 export const scenarioInfos = (data: LabData): ScenarioInfo[] =>
@@ -57,6 +65,8 @@ export const readyOf = (data: LabData): Ready => {
     profiles: profileInfos(data),
     presets: presetInfos(data),
     evaluation: evaluationRefs(data),
-    challenge_variants: [],
+    challenge_variants: data.decision ? ["sample", "decision"] : ["sample"],
+    decision_seed_list: decisionSeeds(data),
+    challenge_records: architecturesOf(data).map((a) => ({ id: a.id, sample: offeredTypes(a).length > 0, decision: data.decision !== undefined && !prevented("label_error", a.flags) })),
   };
 };

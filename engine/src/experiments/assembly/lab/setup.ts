@@ -23,6 +23,8 @@ export interface LabData {
   experiment: unknown;
   /** The lab's own inputs for the raw layer (the calendar anchor and the instruments' zone, A161). */
   rawLayer: unknown;
+  /** The decision variant of the challenge (lab_ui.md section 9): SC8, which the Setup picker does not offer, and the parsed experiment 2 config (its seed list). Absent: the variant is not offered. */
+  decision?: { scenario: unknown; experiment: unknown };
 }
 
 /** The parts of a RunSpec that change the scenario beyond its settings. */

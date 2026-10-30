@@ -2,8 +2,8 @@ import type { ExperimentReport } from "../engine/src/generated/experiment_report
 
 // The messages between the page and the Worker (docs/design/lab_ui.md section 4). Plain data only (structuredClone-safe): no function, no class instance, no truth.
 // Types only: the page imports this file for its shapes and the Worker implements it. S3b built the start-up messages and the `run` request in its Home form; S3c's Setup batch adds
-// the full `ready`, the full `run` (architectures, seeds, the two profile lists, the capture path), `progress` and `cancel`. The other requests of the design (lineage, challenge_*,
-// breakout) join this file when their steps land.
+// the full `ready`, the full `run` (architectures, seeds, the two profile lists, the capture path), `progress` and `cancel`. S3e adds `lineage` and the `challenge_*` requests with their
+// answers. `breakout` joins this file when Step 6 lands. The page imports no engine module, so the shapes of the views are declared here and the Worker's plain data is assignable to them.
 
 export type CapturePath = "manual_transcription" | "adapter_ingest";
 
@@ -23,7 +23,16 @@ export interface RunSpec {
 }
 
 /** page -> Worker */
-export type Request = { type: "run"; id: number; spec: RunSpec } | { type: "cancel"; id: number };
+export type Request =
+  | { type: "run"; id: number; spec: RunSpec }
+  | { type: "cancel"; id: number }
+  | { type: "lineage"; id: number; spec: RunSpec; seed: number; pick: { rule: "sc3" } | { sample_id: string } }
+  | { type: "challenge_start"; id: number; variant: ChallengeVariant; spec: RunSpec; seed: number; shown: string }
+  | { type: "challenge_open"; id: number; challenge: string; sample_id: string }
+  | { type: "challenge_guess"; id: number; challenge: string; target: { sample_id: string } | { decision_id: string } }
+  | { type: "challenge_giveup"; id: number; challenge: string };
+
+export type ChallengeVariant = "sample" | "decision";
 
 export type CheckState = "pending" | "identical" | "failed" | "error";
 
@@ -111,7 +120,83 @@ export interface ResultFooter {
   check: CheckState;
 }
 
-export type ErrorCode = "invalid_spec" | "engine_error" | "cancelled";
+export type ErrorCode = "invalid_spec" | "engine_error" | "cancelled" | "locked";
+
+// The lineage view (lab_ui.md section 8). A field the record does not store is null; an edge whose key is null has `to: null`.
+export interface LineageField {
+  name: string;
+  value: string | number | null;
+}
+export interface LineageNode {
+  id: string;
+  table: string;
+  key: string;
+  fields: LineageField[];
+}
+export interface LineageEdge {
+  from: string;
+  to: string | null;
+  relation: string;
+  basis?: "sampled_at" | "measured_at";
+}
+export type Verdict = "correct" | "wrong" | "unanswerable";
+/** One record's rows for one sample, with no truth and no verdict (the drill-down of the challenge). */
+export interface SampleRecord {
+  architecture: string;
+  flags_on: string[];
+  labelling: string;
+  nodes: LineageNode[];
+  edges: LineageEdge[];
+}
+export interface LineageColumn extends SampleRecord {
+  answers: { question: "unit" | "sampled_at" | "process_context"; answer: unknown; verdict: Verdict }[];
+  realised_errors: { type: string; detail: Record<string, string | number> }[];
+}
+export interface LineageView {
+  sample: { sample_id: string; unit_id: string; picked_by: "sc3_rule" | "reader" | "challenge" };
+  truth: { unit_id: string; sampled_at: number; context: { feed_epoch: number; batch_phase: string } };
+  columns: LineageColumn[];
+}
+
+// The challenge (lab_ui.md section 9). A record is what the reader searches; a reveal exists only after the guess or the give-up.
+export interface RecordView {
+  architecture: string;
+  flags_on: string[];
+  samples: { sample_id: string; unit_id: string; batch_id: string | null; sampled_at: number | null; planned_at: number | null; state: string | null }[];
+  results: { request_id: string; analyte: string; version: number; value: number; measured_at: number; available_at: number | null; state: string | null }[];
+  findings: { rule: string; target: string; severity: string; status: string }[];
+  audit_events: { audit_id: string; request_id: string; analyte: string; at: number; old_value: number; new_value: number; old_version: number; new_version: number }[];
+}
+export interface DecisionRecordView {
+  architecture: string;
+  flags_on: string[];
+  samples: (RecordView["samples"][number] & { container: string | null; hold_s: number | null })[];
+  decisions: {
+    decision_id: string;
+    unit_id: string;
+    t: number;
+    action: "readjust" | "skip" | "none";
+    read: { filed_under: string; measured_at: number; value: number; container: string | null; hold_s: number | null; state: string | null } | null;
+    onto: number | null;
+    reason: "known_bias" | null;
+  }[];
+  findings: RecordView["findings"];
+}
+export interface Score {
+  result: "hit" | "background" | "miss";
+  background_type?: string;
+}
+export interface Reveal {
+  planted: { type: string; affected: string[]; detail: Record<string, string | number> };
+  /** Null after a give-up. */
+  score: Score | null;
+  per_architecture: { architecture: string; outcome: "prevented" | "invisible" | "detected"; evidence: string[]; reading: string; decision_same?: boolean }[];
+  lineage: LineageView;
+  decisions?: {
+    affected: string[];
+    rows: { decision_id: string; read_as: string; from_sample: string; value: number; record: { container: string | null; hold_s: number | null }; truth: { container: string; hold_s: number } }[];
+  };
+}
 
 /** Worker -> page */
 export type Response =
@@ -126,9 +211,15 @@ export type Response =
       profiles: ProfileInfo[];
       presets: PresetInfo[];
       evaluation: RefValue[];
-      challenge_variants: ("sample" | "decision")[];
+      challenge_variants: ChallengeVariant[];
+      decision_seed_list: number[];
+      challenge_records: { id: string; sample: boolean; decision: boolean }[];
     }
   | { type: "check"; state: CheckState; detail: CheckDetail }
   | { type: "progress"; id: number; done: number; total: number }
   | { type: "result"; id: number; summary?: RunSummary; report?: ExperimentReport; utilisation?: UtilisationView; footer: ResultFooter }
+  | { type: "lineage"; id: number; view: LineageView; sample_ids: string[] }
+  | { type: "challenge_ready"; id: number; challenge: string; announced_type: string; record: RecordView | DecisionRecordView; inputs: RefValue[] }
+  | { type: "sample_record"; id: number; sample: SampleRecord }
+  | { type: "challenge_reveal"; id: number; reveal: Reveal }
   | { type: "error"; id: number | null; code: ErrorCode; message: string };

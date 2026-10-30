@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readyOf } from "../../src/experiments/assembly/lab/ready.ts";
 import { labData } from "../support/lab_data.ts";
+import { decisionData } from "./decision_data.ts";
 
 // docs/design/lab_ui.md section 4 and spec section 4.5.6: the full `ready` payload. Expected values are typed by hand from the preset table of spec section 5, the evaluation
 // file, the experiment config and the profile files (bundle ids A065 to A073); the lab function is not their source.
@@ -30,8 +31,19 @@ describe("ready: what the Setup page is built from", () => {
     ]);
   });
 
-  it("Given a build with no challenge Then the variants offered are none (the page never assumes one exists)", () => {
-    expect(ready.challenge_variants).toEqual([]);
+  it("Given the presets and the ablations Then ready says which records each variant of the challenge can show (typed from the flag table: system_issued_id prevents the label error, write_time_keys the re-key, ingest_idempotency the replay)", () => {
+    const shown = (r: typeof ready) => r.challenge_records.map((c) => `${c.id}:${c.sample ? "S" : "-"}${c.decision ? "D" : "-"}`);
+    // the sample variant needs a drawn type the record does not prevent; the decision variant needs the label error not to be prevented, and the SC8 bundle
+    expect(shown(readyOf(decisionData()))).toEqual([
+      "a_manual:SD", "b_lims_lite:S-", "c_context:--",
+      "c_context_minus_system_issued_id:SD", "c_context_minus_two_clocks:--", "c_context_minus_available_at:--", "c_context_minus_instrument_state_snapshot:--",
+      "c_context_minus_append_only_versions:--", "c_context_minus_write_time_keys:S-", "c_context_minus_ingest_idempotency:S-", "c_context_minus_audit_trail:--",
+    ]);
+    expect(shown(ready).map((x) => x.slice(-2))).toEqual(["S-", "S-", "--", "S-", "--", "--", "--", "--", "S-", "S-", "--"]); // no SC8 bundle: no decision variant
+  });
+
+  it("Given a build without the SC8 bundle Then only the sample variant is offered (the page never assumes a variant exists)", () => {
+    expect(ready.challenge_variants).toEqual(["sample"]);
   });
 
   it("Given the ready payload Then it is plain data: a JSON round trip changes nothing", () => {

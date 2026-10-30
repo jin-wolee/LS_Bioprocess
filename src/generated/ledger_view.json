@@ -294,6 +294,20 @@
       ],
       "provisional": true
     },
+    "A051": {
+      "grade": "S",
+      "range": [
+        "on",
+        "off"
+      ],
+      "unit": "category",
+      "sources": [
+        "S013",
+        "S007",
+        "S045"
+      ],
+      "provisional": true
+    },
     "A057": {
       "grade": "D",
       "range": [
@@ -660,6 +674,31 @@
       ],
       "provisional": true
     },
+    "A094": {
+      "grade": "A",
+      "range": [
+        0,
+        0.05
+      ],
+      "unit": "pH units per day",
+      "sources": [
+        "S055"
+      ],
+      "provisional": true
+    },
+    "A095": {
+      "grade": "S",
+      "range": [
+        0,
+        0.05
+      ],
+      "unit": "pH units, half-width around the set point",
+      "sources": [
+        "S099",
+        "S055"
+      ],
+      "provisional": true
+    },
     "A096": {
       "grade": "A",
       "range": [
@@ -745,6 +784,19 @@
         "S005",
         "S001",
         "S003"
+      ],
+      "provisional": true
+    },
+    "A108": {
+      "grade": "A",
+      "range": [
+        8,
+        168
+      ],
+      "unit": "h",
+      "sources": [
+        "S013",
+        "S055"
       ],
       "provisional": true
     },
@@ -1186,10 +1238,16 @@
     "S038": {
       "verification": "agent-read"
     },
+    "S045": {
+      "verification": "snippet"
+    },
     "S053": {
       "verification": "agent-read"
     },
     "S054": {
+      "verification": "agent-read"
+    },
+    "S055": {
       "verification": "agent-read"
     },
     "S056": {

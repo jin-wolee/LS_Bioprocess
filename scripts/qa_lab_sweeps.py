@@ -8,19 +8,19 @@ from pathlib import Path
 
 from qa_checks import KO_LIMIT, VIEWPORTS, Result, first_line, fmt_ratio, unchanged_keys
 from qa_infographic import CONTRAST_JS, contrast_rows
-from qa_lab_browser import NUMBERS_JS, apply_state, go, open_lab, run_small, set_lang, wait_final
+from qa_lab_browser import NUMBERS_JS, apply_state, go, open_lab, prepare_page, set_lang, wait_final
 from qa_lab_helpers import LAB_THEMES, LANGS, SCREENS, alter_reference, number_offenders
 
 
 def check_numbers(browser, url) -> Result:
     """Every text node with a digit sits under a data-ref (an input with its ledger id), a data-result (an output) or a data-label (an identifier or count): invariant 3. All four screens,
-    in both languages; the Results screen after the small run."""
+    in both languages; the screens that need something to show (Results, Lineage, Challenge) after the small run, a lineage view and a started challenge."""
     offenders: list[dict] = []
     seen = refs = 0
     bad_ids: list[str] = []
     with open_lab(browser, url) as (page, _, _):
         wait_final(page)
-        run_small(page)
+        prepare_page(page)
         for lang in LANGS:
             set_lang(page, lang)
             for screen in SCREENS:
@@ -40,7 +40,7 @@ def check_ko(browser, url) -> Result:
     texts: dict[str, dict] = {}
     with open_lab(browser, url) as (page, _, _):
         wait_final(page)
-        run_small(page)
+        prepare_page(page)
         for lang in LANGS:
             set_lang(page, lang)
             texts[lang] = {}
@@ -50,7 +50,7 @@ def check_ko(browser, url) -> Result:
     wide = 0
     with open_lab(browser, url, VIEWPORTS["390"]) as (page, _, _):
         wait_final(page)
-        run_small(page)
+        prepare_page(page)
         set_lang(page, "ko")
         for screen in SCREENS:
             go(page, screen)
@@ -70,7 +70,7 @@ def run_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme: s
     try:
         with open_lab(browser, url, VIEWPORTS[vp], scheme) as (page, errors, _):
             wait_final(page)
-            run_small(page)
+            prepare_page(page)
             problems += apply_state(page, theme, lang)
             for screen in SCREENS:
                 go(page, screen)
@@ -79,8 +79,8 @@ def run_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme: s
                 if m["sw"] > m["iw"]:
                     problems.append(f"{screen}: horizontal scroll: scrollWidth {m['sw']} > innerWidth {m['iw']}")
                 page.bring_to_front()  # a new context can hang the screenshot without it
-                # the Results page of two architectures is tens of thousands of pixels tall at the narrow viewport: its picture is the first screen of it
-                page.screenshot(path=str(out / "shots" / f"{name}_{screen}.png"), full_page=screen != "results")
+                # the pages of Results, Lineage and Challenge are tens of thousands of pixels tall at the narrow viewport: their picture is the first screen of each
+                page.screenshot(path=str(out / "shots" / f"{name}_{screen}.png"), full_page=screen not in ("results", "lineage", "challenge"))
             problems += [f"console: {e[:160]}" for e in errors]
     except Exception as e:
         problems.append(first_line(e))
@@ -114,7 +114,7 @@ def check_contrast(browser, url, root: Path) -> Result:
                 apply_state(page, theme, "en")
                 swept = {"home": page.evaluate(CONTRAST_JS)}
                 if state == "identical":
-                    run_small(page)
+                    prepare_page(page)
                     for screen in SCREENS[1:]:
                         go(page, screen)
                         swept[screen] = page.evaluate(CONTRAST_JS)

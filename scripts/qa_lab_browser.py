@@ -2,7 +2,8 @@
 run of the end-to-end path and the controls for language and theme.
 
 The screens are visited through the navigation links of the page, so the state of the page (the Worker, the form, the result of the last run) stays between them. The Results screen needs a
-run: `run_small` makes the small run of the end-to-end path (the default scenario, two seeds of the list, A and C), because the gate does not time a run of twenty seeds.
+run: `run_small` makes the small run of the end-to-end path (the default scenario, two seeds of the list, A and C), because the gate does not time a run of twenty seeds. The Lineage and
+Challenge screens need a view and a started challenge: `show_lineage` and `start_challenge`; `prepare_page` makes all three, so a sweep over the screens finds something on each.
 """
 from __future__ import annotations
 
@@ -79,6 +80,49 @@ def run_small(page) -> str:
     wait_run(page)
     page.wait_for_selector("[data-result][data-report]", timeout=10_000)
     return seeds
+
+
+# Records every message the Worker sends, in order, as plain JSON (window.__labMessages). It wraps the Worker class before any page code runs and listens beside the page's own listener.
+RECORD_JS = """(() => {
+  window.__labMessages = [];
+  const Original = window.Worker;
+  window.Worker = class extends Original {
+    constructor(...args) {
+      super(...args);
+      this.addEventListener('message', (e) => { try { window.__labMessages.push(JSON.parse(JSON.stringify(e.data))); } catch (err) { /* a message that is not plain data is a finding of its own */ } });
+    }
+  };
+})();"""
+
+
+def show_lineage(page, timeout=60_000) -> None:
+    """The Lineage screen with its default form (SC3, seed 1, the rule, A, B and C): press Show lineage and wait for the view."""
+    go(page, "lineage")
+    page.wait_for_selector("#lineage-show:not([disabled])", timeout=30_000)
+    page.click("#lineage-show")
+    page.wait_for_selector("#lineage-view", timeout=timeout)
+
+
+def start_challenge(page, variant="sample", shown=None, seed=None, timeout=60_000) -> str:
+    """The Challenge screen: choose the variant, the record and the seed, press Start and wait for the record. With nothing given it takes the defaults of the form. Returns the seed it ran."""
+    go(page, "challenge")
+    page.wait_for_selector("#challenge-start:not([disabled])", timeout=30_000)
+    page.check(f"#challenge-variant-{variant}")
+    if shown:
+        page.check(f"#challenge-shown-{shown}")
+    if seed is not None:
+        page.fill("#challenge-seed", str(seed))
+    ran = page.input_value("#challenge-seed")
+    page.click("#challenge-start")
+    page.wait_for_selector("#challenge-play", timeout=timeout)
+    return ran
+
+
+def prepare_page(page) -> None:
+    """A page with something on every screen: the small run, a lineage view and a started challenge (the sample variant, unrevealed)."""
+    run_small(page)
+    show_lineage(page)
+    start_challenge(page)
 
 
 def set_lang(page, lang: str) -> None:

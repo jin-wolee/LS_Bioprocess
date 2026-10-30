@@ -1,6 +1,7 @@
 """Pure helpers and the constants they share with the checks of scripts/qa_lab.py: the headless QA of the lab page (docs/design/lab_ui.md section 12).
 
-Unit-tested in tests/test_qa_lab.py: median, budgets, request log, the altered reference, words, the numbers walk, the flag lists, the label-error sentence, the order of the detection figures.
+Unit-tested in tests/test_qa_lab.py: median, budgets, request log, the altered reference, words, the numbers walk, the flag lists, the label-error sentence, the order of the detection figures,
+the answers of the lineage view against the fixture, and what the challenge may and may not send before the guess.
 This module never opens a browser. The browser plumbing is qa_lab_browser.py; the checks are in qa_lab_checks.py (load, size, time, check, engines), qa_lab_sweeps.py (the screens by language and
 theme: numbers, ko, matrix, contrast), qa_lab_flags.py and qa_lab_results.py.
 """
@@ -21,11 +22,11 @@ PASSED_ONLY_WORDS = ["reproducib", "byte for byte"]
 # (label, #theme-select value, emulated prefers-color-scheme)
 LAB_THEMES = [("light", "light", "light"), ("dark", "dark", "light"), ("auto-light", "auto", "light"), ("auto-dark", "auto", "dark")]
 LANGS = ("en", "ko")
-SCREENS = ["home", "setup", "results", "notes"]
+SCREENS = ["home", "setup", "results", "lineage", "challenge", "notes"]
 # the small run of the end-to-end path: the first two seeds of the list, A and C (a twenty-seed run is several seconds, and the gate does not time it)
 SMALL_RUN = {"seeds": 2, "architectures": ["a_manual", "c_context"]}
-# the lists of flags that exist now (lab_ui.md section 11); the legend of Results is one list per architecture shown
-EXPECTED_FLAG_LISTS = ["setup-matrix", "setup-ablation", "results-legend", "notes-table"]
+# the lists of flags that exist now (lab_ui.md section 11); the legend of Results and the head of a Lineage column are one list per architecture shown
+EXPECTED_FLAG_LISTS = ["setup-matrix", "setup-ablation", "results-legend", "notes-table", "lineage-column", "lineage-ablation", "challenge-ablations"]
 # the label-error sentence of lab_ui.md section 10 (spec section 5, "Notes from S2g"), without the code marks
 LABEL_ERROR_SENTENCE = (
     "Without system_issued_id, a label error is not detected here. A conflict of the duplicate-file check (VR-008b) cannot tell a replayed file from two analyses that a label error gave the same "
@@ -143,3 +144,89 @@ def refs_off_their_line(refs) -> list[str]:
             if near is not None and not r["top"] <= (near["top"] + near["bottom"]) / 2 <= r["bottom"]:
                 problems.append(f"{r['text']} has the text {side} it on another line")
     return problems
+
+
+# ---- lineage and challenge (lab_ui.md sections 8, 9 and 12) ----------------------------------------------------------
+TRACE_QUESTIONS = ("unit", "sampled_at", "process_context")
+
+
+def lineage_answer_problems(answers, fixture) -> list[str]:
+    """The three answers and verdicts the page draws for each architecture against the read-only fixture of the single-sample trace (`fixture` maps an architecture id to a body that has `answers`).
+    `answers` has one element per architecture and question: its `verdict` and its `answer` as JSON text, so the comparison is of values and not of key order."""
+    found = {(a["architecture"], a["question"]): a for a in answers}
+    problems = []
+    for arch, body in fixture.items():
+        for question in TRACE_QUESTIONS:
+            want = body["answers"][question]
+            got = found.get((arch, question))
+            if got is None:
+                problems.append(f"{arch} {question}: not on the page")
+                continue
+            if got["verdict"] != want["verdict"]:
+                problems.append(f"{arch} {question}: verdict {got['verdict']}, the fixture says {want['verdict']}")
+            if json.loads(got["answer"]) != want["answer"]:
+                problems.append(f"{arch} {question}: answer {got['answer']}, the fixture says {json.dumps(want['answer'], sort_keys=True)}")
+    return problems
+
+
+# The expected outcome of each drawn type in A, B and C, typed by hand from the first three columns of engine/tests/support/cell_tables.ts (LABEL_CELLS, REKEY_CELLS, REPLAY_CELLS),
+# which were typed from the hypothesis matrix of spec section 5 before any run. A detected cell would carry its evidence; none of the three has one in A, B or C.
+HAND_CELLS = {
+    "label_error": ["invisible", "prevented", "prevented"],
+    "unit_rekey": ["invisible", "invisible", "prevented"],
+    "duplicate_replay": ["invisible", "prevented", "prevented"],
+}
+COMPARED = ["a_manual", "b_lims_lite", "c_context"]
+
+
+def outcome_problems(reveal) -> list[str]:
+    """The outcome of the planted error in A, B and C that the reveal holds against the typed cell of its type."""
+    kind = reveal["planted"]["type"]
+    cells = HAND_CELLS.get(kind)
+    if cells is None:
+        return [f"{kind}: no typed cell for this type"]
+    by_arch = {p["architecture"]: p for p in reveal["per_architecture"]}
+    problems = []
+    for arch, want in zip(COMPARED, cells):
+        got = by_arch.get(arch)
+        if got is None:
+            problems.append(f"{kind} in {arch}: not in the reveal")
+        elif got["outcome"] != want or got["evidence"]:
+            shown = got["outcome"] + (f" ({', '.join(got['evidence'])})" if got["evidence"] else "")
+            problems.append(f"{kind} in {arch}: {shown}, the typed cell says {want}")
+    return problems
+
+
+# the types of message the page may receive between the start of a challenge and the guess (lab_ui.md section 4, rule 3)
+ALLOWED_BEFORE_GUESS = ["ready", "check", "progress", "result", "error", "challenge_ready", "sample_record", "lineage"]
+# keys that exist only in the reveal or name the plant; none may appear at any depth of a message before the guess
+FORBIDDEN_KEYS = ["reveal", "planted", "affected", "plant", "materialised", "realised_errors", "score", "from_sample", "truth", "result_id", "per_architecture", "decision_same"]
+
+
+def keys_deep(value) -> list[str]:
+    if isinstance(value, dict):
+        return [k for key, v in value.items() for k in [key, *keys_deep(v)]]
+    if isinstance(value, list):
+        return [k for v in value for k in keys_deep(v)]
+    return []
+
+
+def message_problems(messages, planted_ids) -> list[str]:
+    """What the Worker sent before the guess: only types of the list, no key of the reveal or the plant, and the planted ids (known after the reveal) nowhere outside the record the reader
+    searches. The record of `challenge_ready` and the drill-down of `sample_record` hold every sample or decision of the run, the planted one among them, as ordinary rows."""
+    problems = []
+    for m in messages:
+        kind = m.get("type")
+        if kind not in ALLOWED_BEFORE_GUESS:
+            problems.append(f"message type {kind} is not in the list the page may receive before the guess")
+        problems += [f"key {k} in a {kind} message" for k in dict.fromkeys(keys_deep(m)) if k in FORBIDDEN_KEYS]
+        outside = {k: v for k, v in m.items() if k not in ("record", "sample")}
+        text = json.dumps(outside)
+        problems += [f"the planted id {p} is in a {kind} message outside its record" for p in planted_ids if p in text and kind != "sample_record"]
+    return list(dict.fromkeys(problems))
+
+
+def row_shape_problems(record) -> list[str]:
+    """Every row of a table of the record has the same keys, so no row carries a mark that the others lack."""
+    return [f"the rows of {name} do not all have the same keys" for name, rows in record.items()
+            if isinstance(rows, list) and rows and all(isinstance(r, dict) for r in rows) and len({tuple(sorted(r)) for r in rows}) > 1]

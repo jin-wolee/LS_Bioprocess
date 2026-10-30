@@ -1,3 +1,5 @@
+import { cellOf, inKey, ruleFlags } from "../../src/experiments/assembly/lab/outcome.ts";
+import type { Cell } from "../../src/experiments/assembly/lab/outcome.ts";
 import { inject } from "../../src/inject/inject.ts";
 import type { ForcedError, InjectResult } from "../../src/inject/types.ts";
 import type { ObservableEvent } from "../../src/observe.ts";
@@ -5,7 +7,7 @@ import { ABLATIONS, parseArchitecture } from "../../src/record/architecture.ts";
 import type { Architecture } from "../../src/record/architecture.ts";
 import { record } from "../../src/record/recorder.ts";
 import type { QualificationInput, RecordedDataset, RecorderInput } from "../../src/record/types.ts";
-import { requestOfTarget, validate } from "../../src/record/validate.ts";
+import { validate } from "../../src/record/validate.ts";
 import type { RuleConfig } from "../../src/record/validate.ts";
 import { VALID_QUALIFICATIONS } from "./cell_stream.ts";
 import { readJson } from "./paths.ts";
@@ -13,6 +15,8 @@ import { readJson } from "./paths.ts";
 // The forced-error cells (spec section 6; prompts/20 Step 4): one hand-built stream per row of the hypothesis matrix, one error, run through
 // A, B, C and each single-flag ablation of C. This module only runs a row through a configuration and names what happened; the expected
 // outcome of every cell is typed by hand in cell_tables.ts, from the matrix, the flag table and the rule catalogue, never from this output.
+// The classification of a cell (Cell, cellOf, inKey, ruleFlags) moved to the lab folder in S3e (engine/src/experiments/assembly/lab/outcome.ts, where the reveal of the challenge uses it);
+// it is re-exported here, so the rows and the tables are unchanged and stay the oracle.
 
 const preset = (name: string): Architecture => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
 const C = preset("c_context");
@@ -26,8 +30,8 @@ export const CONFIGS: { name: string; config: Architecture }[] = [
 ];
 export const CONFIG_NAMES = CONFIGS.map((c) => c.name);
 
-/** What happened to the error in one configuration: it never arose, a named piece of evidence shows it in the record, or nothing does. */
-export type Cell = "prevented" | "invisible" | `detected:${string}`;
+export { inKey, ruleFlags };
+export type { Cell };
 
 export interface CellRow {
   events: ObservableEvent[];
@@ -60,17 +64,7 @@ export const run = (row: CellRow, config: Architecture, opts: { qualifications?:
 
 export const classify = (row: CellRow, config: Architecture): Cell => {
   const { out, ds } = run(row, config);
-  if (!row.realised(out, ds)) return "prevented";
-  const evidence = row.evidence(ds);
-  return evidence.length === 0 ? "invisible" : `detected:${evidence.join("+")}`;
+  return cellOf(row.realised(out, ds), () => row.evidence(ds));
 };
 
 export const cellsOf = (row: CellRow): Cell[] => CONFIGS.map((c) => classify(row, c.config));
-
-/** Did the injector put an error of this type on this sample into the key? */
-export const inKey = (out: InjectResult, type: string, sample: string): boolean => out.materialised.some((m) => m.type === type && m.sample_id === sample);
-
-/** The rule ids (sorted, once each) of the findings that are not no-ops, of the given rules, on any of the given requests. */
-export const ruleFlags = (ds: RecordedDataset, rules: readonly string[], requests: readonly string[]): string[] => [
-  ...new Set(ds.validation_finding.filter((f) => f.action !== "no-op" && rules.includes(f.rule) && requests.includes(requestOfTarget(ds, f.target) ?? "")).map((f) => f.rule)),
-].sort();

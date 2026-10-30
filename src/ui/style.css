@@ -178,3 +178,60 @@ progress { width: min(100%, 18rem); height: 14px; accent-color: var(--accent); }
 .check-option input, .field input[type="checkbox"] { width: 20px; height: 20px; }
 
 select { max-width: 100%; }
+
+/* Lineage and Challenge (S3e). Shape and text carry the verdict, colour only repeats it (ADR-0011): a solid outline is correct, a heavy outline with a cross is wrong, a dashed hollow outline
+   is a field the record does not store. Each column is its own SVG that scales to the width of its card, so nothing scrolls sideways at the narrow viewport. */
+.pick-set { border: 1px solid var(--border); border-radius: 8px; margin: 12px 0; padding: 8px 12px; min-width: 0; }
+.pick-set legend { font-weight: 700; padding: 0 6px; }
+.pick-note { color: var(--muted); font-size: 0.9rem; margin: 2px 0 8px 28px; }
+.shown-list { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.shown-head { margin: 4px 0 0; font-weight: 600; }
+.check-option.disabled { color: var(--muted); }
+.disabled-reason { font-size: 0.85rem; color: var(--muted); }
+#lineage-seed, #challenge-seed { width: 10rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+#lineage-sample { width: min(100%, 20rem); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.lg-legend { color: var(--muted); font-size: 0.9rem; }
+.lg-truth { border: 1px solid var(--border); border-radius: 8px; padding: 4px 12px; margin: 12px 0; background: var(--bg); }
+.lg-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 16px; align-items: start; margin: 12px 0; }
+.lg-column { border: 1px solid var(--border); border-radius: 8px; padding: 4px 12px 12px; background: var(--bg); min-width: 0; }
+.lg-svg { width: 100%; max-width: 30rem; height: auto; display: block; background: var(--bg); margin: 8px 0; }
+.lg-svg text { font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: var(--fg); }
+.lg-svg .lg-head { font-weight: 700; }
+.lg-svg .lg-muted, .lg-svg .lg-null { fill: var(--muted); }
+.lg-svg .lg-null { font-style: italic; }
+.lg-box { fill: var(--surface); stroke: var(--muted); stroke-width: 1.25; }
+.lg-node-sample .lg-box { stroke-width: 2.25; }
+.lg-edge { fill: none; stroke: var(--muted); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.lg-edge-dashed { stroke-dasharray: 5 4; }
+.lg-arrow { fill: var(--muted); }
+.lg-stub-line { stroke: var(--muted); stroke-width: 1.5; fill: none; vector-effect: non-scaling-stroke; }
+.lg-stub-gap { fill: var(--bg); stroke: var(--muted); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.lg-answer-box { fill: var(--bg); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.v-correct .lg-answer-box { stroke: var(--ok-fg); }
+.v-wrong .lg-answer-box { stroke: var(--fail-fg); stroke-width: 4; }
+.v-unanswerable .lg-answer-box { fill: none; stroke: var(--warn-fg); stroke-dasharray: 6 4; }
+.lg-cross { stroke: var(--fail-fg); stroke-width: 3; fill: none; vector-effect: non-scaling-stroke; }
+.lg-svg .lg-verdict-correct { fill: var(--ok-fg); font-weight: 700; }
+.lg-svg .lg-verdict-wrong { fill: var(--fail-fg); font-weight: 700; }
+.lg-svg .lg-verdict-unanswerable { fill: var(--warn-fg); font-style: italic; }
+.lg-errors { margin: 4px 0; padding-left: 20px; }
+.lg-detail { color: var(--muted); }
+
+.announced { font-weight: 700; }
+.rt { margin: 16px 0; }
+.rt h4 { margin: 8px 0 4px; }
+.rt-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; }
+.rt-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+.rt-table th, .rt-table td { text-align: left; padding: 3px 8px; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
+.rt-table thead th { background: var(--surface); }
+.rt-actions { white-space: nowrap; }
+.rt-actions button, .rt-more { min-height: 30px; padding: 2px 10px; font-size: 0.85rem; }
+.rt-count { color: var(--muted); font-size: 0.9rem; }
+.dec-read { color: var(--muted); }
+.reveal { border-top: 3px solid var(--border); margin-top: 24px; }
+.rv-archs, .rv-rows { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 8px; margin: 8px 0; }
+.rv-arch, .rv-rows li { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: var(--bg); min-width: 0; }
+.rv-arch h4, .rv-rows h4 { margin: 0 0 4px; }
+.rv-arch[data-outcome="invisible"] { border-style: dashed; }
+.rv-arch[data-outcome="detected"] { border-width: 2px; }
+.rv-reading { color: var(--muted); margin: 4px 0; }

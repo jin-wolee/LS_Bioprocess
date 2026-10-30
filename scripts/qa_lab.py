@@ -5,7 +5,7 @@
 
 Runs `npm run build:lab` first unless --no-build, serves --root over http.server on a free localhost port, drives headless Chromium (Playwright sync API) for every check and, for
 `engines`, headless Firefox and WebKit as well (the standing test of ADR-0019's claim: the check reads `identical` in each). Every browser is closed. Writes results.json,
-summary.md and shots/*.png to --out. This file is the CLI, the build and the report; the checks live in qa_lab_checks.py (page as a whole), qa_lab_sweeps.py (screens by language and theme), qa_lab_flags.py and qa_lab_results.py,
+summary.md and shots/*.png to --out. This file is the CLI, the build and the report; the checks live in qa_lab_checks.py (page as a whole), qa_lab_sweeps.py (screens by language and theme), qa_lab_flags.py, qa_lab_results.py and qa_lab_one_seed.py (lineage and challenge),
 the browser plumbing in qa_lab_browser.py and the unit-tested helpers in qa_lab_helpers.py.
 """
 from __future__ import annotations
@@ -21,6 +21,7 @@ from qa_checks import Result
 from qa_infographic import guarded, serve
 from qa_lab_checks import check_check, check_engines, check_load, check_size, check_time
 from qa_lab_flags import check_flags
+from qa_lab_one_seed import check_challenge, check_lineage_sc3
 from qa_lab_results import check_results
 from qa_lab_sweeps import check_contrast, check_ko, check_matrix, check_numbers
 
@@ -65,6 +66,8 @@ def main(argv=None) -> int:
                        guarded("check", lambda: check_check(browser, url, args.root)),
                        guarded("engines", lambda: check_engines(pw, url)),
                        guarded("results", lambda: check_results(browser, url)),
+                       guarded("lineage_sc3", lambda: check_lineage_sc3(browser, url)),
+                       guarded("challenge", lambda: check_challenge(browser, url)),
                        guarded("numbers", lambda: check_numbers(browser, url)),
                        guarded("flags", lambda: check_flags(browser, url)),
                        guarded("ko", lambda: check_ko(browser, url)),

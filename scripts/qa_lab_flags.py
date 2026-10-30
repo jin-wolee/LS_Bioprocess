@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from qa_checks import Result
-from qa_lab_browser import go, open_lab, run_small, wait_final
+from qa_lab_browser import go, open_lab, run_small, show_lineage, wait_final
 from qa_lab_helpers import flag_list_problems, missing_flag_lists
 
 
@@ -34,10 +34,11 @@ NINTH_FLAG_JS = """(() => {
 
 
 def flag_lists(page) -> dict:
-    """Every list of flags on Setup, Results (after the small run) and Notes, with the flags `ready` gave the page."""
+    """Every list of flags on Setup, Results (after the small run), Lineage (after a view), Challenge (its start panel: the records to search) and Notes, with the flags `ready` gave the page."""
     run_small(page)
+    show_lineage(page)
     seen = {"expected": [], "lists": []}
-    for screen in ("setup", "results", "notes"):
+    for screen in ("setup", "results", "lineage", "challenge", "notes"):
         go(page, screen)
         got = page.evaluate(COLLECT_FLAGS_JS)
         seen["expected"] = got["expected"]

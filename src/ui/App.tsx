@@ -1,13 +1,19 @@
-import { useEffect, useLayoutEffect, useReducer, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useReducer, useRef, useState } from "preact/hooks";
 import { saveLang, savedLang, text } from "../i18n/index.ts";
 import type { Lang } from "../i18n/index.ts";
 import type { Request, Response } from "../protocol.ts";
+import { Challenge } from "./Challenge.tsx";
+import { challengeStart, defaultChallengeForm } from "./challenge_form.ts";
+import type { ChallengeForm } from "./challenge_form.ts";
 import { defaultForm, fromQuery, specOf } from "./form.ts";
 import type { Form } from "./form.ts";
 import { Home } from "./Home.tsx";
+import { Lineage } from "./Lineage.tsx";
+import { defaultLineageForm, lineageRequest } from "./lineage_form.ts";
+import type { LineageForm } from "./lineage_form.ts";
 import { Notes } from "./Notes.tsx";
 import { Results } from "./Results.tsx";
-import { hashOf, parseHash } from "./route.ts";
+import { SCREENS, hashOf, parseHash } from "./route.ts";
 import type { Route, Screen } from "./route.ts";
 import { Setup } from "./Setup.tsx";
 import { HOME_ID, initial, reduce } from "./state.ts";
@@ -18,7 +24,7 @@ type Theme = "auto" | "light" | "dark";
 /** The Home form of the run request (lab_ui.md section 4): one seed, no architectures. Seed 1 is the first seed of the goldens (spec section 7); the page draws no random number. */
 const HOME_REQUEST: Request = { type: "run", id: HOME_ID, spec: { schema_version: "1", scenario: "default", settings: {}, architectures: [], seeds: [1] } };
 
-const NAV: Screen[] = ["home", "setup", "results", "notes"];
+const NAV: readonly Screen[] = SCREENS;
 
 /** The address of the page without its hash: the link of a setup is this and `#/setup?...`. */
 const pageAddress = (): string => {
@@ -36,8 +42,14 @@ export function App({ worker }: { worker: Worker }) {
   const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash));
   const [form, setForm] = useState<Form | null>(null);
   const [linkEngine, setLinkEngine] = useState<string | null>(null);
-  const [nextId, setNextId] = useState(HOME_ID + 1);
+  const ids = useRef(HOME_ID + 1);
+  const take = (): number => ids.current++;
+  // the forms of the one-seed screens start from the defaults of the build and keep what the reader typed while they visit another screen
+  const [lineageForm, setLineageForm] = useState<LineageForm | null>(null);
+  const [challengeForm, setChallengeForm] = useState<ChallengeForm | null>(null);
   const ready = state.ready;
+  const lineageNow = lineageForm ?? (ready ? defaultLineageForm(ready) : null);
+  const challengeNow = challengeForm ?? (ready ? defaultChallengeForm(ready) : null);
 
   // a layout effect runs inside the render task, before the Worker's first message can be handled
   useLayoutEffect(() => {
@@ -86,13 +98,47 @@ export function App({ worker }: { worker: Worker }) {
   const run = (f: Form) => {
     const out = ready ? specOf(f, ready) : null;
     if (!out?.ok) return;
-    dispatch({ type: "run_started", id: nextId });
-    setNextId(nextId + 1);
-    worker.postMessage({ type: "run", id: nextId, spec: out.spec } satisfies Request);
+    const id = take();
+    dispatch({ type: "run_started", id });
+    worker.postMessage({ type: "run", id, spec: out.spec } satisfies Request);
     window.location.hash = hashOf("results");
   };
   const cancel = () => {
     if (state.running !== null) worker.postMessage({ type: "cancel", id: state.running } satisfies Request);
+  };
+
+  const showLineage = (f: LineageForm) => {
+    const id = take();
+    const request = lineageRequest(f, id);
+    if (request?.type !== "lineage") return;
+    dispatch({ type: "lineage_started", id, asked: { scenario: f.scenario, seed: request.seed, architectures: request.spec.architectures } });
+    worker.postMessage(request);
+  };
+  const startChallenge = (f: ChallengeForm) => {
+    const id = take();
+    const request = ready ? challengeStart(f, ready, id) : null;
+    if (request?.type !== "challenge_start") return;
+    dispatch({ type: "challenge_starting", id, meta: { variant: f.variant, scenario: f.scenario, seed: request.seed, shown: f.shown } });
+    worker.postMessage(request);
+  };
+  const active = state.challenge.active;
+  const openSample = (sample_id: string) => {
+    if (!active) return;
+    const id = take();
+    dispatch({ type: "challenge_busy", busy: { id, kind: "open", sample_id } });
+    worker.postMessage({ type: "challenge_open", id, challenge: active.challenge, sample_id } satisfies Request);
+  };
+  const guess = (target: { sample_id: string } | { decision_id: string }) => {
+    if (!active) return;
+    const id = take();
+    dispatch({ type: "challenge_busy", busy: { id, kind: "guess" } });
+    worker.postMessage({ type: "challenge_guess", id, challenge: active.challenge, target } satisfies Request);
+  };
+  const giveUp = () => {
+    if (!active) return;
+    const id = take();
+    dispatch({ type: "challenge_busy", busy: { id, kind: "giveup" } });
+    worker.postMessage({ type: "challenge_giveup", id, challenge: active.challenge } satisfies Request);
   };
 
   const other: Lang = lang === "en" ? "ko" : "en";
@@ -130,6 +176,14 @@ export function App({ worker }: { worker: Worker }) {
             <T as="p" k="app.loading" />
           ))}
         {route.screen === "results" && (ready ? <Results state={state} ready={ready} onCancel={cancel} /> : <T as="p" k="app.loading" />)}
+        {route.screen === "lineage" &&
+          (ready && lineageNow ? <Lineage ready={ready} state={state} form={lineageNow} setForm={setLineageForm} onShow={showLineage} /> : <T as="p" k="app.loading" />)}
+        {route.screen === "challenge" &&
+          (ready && challengeNow ? (
+            <Challenge ready={ready} state={state} form={challengeNow} setForm={setChallengeForm} actions={{ onStart: startChallenge, onOpen: openSample, onGuess: guess, onGiveUp: giveUp, onNew: () => dispatch({ type: "challenge_reset" }) }} />
+          ) : (
+            <T as="p" k="app.loading" />
+          ))}
         {route.screen === "notes" && <Notes ready={ready} />}
       </main>
       <footer class="foot">

@@ -98,7 +98,7 @@ describe("the texts of the lab never order the architectures (spec section 8, an
 
   it("Given the texts about a score Then they say there is none (a negation), never that there is one", () => {
     const about = Object.entries(en).filter(([, v]) => /\bscore\b/i.test(v));
-    expect(about.map(([k]) => k).sort()).toEqual(["notes.scope.score", "results.lead"]);
+    expect(about.map(([k]) => k).sort()).toEqual(["notes.scope.score", "results.lead", "reveal.score.none", "reveal.score.note"]); // the reveal of the challenge says there is no running score
     for (const [key, value] of about) expect(value, key).toMatch(/\b(no|not)\b/i);
   });
 });

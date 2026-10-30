@@ -177,12 +177,12 @@ def test_flag_list_problems_fails_when_there_is_no_list_at_all():
 
 
 def test_the_lists_the_flags_check_expects_are_the_ones_that_exist_now():
-    assert qc.EXPECTED_FLAG_LISTS == ["setup-matrix", "setup-ablation", "results-legend", "notes-table"]
+    assert qc.EXPECTED_FLAG_LISTS == ["setup-matrix", "setup-ablation", "results-legend", "notes-table", "lineage-column", "lineage-ablation", "challenge-ablations"]
 
 
 def test_missing_flag_lists_reports_an_expected_list_that_is_not_on_the_page():
     lists = [{"name": "setup-matrix", "flags": FLAGS}, {"name": "notes-table", "flags": FLAGS}]
-    assert qc.missing_flag_lists(lists) == ["setup-ablation", "results-legend"]
+    assert qc.missing_flag_lists(lists) == ["setup-ablation", "results-legend", "lineage-column", "lineage-ablation", "challenge-ablations"]
 
 
 # ---------- the label-error sentence (lab_ui.md section 10) ----------
@@ -238,8 +238,8 @@ def test_the_small_run_is_two_seeds_of_the_list_with_architectures_a_and_c():
     assert qc.SMALL_RUN == {"seeds": 2, "architectures": ["a_manual", "c_context"]}
 
 
-def test_screens_are_the_four_that_exist_now():
-    assert qc.SCREENS == ["home", "setup", "results", "notes"]
+def test_screens_are_the_six_that_exist_now():
+    assert qc.SCREENS == ["home", "setup", "results", "lineage", "challenge", "notes"]
 
 
 # ---------- a Ref inside running text stays on the line of its sentence (lab_ui.md section 6) ----------
@@ -268,3 +268,104 @@ def test_refs_off_their_line_names_both_sides_of_a_block_level_ref():
     # the defect of the S3c review: the ref on a line of its own, the sentence in three lines
     problems = qc.refs_off_their_line([{**REF, "before": {"top": 70, "bottom": 90}, "after": {"top": 130, "bottom": 150}}])
     assert len(problems) == 2
+
+
+# ---------- the lineage and challenge checks (lab_ui.md sections 8, 9 and 12) ----------
+FIXTURE = {  # two of the three architectures of the single-sample trace, the answers typed as the read-only fixture holds them
+    "a_manual": {"answers": {"unit": {"answer": "U03", "verdict": "correct"}, "sampled_at": {"answer": None, "verdict": "unanswerable"},
+                             "process_context": {"answer": {"batch_phase": "after_shift", "feed_epoch": 4}, "verdict": "wrong"}}},
+    "c_context": {"answers": {"unit": {"answer": "U03", "verdict": "correct"}, "sampled_at": {"answer": 899841, "verdict": "correct"},
+                              "process_context": {"answer": {"batch_phase": "after_shift", "feed_epoch": 3}, "verdict": "correct"}}},
+}
+
+
+def page_answers(changes=None):
+    """The answers as the page marks them: the answer as JSON text, one element per architecture and question."""
+    rows = []
+    for arch, body in FIXTURE.items():
+        for question, a in body["answers"].items():
+            rows.append({"architecture": arch, "question": question, "verdict": a["verdict"], "answer": json.dumps(a["answer"])})
+    for r in rows:
+        r.update((changes or {}).get((r["architecture"], r["question"]), {}))
+    return rows
+
+
+def test_lineage_answer_problems_accepts_the_answers_of_the_fixture():
+    assert qc.lineage_answer_problems(page_answers(), FIXTURE) == []
+
+
+def test_lineage_answer_problems_names_a_verdict_that_differs():
+    got = qc.lineage_answer_problems(page_answers({("c_context", "sampled_at"): {"verdict": "wrong"}}), FIXTURE)
+    assert got == ["c_context sampled_at: verdict wrong, the fixture says correct"]
+
+
+def test_lineage_answer_problems_names_an_answer_that_differs_whatever_the_key_order_of_the_json():
+    same = {("a_manual", "process_context"): {"answer": '{"feed_epoch": 4, "batch_phase": "after_shift"}'}}
+    assert qc.lineage_answer_problems(page_answers(same), FIXTURE) == []
+    other = {("a_manual", "process_context"): {"answer": '{"feed_epoch": 3, "batch_phase": "after_shift"}'}}
+    assert qc.lineage_answer_problems(page_answers(other), FIXTURE) == ['a_manual process_context: answer {"feed_epoch": 3, "batch_phase": "after_shift"}, the fixture says {"batch_phase": "after_shift", "feed_epoch": 4}']
+
+
+def test_lineage_answer_problems_names_a_missing_column_and_a_missing_question():
+    rows = [r for r in page_answers() if not (r["architecture"] == "c_context" and r["question"] == "unit")]
+    assert qc.lineage_answer_problems(rows, FIXTURE) == ["c_context unit: not on the page"]
+    assert qc.lineage_answer_problems([], FIXTURE)[0] == "a_manual unit: not on the page"
+
+
+def test_the_hand_typed_cells_are_those_of_the_cell_tables_for_a_b_and_c():
+    # engine/tests/support/cell_tables.ts, the first three columns: A, B, C
+    assert qc.HAND_CELLS == {"label_error": ["invisible", "prevented", "prevented"], "unit_rekey": ["invisible", "invisible", "prevented"], "duplicate_replay": ["invisible", "prevented", "prevented"]}
+
+
+def reveal(kind, outcomes, evidence=None):
+    names = ["a_manual", "b_lims_lite", "c_context"]
+    return {"planted": {"type": kind}, "per_architecture": [{"architecture": n, "outcome": o, "evidence": (evidence or {}).get(n, [])} for n, o in zip(names, outcomes)]}
+
+
+def test_outcome_problems_accepts_the_typed_cells():
+    assert qc.outcome_problems(reveal("label_error", ["invisible", "prevented", "prevented"])) == []
+    assert qc.outcome_problems(reveal("unit_rekey", ["invisible", "invisible", "prevented"])) == []
+
+
+def test_outcome_problems_names_an_architecture_whose_outcome_differs_from_the_cell():
+    got = qc.outcome_problems(reveal("duplicate_replay", ["invisible", "invisible", "prevented"]))
+    assert got == ["duplicate_replay in b_lims_lite: invisible, the typed cell says prevented"]
+
+
+def test_outcome_problems_names_evidence_where_the_cell_has_none_and_a_type_that_has_no_cell():
+    got = qc.outcome_problems(reveal("label_error", ["detected", "prevented", "prevented"], {"a_manual": ["VR-009"]}))
+    assert got == ["label_error in a_manual: detected (VR-009), the typed cell says invisible"]
+    assert qc.outcome_problems(reveal("clock_offset", ["invisible"] * 3)) == ["clock_offset: no typed cell for this type"]
+
+
+def test_the_messages_the_page_may_receive_before_the_guess_have_a_closed_list_of_types():
+    assert qc.ALLOWED_BEFORE_GUESS == ["ready", "check", "progress", "result", "error", "challenge_ready", "sample_record", "lineage"]
+
+
+def test_message_problems_accepts_a_start_that_carries_the_record_and_nothing_about_the_plant():
+    ready = {"type": "challenge_ready", "id": 5, "challenge": "challenge-1", "announced_type": "label_error", "inputs": [], "record": {"samples": [{"sample_id": "S9"}]}}
+    assert qc.message_problems([{"type": "ready"}, {"type": "progress", "id": 5, "done": 1, "total": 2}, ready], ["S9"]) == []
+
+
+def test_message_problems_names_a_type_outside_the_list_a_reveal_key_and_a_planted_key_at_any_depth():
+    reveal_early = {"type": "challenge_reveal", "id": 6, "reveal": {"planted": {"type": "label_error"}}}
+    got = qc.message_problems([reveal_early], [])
+    assert "message type challenge_reveal is not in the list the page may receive before the guess" in got
+    assert "key reveal in a challenge_reveal message" in got and "key planted in a challenge_reveal message" in got
+
+
+def test_message_problems_names_the_planted_id_wherever_it_is_outside_the_record_tables():
+    leaky = {"type": "challenge_ready", "id": 5, "challenge": "challenge-1", "announced_type": "S9 mixed up", "record": {"samples": [{"sample_id": "S9"}]}}
+    assert qc.message_problems([leaky], ["S9"]) == ["the planted id S9 is in a challenge_ready message outside its record"]
+    assert qc.message_problems([{"type": "progress", "id": 5, "done": 1, "total": 2, "note": "S9"}], ["S9"]) == ["the planted id S9 is in a progress message outside its record"]
+
+
+def test_message_problems_lets_a_drill_down_hold_the_id_it_is_about():
+    assert qc.message_problems([{"type": "sample_record", "id": 7, "sample": {"nodes": [{"key": "S9"}]}}], ["S9"]) == []
+
+
+def test_row_shape_problems_names_a_table_whose_rows_do_not_all_have_the_same_keys():
+    ok = {"samples": [{"a": 1, "b": 2}, {"b": 3, "a": 4}], "findings": []}
+    assert qc.row_shape_problems(ok) == []
+    marked = {"samples": [{"a": 1, "b": 2}, {"a": 3, "b": 4, "planted": True}]}
+    assert qc.row_shape_problems(marked) == ["the rows of samples do not all have the same keys"]

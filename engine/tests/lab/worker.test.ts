@@ -53,7 +53,7 @@ describe("start-up", () => {
     expect(ready.scenarios[0]?.settings[0]).toEqual({ name: "reactor_count", value: 24, unit: "reactors", ref: "A001" });
   });
 
-  it("Given the ready message Then it is the full payload of the design: minimum seeds, seed list, presets with the ablations of C, evaluation inputs, profile catalogue, no challenge variant", async () => {
+  it("Given the ready message Then it is the full payload of the design: minimum seeds, seed list, presets with the ablations of C, evaluation inputs, profile catalogue, the sample challenge variant", async () => {
     const { posted, worker } = setup();
     await worker.start();
     const ready = posted[0];
@@ -63,7 +63,7 @@ describe("start-up", () => {
     expect(ready.presets).toHaveLength(3 + FLAGS.length);
     expect(ready.evaluation.map((e) => e.ref)).toEqual(["A097", "A098", "A046", "A103"]);
     expect(ready.profiles).toHaveLength(8);
-    expect(ready.challenge_variants).toEqual([]);
+    expect(ready.challenge_variants).toEqual(["sample"]);
   });
 
   it("Given the real reference Then the check detail holds three equal truth hashes, equal repeats and cells, and five timed runs", async () => {

@@ -1,7 +1,7 @@
 // Hash routes (docs/design/lab_ui.md section 2): the path picks the screen and the query carries the shareable state. A few lines, no router. Lineage, Challenge and Break-out join the
-// list when their steps land.
+// list when their steps land (Lineage and Challenge landed in S3e).
 
-export const SCREENS = ["home", "setup", "results", "notes"] as const;
+export const SCREENS = ["home", "setup", "results", "lineage", "challenge", "notes"] as const;
 export type Screen = (typeof SCREENS)[number];
 
 export interface Route {

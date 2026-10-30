@@ -1,5 +1,8 @@
 import { checkError, makeDeps, runCheck } from "../../engine/src/experiments/assembly/lab/check.ts";
+import { createChallenges } from "../../engine/src/experiments/assembly/lab/challenges.ts";
+import type { Refusal } from "../../engine/src/experiments/assembly/lab/challenges.ts";
 import { homeRun } from "../../engine/src/experiments/assembly/lab/home.ts";
+import { answerLineage } from "../../engine/src/experiments/assembly/lab/lineage_request.ts";
 import { readyOf } from "../../engine/src/experiments/assembly/lab/ready.ts";
 import { runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
@@ -11,6 +14,9 @@ import { LAB_DATA } from "./data.ts";
 // The Worker entry (docs/design/lab_ui.md section 4): the only file of src/ with value imports from engine/, and only from engine/src/experiments/assembly/lab/. The page sends a request of plain
 // data and gets plain data back; there is no message that asks for a truth log, an event stream, the answer key or the raw quirk key. Both sides are one build, so the page trusts the Worker's
 // messages; the Worker does not trust a request, because a shareable link is user input (invalid_spec).
+//
+// S3e adds `lineage` and the four `challenge_*` requests. The challenge lives in the Worker under its id (engine/src/experiments/assembly/lab/challenges.ts): the plant leaves it only inside
+// `challenge_reveal`, and `lineage` is refused with `locked` for a run that is an unrevealed challenge (rules 2 and 3 of section 4).
 //
 // createWorker holds the whole protocol and touches no global, so the unit tests drive it directly. The entry at the bottom wires it to postMessage when this file runs as a Worker.
 
@@ -26,6 +32,7 @@ const PENDING: CheckDetail = { runs_ms: [], truth: [], repeats_equal: false, cel
 
 export const createWorker = (post: (message: Response) => void, env: WorkerEnv) => {
   const ready = readyOf(env.data);
+  const challenges = createChallenges(env.data);
   let check: { state: CheckState; detail: CheckDetail } = { state: "pending", detail: PENDING };
   /** The runs that are queued or running, and those a `cancel` named. A run is read for its flag between seeds. */
   const open = new Set<number>();
@@ -95,6 +102,34 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     return mine;
   };
 
+  const refuse = (id: number, r: Refusal): void => fail(id, r.code, r.message);
+
+  /** The one-seed requests (lineage, challenge_*): answered at once, in the order they arrive; an engine exception arrives as `engine_error` with its message. */
+  const oneSeed = (id: number, request: Record<string, unknown>): void => {
+    try {
+      switch (request.type) {
+        case "lineage": {
+          const out = answerLineage(env.data, challenges, { spec: request.spec, seed: request.seed, pick: request.pick });
+          return out.ok ? post({ type: "lineage", id, view: out.view, sample_ids: out.sample_ids }) : refuse(id, out);
+        }
+        case "challenge_start": {
+          const out = challenges.start({ variant: request.variant, spec: request.spec, seed: request.seed, shown: request.shown }, (done, total) => post({ type: "progress", id, done, total }));
+          return out.ok ? post({ type: "challenge_ready", id, challenge: out.challenge, announced_type: out.announced_type, record: out.record, inputs: out.inputs }) : refuse(id, out);
+        }
+        case "challenge_open": {
+          const out = challenges.drillDown(request.challenge, request.sample_id);
+          return "ok" in out ? refuse(id, out) : post({ type: "sample_record", id, sample: out });
+        }
+        default: {
+          const out = challenges.finish(request.challenge, request.type === "challenge_giveup" ? null : request.target);
+          return "ok" in out ? refuse(id, out) : post({ type: "challenge_reveal", id, reveal: out });
+        }
+      }
+    } catch (e) {
+      fail(id, "engine_error", e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const onMessage = (message: unknown): Promise<void> | void => {
     if (typeof message !== "object" || message === null || Array.isArray(message)) return fail(null, "invalid_spec", "a request must be an object with a type");
     const { type, id, spec } = message as { type?: unknown; id?: unknown; spec?: unknown };
@@ -107,6 +142,10 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       return;
     }
     if (type === "cancel") return fail(null, "invalid_spec", "a cancel request needs a numeric id");
+    if (type === "lineage" || type === "challenge_start" || type === "challenge_open" || type === "challenge_guess" || type === "challenge_giveup") {
+      if (requestId === null) return fail(null, "invalid_spec", `a ${type} request needs a numeric id`);
+      return oneSeed(requestId, message as Record<string, unknown>);
+    }
     return fail(requestId, "invalid_spec", `unknown request type ${JSON.stringify(type)}`);
   };
 

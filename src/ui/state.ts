@@ -1,4 +1,8 @@
-import type { CheckDetail, CheckState, ErrorCode, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
+import type { CheckDetail, CheckState, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
+import { initialChallenge, initialLineage, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
+import type { ChallengeState, LineageState, OneSeedAction, Problem } from "./one_seed_state.ts";
+
+export type { Problem };
 
 // What the page knows: the messages of the Worker folded into one state (docs/design/lab_ui.md section 2: hooks and one reducer).
 
@@ -15,13 +19,6 @@ export interface ResultInfo {
   report?: NonNullable<Extract<Response, { type: "result" }>["report"]>;
   utilisation?: UtilisationView;
   footer: ResultFooter;
-}
-
-export interface Problem {
-  /** The request it answers; null for the Worker itself. */
-  id: number | null;
-  code: ErrorCode | "worker";
-  message: string;
 }
 
 export interface Progress {
@@ -41,9 +38,12 @@ export interface State {
   /** The id of the run the reader started and that has not ended. */
   running: number | null;
   problem: Problem | null;
+  /** S3e: the lineage view of the last request, and the challenge in progress (one_seed_state.ts). */
+  lineage: LineageState;
+  challenge: ChallengeState;
 }
 
-export type Action = Response | { type: "worker_error"; message: string } | { type: "run_started"; id: number };
+export type Action = Response | OneSeedAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number };
 
 export const initial: State = {
   ready: null,
@@ -53,14 +53,30 @@ export const initial: State = {
   progress: null,
   running: null,
   problem: null,
+  lineage: initialLineage,
+  challenge: initialChallenge,
 };
 
 /** The run in flight is over when a message about it ends it. */
 const over = (state: State, id: number | null): Pick<State, "running" | "progress"> =>
   id !== null && id === state.running ? { running: null, progress: null } : { running: state.running, progress: state.progress };
 
+/** A message about a request of the one-seed screens goes to their state, not to the run in flight. */
+const forOneSeed = (state: State, id: number | null): boolean =>
+  id !== null && (id === state.lineage.running || id === state.challenge.starting?.id || id === state.challenge.busy?.id);
+
 export const reduce = (state: State, action: Action): State => {
+  const withOneSeed = (next: State): State => ({ ...next, lineage: reduceLineage(state.lineage, action as Response | OneSeedAction), challenge: reduceChallenge(state.challenge, action as Response | OneSeedAction) });
   switch (action.type) {
+    case "lineage_started":
+    case "challenge_starting":
+    case "challenge_busy":
+    case "challenge_reset":
+    case "lineage":
+    case "challenge_ready":
+    case "sample_record":
+    case "challenge_reveal":
+      return withOneSeed(state);
     case "ready": {
       const { type, ...ready } = action;
       return type === "ready" ? { ...state, ready } : state;
@@ -70,12 +86,13 @@ export const reduce = (state: State, action: Action): State => {
     case "run_started":
       return { ...state, results: null, running: action.id, progress: null, problem: null };
     case "progress":
-      return action.id === state.running ? { ...state, progress: { id: action.id, done: action.done, total: action.total } } : state;
+      return action.id === state.running ? { ...state, progress: { id: action.id, done: action.done, total: action.total } } : withOneSeed(state);
     case "result": {
       const info: ResultInfo = { id: action.id, ...(action.summary && { summary: action.summary }), ...(action.report && { report: action.report }), ...(action.utilisation && { utilisation: action.utilisation }), footer: action.footer };
       return { ...state, ...(action.report ? { results: info } : { home: info }), ...over(state, action.id), problem: null };
     }
     case "error":
+      if (forOneSeed(state, action.id)) return withOneSeed(state);
       return { ...state, problem: { id: action.id, code: action.code, message: action.message }, ...over(state, action.id) };
     case "worker_error":
       return { ...state, problem: { id: null, code: "worker", message: action.message }, running: null, progress: null };

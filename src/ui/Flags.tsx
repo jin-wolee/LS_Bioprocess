@@ -81,11 +81,11 @@ export function FlagMatrix({ ready }: { ready: ReadyInfo }) {
   );
 }
 
-/** The flags of one architecture (the legend of a Results block): every flag of `ready.flags`, on or off as the preset says. */
-export function FlagLegend({ ready, architecture }: { ready: ReadyInfo; architecture: string }) {
+/** The flags of one architecture (the legend of a Results block, the head of a Lineage column): every flag of `ready.flags`, on or off as the preset says. `list` names the list for the check `flags`. */
+export function FlagLegend({ ready, architecture, list = "results-legend" }: { ready: ReadyInfo; architecture: string; list?: string }) {
   const preset = ready.presets.find((p) => p.id === architecture);
   return (
-    <ul class="flag-legend" data-flag-list="results-legend" data-architecture={architecture}>
+    <ul class="flag-legend" data-flag-list={list} data-architecture={architecture}>
       {ready.flags.map((flag) => (
         <li key={flag} data-flag={flag}>
           <FlagName flag={flag} /> <FlagState on={preset?.flags[flag] === true} />

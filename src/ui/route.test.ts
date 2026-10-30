@@ -11,6 +11,8 @@ describe("parseHash", () => {
     ["#/home", "home", ""],
     ["#/setup", "setup", ""],
     ["#/results", "results", ""],
+    ["#/lineage", "lineage", ""],
+    ["#/challenge", "challenge", ""],
     ["#/notes", "notes", ""],
     ["#/setup?scenario=default&seeds=1,2", "setup", "scenario=default&seeds=1,2"],
     ["#/setup?", "setup", ""],
@@ -31,6 +33,10 @@ describe("hashOf", () => {
   it("Given a screen Then its hash, with the query when there is one", () => {
     expect(hashOf("results")).toBe("#/results");
     expect(hashOf("setup", "scenario=default")).toBe("#/setup?scenario=default");
+  });
+
+  it("Given the screens Then the order is the order of the navigation: the one-seed screens sit between Results and Notes", () => {
+    expect([...SCREENS]).toEqual(["home", "setup", "results", "lineage", "challenge", "notes"]);
   });
 
   it("Given every screen Then parsing its hash gives the screen back", () => {

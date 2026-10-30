@@ -61,5 +61,13 @@ export const READY: ReadyInfo = {
     { name: "staffed_window_h", value: 10, unit: "h", ref: "A098" },
     { name: "min_seeds", value: 20, unit: "seeds", ref: "A103" },
   ],
-  challenge_variants: [],
+  challenge_variants: ["sample", "decision"],
+  decision_seed_list: Array.from({ length: 30 }, (_, i) => 5000 + i * 11),
+  challenge_records: [
+    { id: "a_manual", sample: true, decision: true },
+    { id: "b_lims_lite", sample: true, decision: false },
+    { id: "c_context", sample: false, decision: false },
+    { id: "c_context_minus_system_issued_id", sample: true, decision: true },
+    { id: "c_context_minus_audit_trail", sample: false, decision: false },
+  ],
 };
