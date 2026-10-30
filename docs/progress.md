@@ -1322,3 +1322,16 @@ The new pattern run over live scratch output (a timed-out test, then a passing r
 - Left as a note: with `FORCE_COLOR` set the lines start with colour codes and the patterns miss them; the hook environment sets none.
 
 **Open (held by the orchestrator)**: unchanged from the S2f review; next, the S2 close.
+
+## 2026-10-30 — S2 close (orchestrator)
+
+**Verdict**: S2 PASS at df8e62d. Every blocking item of the gate in `prompts/20_S2_capture_metrics.md` ("Gate and report") holds, the S2-end adversary pass ran and its findings are fixed (S2f), and the held items below are the author's or the research role's, none blocking.
+- Gates at df8e62d, run by the orchestrator: `uv run pytest -q` 226 passed; `check_docs --all` 539 files, 0 failures; `check_all --manual` PASS (its `npm run check` holds every engine test: forced-error cells, the 2 x 2 time-flag fixture, evaluator, gaming guards, answer-key isolation, experiment 1 invariance, experiment 2 CRN and zero bias, dictionary, parser, trace, export, Gates 5 to 7).
+- Mutation spot checks of the gate, all run and recorded: a recorder reads a hidden field and `two_clocks` ignores its flag (S2a entry); the recall denominator over flagged samples and the coupling removed (S2b entry); the adapter ignores `ingest_idempotency`, the parser reads day-first against the entry, an emitter drops the banner, the transcription step runs on `adapter_ingest`, the recorder ignores the capture-path override (S2e1 entry).
+- Raw device layer (Steps 5 to 8 ran): the capture-path contrast is written (S2e1, S2e2, rerun after S2f: block 1 all 0 [0, 0], block 2 only C's availability -0.586 [-0.626, -0.541]); the Step 8 checklist with its evidence is in the S2e2 entry; the Step 7 parts blocked by ledger gaps are listed (L1 signals beyond A100, the OUT rule, alarm acknowledge and return-to-normal times).
+- The stochastic report is in the S2c2 entry. Non-blocking author path: `uv run pytest -m user_track` 1 passed, 75 skipped (the author's SQL files are not written yet).
+- Process: executors ran on Sonnet xhigh throughout S2; from 5192051 an Opus 5.5 executor takes the three cases in `prompts/README.md`.
+
+**Held for the author**: ADR-0016 (Proposed, the runtime flag); the review outcome of VR-005, VR-006, VR-013, VR-024, VR-025 and VR-026; how the page states that C without `system_issued_id` shows a label error as `duplicate_replay` false alarms (S2f review); the S4 redesign of the SC13 lactate consumer. **Held for the research role**: ledger rates for RQ4 and for entry errors and entry delay; the export schedule source (S003, S038); the Step 7 gaps above; a "results beyond the stability limit" metric; merging S127 and S128 with S030 and S029. **Parked**: provenance keyed by label on `adapter_ingest`; analyzer-parser VR-008b conflicts named through `ingest_conflict.request_id`; the S3 browser check of the miscompile (ADR-0016).
+
+**Next**: S3 (Lab UI). Its brief `prompts/30_*` is written at the start of that session, from this entry and the Proposed ADRs.
