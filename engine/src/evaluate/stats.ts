@@ -11,5 +11,5 @@ export const mean = (xs: readonly number[]): number | null => (xs.length === 0 ?
 /** Sample variance (n - 1); null below two values. */
 export const variance = (xs: readonly number[]): number | null => {
   const m = mean(xs);
-  return m === null || xs.length < 2 ? null : xs.reduce((a, x) => a + (x - m) ** 2, 0) / (xs.length - 1);
+  return m === null || xs.length < 2 ? null : xs.reduce((a, x) => a + (x - m) * (x - m), 0) / (xs.length - 1);
 };

@@ -5,6 +5,18 @@ const NODE_ONLY = [
   "node:*", "fs", "fs/*", "path", "os", "child_process", "crypto", "process", "buffer", "worker_threads", "url", "util", "stream", "zlib",
 ].map((name) => ({ name, message: "engine/src must run in a Web Worker: no Node-only imports (contract: Portability)." }));
 
+// 2026-10-30 S3m (ADR-0019): ECMAScript leaves these Math members and the exponent operator implementation-approximated, and the JavaScript engines
+// differ in the last digits, so a seed would give different bytes in Node and in a browser. engine/src uses its own port in engine/src/xmath.ts.
+const APPROXIMATED = [
+  "log", "log1p", "log2", "log10", "exp", "expm1", "pow", "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
+  "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "cbrt", "hypot",
+].map((property) => ({
+  object: "Math",
+  property,
+  message: `Math.${property} is implementation-approximated and differs between JavaScript engines (ADR-0019): use engine/src/xmath.ts, or add the function there.`,
+}));
+const POWER_MESSAGE = "The exponent operator is implementation-approximated and differs between JavaScript engines (ADR-0019): write x * x, or use engine/src/xmath.ts.";
+
 // 2026-10-29 S2 Step 0: import zones (spec section 3, rule 2; prompts/20 Step 0). A later config object replaces the options of
 // no-restricted-imports for the files it matches, so every zone repeats the Node-only ban through restrict().
 const NODE_PATTERN = { group: ["node:*"], message: "No Node-only imports in engine/src." };
@@ -64,10 +76,13 @@ export default tseslint.config(
         "error",
         { object: "Math", property: "random", message: "Seeded PRNG only (invariant 2): use the keyed streams of engine/src/rng.ts." },
         { object: "Date", property: "now", message: "No wall clock in the engine (invariant 2): time is an integer second of the scenario." },
+        ...APPROXIMATED,
       ],
       "no-restricted-syntax": [
         "error",
         { selector: "NewExpression[callee.name='Date']", message: "No wall clock in the engine (invariant 2): time is an integer second of the scenario." },
+        { selector: "BinaryExpression[operator='**']", message: POWER_MESSAGE },
+        { selector: "AssignmentExpression[operator='**=']", message: POWER_MESSAGE },
       ],
       "no-restricted-imports": ["error", { paths: NODE_ONLY, patterns: [{ group: ["node:*"], message: "No Node-only imports in engine/src." }] }],
       "no-restricted-globals": [

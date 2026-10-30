@@ -4,6 +4,7 @@ import { readAll } from "./profiles.ts";
 import type { Params } from "./profiles.ts";
 import type { Rng } from "./rng.ts";
 import { entityKey } from "./rng.ts";
+import { exp } from "./xmath.ts";
 
 // L1 online sensors (spec 2.1, A198, A199, A100). A series holds the true value and the process value (truth plus independent
 // normal noise) at a fixed cadence from inoculation to harvest, in typed arrays: about 1.4 million values for the default
@@ -48,7 +49,7 @@ export interface SensorReactor {
 export const buildSensors = (c: SensorConfig, r: SensorReactor, seed: number, rng: Rng): SensorSeries[] => {
   if (c.cadence_s % c.step_s !== 0) throw new Error("sensor cadence must be a whole multiple of the integration step (A100, A200)");
   const n = Math.floor((r.harvested_s - r.inoculated_s) / c.cadence_s) + 1;
-  const decay = Math.exp(-c.cadence_s / c.tempLag_s);
+  const decay = exp(-c.cadence_s / c.tempLag_s);
   const series = (signal: Signal): SensorSeries => ({ unit_id: r.unit_id, signal, t0_s: r.inoculated_s, cadence_s: c.cadence_s, n, pv: new Float64Array(n), truth: new Float64Array(n) });
   const draw = (signal: Signal) => rng.stream(entityKey(seed, r.unit_id, `sensor_${signal}`));
   const out: SensorSeries[] = [];

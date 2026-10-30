@@ -1,6 +1,7 @@
 import { uniformFloat64 } from "pure-rand/distribution/uniformFloat64";
 import { uniformInt } from "pure-rand/distribution/uniformInt";
 import { xoroshiro128plusFromState } from "pure-rand/generator/xoroshiro128plus";
+import { cos, log } from "./xmath.ts";
 
 // Keyed streams (prompts/10 Step 1, RNG row). One canonical key tuple everywhere:
 //   (run_seed, physical_sample_id, analyte, attempt, purpose)
@@ -94,8 +95,9 @@ export const createRng = (onKey?: (key: StreamKey) => void): Rng => ({
     return {
       float,
       int: (from, to) => uniformInt(gen, from, to),
-      gaussian: () => Math.sqrt(-2 * Math.log(1 - float())) * Math.cos(2 * Math.PI * float()),
-      exponential: (mean) => -mean * Math.log(1 - float()),
+      // log and cos from xmath.ts, not Math (ADR-0019): the same draw gives the same bytes in every JavaScript engine
+      gaussian: () => Math.sqrt(-2 * log(1 - float())) * cos(2 * Math.PI * float()),
+      exponential: (mean) => -mean * log(1 - float()),
     };
   },
 });

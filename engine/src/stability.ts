@@ -2,6 +2,7 @@ import type { Scenario } from "./generated/scenario.schema";
 import { wholeSeconds } from "./clock.ts";
 import type { Param } from "./generated/profile.schema";
 import { checkParams } from "./profiles.ts";
+import { exp } from "./xmath.ts";
 
 // Stability effects between sampled_at and run_started_at (spec 2.2): a held sample drifts while it waits. An effect is data in the
 // scenario (kind, analyte, container, parameters with refs); the engine applies the kind and reads no analyte or profile name.
@@ -56,7 +57,7 @@ export const stabilityConfig = (list: Scenario["stability"] | undefined): Stabil
 export const applyStability = (effects: readonly StabilityEffect[], analyte: string, container: "open" | "closed", value: number, hold_s: number): Stabilised => {
   const e = effects.find((x) => x.analyte === analyte && x.container === container);
   if (!e) return { value };
-  const delta = e.effect === "linear_rate" ? (e.rate_per_h as number) * (hold_s / 3600) : (e.offset as number) * (1 - Math.exp(-hold_s / (e.tau_s as number)));
+  const delta = e.effect === "linear_rate" ? (e.rate_per_h as number) * (hold_s / 3600) : (e.offset as number) * (1 - exp(-hold_s / (e.tau_s as number)));
   if (delta === 0) return { value };
   const out: Stabilised = { value: value + delta, kind: e.effect, delta };
   if (e.validTo_s !== undefined && hold_s > e.validTo_s) out.extrapolated = true;
