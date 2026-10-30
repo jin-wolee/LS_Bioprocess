@@ -5,8 +5,17 @@
 #              last green check (.claude/.last-check; this catches edits made through Bash).
 #              Exit 2 = Claude keeps going and sees stderr; exit 0 = allow stop.
 #   --manual   Ignore stdin, stop_hook_active and stored state: always run, print a summary, exit 0 (PASS) or 1 (FAIL).
+#   --lab      Also run the end-to-end checks of the lab page (scripts/qa_lab.py: builds the lab, then headless Chromium, Firefox and WebKit; about a minute). Never part of the
+#              Stop hook, which passes no flag; the S3 batches use `--manual --lab` (docs/design/lab_ui.md section 12).
 set -u
-MANUAL=0; [ "${1:-}" = "--manual" ] && MANUAL=1
+MANUAL=0; LAB=0
+for arg in "$@"; do
+  case "$arg" in
+    --manual) MANUAL=1 ;;
+    --lab) LAB=1 ;;
+    *) echo "check_all.sh: unknown flag $arg (flags: --manual, --lab)" >&2; exit 2 ;;
+  esac
+done
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "${CLAUDE_PROJECT_DIR:-.}")"
 cd "$ROOT" || exit 0
 
@@ -51,6 +60,9 @@ RANDOM_HITS="$(grep -rIl --include='*.ts' --include='*.js' 'Math\.random' engine
 if [ -n "$RANDOM_HITS" ]; then
   OUT="$OUT"$'\n'"FAIL  Math.random found in engine/src or src (use the seeded PRNG): $(printf '%s' "$RANDOM_HITS" | tr '\n' ' ')"; RC=1
 fi
+
+# The end-to-end checks of the lab page, last because they are the slowest; qa_lab.py prints one `FAIL  qa_lab <check>: ...` line per failed check, which the summary below keeps.
+if [ $LAB -eq 1 ]; then step qa_lab uv run --frozen --quiet python scripts/qa_lab.py; fi
 
 # The summary. Never cut: each step's "FAIL  <step> failed", the Math.random line and the count lines (Vitest's, eslint's when it counts errors), so a failed gate
 # always says which one. Cut after 40 lines, with a note of how many: the lines that name a failure. Vitest indents its own (" FAIL  <file> > <test>"); eslint prints

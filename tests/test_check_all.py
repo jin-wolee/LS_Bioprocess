@@ -398,3 +398,73 @@ def test_eslint_warnings_alone_add_nothing_to_the_summary(lab):
     for text in ("lint_warn_only", "no-console", "problem"):
         assert text not in r.stdout
     assert stop_hook(lab).returncode == 0
+
+
+# ---------- --lab: the end-to-end run of the lab page (docs/design/lab_ui.md section 12) ----------
+# The throwaway repo gets a stub in place of scripts/qa_lab.py that logs each run into the gitignored qa_out/, like the probe test above, and exits as told.
+QA_LAB_STUB = '''import sys
+from pathlib import Path
+
+Path("qa_out").mkdir(exist_ok=True)
+with Path("qa_out/qa-lab-ran.log").open("a") as f:
+    f.write("ran\\n")
+print("1 load  PASS  stub")
+if EXIT:
+    print("FAIL  qa_lab load: the stub fails on purpose")
+sys.exit(EXIT)
+'''
+
+
+def qa_lab_stub(lab, exit_code: int = 0) -> None:
+    lab.write("scripts/qa_lab.py", QA_LAB_STUB.replace("EXIT", str(exit_code)))
+
+
+def lab_runs(lab) -> int:
+    log = lab.root / "qa_out/qa-lab-ran.log"
+    return len(log.read_text().splitlines()) if log.exists() else 0
+
+
+def test_manual_does_not_run_the_lab_page_checks_without_the_flag(lab):
+    qa_lab_stub(lab)
+    assert check_all(lab, "--manual").returncode == 0
+    assert lab_runs(lab) == 0
+
+
+@pytest.mark.parametrize("flags", [("--manual", "--lab"), ("--lab", "--manual")])
+def test_manual_lab_runs_the_page_checks_once_after_the_other_steps_and_passes(lab, flags):
+    qa_lab_stub(lab)
+    r = check_all(lab, *flags)
+    assert r.returncode == 0, output(r)
+    assert "PASS" in r.stdout
+    assert lab_runs(lab) == 1
+    assert runs(lab) == 1  # pytest still ran as before
+
+
+def test_manual_lab_fails_when_the_page_checks_fail_and_the_summary_names_the_failing_check(lab):
+    qa_lab_stub(lab, 1)
+    r = check_all(lab, "--manual", "--lab")
+    assert r.returncode == 1, output(r)
+    lines = r.stdout.splitlines()
+    assert "FAIL  qa_lab failed (exit 1)" in lines, r.stdout
+    assert "FAIL  qa_lab load: the stub fails on purpose" in lines, r.stdout
+    assert "check_all --manual: FAIL" in lines
+
+
+def test_the_other_steps_still_fail_the_gate_with_the_lab_flag(lab):
+    qa_lab_stub(lab)
+    lab.write("notes.md", f"{BANNED}\n")
+    r = check_all(lab, "--manual", "--lab")
+    assert r.returncode == 1 and "notes.md" in r.stdout
+
+
+def test_the_stop_hook_never_runs_the_page_checks(lab):
+    qa_lab_stub(lab, 1)
+    assert stop_hook(lab).returncode == 0
+    assert lab_runs(lab) == 0
+
+
+def test_an_unknown_flag_is_refused_instead_of_silently_skipping_a_check(lab):
+    r = check_all(lab, "--manual", "--lap")
+    assert r.returncode == 2
+    assert "--lap" in output(r) and "--lab" in output(r)
+    assert runs(lab) == 0

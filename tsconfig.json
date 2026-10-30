@@ -13,7 +13,9 @@
     "erasableSyntaxOnly": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   },
-  "include": ["engine/**/*.ts", "vite.config.ts"]
+  "include": ["engine/**/*.ts", "src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "vite.lab.config.ts"]
 }

@@ -64,6 +64,24 @@ const TRUTH_READERS = [
   "engine/src/observe/**", "engine/src/evaluate/**", "engine/src/experiments/assembly/**", "engine/src/experiments/oracle/**", "engine/src/generated/**",
 ];
 
+// 2026-10-30 S3b (docs/design/lab_ui.md section 2): import zones for the lab page. The page (src/ui, src/main.tsx, src/i18n, src/protocol.ts) imports no engine or scenario module; only
+// src/worker/worker.ts reaches the engine, and only through engine/src/experiments/assembly/lab/; src/worker/data.ts bundles the scenario JSON and nothing of the engine. Test files
+// (src/**/*.test.ts) are outside the zones, as engine/tests is. Each zone repeats the Node-only ban through srcRestrict(), because a later object replaces the options.
+const SRC_NODE_ONLY = NODE_ONLY.map(({ name }) => ({ name, message: "The lab page and its Worker run in a browser: no Node-only imports in src." }));
+const srcRestrict = (...zone) => ["error", { paths: SRC_NODE_ONLY, patterns: [{ group: ["node:*"], message: "No Node-only imports in src." }, ...zone] }];
+const GENERATED_TYPES = `src/generated/(?:metrics|experiment_report)\\.schema${EXT}$`;
+const PAGE_NO_ENGINE = {
+  regex: `(^|/)(engine|scenarios)(/(?!${GENERATED_TYPES})|$)`,
+  message: "The page imports no engine or scenario module (only the generated types of the metrics and the report): the Worker holds the engine and sends plain data (src/protocol.ts).",
+};
+const PAGE_NO_WORKER = { regex: "(^|/)worker(/|$)", message: "The page never imports the Worker: it creates it with new Worker(new URL(...))." };
+const WORKER_ONLY_LAB = {
+  regex: "(^|/)engine(/(?!src/experiments/assembly/lab/)|$)",
+  message: "src/worker/worker.ts imports engine/src/experiments/assembly/lab/ only: the truth modules, the answer key, the raw quirk key, the hidden event type and the tests stay behind it.",
+};
+const WORKER_NO_SCENARIOS = { regex: "(^|/)scenarios(/|$)", message: "The scenario files reach the Worker through src/worker/data.ts." };
+const DATA_NO_ENGINE = { regex: "(^|/)engine(/|$)", message: "src/worker/data.ts bundles JSON only; the engine functions are imported by src/worker/worker.ts." };
+
 export default tseslint.config(
   { ignores: ["node_modules/**", "dist/**", "engine/src/generated/**"] },
   js.configs.recommended,
@@ -127,5 +145,29 @@ export default tseslint.config(
     // Zone 5, the raw layer: the emitter writes the key. It is not a truth reader, so zone 1 (folders) applies as before; evaluate/** needs no object (it was in no zone but the base).
     files: ["engine/src/raw/**/*.ts"],
     rules: { "no-restricted-imports": restrict(ANSWER_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS) },
+  },
+  {
+    // Lab page zones (S3b, lab_ui.md section 2), 1: the page.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/worker/**", "src/**/*.test.ts"],
+    rules: { "no-restricted-imports": srcRestrict(PAGE_NO_ENGINE, PAGE_NO_WORKER) },
+  },
+  {
+    // Lab page zones, 2: the Worker entry.
+    files: ["src/worker/worker.ts"],
+    rules: { "no-restricted-imports": srcRestrict(WORKER_ONLY_LAB, WORKER_NO_SCENARIOS) },
+  },
+  {
+    // Lab page zones, 3: the bundled JSON of the Worker.
+    files: ["src/worker/data.ts"],
+    rules: { "no-restricted-imports": srcRestrict(DATA_NO_ENGINE) },
+  },
+  {
+    // Invariant 2 in src: seeded PRNG only (check_all.sh greps engine/src and src for Math.random as well).
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.ts"],
+    rules: {
+      "no-restricted-properties": ["error", { object: "Math", property: "random", message: "Seeded PRNG only (invariant 2): the page draws no random number; every lab draw is keyed (lab_ui.md section 9)." }],
+    },
   },
 );

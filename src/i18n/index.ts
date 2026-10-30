@@ -1,0 +1,30 @@
+import { en } from "./en.ts";
+import type { Key } from "./en.ts";
+import { ko } from "./ko.ts";
+
+export type { Key };
+export type Lang = "en" | "ko";
+
+const DICTIONARIES: Record<Lang, Record<Key, string>> = { en, ko };
+const STORAGE_KEY = "lab.lang";
+
+/** The text of a key in a language, with {name} placeholders filled from `params`. */
+export const text = (lang: Lang, key: Key, params: Readonly<Record<string, string>> = {}): string =>
+  DICTIONARIES[lang][key].replace(/\{(\w+)\}/g, (placeholder: string, name: string) => params[name] ?? placeholder);
+
+/** The saved language, or English: the default is always English (ADR-0006). localStorage can be blocked, so every access is in try/catch. */
+export const savedLang = (): Lang => {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === "ko" ? "ko" : "en";
+  } catch {
+    return "en";
+  }
+};
+
+export const saveLang = (lang: Lang): void => {
+  try {
+    localStorage.setItem(STORAGE_KEY, lang);
+  } catch {
+    // blocked storage: the choice lasts for this visit only
+  }
+};
