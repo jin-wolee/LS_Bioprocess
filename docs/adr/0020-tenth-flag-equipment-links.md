@@ -24,7 +24,7 @@ Proposed: option 2 (the author's choice in chat).
 |---|---|---|---|
 | `equipment_links` | an `equipment_use` event stores the equipment id as a key, and the recorder writes the `used_in` edge from the item to the use | no edge; at most a free-text equipment name in the batch record, which a query cannot join | the sibling walk-back cannot reach the other batches that used the contaminated item: they are invisible to it |
 
-- Presets: A off; B off (equipment use is a batch-record fact, as lot consumption is for ADR-0017); C on, so C has all ten flags.
+- Presets: A off; B on (the author's choice: a LIMS-lite system logs which equipment item a batch used, while it keeps lot consumption unlinked, ADR-0017); C on, so C has all ten flags.
 - The flag is read only where equipment items exist, that is with the break-out extension (SC12). With no extension nothing reads it, so no recorded value changes. Outputs that list the flags of an architecture gain one entry, as for ADR-0017; the trace fixture is regenerated under the same condition the author set for the ninth flag (the flag list and the checksum only).
 - S3 adds a forced-error fixture typed by hand before any run: a contaminated equipment item used by two batches; with the flag on, direction 3 reaches the second batch; with it off, it does not (spec 11.8, fixture FX12e).
 - The contamination share by origin and a list of which equipment is shared have no source; they are scenario inputs, not numbers of the engine (A177 as widened by the S3f ledger changes).
@@ -44,6 +44,8 @@ Proposed: option 2 (the author's choice in chat).
 ## Author statement (verbatim, if any)
 
 > Chose "장비까지 포함" for the origins (chat, 2026-10-30, decision D1) and "10번째 플래그 추가" for the flag of equipment links (chat, 2026-10-30, decision D6)
+
+> Chose "B도 켜고 수락" (chat, 2026-10-30, asked to decide ADR-0020 with the presets A off, B off, C on)
 
 ## Decider's note
 _(author only — Claude never writes here)_
