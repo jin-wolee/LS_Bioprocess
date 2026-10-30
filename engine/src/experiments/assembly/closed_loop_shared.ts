@@ -1,4 +1,5 @@
 import type { EvaluationSettings } from "../../evaluate/config.ts";
+import type { ForcedError, MaterialisedError } from "../../inject/types.ts";
 import { observeEvents } from "../../observe.ts";
 import type { Architecture } from "../../record/architecture.ts";
 import { record } from "../../record/recorder.ts";
@@ -11,6 +12,7 @@ import type { ScenarioRun } from "../../run.ts";
 import type { ScenarioConfig } from "../../scenario.ts";
 import type { PhLoopConfig } from "../../sensors.ts";
 import type { StabilityEffect } from "../../stability.ts";
+import { plantStream } from "./closed_loop_plant.ts";
 import { qualificationsOf, rosterOf } from "./from_run.ts";
 
 // 2026-10-30 S2c3, experiment 2 (spec 6.2): what every arm of one seed shares. The lab run of the seed is the open-loop run of the scenario (its pH values are placeholders:
@@ -47,10 +49,18 @@ export interface SharedReactor {
   samples: SharedSample[];
 }
 
+/** A recorded pH row and the id of the lab-run result it stands for (`SharedResult.run_id`): the arm values the row by that result, whatever id the row is filed under. */
+export interface PhRow {
+  row: ResultRow;
+  run_id: string;
+}
+
 export interface Structure {
   dataset: RecordedDataset;
-  /** The pH rows of the dataset by sample id. */
-  ph: Map<string, ResultRow[]>;
+  /** The pH rows of the dataset by the physical sample they stand for. With no plant a row stands for the sample it is filed under, so this is the rows by sample id. */
+  ph: Map<string, PhRow[]>;
+  /** S3d: the injector's realised errors of this architecture (plain data); empty with no plant. */
+  materialised: MaterialisedError[];
 }
 
 export interface Shared {
@@ -71,6 +81,11 @@ export interface SharedOptions {
   evaluation: EvaluationSettings;
   rng: Rng;
   timing?: ReviewTiming;
+  /**
+   * S3d: the errors to plant, as the injector's forced mode takes them (lab_ui.md section 9). Each architecture records the stream the injector made of the lab run, so a label error
+   * files a sample's rows under another id where the architecture does not prevent it. Absent or empty: the injector does not run and nothing here changes.
+   */
+  forced?: readonly ForcedError[];
 }
 
 export const buildShared = (run: ScenarioRun, scenario: ScenarioConfig, seed: number, o: SharedOptions): Shared => {
@@ -117,11 +132,16 @@ export const buildShared = (run: ScenarioRun, scenario: ScenarioConfig, seed: nu
   const roster = rosterOf(scenario.sampling);
   const structure: Record<string, Structure> = {};
   for (const architecture of o.architectures) {
-    const recorded = record({ events, sensors: [], plan, qualifications: qualificationsOf(run) }, architecture);
+    const planted = o.forced && o.forced.length > 0 ? plantStream(seed, architecture, events, o.forced) : undefined;
+    const recorded = record({ events: planted?.events ?? events, sensors: [], plan, qualifications: qualificationsOf(run), ...(planted && { received_at: planted.received_at }) }, architecture);
     const dataset = review(validate(recorded, { hold_limit_s: o.evaluation.hold_limit_s }).dataset, { roster, timing: o.timing ?? "next_shift_start" });
-    const ph = new Map<string, ResultRow[]>();
-    for (const row of dataset.result) if (row.analyte === "ph") ph.set(row.request_id, [...(ph.get(row.request_id) ?? []), row]);
-    structure[architecture.id] = { dataset, ph };
+    const ph = new Map<string, PhRow[]>();
+    for (const row of dataset.result) {
+      if (row.analyte !== "ph") continue;
+      const at = planted ? planted.standsFor(row) : { sample_id: row.request_id, run_id: row.run_id };
+      ph.set(at.sample_id, [...(ph.get(at.sample_id) ?? []), { row, run_id: at.run_id }]);
+    }
+    structure[architecture.id] = { dataset, ph, materialised: planted?.materialised ?? [] };
   }
 
   const open = scenario.analysis.effects.find((e) => e.analyte === "ph" && e.container === "open" && e.effect === "first_order_offset");

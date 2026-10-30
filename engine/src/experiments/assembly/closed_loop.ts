@@ -1,4 +1,5 @@
 import type { EvaluationSettings } from "../../evaluate/config.ts";
+import type { ForcedError } from "../../inject/types.ts";
 import type { Architecture } from "../../record/architecture.ts";
 import { createRng } from "../../rng.ts";
 import type { Rng } from "../../rng.ts";
@@ -22,6 +23,8 @@ export interface ClosedLoopInput {
   /** A, B and C, in report order. */
   architectures: readonly Architecture[];
   variants: readonly Variant[];
+  /** S3d: errors to plant in the record of every architecture (the injector's forced mode, lab_ui.md section 9). Absent or empty: no plant, and every output is what it was without this field. */
+  forced?: readonly ForcedError[];
 }
 
 export interface SeedOutcome {
@@ -40,7 +43,7 @@ export interface ClosedLoopResult {
 export const runClosedLoopSeed = (input: ClosedLoopInput, seed: number, rng: Rng = createRng()): SeedOutcome => {
   if (!input.scenario.feedback) throw new Error("closed loop: the scenario must set feedback: true (SC8); every other scenario stays open loop");
   const run = runScenario({ ...input.scenario, seed, feedback: false });
-  const shared = buildShared(run, input.scenario, seed, { architectures: input.architectures, evaluation: input.evaluation, rng });
+  const shared = buildShared(run, input.scenario, seed, { architectures: input.architectures, evaluation: input.evaluation, rng, ...(input.forced && { forced: input.forced }) });
   const specs: ArmSpec[] = [
     { id: "oracle", kind: "oracle" },
     ...input.architectures.map((a): ArmSpec => ({ id: a.id, kind: "architecture", structure: a.id })),

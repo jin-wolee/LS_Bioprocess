@@ -29,7 +29,7 @@ export type Decision =
  * The recorded container and the recorded hold time of a sample, each null where the record does not hold it. The hold time is the first run's start minus
  * `sampled_at`, the definition of the evidence check `holdContext` (record/evidence.ts), which needs both fields and so cannot serve an architecture that stores only one.
  */
-const recordedContext = (ds: RecordedDataset, sampleId: string): { container: string | null; hold_time_s: number | null } => {
+export const recordedContext = (ds: RecordedDataset, sampleId: string): { container: string | null; hold_time_s: number | null } => {
   const sample = ds.sample.find((s) => s.sample_id === sampleId);
   const start = ds.run.filter((r) => r.request_id === sampleId).map((r) => r.started_at).sort((a, b) => a - b)[0];
   return { container: sample?.container ?? null, hold_time_s: sample?.sampled_at != null && start !== undefined ? start - sample.sampled_at : null };

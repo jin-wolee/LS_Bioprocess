@@ -9,6 +9,8 @@ import type { ArmOptions } from "../arms/closed_loop.ts";
 import { oracleReference } from "../oracle/closed_loop.ts";
 import type { TruthValue } from "../oracle/closed_loop.ts";
 import type { ResultRow } from "../../record/types.ts";
+import { loggedDecision } from "./closed_loop_log.ts";
+import type { LoggedDecision } from "./closed_loop_log.ts";
 import type { Shared } from "./closed_loop_shared.ts";
 
 // 2026-10-30 S2c3, experiment 2 (spec 6.2): one arm over all reactors of a seed. The loop of a reactor is run at the sensor cadence; at each readjustment slot the arm decides
@@ -43,14 +45,22 @@ export interface ArmOutcome {
   kind: ArmSpec["kind"];
   reactors: ReactorMetrics[];
   counts: ArmCounts;
+  /** S3d: present only when the log was asked for (`RunArmOptions`): every readjustment slot of every reactor, in the order of the slots. The oracle reads no record, so its log is empty. */
+  decisions?: LoggedDecision[];
 }
 
-export const runArm = (sh: Shared, spec: ArmSpec, rng: Rng): ArmOutcome => {
+export interface RunArmOptions {
+  /** Return the decision log beside the counts. Off by default, so that an outcome with no request is what it was before the log existed. */
+  decisions?: boolean;
+}
+
+export const runArm = (sh: Shared, spec: ArmSpec, rng: Rng, o: RunArmOptions = {}): ArmOutcome => {
   const structure = spec.structure === undefined ? undefined : sh.structure[spec.structure];
   if (spec.kind !== "oracle" && !structure) throw new Error(`closed loop: arm ${spec.id} reads no recorded structure`);
   const opts: ArmOptions = { hold_limit_s: sh.hold_limit_s, bias_handling: spec.bias_handling ?? "exclude", open_offset: sh.open_offset };
   const counts: ArmCounts = { slots: 0, readjusted: 0, skipped_known_bias: 0, no_new_result: 0, values: 0, extrapolated: 0 };
   const reactors: ReactorMetrics[] = [];
+  const decisions: LoggedDecision[] = [];
 
   for (const r of sh.reactors) {
     // the direction of the probe drift: one keyed draw per reactor, the same in every arm (A094; a simulator choice, grade A)
@@ -78,9 +88,10 @@ export const runArm = (sh: Shared, spec: ArmSpec, rng: Rng): ArmOutcome => {
             if (st.extrapolated) counts.extrapolated++;
           }
         }
-        for (const row of structure?.ph.get(s.sample_id) ?? []) {
-          const value = values.get(row.run_id);
-          if (value === undefined) throw new Error(`closed loop: the recorded pH row ${row.result_id} names run ${row.run_id}, which has no result in the lab run`);
+        // the rows that stand for this sample's results, whatever id they are filed under (a label error files a row under the neighbour's id): each takes the value of its own result
+        for (const { row, run_id } of structure?.ph.get(s.sample_id) ?? []) {
+          const value = values.get(run_id);
+          if (value === undefined) throw new Error(`closed loop: the recorded pH row ${row.result_id} stands for run ${run_id}, which has no result in the lab run`);
           rows.push({ ...row, value });
         }
       }
@@ -94,7 +105,9 @@ export const runArm = (sh: Shared, spec: ArmSpec, rng: Rng): ArmOutcome => {
         counts.readjusted++;
         return ref.onto;
       }
-      const d = decideReadjust({ ...structure.dataset, result: rows }, t, since, opts);
+      const held = { ...structure.dataset, result: rows };
+      const d = decideReadjust(held, t, since, opts);
+      if (o.decisions) decisions.push(loggedDecision(r.unit_id, t, d, held));
       if (d.action === "none") {
         counts.no_new_result++;
         return null;
@@ -109,5 +122,5 @@ export const runArm = (sh: Shared, spec: ArmSpec, rng: Rng): ArmOutcome => {
     });
     reactors.push(reactorMetrics(series, sh.setpoint));
   }
-  return { id: spec.id, kind: spec.kind, reactors, counts };
+  return { id: spec.id, kind: spec.kind, reactors, counts, ...(o.decisions && { decisions }) };
 };
