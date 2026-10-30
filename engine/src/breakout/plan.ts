@@ -20,9 +20,12 @@ export interface UnitScript {
   signal_s: number;
   /** signal_at + d1: the unit stops here. */
   stop_s: number;
+  /** The moments at which the growth and death multipliers of the unit change (rule S13): the onset plus each delay of the event type. Empty for a type with no host effect. */
+  effects: { at_s: number; mu?: number; kd?: number }[];
 }
 
-export interface AliquotScript { aliquot_id: string; test: string; volume_ul: number; result_s: number }
+/** `covers` is false for a test whose target does not cover the organism: it reports not_detected even for an affected unit (A146, A224). */
+export interface AliquotScript { aliquot_id: string; test: string; volume_ul: number; result_s: number; covers: boolean }
 export interface ConfirmScript {
   unit_id: string;
   batch_id: string;
@@ -130,7 +133,8 @@ export const planBreakout = (b: BreakoutConfig, scenario: string, c: ProcessConf
     .sort((x, y) => x.info.index - y.info.index)
     .map(({ info, onset_s }) => {
       const signal_s = info.t0 + Math.ceil((onset_s + b.lag_s - info.t0) / cadence) * cadence;
-      return { unit_id: info.unit_id, batch_id: batchIdOf(info.unit_id), onset_s, signal_s, stop_s: signal_s + b.signal_to_response_s };
+      const effects = b.effects.map((e) => ({ at_s: onset_s + e.delay_s, ...(e.mu !== undefined && { mu: e.mu }), ...(e.kd !== undefined && { kd: e.kd }) }));
+      return { unit_id: info.unit_id, batch_id: batchIdOf(info.unit_id), onset_s, signal_s, stop_s: signal_s + b.signal_to_response_s, effects };
     });
   const deviation_s = Math.min(...units.map((u) => u.signal_s));
   const decision_s = deviation_s + b.signal_to_response_s;
@@ -154,7 +158,7 @@ export const planBreakout = (b: BreakoutConfig, scenario: string, c: ProcessConf
     const info = unit(id, "confirm");
     if (!(info.t0 <= decision_s && decision_s < info.end)) fail(`breakout confirm names ${id}, which is not running at the first decision (${hoursText(decision_s)} h): it is inoculated at ${hoursText(info.t0)} h and ends at ${hoursText(info.end)} h`);
     const sample_id = `${id}-CONF`;
-    const aliquots = b.tests.map((t, i): AliquotScript => ({ aliquot_id: `${sample_id}-A${i + 1}`, test: t.test, volume_ul: roundUl(t.volume_ml * 1000), result_s: decision_s + t.turnaround_s }));
+    const aliquots = b.tests.map((t, i): AliquotScript => ({ aliquot_id: `${sample_id}-A${i + 1}`, test: t.test, volume_ul: roundUl(t.volume_ml * 1000), result_s: decision_s + t.turnaround_s, covers: t.covers }));
     for (const a of aliquots) if (a.result_s > latest.result_s) Object.assign(latest, { result_s: a.result_s, test: a.test, unit_id: id });
     confirm.push({ unit_id: id, batch_id: batchIdOf(id), sample_id, affected: onsets.has(id), volume_ul: roundUl(aliquots.reduce((sum, a) => sum + a.volume_ul, 0)), aliquots });
   }

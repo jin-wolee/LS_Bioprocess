@@ -44,7 +44,17 @@ export interface Profile {
    */
   signals?: [SignalChange, ...SignalChange[]];
   /**
-   * Break-out profiles: the confirming tests, in aliquot order. Names refer to keys of params, or (volume, portions) to keys of scenario_inputs.
+   * Break-out profiles: the key of scenario_inputs that holds the length of the signal ramp, in hours, when the profile has no default for it (mycoplasma, A219). Absent: the profile has the param signal_ramp_h and the scenario block may override it.
+   */
+  ramp_input?: string;
+  /**
+   * Break-out profiles: scripted changes of the growth and death multipliers of an affected unit (spec 11.8.2 rule S13). Each takes effect at the onset of the unit plus the delay. Names refer to keys of scenario_inputs.
+   *
+   * @minItems 1
+   */
+  host_effects?: [HostEffect, ...HostEffect[]];
+  /**
+   * Break-out profiles: the confirming tests, in aliquot order. Names refer to keys of params, or (volume, portions, covered_by) to keys of scenario_inputs.
    *
    * @minItems 1
    */
@@ -88,6 +98,20 @@ export interface SignalChange {
   signal: "DO" | "pH";
   change: string;
 }
+export interface HostEffect {
+  /**
+   * The scenario input (unit d) that holds the delay from the onset of the unit to this effect.
+   */
+  delay: string;
+  /**
+   * The scenario input (unit factor) that holds the growth multiplier from the effect on; absent: the growth multiplier stays as it was.
+   */
+  growth?: string;
+  /**
+   * The scenario input (unit factor) that holds the death multiplier from the effect on; absent: the death multiplier stays as it was.
+   */
+  death?: string;
+}
 export interface ConfirmTest {
   test: string;
   /**
@@ -102,6 +126,10 @@ export interface ConfirmTest {
    * The param that holds how many portions the test takes (unit media); absent: one.
    */
   portions?: string;
+  /**
+   * The scenario input (unit flag, 0 or 1) that says whether the target of the test covers the organism. With 0 the test reports not_detected for an affected unit (A146, A224); absent: the test reports the truth.
+   */
+  covered_by?: string;
 }
 export interface ScenarioInput {
   unit: string;

@@ -252,21 +252,29 @@ def test_the_transitions_the_pipeline_performs_are_the_ones_the_design_gives_it(
         ("sample", "planned", "skipped", "rule"),
         # break-out batch 3 (data_model 15.2): the recorder registers a lot as available (master data) and puts a lot that an event consumed in use
         ("material_lot", "prepared", "available", "administrator"), ("material_lot", "available", "in_use", "rule"),
+        # break-out batch 4 (rule S9, data_model 15.2): a hold is placed and put under test; a positive result turns it into a quarantine that a reviewer rejects, a negative one is released by a
+        # reviewer; either ends closed with its deviation. A lot or an item that is consumed or in service goes on hold and, under a positive, to quarantine. The deviation is contained at the first hold,
+        # concluded when every confirming result is in, and closed by a reviewer
+        ("quality_hold", "placed", "under_test", "rule"), ("quality_hold", "under_test", "quarantined", "rule"), ("quality_hold", "quarantined", "rejected", "reviewer"),
+        ("quality_hold", "under_test", "released", "reviewer"), ("quality_hold", "released", "closed", "rule"), ("quality_hold", "rejected", "closed", "rule"),
+        ("material_lot", "in_use", "on_hold", "rule"), ("material_lot", "on_hold", "quarantined", "rule"),
+        ("equipment", "in_service", "on_hold", "rule"), ("equipment", "on_hold", "quarantined", "rule"),
+        ("deviation", "opened", "contained", "rule"), ("deviation", "contained", "concluded", "rule"), ("deviation", "concluded", "closed", "reviewer"),
     }
 
 
 # ---- the break-out extension (data_model 15.1, 15.2, 15.6; break-out batch 3) ---------------------------------------------------------------------------------------------------------
 
-BREAKOUT_TABLES = ["material_lot", "equipment", "lineage_edge", "deviation"]
+BREAKOUT_TABLES = ["material_lot", "equipment", "lineage_edge", "deviation", "quality_hold"]
 
 
-def test_the_break_out_tables_are_entries_and_the_table_of_holds_waits_for_the_investigation(d: dict, engine: dict) -> None:
+def test_the_break_out_tables_are_entries_and_the_investigation_places_the_holds(d: dict, engine: dict) -> None:
     assert set(BREAKOUT_TABLES) <= set(d["dataset"]["tables"])
     assert all(d["entities"][t]["emitted"] for t in BREAKOUT_TABLES)
-    # the holds are placed by the investigation of batch 4: the table exists, empty, so it is a dataset member but no entity is emitted yet
-    assert "quality_hold" in d["dataset"]["other"] and "quality_hold" not in d["dataset"]["tables"]
-    assert d["entities"]["quality_hold"]["emitted"] is False and "quality_hold" not in engine["tables"]
-    assert "quality_hold" in engine["tables"]["dataset"]
+    # the holds are placed by the investigation of batch 4 (a step after recording): the dictionary describes the rows and the CLI runs the investigation, so quality_hold is a member of the
+    # dataset like the other four tables and no longer a placeholder
+    assert "quality_hold" not in d["dataset"]["other"]
+    assert "quality_hold" in engine["tables"] and "quality_hold" in engine["tables"]["dataset"]
     # the columns the extension adds to the earlier tables (data_model 15.6), absent without a break-out block
     assert "purpose" in columns(d, "analysis_request") and set(columns(d, "analysis_request")["purpose"]["values"]) == {"routine", "confirmatory"}
     assert "outcome" in columns(d, "result") and columns(d, "result")["value"]["nullable"] is True
@@ -274,14 +282,38 @@ def test_the_break_out_tables_are_entries_and_the_table_of_holds_waits_for_the_i
     assert {"medium_addition", "equipment_use", "unit_stopped"} <= set(columns(d, "process_event")["kind"]["values"])
 
 
-def test_the_break_out_states_the_recorder_writes_belong_to_their_machines_and_are_declared(d: dict, engine: dict) -> None:
-    # the recorder writes the initial state of a row (deviation opened, equipment in_service) or the state its machine reaches by a transition it performs (lot: available, in_use)
-    for entity in ("material_lot", "equipment", "deviation"):
+def test_the_retro_flag_adds_columns_to_the_result_and_the_audit_event(d: dict, engine: dict) -> None:
+    # data_model 15.3 items 3 and 5, rule S9, spec 11.8.10 C25: version n+1 of a flagged result names the hold; the audit event of the flag names the hold, the person and the reason. Both are
+    # absent (not null) on every other row, so the engine never emits a null for them
+    assert {"hold_id"} <= set(columns(d, "result")) and {"hold_id", "placed_by", "reason"} <= set(columns(d, "audit_event"))
+    assert engine["tables"]["result"]["hold_id"]["types"] == ["string"]
+    for name in ("hold_id", "placed_by", "reason"):
+        assert engine["tables"]["audit_event"][name]["types"] == ["string"], name
+    # a hold on a result is the only way a result gets a hold_id: its value is a hold of the quality_hold table (typed: H1, H2, ...)
+    assert all(v.startswith("H") for v in engine["tables"]["result"]["hold_id"]["values"])
+
+
+def test_the_break_out_states_the_runs_write_belong_to_their_machines_and_are_declared(d: dict, engine: dict) -> None:
+    # a row carries the initial state of its machine (deviation opened, equipment in_service), the state the recorder reaches by a transition it performs (lot available, in_use), or the state the
+    # investigation leaves it in: a lot or an item under a positive is quarantined, a deviation and the holds that close with it are closed (rule S9, C23, C24)
+    for entity in ("material_lot", "equipment", "deviation", "quality_hold"):
         machine = d["state_machines"][entity]
         seen = set(engine["tables"][entity]["state"]["values"])
         assert seen <= {t["to"] for t in machine["transitions"]} | {machine["initial"]}, entity
         assert seen == set(machine["emitted_states"]), f"{entity}: declared emitted_states differ from what the runs emitted"
-    assert d["state_machines"]["quality_hold"]["emitted_states"] == []
+    # typed by hand: the end states of FX12a, FX12e and FX12m under the thirteen configurations (every lot is consumed or available, a quarantine is final, every deviation ends closed)
+    assert {e: set(d["state_machines"][e]["emitted_states"]) for e in ("material_lot", "equipment", "deviation", "quality_hold")} == {
+        "material_lot": {"available", "in_use", "quarantined"}, "equipment": {"in_service", "quarantined"}, "deviation": {"opened", "closed"}, "quality_hold": {"closed"},
+    }
+
+
+def test_the_confirming_tests_are_the_ones_of_data_model_15_1(d: dict, engine: dict) -> None:
+    # data_model 15.1, method kind: bioburden, sterility, mycoplasma culture, mycoplasma indicator cells, nucleic-acid test (the in-vitro virus assay is not built, A147). Typed by hand
+    assert set(d["confirming_tests"]) == {"bioburden", "sterility", "mycoplasma_culture", "mycoplasma_indicator_cells", "nucleic_acid_test"}
+    ledger = {k: v["ledger"] for k, v in d["confirming_tests"].items()}
+    assert ledger == {"bioburden": "A142", "sterility": "A143", "mycoplasma_culture": "A144", "mycoplasma_indicator_cells": "A145", "nucleic_acid_test": "A146"}
+    # every test a run asked for is in the list, and the mycoplasma set is among them (FX12m is one of the streams the CLI records)
+    assert set(engine["tables"]["result"]["analyte"]["values"]) >= {"bioburden", "sterility", "mycoplasma_culture", "mycoplasma_indicator_cells", "nucleic_acid_test"}
 
 
 def test_the_state_machines_of_data_model_15_2_have_the_states_and_the_order_of_the_text(d: dict) -> None:
@@ -316,6 +348,17 @@ def test_the_transitions_no_run_performs_are_listed_so_the_gap_is_visible(d: dic
         ("sample", "drawn", "quarantined"), ("sample", "received", "quarantined"), ("sample", "quarantined", "received"), ("sample", "quarantined", "discarded"),
         # VR-014 rejects at ingest but cannot fire in any architecture (S2b); an unheld row is not reviewed (review by exception); a later version is a new row and the old state is not changed
         ("result", "measured", "rejected"), ("result", "measured", "under_review"), ("result", "released", "superseded"),
+    }
+
+
+def test_the_break_out_transitions_no_run_performs_are_listed_so_the_gap_is_visible(d: dict, engine: dict) -> None:
+    performed = {(p["entity"], p["from"], p["to"]) for p in engine["performed"]}
+    never = {(e, t["from"], t["to"]) for e, m in d["state_machines"].items() if e in ("material_lot", "equipment", "quality_hold", "deviation") for t in m["transitions"]} - performed
+    assert never == {
+        # a lot is consumed or discarded and a lot that is available (not used yet) is held: no fixture does either; a hold that ends negative returns the lot or the item to its state, and in FX12 no
+        # hold on a lot or an item is released, because the hold waits for the sample of the signalling unit, which is positive
+        ("material_lot", "in_use", "consumed"), ("material_lot", "in_use", "discarded"), ("material_lot", "available", "on_hold"),
+        ("material_lot", "on_hold", "available"), ("material_lot", "on_hold", "in_use"), ("equipment", "on_hold", "in_service"),
     }
 
 

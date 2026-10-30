@@ -7,8 +7,9 @@ import type { BreakoutConfig } from "./config.ts";
 import type { BreakoutPlan } from "./plan.ts";
 
 // The events of the break-out script that the process and the sampling do not emit themselves (spec 11.4, 11.8.2): the records of what each unit consumed and used, the hidden onsets, the
-// first signals, the one deviation, and the confirming draws with their results. They are the truth run's, identical for every architecture (11.1 rule 4). The stop is not here: it is a
-// moment of the unit in process.ts. The tests report the truth: a result is `detected` exactly when the unit is affected.
+// first signals, the one deviation, and the confirming draws with their results. They are the truth run's, identical for every architecture (11.1 rule 4). The stop and the multiplier moments are not here: they
+// are moments of the unit in process.ts. The tests report the truth: a result is `detected` exactly when the unit is affected, except that a test whose target the scenario says does not cover the
+// organism reports `not_detected` (A146, A224).
 
 const DAY = 86400;
 
@@ -49,7 +50,7 @@ export const breakoutEvents = (b: BreakoutConfig, plan: BreakoutPlan, seed: numb
     const operator_id = operatorOf(sampling, plan.decision_s, rng.stream(entityKey(seed, c.sample_id, "confirm")));
     const tests = c.aliquots.map((a) => ({ aliquot_id: a.aliquot_id, test: a.test, volume_ul: a.volume_ul }));
     out.push({ type: "confirm_sample_drawn", t: plan.decision_s, sample_id: c.sample_id, unit_id: c.unit_id, batch_id: c.batch_id, operator_id, volume_ul: c.volume_ul, tests: tests as [(typeof tests)[number], ...typeof tests] });
-    for (const a of c.aliquots) out.push({ type: "confirm_result", t: a.result_s, sample_id: c.sample_id, aliquot_id: a.aliquot_id, test: a.test, outcome: c.affected ? "detected" : "not_detected" });
+    for (const a of c.aliquots) out.push({ type: "confirm_result", t: a.result_s, sample_id: c.sample_id, aliquot_id: a.aliquot_id, test: a.test, outcome: c.affected && a.covers ? "detected" : "not_detected" });
   }
   return out;
 };

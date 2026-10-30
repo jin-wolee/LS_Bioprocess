@@ -90,7 +90,7 @@ export interface Scenario {
     tau?: Param;
   }[];
   /**
-   * One scripted break-out event (spec 11.4, 11.8; ADR-0013): a hidden contamination with an origin, the shared lots and equipment, the scripted response and the confirming samples. Absent means no event: every earlier scenario keeps a byte-identical event log. Every instant and delay is in hours from scenario start; every number is {value, unit, ref}. `lag` is the time from the onset to the first signal (A139) and `ramp` the length of the linear signal ramp that ends at it (A141), both in hours; absent, the profile's values apply, and the ramp may not exceed the lag. The delays of `response` (A176), the topology (A177) and the inputs the event-type profile names (for the bacterial profile the bioburden volume, A225) have no default and are required: a scenario that omits one is refused, naming it.
+   * One scripted break-out event (spec 11.4, 11.8; ADR-0013): a hidden contamination with an origin, the shared lots and equipment, the scripted response and the confirming samples. Absent means no event: every earlier scenario keeps a byte-identical event log. Every instant and delay is in hours from scenario start; every number is {value, unit, ref}. `lag` is the time from the onset to the first signal (A139) and `ramp` the length of the linear signal ramp that ends at it (A141), both in hours; absent, the profile's values apply, and the ramp may not exceed the lag. The delays of `response` (A176), the topology (A177) and the inputs the event-type profile names (for the bacterial profile the bioburden volume, A225; for the mycoplasma profile A219 to A224 and A226) have no default and are required: a scenario that omits one is refused, naming it.
    */
   breakout?: {
     /**
@@ -160,7 +160,7 @@ export interface Scenario {
      */
     confirm: [string, ...string[]];
     /**
-     * The scenario inputs the profile declares and gives no default (for the bacterial profile bioburden_sample_volume_ml, A225).
+     * The scenario inputs the profile declares and gives no default (for the bacterial profile bioburden_sample_volume_ml, A225; for the mycoplasma profile the DO rise ramp A219, the plateau and viability-fall delays and multipliers A220 to A223, the nucleic-acid target A224 and its sample volume A226). A profile that names its ramp as an input (ramp_input) takes the ramp from here and refuses the `ramp` field.
      */
     inputs?: {
       [k: string]: Param;

@@ -4,13 +4,14 @@ import type { Scenario } from "../generated/scenario.schema";
 import { checkParams, loadProfile } from "../profiles.ts";
 import type { ProfileLookup } from "../profiles.ts";
 import { loadTypeProfile } from "./profile.ts";
-import type { TypeProfile } from "./profile.ts";
+import type { TestSpec, TypeProfile } from "./profile.ts";
 
 // The `breakout` block of a scenario (spec 11.4, 11.8.2; schemas/scenario.schema.json), read into seconds and checked for everything that does not need the process: the inputs that have no
 // default (A176, A177 and the ones the event-type profile names), the ramp inside the lag, and the names the topology uses. What needs the units (their inoculation, their end) is checked
 // by plan.ts. Every refusal names the input at fault and, where it has one, its ledger id.
 
 const HOUR = 3600;
+const DAY = 86400;
 
 export type Origin =
   | { kind: "seed_lot"; lot_id: string; contaminated_s: number }
@@ -24,8 +25,13 @@ export interface Equipment { equipment_id: string; name: string }
 /** A seed lot has no `at_s`: it is consumed at the inoculation of its unit. */
 export interface Consumption { unit_id: string; lot_id: string; at_s?: number }
 export interface Use { unit_id: string; equipment_id: string; at_s: number }
-/** One confirming test of the event type with its volume in millilitres (all portions) resolved from the profile or from the scenario input. */
-export interface ConfirmTest { test: string; turnaround_s: number; volume_ml: number }
+/**
+ * One confirming test of the event type with its volume in millilitres (all portions) resolved from the profile or from the scenario input. `covers` is false only for a test whose target the
+ * scenario says does not cover the organism (A146, A224): it then reports not_detected for an affected unit.
+ */
+export interface ConfirmTest { test: string; turnaround_s: number; volume_ml: number; covers: boolean }
+/** A scripted change of the growth and death multipliers of an affected unit at its onset plus the delay (rule S13). A factor not named stays as it was. */
+export interface Effect { delay_s: number; mu?: number; kd?: number }
 
 export interface BreakoutConfig {
   profile: TypeProfile;
@@ -41,6 +47,7 @@ export interface BreakoutConfig {
   positive_to_hold_s: number;
   confirm: string[];
   tests: ConfirmTest[];
+  effects: Effect[];
   /** The scenario inputs as given, printed with every result. */
   inputs: Record<string, Param>;
 }
@@ -88,12 +95,32 @@ export const loadBreakout = (b: Block, scenario: string, lookup: ProfileLookup):
     return s >= 0 ? s : fail(`breakout ${where} must not be negative (A176)`);
   };
 
-  // the lag runs from the onset to the first signal and the ramp ends there, inside it (ruling D4)
+  /** The ledger id of a scenario input the profile declares. */
+  const refOf = (name: string): string => (profile.inputs[name] as { ref: string }).ref;
+  /** The value of a scenario input, in the unit the profile declares for it. */
+  const input = (name: string): number => quantity(given[name] as Param, (profile.inputs[name] as { unit: string }).unit, `inputs.${name}`);
+  const nonNegative = (name: string): number => {
+    const v = input(name);
+    return v >= 0 ? v : fail(`breakout inputs.${name} must not be negative (${refOf(name)})`);
+  };
+
+  // the lag runs from the onset to the first signal and the ramp ends there, inside it (ruling D4). The ramp is the profile's default, which the block may override, or the scenario input the
+  // profile names when it has no default (A219); a block that gives `ramp` to such a profile would say one thing two ways, and is refused.
+  const lagRef = profile.params.onset_to_signal_lag_h?.ref ?? "A139";
   const lag_s = b.lag === undefined ? profile.lag_s : hours(b.lag, "lag");
-  const ramp_s = b.ramp === undefined ? profile.ramp_s : hours(b.ramp, "ramp");
-  if (lag_s <= 0) fail(`breakout lag ${hoursText(lag_s)} h must be above 0 (A139)`);
-  if (ramp_s <= 0) fail(`breakout ramp ${hoursText(ramp_s)} h must be above 0 (A141)`);
-  if (ramp_s > lag_s) fail(`breakout ramp ${hoursText(ramp_s)} h is longer than the lag ${hoursText(lag_s)} h: the ramp ends at the first signal, inside the lag (A139, A141)`);
+  let ramp_s: number;
+  let rampRef: string;
+  if (profile.ramp_input !== undefined) {
+    if (b.ramp !== undefined) fail(`breakout ramp is not accepted for the profile ${profile.profile_id}: it takes its ramp from inputs.${profile.ramp_input} (${refOf(profile.ramp_input)})`);
+    ramp_s = hours(given[profile.ramp_input] as Param, `inputs.${profile.ramp_input}`);
+    rampRef = refOf(profile.ramp_input);
+  } else {
+    ramp_s = b.ramp === undefined ? (profile.ramp_s as number) : hours(b.ramp, "ramp");
+    rampRef = profile.params.signal_ramp_h?.ref ?? "A141";
+  }
+  if (lag_s <= 0) fail(`breakout lag ${hoursText(lag_s)} h must be above 0 (${lagRef})`);
+  if (ramp_s <= 0) fail(`breakout ramp ${hoursText(ramp_s)} h must be above 0 (${rampRef})`);
+  if (ramp_s > lag_s) fail(`breakout ramp ${hoursText(ramp_s)} h is longer than the lag ${hoursText(lag_s)} h: the ramp ends at the first signal, inside the lag (${lagRef}, ${rampRef})`);
 
   const lots: Lot[] = (topology.lots ?? []).map((l) => ({ lot_id: l.lot_id, kind: l.kind, prepared_s: hours(l.prepared_at, `topology.lots ${l.lot_id} prepared_at`) }));
   const equipment: Equipment[] = (topology.equipment ?? []).map((e) => ({ equipment_id: e.equipment_id, name: e.name }));
@@ -138,14 +165,22 @@ export const loadBreakout = (b: Block, scenario: string, lookup: ProfileLookup):
   const volumeOf = (name: string): number => {
     const p = profile.params[name];
     if (p) return p.unit === "mL" ? p.value : fail(`breakout profile ${profile.profile_id}: ${name} has unit ${p.unit}, the engine expects mL`);
-    const input = given[name] as Param;
-    const v = quantity(input, "mL", `inputs.${name}`);
-    return v > 0 ? v : fail(`breakout inputs.${name} must be above 0 (${profile.inputs[name]?.ref ?? "ledger"})`);
+    const v = quantity(given[name] as Param, "mL", `inputs.${name}`);
+    return v > 0 ? v : fail(`breakout inputs.${name} must be above 0 (${refOf(name)})`);
   };
-  const tests: ConfirmTest[] = profile.tests.map((t) => ({ test: t.test, turnaround_s: t.turnaround_s, volume_ml: volumeOf(t.volume) * t.portions }));
+  /** Does the test report an affected unit as detected? Only a test whose coverage is a scenario input can say no (A146, A224). */
+  const covers = (t: TestSpec): boolean => {
+    if (t.covered_by === undefined) return true;
+    const v = input(t.covered_by);
+    return v === 0 || v === 1 ? v === 1 : fail(`breakout inputs.${t.covered_by} must be 0 or 1 (${refOf(t.covered_by)})`);
+  };
+  const tests: ConfirmTest[] = profile.tests.map((t) => ({ test: t.test, turnaround_s: t.turnaround_s, volume_ml: volumeOf(t.volume) * t.portions, covers: covers(t) }));
+  const effects: Effect[] = profile.effects.map((e) => ({
+    delay_s: wholeSeconds(nonNegative(e.delay) * DAY), ...(e.growth !== undefined && { mu: nonNegative(e.growth) }), ...(e.death !== undefined && { kd: nonNegative(e.death) }),
+  }));
 
   return {
-    profile, lag_s, ramp_s, origin, lots, equipment, consumption, use, confirm: [...b.confirm], tests, inputs: given,
+    profile, lag_s, ramp_s, origin, lots, equipment, consumption, use, confirm: [...b.confirm], tests, effects, inputs: given,
     signal_to_response_s: delay(response.signal_to_response, "response.signal_to_response"), positive_to_hold_s: delay(response.positive_to_hold, "response.positive_to_hold"),
   };
 };

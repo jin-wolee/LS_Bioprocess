@@ -1,0 +1,40 @@
+{
+  "schema_version": "1",
+  "profile_id": "mycoplasma",
+  "kind": "breakout",
+  "description": "Mycoplasma contamination (spec 11.4, 11.8.2): DO rises to its high alarm over a ramp that ends at the first signal and no pH signal moves (A140: little base is needed); the lag runs from the onset to that signal; the host cells plateau and then lose viability (rule S13); the confirming tests are the nucleic-acid test, indicator cells and culture. Bundle A158 (detection: signals first, confirming tests days later) with the origin bundle A157 chosen by the scenario. Every magnitude the ledger gives no number for is a scenario input.",
+  "bundle": "A158",
+  "contamination_type": "mycoplasma",
+  "alarm_signal": "DO",
+  "ramp_input": "mycoplasma_do_rise_ramp_h",
+  "signals": [
+    { "signal": "DO", "change": "do_alarm_offset_pct" }
+  ],
+  "host_effects": [
+    { "delay": "mycoplasma_plateau_delay_d", "growth": "mycoplasma_growth_multiplier_after_plateau" },
+    { "delay": "mycoplasma_viability_fall_delay_d", "death": "mycoplasma_death_multiplier_after_fall" }
+  ],
+  "tests": [
+    { "test": "nucleic_acid_test", "turnaround": "nucleic_acid_test_turnaround_d", "volume": "nat_sample_volume_ml", "covered_by": "nat_target_covers_organism" },
+    { "test": "mycoplasma_indicator_cells", "turnaround": "mycoplasma_indicator_cells_turnaround_d", "volume": "mycoplasma_indicator_cell_volume_ml" },
+    { "test": "mycoplasma_culture", "turnaround": "mycoplasma_culture_turnaround_d", "volume": "mycoplasma_culture_volume_ml" }
+  ],
+  "scenario_inputs": {
+    "mycoplasma_do_rise_ramp_h": { "unit": "h", "ref": "A219" },
+    "mycoplasma_plateau_delay_d": { "unit": "d", "ref": "A220" },
+    "mycoplasma_growth_multiplier_after_plateau": { "unit": "factor", "ref": "A221" },
+    "mycoplasma_viability_fall_delay_d": { "unit": "d", "ref": "A222" },
+    "mycoplasma_death_multiplier_after_fall": { "unit": "factor", "ref": "A223" },
+    "nat_target_covers_organism": { "unit": "flag", "ref": "A224" },
+    "nat_sample_volume_ml": { "unit": "mL", "ref": "A226" }
+  },
+  "params": {
+    "onset_to_signal_lag_h": {"value": 48, "unit": "h", "ref": "A138"},
+    "do_alarm_offset_pct": {"value": 10, "unit": "% air saturation", "ref": "A197"},
+    "nucleic_acid_test_turnaround_d": {"value": 1, "unit": "d", "ref": "A146"},
+    "mycoplasma_indicator_cells_turnaround_d": {"value": 8, "unit": "d", "ref": "A145"},
+    "mycoplasma_culture_turnaround_d": {"value": 28, "unit": "d", "ref": "A144"},
+    "mycoplasma_indicator_cell_volume_ml": {"value": 1, "unit": "mL", "ref": "A148"},
+    "mycoplasma_culture_volume_ml": {"value": 10.5, "unit": "mL", "ref": "A148"}
+  }
+}

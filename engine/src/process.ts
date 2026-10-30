@@ -15,10 +15,16 @@ import type { PhLoopConfig, SensorConfig, SensorSeries } from "./sensors.ts";
 const DAY = 86400;
 
 export interface ScriptedEvent {
-  /** `stop` ends the unit at that instant (break-out script, spec 11.8.2 rule S2): no later feed, draw or harvest. The scenario file cannot name it; the break-out script does. */
-  type: "feed" | "alarm" | "stop";
+  /**
+   * `stop` ends the unit at that instant (break-out script, spec 11.8.2 rule S2): no later feed, draw or harvest. `multiplier` sets the factor `mu` on the growth multiplier and/or `kd` on the death
+   * multiplier of the unit from that instant, on top of the temperature shift (rule S13); a factor it does not name stays as it was, and a factor of 1 changes nothing. The scenario file cannot
+   * name either: the break-out script does.
+   */
+  type: "feed" | "alarm" | "stop" | "multiplier";
   unit_id: string;
   at_s: number;
+  mu?: number;
+  kd?: number;
 }
 
 export interface ProcessConfig {
@@ -134,6 +140,9 @@ export interface CultureState {
 
 export interface State { x: number; d: number; g: number; q: number; l: number; p: number }
 export interface Mult { mu: number; kd: number; prod: number }
+/** The scripted factors on the growth and death multipliers (rule S13), and the instant from which a stored step of a unit has them. */
+export interface Factor { mu: number; kd: number }
+export interface FactorStep extends Factor { t: number }
 
 export interface Reactor {
   unit_id: string;
@@ -146,6 +155,8 @@ export interface Reactor {
   harvested_s: number;
   /** Instant of the temperature shift (A195); the multipliers of A196 apply from here. */
   shift_s: number;
+  /** The multiplier moments that happened, in order, each with the factors in effect from it on (rule S13). Empty when the unit had none. */
+  factors: FactorStep[];
   step_s: number;
   /** Number of stored steps: index k is the state at inoculated_s + k * step_s, after the events of that instant. */
   n: number;
@@ -167,6 +178,12 @@ export interface ProcessRun {
 
 const BASE: Mult = { mu: 1, kd: 1, prod: 1 };
 const shifted = (c: ProcessConfig): Mult => ({ mu: c.shiftMu, kd: c.shiftKd, prod: c.shiftProd });
+const ONE: Factor = { mu: 1, kd: 1 };
+/** The multipliers in effect: the base, or the temperature shift once it has happened (A196), times the scripted factors (rule S13). Every moment that changes a multiplier, and the lookup of a stored step, go through here. */
+const multOf = (c: ProcessConfig, shift: boolean, f: Factor = ONE): Mult => {
+  const m = shift ? shifted(c) : BASE;
+  return f === ONE ? m : { mu: m.mu * f.mu, kd: m.kd * f.kd, prod: m.prod };
+};
 
 /** One explicit Euler step of dt seconds, in place; every increment is computed from the state at the start of the step, which is at culture age age_s (0 when the age does not matter). */
 export const advance = (c: ProcessConfig, s: State, m: Mult, dt: number, age_s = 0): void => {
@@ -211,10 +228,12 @@ const bolus = (c: ProcessConfig, s: State, volume: { l: number }, f: number): nu
 
 const viabilityOf = (s: State): number => (100 * s.x) / (s.x + s.d);
 
-type Kind = "stop" | "alarm" | "scripted_feed" | "shift" | "decision" | "harvest";
-interface Moment { t: number; rank: number; kind: Kind }
+type Kind = "stop" | "alarm" | "scripted_feed" | "multiplier" | "shift" | "decision" | "harvest";
+interface Moment { t: number; rank: number; kind: Kind; ev?: ScriptedEvent }
 /** The scripted moments in the order they apply at an equal instant; a stop comes first, so nothing else happens at the instant a unit is stopped. */
-const SCRIPTED: Record<ScriptedEvent["type"], Pick<Moment, "rank" | "kind">> = { stop: { rank: -1, kind: "stop" }, alarm: { rank: 0, kind: "alarm" }, feed: { rank: 1, kind: "scripted_feed" } };
+const SCRIPTED: Record<ScriptedEvent["type"], Pick<Moment, "rank" | "kind">> = {
+  stop: { rank: -1, kind: "stop" }, alarm: { rank: 0, kind: "alarm" }, feed: { rank: 1, kind: "scripted_feed" }, multiplier: { rank: 2, kind: "multiplier" },
+};
 
 /** The unit id of the reactor at index i, counted from 0: U01, U02, ... */
 export const unitIdOf = (i: number): string => `U${String(i + 1).padStart(2, "0")}`;
@@ -235,18 +254,20 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
   const moments: Moment[] = [{ t: end_s, rank: 4, kind: "harvest" }];
   for (let day = Math.floor(t0 / DAY); day * DAY + c.decision_s < last; day++) if (day * DAY + c.decision_s > t0) moments.push({ t: day * DAY + c.decision_s, rank: 3, kind: "decision" });
   if (shift_s > t0 && shift_s < last) moments.push({ t: shift_s, rank: 2, kind: "shift" });
-  for (const e of c.scripted) if (e.unit_id === unit_id && e.at_s > t0 && e.at_s < last) moments.push({ t: e.at_s, ...SCRIPTED[e.type] });
+  for (const e of c.scripted) if (e.unit_id === unit_id && e.at_s > t0 && e.at_s < last) moments.push({ t: e.at_s, ...SCRIPTED[e.type], ev: e });
   moments.sort((a, b) => a.t - b.t || a.rank - b.rank);
 
   const size = Math.ceil((last - t0) / c.step_s) + 1;
   const r: Reactor = {
-    unit_id, batch_id, bay: Math.floor(i / c.baySize) + 1, slot: i % c.baySize, inoculated_s: t0, harvested_s: last, shift_s, step_s: c.step_s, n: 0,
+    unit_id, batch_id, bay: Math.floor(i / c.baySize) + 1, slot: i % c.baySize, inoculated_s: t0, harvested_s: last, shift_s, factors: [], step_s: c.step_s, n: 0,
     x: new Float64Array(size), d: new Float64Array(size), g: new Float64Array(size), q: new Float64Array(size), l: new Float64Array(size), p: new Float64Array(size),
   };
   const dead0 = (c.density * (100 - c.viability0)) / c.viability0;
   const s: State = { x: c.density, d: dead0, g: c.glucose0, q: c.glutamine0, l: c.lactate0, p: c.titer0 };
   const volume = { l: c.bayVolume_l?.[Math.floor(i / c.baySize)] ?? c.volume_l };
   const mult: Mult = { ...BASE };
+  let shiftOn = false;
+  let factor = ONE;
   events.push({ type: "inoculation", t: t0, unit_id, batch_id, density_e6_per_ml: c.density, ...(c.seedLots?.[unit_id] !== undefined && { seed_lot_id: c.seedLots[unit_id] }) });
   const process = (t: number, kind: "feed" | "temperature_shift" | "alarm" | "harvest" | "unit_stopped", source: "rule" | "scheduled" | "scripted", amount?: number, amount_unit?: string): void => {
     events.push({ type: "process_event", t, unit_id, batch_id, kind, source, ...(amount !== undefined && { amount, amount_unit }) } as Event);
@@ -264,8 +285,14 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
         done = true;
       } else if (mo.kind === "alarm") process(mo.t, "alarm", "scripted");
       else if (mo.kind === "scripted_feed") process(mo.t, "feed", "scripted", bolus(c, s, volume, c.bolus), "L");
-      else if (mo.kind === "shift") {
-        Object.assign(mult, shifted(c));
+      else if (mo.kind === "multiplier") {
+        const ev = mo.ev as ScriptedEvent;
+        factor = { mu: ev.mu ?? factor.mu, kd: ev.kd ?? factor.kd };
+        r.factors.push({ t: mo.t, ...factor });
+        Object.assign(mult, multOf(c, shiftOn, factor));
+      } else if (mo.kind === "shift") {
+        shiftOn = true;
+        Object.assign(mult, multOf(c, shiftOn, factor));
         process(mo.t, "temperature_shift", "scheduled", c.sensors.tempShiftSp, "C");
       } else if (mo.kind === "decision") {
         if (viabilityOf(s) < c.harvestViability) {
@@ -311,6 +338,6 @@ export const stateAt = (run: ProcessRun, unit_id: string, t: number): CultureSta
   const tk = r.inoculated_s + k * r.step_s;
   const s: State = { x: r.x[k] as number, d: r.d[k] as number, g: r.g[k] as number, q: r.q[k] as number, l: r.l[k] as number, p: r.p[k] as number };
   const dt = Math.min(t, r.harvested_s) - tk;
-  if (dt > 0) advance(run.cfg, s, tk >= r.shift_s ? shifted(run.cfg) : BASE, dt, tk - r.inoculated_s);
+  if (dt > 0) advance(run.cfg, s, multOf(run.cfg, tk >= r.shift_s, r.factors.filter((x) => x.t <= tk).at(-1) ?? ONE), dt, tk - r.inoculated_s);
   return { vcd: s.x, viability: viabilityOf(s), glucose: s.g, glutamine: s.q, lactate: s.l, titer: s.p, ph: run.cfg.ph };
 };

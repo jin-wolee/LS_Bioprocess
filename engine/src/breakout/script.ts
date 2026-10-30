@@ -22,10 +22,14 @@ export const scriptOf = (cfg: ScenarioConfig, b: BreakoutConfig): BreakoutPlan =
   return planBreakout(b, cfg.scenario_id, cfg.process, (id) => draws.find((s) => s.sample_id === id && s.state === "drawn")?.drawn_s) as BreakoutPlan;
 };
 
-/** The process settings of the run: the scenario's, plus one stop per affected unit and the seed lot of each unit the topology names. */
+/** The process settings of the run: the scenario's, plus one stop and the multiplier moments of the event type (rule S13) per affected unit, and the seed lot of each unit the topology names. */
 export const withScript = (c: ProcessConfig, plan: BreakoutPlan): ProcessConfig => ({
   ...c,
-  scripted: [...c.scripted, ...plan.units.map((u) => ({ type: "stop" as const, unit_id: u.unit_id, at_s: u.stop_s }))],
+  scripted: [
+    ...c.scripted,
+    ...plan.units.map((u) => ({ type: "stop" as const, unit_id: u.unit_id, at_s: u.stop_s })),
+    ...plan.units.flatMap((u) => u.effects.map((e) => ({ type: "multiplier" as const, unit_id: u.unit_id, ...e }))),
+  ],
   ...(Object.keys(plan.seedLots).length > 0 && { seedLots: plan.seedLots }),
 });
 

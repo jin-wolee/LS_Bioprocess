@@ -11,13 +11,15 @@ import type { ObservableEvent } from "../../src/observe.ts";
 import { contextAsOf } from "../../src/record/asof.ts";
 import { record } from "../../src/record/recorder.ts";
 import { review } from "../../src/record/review.ts";
+import { investigate, signalsOf } from "../../src/record/investigate/investigate.ts";
 import { MACHINES, ROLES } from "../../src/record/transitions.ts";
 import type { Transition } from "../../src/record/transitions.ts";
 import type { QualificationInput, RecordedDataset, RecorderInput } from "../../src/record/types.ts";
 import { validate } from "../../src/record/validate.ts";
 import { VALID_QUALIFICATIONS, byTime } from "./cell_stream.ts";
-import { FX12A, FX12A_MASTER, FX12A_SPARE, FX12E, FX12E_MASTER } from "./breakout_streams.ts";
+import { FX12A, FX12A_MASTER, FX12A_SPARE, FX12E, FX12E_MASTER, H } from "./breakout_streams.ts";
 import { CONFIGS } from "./cells.ts";
+import { FX12M_I, FX12M_II, FX12M_MASTER } from "./fx12m_streams.ts";
 import { REVIEW } from "./review_setup.ts";
 import { SENSORS, STREAM, WITH_CONFLICT, WITH_HARVEST, WITH_REPLAY, WITH_SKIP } from "./record_fixture.ts";
 import { runSeed } from "../../src/experiments/assembly/run_seed.ts";
@@ -116,14 +118,18 @@ for (const v of VARIANTS) {
   }
 }
 
-// break-out batch 3 (data_model 15.6): FX12a and FX12e as hand-built streams, recorded under every architecture with the master data of their topology, then the rules and the review. The export is
-// not run on them: a confirming result has a test and no unit, and export/rows.ts is outside this batch.
-for (const [events, breakout] of [[FX12A, FX12A_MASTER], [FX12A, FX12A_SPARE], [FX12E, FX12E_MASTER]] as const) {
+// break-out batches 3 to 5 (data_model 15.6): FX12a, FX12e and the two mycoplasma variants of FX12m as hand-built streams, recorded under every architecture with the master data of their topology, then
+// the rules and the review (batch 3) and, on the record as recorded, the investigation (batch 4: holds, retro-flag versions, the states that follow). The decision settings are those of 11.8.4: d1 2 h,
+// d2 4 h, the assumed lag the default of the type (12 h bacterial, 48 h mycoplasma) and the review of the S2 review step. The export is not run on these datasets: a confirming result has a test and no
+// unit, and export/rows.ts is outside these batches.
+const DECISIONS = { decision_delay_s: H(2), conclusion_delay_s: H(4), review: REVIEW };
+for (const [events, breakout, assumed_lag_s] of [[FX12A, FX12A_MASTER, H(12)], [FX12A, FX12A_SPARE, H(12)], [FX12E, FX12E_MASTER, H(12)], [FX12M_I, FX12M_MASTER, H(48)], [FX12M_II, FX12M_MASTER, H(48)]] as const) {
   for (const c of CONFIGS) {
     const recorded = record({ events, sensors: [], qualifications: VALID_QUALIFICATIONS, breakout }, c.config, log);
     const validated = validate(recorded, { hold_limit_s: 3600, late_tolerance_s: 600, clock_tolerance_s: 900 }, log);
     take(validated.dataset);
     take(review(validated.dataset, REVIEW, log));
+    take(investigate(recorded, signalsOf(events), { ...DECISIONS, assumed_lag_s }, log).dataset);
   }
 }
 
