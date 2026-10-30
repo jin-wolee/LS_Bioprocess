@@ -31,5 +31,6 @@ Each record states a context, at least two real options, a proposed decision, it
 | [0016](0016-runtime-flag-against-v8-miscompile.md) | Runtime flag against a V8 miscompile that breaks determinism | Proposed |
 | [0017](0017-ninth-flag-material-lot-links.md) | Ninth flag: material lot links (amends ADR-0005) | Proposed |
 | [0018](0018-lab-ui-stack-preact.md) | Lab UI stack: Preact, with the engine in a Web Worker | Proposed |
+| [0019](0019-deterministic-math-across-js-engines.md) | Deterministic maths across JavaScript engines | Proposed |
 
 Keep this table in step with the files. A status other than `Proposed` appears here only after the author's own commit.
