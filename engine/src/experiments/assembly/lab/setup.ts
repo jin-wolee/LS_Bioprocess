@@ -25,6 +25,8 @@ export interface LabData {
   rawLayer: unknown;
   /** The decision variant of the challenge (lab_ui.md section 9): SC8, which the Setup picker does not offer, and the parsed experiment 2 config (its seed list). Absent: the variant is not offered. */
   decision?: { scenario: unknown; experiment: unknown };
+  /** The Break-out screen (lab_ui.md section 3, S3g): the SC12 scenarios by scenario id, the event-type profiles they name and the parsed SC12 config (its seed list). Absent: the build does not offer the screen. */
+  breakout?: { scenarios: Readonly<Record<string, unknown>>; profiles: readonly unknown[]; experiment: unknown };
 }
 
 /** The parts of a RunSpec that change the scenario beyond its settings. */

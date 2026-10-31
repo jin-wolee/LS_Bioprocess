@@ -92,3 +92,37 @@ describe("challenge", () => {
     expect(apply(playing, { type: "challenge_reset" }).challenge).toEqual({ starting: null, active: null, busy: null, problem: null });
   });
 });
+
+describe("breakout (S3g)", () => {
+  const asked = { case: "sc12_medium_lot", seed: 9013, architectures: ["a_manual", "c_context"] };
+  const result = { kind: "simulation_result", case: "sc12_medium_lot", scenario: "sc12_medium_lot", seed: 9013, per_architecture: [] } as unknown as Extract<Response, { type: "breakout_result" }>["result"];
+
+  it("Given a request and its answer Then the result is kept with what was asked, and the request is over", () => {
+    const s = apply(initial, { type: "breakout_started", id: 3, asked }, { type: "breakout_result", id: 3, result });
+    expect(s.breakout).toEqual({ running: null, asked, result, problem: null });
+  });
+
+  it("Given an answer to another request Then it is ignored", () => {
+    const s = apply(initial, { type: "breakout_started", id: 3, asked }, { type: "breakout_result", id: 4, result });
+    expect(s.breakout.result).toBeNull();
+    expect(s.breakout.running).toBe(3);
+  });
+
+  it("Given a refusal of the request Then it is the problem of the Break-out screen and not of a run in flight", () => {
+    const s = apply(reduce(initial, { type: "run_started", id: 2 }), { type: "breakout_started", id: 3, asked }, { type: "error", id: 3, code: "invalid_spec", message: "unknown case" });
+    expect(s.breakout).toMatchObject({ running: null, result: null, problem: { id: 3, code: "invalid_spec", message: "unknown case" } });
+    expect(s.problem).toBeNull();
+    expect(s.running).toBe(2);
+  });
+
+  it("Given a new request Then the earlier result and problem are cleared, so a result on screen belongs to the request that made it", () => {
+    const first = apply(initial, { type: "breakout_started", id: 3, asked }, { type: "breakout_result", id: 3, result });
+    const next = reduce(first, { type: "breakout_started", id: 4, asked: { ...asked, seed: 9127 } });
+    expect(next.breakout).toEqual({ running: 4, asked: { ...asked, seed: 9127 }, result: null, problem: null });
+  });
+
+  it("Given a message for the other screens Then the break-out state does not move", () => {
+    const s = apply(initial, { type: "breakout_started", id: 3, asked }, { type: "lineage", id: 9, view, sample_ids: [] });
+    expect(s.breakout.running).toBe(3);
+  });
+});

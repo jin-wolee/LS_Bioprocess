@@ -8,7 +8,7 @@ from pathlib import Path
 
 from qa_checks import KO_LIMIT, VIEWPORTS, Result, first_line, fmt_ratio, unchanged_keys
 from qa_infographic import CONTRAST_JS, contrast_rows
-from qa_lab_browser import NUMBERS_JS, apply_state, go, open_lab, prepare_page, set_lang, wait_final
+from qa_lab_browser import NUMBERS_JS, apply_state, go, open_lab, prepare_page, set_lang, shown_screens, wait_final
 from qa_lab_helpers import LAB_THEMES, LANGS, SCREENS, alter_reference, number_offenders
 
 
@@ -23,7 +23,7 @@ def check_numbers(browser, url) -> Result:
         prepare_page(page)
         for lang in LANGS:
             set_lang(page, lang)
-            for screen in SCREENS:
+            for screen in shown_screens(page):
                 go(page, screen)
                 nodes = page.evaluate(NUMBERS_JS)
                 seen += len(nodes)
@@ -44,7 +44,7 @@ def check_ko(browser, url) -> Result:
         for lang in LANGS:
             set_lang(page, lang)
             texts[lang] = {}
-            for screen in SCREENS:
+            for screen in shown_screens(page):
                 go(page, screen)
                 texts[lang].update(page.evaluate(text_js))
     wide = 0
@@ -52,7 +52,7 @@ def check_ko(browser, url) -> Result:
         wait_final(page)
         prepare_page(page)
         set_lang(page, "ko")
-        for screen in SCREENS:
+        for screen in shown_screens(page):
             go(page, screen)
             wide = max(wide, page.evaluate("document.documentElement.scrollWidth - window.innerWidth"))
     en, ko = texts["en"], texts["ko"]
@@ -72,15 +72,15 @@ def run_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme: s
             wait_final(page)
             prepare_page(page)
             problems += apply_state(page, theme, lang)
-            for screen in SCREENS:
+            for screen in shown_screens(page):
                 go(page, screen)
                 m = page.evaluate("({sw: document.documentElement.scrollWidth, iw: window.innerWidth, bg: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()})")
                 bg = m["bg"]
                 if m["sw"] > m["iw"]:
                     problems.append(f"{screen}: horizontal scroll: scrollWidth {m['sw']} > innerWidth {m['iw']}")
                 page.bring_to_front()  # a new context can hang the screenshot without it
-                # the pages of Results, Lineage and Challenge are tens of thousands of pixels tall at the narrow viewport: their picture is the first screen of each
-                page.screenshot(path=str(out / "shots" / f"{name}_{screen}.png"), full_page=screen not in ("results", "lineage", "challenge"))
+                # the pages of Results, Lineage, Challenge and Break-out are tens of thousands of pixels tall at the narrow viewport: their picture is the first screen of each
+                page.screenshot(path=str(out / "shots" / f"{name}_{screen}.png"), full_page=screen not in ("results", "lineage", "challenge", "breakout"))
             problems += [f"console: {e[:160]}" for e in errors]
     except Exception as e:
         problems.append(first_line(e))
@@ -115,7 +115,7 @@ def check_contrast(browser, url, root: Path) -> Result:
                 swept = {"home": page.evaluate(CONTRAST_JS)}
                 if state == "identical":
                     prepare_page(page)
-                    for screen in SCREENS[1:]:
+                    for screen in shown_screens(page)[1:]:
                         go(page, screen)
                         swept[screen] = page.evaluate(CONTRAST_JS)
             for screen, data in swept.items():

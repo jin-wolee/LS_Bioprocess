@@ -6,7 +6,7 @@ import type { Key, Lang } from "../i18n/index.ts";
 
 export const LangContext = createContext<Lang>("en");
 
-type Tag = "span" | "p" | "h1" | "h2" | "h3" | "h4" | "dt" | "dd" | "th" | "td" | "li" | "label" | "legend" | "summary" | "strong" | "caption" | "option" | "button";
+type Tag = "span" | "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "dt" | "dd" | "th" | "td" | "li" | "label" | "legend" | "summary" | "strong" | "caption" | "option" | "button";
 
 /** The pieces of a template: its text, with each {placeholder} replaced by the element given for it (or by its plain value, or left as it is). */
 export const piecesOf = (templateText: string, params: Readonly<Record<string, string>> = {}, parts: Readonly<Record<string, ComponentChildren>> = {}): ComponentChildren[] =>

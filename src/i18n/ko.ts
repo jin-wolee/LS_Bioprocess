@@ -1,4 +1,5 @@
 import type { Key, enBase } from "./en.ts";
+import { koBreakout } from "./ko_breakout.ts";
 import { koChallenge } from "./ko_challenge.ts";
 import { koLineage } from "./ko_lineage.ts";
 import { koNotes } from "./ko_notes.ts";
@@ -18,6 +19,7 @@ const koBase: Record<keyof typeof enBase, string> = {
   "nav.results": "결과",
   "nav.lineage": "계보",
   "nav.challenge": "챌린지",
+  "nav.breakout": "역추적",
   "nav.notes": "노트",
 
   "controls.lang.label": "언어",
@@ -85,4 +87,4 @@ const koBase: Record<keyof typeof enBase, string> = {
   "grade.provisional": "잠정",
 };
 
-export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge };
+export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge, ...koBreakout };

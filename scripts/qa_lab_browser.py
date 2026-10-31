@@ -10,7 +10,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 
 from qa_checks import VIEWPORTS
-from qa_lab_helpers import SMALL_RUN
+from qa_lab_helpers import SCREENS, SMALL_RUN
 
 
 FINAL_MS = 120_000  # how long a browser may take to finish the check (Firefox and WebKit are the slower ones)
@@ -49,6 +49,11 @@ def wait_final(page, timeout=FINAL_MS) -> dict:
     return page.evaluate("""() => { const c = document.querySelector('#check-chip');
         return {state: c.dataset.checkState, detail: JSON.parse(c.dataset.detail),
                 banner: document.querySelector('#check-banner').innerText.trim(), body: document.body.innerText}; }""")
+
+
+def shown_screens(page) -> list[str]:
+    """The screens of SCREENS that this build offers: the Break-out screen has no navigation link in a build that refuses it (docs/design/lab_ui.md section 20)."""
+    return [s for s in SCREENS if page.query_selector(f"#nav-{s}") is not None]
 
 
 def go(page, screen: str) -> None:
@@ -118,11 +123,23 @@ def start_challenge(page, variant="sample", shown=None, seed=None, timeout=60_00
     return ran
 
 
+def show_breakout(page, archs=("a_manual", "c_context"), timeout=90_000) -> None:
+    """The Break-out screen with its default case and seed, A and C (the two records that differ most in what direction 3 can read): press Run and wait for the result."""
+    go(page, "breakout")
+    page.wait_for_selector("#breakout-run:not([disabled])", timeout=30_000)
+    for arch in page.eval_on_selector_all("[id^=breakout-arch-]", "els => els.map(e => e.id.replace('breakout-arch-', ''))"):
+        page.set_checked(f"#breakout-arch-{arch}", arch in archs)
+    page.click("#breakout-run")
+    page.wait_for_selector("#breakout-result", timeout=timeout)
+
+
 def prepare_page(page) -> None:
-    """A page with something on every screen: the small run, a lineage view and a started challenge (the sample variant, unrevealed)."""
+    """A page with something on every screen: the small run, a lineage view, a started challenge (the sample variant, unrevealed) and, where the build offers it, a break-out result."""
     run_small(page)
     show_lineage(page)
     start_challenge(page)
+    if page.query_selector("#nav-breakout") is not None:
+        show_breakout(page)
 
 
 def set_lang(page, lang: str) -> None:

@@ -235,3 +235,10 @@ select { max-width: 100%; }
 .rv-arch[data-outcome="invisible"] { border-style: dashed; }
 .rv-arch[data-outcome="detected"] { border-width: 2px; }
 .rv-reading { color: var(--muted); margin: 4px 0; }
+
+/* Break-out (S3g, lab_ui.md section 20) */
+.bo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 8px; margin: 8px 0; }
+.bo-cell { display: inline-block; vertical-align: top; max-width: 100%; overflow-wrap: anywhere; }
+.bo-cell[data-cell="not_reachable"], .bo-cell[data-cell="undefined"] { border-bottom: 2px dashed var(--muted); }
+.bo-list, .bo-counts, .bo-reach { padding-left: 20px; margin: 6px 0; }
+.bo-walk, .bo-events, .bo-metrics { margin: 12px 0; }

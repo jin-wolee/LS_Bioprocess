@@ -70,4 +70,5 @@ export const READY: ReadyInfo = {
     { id: "c_context_minus_system_issued_id", sample: true, decision: true },
     { id: "c_context_minus_audit_trail", sample: false, decision: false },
   ],
+  breakout: null,
 };

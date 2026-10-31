@@ -14,7 +14,7 @@ const REPORT = { schema_version: "1", architectures: [] } as unknown as NonNulla
 const running = (): State => reduce(initial, { type: "run_started", id: 5 });
 
 describe("reduce", () => {
-  it("Given the initial state Then nothing is ready, the check is pending, there is no result, no run, no problem, no lineage view and no challenge", () => {
+  it("Given the initial state Then nothing is ready, the check is pending, there is no result, no run, no problem, no lineage view, no challenge and no break-out result", () => {
     expect(initial).toEqual({
       ready: null,
       check: { state: "pending", detail: { runs_ms: [], truth: [], repeats_equal: false, cells_equal: false } },
@@ -25,6 +25,7 @@ describe("reduce", () => {
       problem: null,
       lineage: { running: null, asked: null, answer: null, problem: null },
       challenge: { starting: null, active: null, busy: null, problem: null },
+      breakout: { running: null, asked: null, result: null, problem: null },
     });
   });
 

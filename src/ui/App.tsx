@@ -2,6 +2,10 @@ import { useEffect, useLayoutEffect, useReducer, useRef, useState } from "preact
 import { saveLang, savedLang, text } from "../i18n/index.ts";
 import type { Lang } from "../i18n/index.ts";
 import type { Request, Response } from "../protocol.ts";
+import { OFFER } from "../breakout_offer.ts";
+import { Breakout } from "./Breakout.tsx";
+import { breakoutRequest, defaultBreakoutForm } from "./breakout_view.ts";
+import type { BreakoutForm } from "./breakout_view.ts";
 import { Challenge } from "./Challenge.tsx";
 import { challengeStart, defaultChallengeForm } from "./challenge_form.ts";
 import type { ChallengeForm } from "./challenge_form.ts";
@@ -24,7 +28,8 @@ type Theme = "auto" | "light" | "dark";
 /** The Home form of the run request (lab_ui.md section 4): one seed, no architectures. Seed 1 is the first seed of the goldens (spec section 7); the page draws no random number. */
 const HOME_REQUEST: Request = { type: "run", id: HOME_ID, spec: { schema_version: "1", scenario: "default", settings: {}, architectures: [], seeds: [1] } };
 
-const NAV: readonly Screen[] = SCREENS;
+/** The navigation: every screen, except the Break-out screen in a build that refuses it (lab_ui.md section 20). */
+const NAV: readonly Screen[] = SCREENS.filter((screen) => screen !== "breakout" || OFFER !== "refused");
 
 /** The address of the page without its hash: the link of a setup is this and `#/setup?...`. */
 const pageAddress = (): string => {
@@ -47,9 +52,11 @@ export function App({ worker }: { worker: Worker }) {
   // the forms of the one-seed screens start from the defaults of the build and keep what the reader typed while they visit another screen
   const [lineageForm, setLineageForm] = useState<LineageForm | null>(null);
   const [challengeForm, setChallengeForm] = useState<ChallengeForm | null>(null);
+  const [breakoutForm, setBreakoutForm] = useState<BreakoutForm | null>(null);
   const ready = state.ready;
   const lineageNow = lineageForm ?? (ready ? defaultLineageForm(ready) : null);
   const challengeNow = challengeForm ?? (ready ? defaultChallengeForm(ready) : null);
+  const breakoutNow = breakoutForm ?? (ready ? defaultBreakoutForm(ready) : null);
 
   // a layout effect runs inside the render task, before the Worker's first message can be handled
   useLayoutEffect(() => {
@@ -112,6 +119,13 @@ export function App({ worker }: { worker: Worker }) {
     const request = lineageRequest(f, id);
     if (request?.type !== "lineage") return;
     dispatch({ type: "lineage_started", id, asked: { scenario: f.scenario, seed: request.seed, architectures: request.spec.architectures } });
+    worker.postMessage(request);
+  };
+  const runBreakout = (f: BreakoutForm) => {
+    const id = take();
+    const request = ready ? breakoutRequest(f, ready, id) : null;
+    if (request?.type !== "breakout") return;
+    dispatch({ type: "breakout_started", id, asked: { case: request.case, seed: request.seed, architectures: request.architectures } });
     worker.postMessage(request);
   };
   const startChallenge = (f: ChallengeForm) => {
@@ -184,6 +198,8 @@ export function App({ worker }: { worker: Worker }) {
           ) : (
             <T as="p" k="app.loading" />
           ))}
+        {route.screen === "breakout" &&
+          (ready && breakoutNow ? <Breakout ready={ready} state={state} form={breakoutNow} setForm={setBreakoutForm} offer={OFFER} onRun={runBreakout} /> : <T as="p" k="app.loading" />)}
         {route.screen === "notes" && <Notes ready={ready} />}
       </main>
       <footer class="foot">

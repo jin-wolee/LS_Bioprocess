@@ -199,7 +199,8 @@ def test_the_committed_view_names_every_ref_of_the_shipped_files():
 
 # ---------- the bundles of the profile files (no second list of their ids in src/worker) ----------
 # Hand-typed from the "bundle ..., grade ..." of each profile file's description and from docs/research/assumptions.yaml (A065 to A073; A066, the mini-scale class, has no profile file yet).
-BUNDLE_GRADES = {"A065": "D", "A067": "D", "A068": "A", "A069": "D", "A070": "A", "A071": "A", "A072": "A", "A073": "A"}
+# S3g: A158, the bundle of both event-type profiles of the Break-out screen (profile_contamination_detection, grade A in the ledger), ships with them.
+BUNDLE_GRADES = {"A065": "D", "A067": "D", "A068": "A", "A069": "D", "A070": "A", "A071": "A", "A072": "A", "A073": "A", "A158": "A"}
 
 
 def test_the_committed_view_holds_the_grade_of_the_bundle_of_every_profile_file_the_worker_bundles():
@@ -214,3 +215,122 @@ def test_the_committed_view_holds_the_grade_of_the_bundle_of_every_profile_file_
 
 def test_no_second_list_of_the_bundle_ids_ships_in_src_worker():
     assert not (REPO / "src/worker/profile_bundles.json").exists()
+
+
+# ---------- the public build and the Break-out screen (lab_ui.md sections 6 and 20; ADR-0013) ----------
+# The screen shows the ids of its own files: the `breakout` block (and the horizon setting) of each scenarios/sc12_*.json, every ref of the event-type profiles, and the ids of its dictionaries.
+# While any of them follows to a source below main-reread, the public build does not offer the screen. Throwaway ledgers; the real ledgers are never edited.
+def make_breakout_root(tmp_path, block_refs=("A001",), other_refs=(), profile_refs=(), i18n_text="", ledger_sources=SOURCES):
+    root = make_root(tmp_path, ("A001",), i18n_text="")
+    (root / "docs/research/sources.yaml").write_text(ledger_sources, encoding="utf-8")
+    param = lambda ref: {"value": 1, "unit": "u", "ref": ref}  # noqa: E731
+    sc12 = {"settings": {f"other{i}": param(r) for i, r in enumerate(other_refs)} | {"horizon_days": param("A001")}, "breakout": {"origin": {"contaminated_at": param(block_refs[0])}, "inputs": {f"i{i}": param(r) for i, r in enumerate(block_refs)}}}
+    (root / "scenarios/sc12_x.json").write_text(json.dumps(sc12), encoding="utf-8")
+    (root / "scenarios/profiles/breakout").mkdir(parents=True)
+    (root / "scenarios/profiles/breakout/bact.json").write_text(json.dumps({"bundle": profile_refs[0] if profile_refs else "A001", "params": {f"p{i}": param(r) for i, r in enumerate(profile_refs)}}), encoding="utf-8")
+    data_ts = root / "src/worker/data.ts"
+    data_ts.write_text(data_ts.read_text(encoding="utf-8") + 'import s from "../../scenarios/sc12_x.json";\nimport p from "../../scenarios/profiles/breakout/bact.json";\n', encoding="utf-8")
+    if i18n_text:
+        (root / "src/i18n").mkdir(exist_ok=True)
+        (root / "src/i18n/en_breakout.ts").write_text(i18n_text, encoding="utf-8")
+    return root
+
+
+def test_the_screen_is_not_public_while_an_id_it_shows_follows_to_a_source_below_main_reread(tmp_path):
+    view = view_of(make_breakout_root(tmp_path, block_refs=("A001", "A002")))  # A002 follows to S001 (main-reread) and S002 (snippet)
+    assert view["breakout"] == {"ids": ["A001", "A002"], "below_main_reread": ["S002"], "public": False}
+
+
+def test_a_copy_of_the_ledger_where_those_sources_read_main_reread_makes_the_screen_public(tmp_path):
+    reread = SOURCES.replace("verification: snippet", "verification: main-reread")
+    view = view_of(make_breakout_root(tmp_path, block_refs=("A001", "A002"), ledger_sources=reread))
+    assert view["breakout"] == {"ids": ["A001", "A002"], "below_main_reread": [], "public": True}
+
+
+def test_an_id_of_a_profile_file_counts(tmp_path):
+    view = view_of(make_breakout_root(tmp_path, block_refs=("A001",), profile_refs=("A002",)))
+    assert view["breakout"]["public"] is False and view["breakout"]["below_main_reread"] == ["S002"]
+
+
+def test_an_id_of_a_break_out_dictionary_counts(tmp_path):
+    view = view_of(make_breakout_root(tmp_path, block_refs=("A001",), i18n_text='export const enBreakout = { "x": "see A002" } as const;\n'))
+    assert view["breakout"]["public"] is False and "A002" in view["breakout"]["ids"]
+
+
+def test_an_id_that_a_scenario_file_names_outside_the_break_out_block_is_not_an_id_of_the_screen(tmp_path):
+    # the process settings of an SC12 scenario are not shown on the screen; the horizon (A189 in the real file) is
+    view = view_of(make_breakout_root(tmp_path, block_refs=("A001",), other_refs=("A002",)))
+    assert view["breakout"] == {"ids": ["A001"], "below_main_reread": [], "public": True}
+    assert "A002" in view["assumptions"]  # the view still holds the id: the Setup pages may show it with a provisional chip
+
+
+def test_a_grade_a_id_with_no_source_does_not_make_the_screen_provisional(tmp_path):
+    assert view_of(make_breakout_root(tmp_path, block_refs=("A003",)))["breakout"]["public"] is True
+
+
+def test_a_build_with_no_break_out_file_has_nothing_to_refuse(tmp_path):
+    assert view_of(make_root(tmp_path, ("A001",)))["breakout"] == {"ids": [], "below_main_reread": [], "public": True}
+
+
+def test_the_ids_of_the_screen_are_listed_once_in_id_order(tmp_path):
+    view = view_of(make_breakout_root(tmp_path, block_refs=("A002", "A001", "A002"), profile_refs=("A001",)))
+    assert view["breakout"]["ids"] == ["A001", "A002"]
+
+
+# the real ledgers: the screen is not public today, and a copy of them where the sources behind it read main-reread makes it public (the real ledgers are not touched)
+def real_breakout():
+    return json.loads((REPO / "src/generated/ledger_view.json").read_text(encoding="utf-8"))["breakout"]
+
+
+def test_the_real_screen_is_not_public_today_and_its_ids_include_the_extension_inputs():
+    b = real_breakout()
+    assert b["public"] is False and b["below_main_reread"]
+    # typed from the break-out rows of docs/research/assumptions.yaml: both delays and the topology, the origin instant, the horizon, the mycoplasma inputs and the volumes
+    for i in ("A176", "A177", "A157", "A189", "A219", "A220", "A221", "A222", "A223", "A224", "A225", "A226"):
+        assert i in b["ids"], i
+
+
+def test_a_copy_of_the_real_ledgers_with_those_sources_re_read_makes_the_real_screen_public(tmp_path):
+    import shutil
+
+    import yaml
+
+    for d in ("docs/research", "scenarios", "src/worker", "src/i18n"):
+        shutil.copytree(REPO / d, tmp_path / d)
+    sources = yaml.safe_load((tmp_path / "docs/research/sources.yaml").read_text(encoding="utf-8"))
+    text = (tmp_path / "docs/research/sources.yaml").read_text(encoding="utf-8")
+    assert sources and ll.build(tmp_path)["breakout"]["public"] is False  # the copy starts like the original
+    for s in real_breakout()["below_main_reread"]:
+        head, _, tail = text.partition(f"- id: {s}\n")
+        tail = tail.replace("verification: agent-read", "verification: main-reread", 1).replace("verification: snippet", "verification: main-reread", 1)
+        text = head + f"- id: {s}\n" + tail
+    (tmp_path / "docs/research/sources.yaml").write_text(text, encoding="utf-8")
+    view = ll.build(tmp_path)
+    assert view["breakout"]["public"] is True and view["breakout"]["below_main_reread"] == []
+    # and the original is untouched
+    assert real_breakout()["public"] is False
+
+
+# the rule as a constant a bundler can fold: the public build drops the Break-out files only through it (src/worker/data.ts)
+def test_write_also_writes_the_rule_as_a_typescript_constant(tmp_path):
+    root = make_breakout_root(tmp_path, block_refs=("A001", "A002"))
+    assert ll.main(["--root", str(root), "--write"]) == 0
+    assert "export const BREAKOUT_PUBLIC = false;" in (root / "src/generated/breakout_public.ts").read_text(encoding="utf-8")
+    (root / "docs/research/sources.yaml").write_text(SOURCES.replace("verification: snippet", "verification: main-reread"), encoding="utf-8")
+    assert ll.main(["--root", str(root), "--check"]) == 1  # the constant (and the view) must follow the ledger
+    assert ll.main(["--root", str(root), "--write"]) == 0
+    assert "export const BREAKOUT_PUBLIC = true;" in (root / "src/generated/breakout_public.ts").read_text(encoding="utf-8")
+    assert ll.main(["--root", str(root), "--check"]) == 0
+
+
+def test_check_fails_when_only_the_constant_is_stale(tmp_path):
+    root = make_breakout_root(tmp_path, block_refs=("A001", "A002"))
+    ll.main(["--root", str(root), "--write"])
+    (root / "src/generated/breakout_public.ts").write_text("export const BREAKOUT_PUBLIC = true;\n", encoding="utf-8")
+    assert ll.main(["--root", str(root), "--check"]) == 1
+
+
+def test_the_committed_constant_equals_a_fresh_generation_and_the_view():
+    committed = (REPO / "src/generated/breakout_public.ts").read_text(encoding="utf-8")
+    assert committed == ll.render_public(ll.build(REPO)), "run: uv run python scripts/lab_ledger.py --write"
+    assert f"BREAKOUT_PUBLIC = {'true' if real_breakout()['public'] else 'false'};" in committed

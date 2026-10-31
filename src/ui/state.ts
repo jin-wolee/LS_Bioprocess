@@ -1,6 +1,6 @@
 import type { CheckDetail, CheckState, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
-import { initialChallenge, initialLineage, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
-import type { ChallengeState, LineageState, OneSeedAction, Problem } from "./one_seed_state.ts";
+import { initialBreakout, initialChallenge, initialLineage, reduceBreakout, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
+import type { BreakoutState, ChallengeState, LineageState, OneSeedAction, Problem } from "./one_seed_state.ts";
 
 export type { Problem };
 
@@ -41,6 +41,8 @@ export interface State {
   /** S3e: the lineage view of the last request, and the challenge in progress (one_seed_state.ts). */
   lineage: LineageState;
   challenge: ChallengeState;
+  /** S3g: the Break-out result of the last request. */
+  breakout: BreakoutState;
 }
 
 export type Action = Response | OneSeedAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number };
@@ -55,6 +57,7 @@ export const initial: State = {
   problem: null,
   lineage: initialLineage,
   challenge: initialChallenge,
+  breakout: initialBreakout,
 };
 
 /** The run in flight is over when a message about it ends it. */
@@ -63,12 +66,14 @@ const over = (state: State, id: number | null): Pick<State, "running" | "progres
 
 /** A message about a request of the one-seed screens goes to their state, not to the run in flight. */
 const forOneSeed = (state: State, id: number | null): boolean =>
-  id !== null && (id === state.lineage.running || id === state.challenge.starting?.id || id === state.challenge.busy?.id);
+  id !== null && (id === state.lineage.running || id === state.breakout.running || id === state.challenge.starting?.id || id === state.challenge.busy?.id);
 
 export const reduce = (state: State, action: Action): State => {
-  const withOneSeed = (next: State): State => ({ ...next, lineage: reduceLineage(state.lineage, action as Response | OneSeedAction), challenge: reduceChallenge(state.challenge, action as Response | OneSeedAction) });
+  const withOneSeed = (next: State): State => ({ ...next, lineage: reduceLineage(state.lineage, action as Response | OneSeedAction), challenge: reduceChallenge(state.challenge, action as Response | OneSeedAction), breakout: reduceBreakout(state.breakout, action as Response | OneSeedAction) });
   switch (action.type) {
     case "lineage_started":
+    case "breakout_started":
+    case "breakout_result":
     case "challenge_starting":
     case "challenge_busy":
     case "challenge_reset":

@@ -825,6 +825,147 @@
       ],
       "provisional": true
     },
+    "A138": {
+      "grade": "S",
+      "range": [
+        2,
+        6
+      ],
+      "unit": "d",
+      "sources": [
+        "S063"
+      ],
+      "provisional": true
+    },
+    "A139": {
+      "grade": "A",
+      "range": [
+        4,
+        36
+      ],
+      "unit": "h",
+      "sources": [
+        "S064",
+        "S065",
+        "S082"
+      ],
+      "provisional": true
+    },
+    "A141": {
+      "grade": "A",
+      "range": "n/a",
+      "unit": "% air saturation and pH units",
+      "sources": [
+        "S065"
+      ],
+      "provisional": true
+    },
+    "A142": {
+      "grade": "P",
+      "range": [
+        3,
+        7
+      ],
+      "unit": "d",
+      "sources": [
+        "S073"
+      ],
+      "provisional": true
+    },
+    "A143": {
+      "grade": "S",
+      "range": "fixed",
+      "unit": "d",
+      "sources": [
+        "S072"
+      ],
+      "provisional": true
+    },
+    "A144": {
+      "grade": "S",
+      "range": [
+        14,
+        28
+      ],
+      "unit": "d",
+      "sources": [
+        "S061",
+        "S063",
+        "S083"
+      ],
+      "provisional": true
+    },
+    "A145": {
+      "grade": "D",
+      "range": [
+        6,
+        10
+      ],
+      "unit": "d",
+      "sources": [
+        "S061",
+        "S083"
+      ],
+      "provisional": true
+    },
+    "A146": {
+      "grade": "A",
+      "range": [
+        0.33,
+        3
+      ],
+      "unit": "d",
+      "sources": [
+        "S062",
+        "S060",
+        "S059",
+        "S058"
+      ],
+      "provisional": true
+    },
+    "A148": {
+      "grade": "S",
+      "range": "n/a",
+      "unit": "mL",
+      "sources": [
+        "S083",
+        "S072"
+      ],
+      "provisional": true
+    },
+    "A157": {
+      "grade": "A",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S066",
+        "S064",
+        "S068",
+        "S069",
+        "S058"
+      ],
+      "provisional": true
+    },
+    "A158": {
+      "grade": "A",
+      "range": "bundle",
+      "unit": "bundle",
+      "sources": [
+        "S063",
+        "S065",
+        "S064",
+        "S082",
+        "S073",
+        "S072",
+        "S061",
+        "S083",
+        "S062",
+        "S060",
+        "S059",
+        "S058"
+      ],
+      "provisional": true
+    },
     "A160": {
       "grade": "P",
       "range": "units row on or off",
@@ -929,6 +1070,26 @@
       ],
       "provisional": true
     },
+    "A176": {
+      "grade": "A",
+      "range": "n/a",
+      "unit": "h",
+      "sources": [
+        "S065",
+        "S058"
+      ],
+      "provisional": true
+    },
+    "A177": {
+      "grade": "A",
+      "range": "1 to the number of reactors (A001)",
+      "unit": "reactors per lot or item",
+      "sources": [
+        "S071",
+        "S049"
+      ],
+      "provisional": true
+    },
     "A188": {
       "grade": "A",
       "range": "cohort interval 0 to 2 d; in-cohort interval 5 to 60 min; cohort size 1 to 24",
@@ -1029,6 +1190,15 @@
         "S116",
         "S122",
         "S120"
+      ],
+      "provisional": true
+    },
+    "A197": {
+      "grade": "A",
+      "range": "n/a",
+      "unit": "schedule; pH units, % air saturation, C",
+      "sources": [
+        "S099"
       ],
       "provisional": true
     },
@@ -1160,6 +1330,87 @@
         "S118"
       ],
       "provisional": true
+    },
+    "A219": {
+      "grade": "A",
+      "range": "above 0 and at most the lag (A138)",
+      "unit": "h",
+      "sources": [
+        "S063"
+      ],
+      "provisional": true
+    },
+    "A220": {
+      "grade": "A",
+      "range": [
+        2,
+        4
+      ],
+      "unit": "d",
+      "sources": [
+        "S063"
+      ],
+      "provisional": true
+    },
+    "A221": {
+      "grade": "A",
+      "range": [
+        0,
+        1
+      ],
+      "unit": "factor",
+      "sources": [
+        "S063"
+      ],
+      "provisional": true
+    },
+    "A222": {
+      "grade": "A",
+      "range": [
+        3,
+        6
+      ],
+      "unit": "d",
+      "sources": [
+        "S063"
+      ],
+      "provisional": true
+    },
+    "A223": {
+      "grade": "A",
+      "range": "1 or more; no upper end is sourced",
+      "unit": "factor",
+      "sources": [
+        "S063"
+      ],
+      "provisional": true
+    },
+    "A224": {
+      "grade": "A",
+      "range": [
+        0,
+        1
+      ],
+      "unit": "flag",
+      "sources": [
+        "S058",
+        "S060"
+      ],
+      "provisional": true
+    },
+    "A225": {
+      "grade": "A",
+      "range": "above 0",
+      "unit": "mL",
+      "sources": [],
+      "provisional": false
+    },
+    "A226": {
+      "grade": "A",
+      "range": "above 0",
+      "unit": "mL",
+      "sources": [],
+      "provisional": false
     }
   },
   "sources": {
@@ -1241,6 +1492,9 @@
     "S045": {
       "verification": "snippet"
     },
+    "S049": {
+      "verification": "snippet"
+    },
     "S053": {
       "verification": "agent-read"
     },
@@ -1252,6 +1506,54 @@
     },
     "S056": {
       "verification": "agent-read"
+    },
+    "S058": {
+      "verification": "agent-read"
+    },
+    "S059": {
+      "verification": "snippet"
+    },
+    "S060": {
+      "verification": "agent-read"
+    },
+    "S061": {
+      "verification": "agent-read"
+    },
+    "S062": {
+      "verification": "snippet"
+    },
+    "S063": {
+      "verification": "agent-read"
+    },
+    "S064": {
+      "verification": "agent-read"
+    },
+    "S065": {
+      "verification": "agent-read"
+    },
+    "S066": {
+      "verification": "agent-read"
+    },
+    "S068": {
+      "verification": "agent-read"
+    },
+    "S069": {
+      "verification": "agent-read"
+    },
+    "S071": {
+      "verification": "agent-read"
+    },
+    "S072": {
+      "verification": "agent-read"
+    },
+    "S073": {
+      "verification": "snippet"
+    },
+    "S082": {
+      "verification": "snippet"
+    },
+    "S083": {
+      "verification": "snippet"
     },
     "S084": {
       "verification": "agent-read"
@@ -1313,5 +1615,53 @@
     "S122": {
       "verification": "agent-read"
     }
+  },
+  "breakout": {
+    "ids": [
+      "A138",
+      "A139",
+      "A141",
+      "A142",
+      "A143",
+      "A144",
+      "A145",
+      "A146",
+      "A148",
+      "A157",
+      "A158",
+      "A176",
+      "A177",
+      "A189",
+      "A197",
+      "A219",
+      "A220",
+      "A221",
+      "A222",
+      "A223",
+      "A224",
+      "A225",
+      "A226"
+    ],
+    "below_main_reread": [
+      "S049",
+      "S058",
+      "S059",
+      "S060",
+      "S061",
+      "S062",
+      "S063",
+      "S064",
+      "S065",
+      "S066",
+      "S068",
+      "S069",
+      "S071",
+      "S072",
+      "S073",
+      "S082",
+      "S083",
+      "S099"
+    ],
+    "public": false
   }
 }

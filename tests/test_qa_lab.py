@@ -13,6 +13,7 @@ import pytest
 from helpers import REPO
 
 sys.path.insert(0, str(REPO / "scripts"))
+import qa_lab_breakout_helpers as bo  # noqa: E402
 import qa_lab_helpers as qc  # noqa: E402
 from qa_checks import VIEWPORTS  # noqa: E402
 
@@ -185,6 +186,14 @@ def test_missing_flag_lists_reports_an_expected_list_that_is_not_on_the_page():
     assert qc.missing_flag_lists(lists) == ["setup-ablation", "results-legend", "lineage-column", "lineage-ablation", "challenge-ablations"]
 
 
+def test_the_break_out_lists_are_expected_only_where_the_page_offers_the_screen():
+    assert qc.BREAKOUT_FLAG_LISTS == ["breakout-ablations", "breakout-column"]
+    lists = [{"name": n, "flags": FLAGS} for n in qc.EXPECTED_FLAG_LISTS]
+    assert qc.missing_flag_lists(lists) == []
+    assert qc.missing_flag_lists(lists, breakout=True) == ["breakout-ablations", "breakout-column"]
+    assert qc.missing_flag_lists(lists + [{"name": "breakout-ablations", "flags": FLAGS}], breakout=True) == ["breakout-column"]
+
+
 # ---------- the label-error sentence (lab_ui.md section 10) ----------
 SENTENCE = (
     "Without system_issued_id, a label error is not detected here. A conflict of the duplicate-file check (VR-008b) cannot tell a replayed file from two analyses that a label error gave the same "
@@ -238,8 +247,8 @@ def test_the_small_run_is_two_seeds_of_the_list_with_architectures_a_and_c():
     assert qc.SMALL_RUN == {"seeds": 2, "architectures": ["a_manual", "c_context"]}
 
 
-def test_screens_are_the_six_that_exist_now():
-    assert qc.SCREENS == ["home", "setup", "results", "lineage", "challenge", "notes"]
+def test_screens_are_the_seven_that_exist_now_and_break_out_sits_before_notes():
+    assert qc.SCREENS == ["home", "setup", "results", "lineage", "challenge", "breakout", "notes"]
 
 
 # ---------- a Ref inside running text stays on the line of its sentence (lab_ui.md section 6) ----------
@@ -395,3 +404,119 @@ def test_ubiquitous_problems_names_a_record_that_lacks_the_list_a_wrong_type_for
     assert qc.ubiquitous_problems("b_lims_lite", {}, [], {"score": {"result": "miss"}}) == ["b_lims_lite: the record has no ubiquitous list"]
     assert qc.ubiquitous_problems("a_manual", {"ubiquitous": []}, [], {"score": {"result": "miss"}}) == ["a_manual: the record names ubiquitous [], the typed list says ['unattributable_record']"]
     assert qc.ubiquitous_problems("b_lims_lite", {"ubiquitous": ["planned_vs_actual"]}, [], {"score": {"result": "miss"}}) == ["b_lims_lite: the page notes [], the record names ['planned_vs_actual']"]
+
+
+# ---------- the Break-out screen (lab_ui.md sections 12 and 20) ----------
+ARCHS = ["a_manual", "b_lims_lite", "c_context", "c_context_minus_material_lot_links", "c_context_minus_equipment_links"]
+FLAG_STATES = {  # the link flags of the five records: A has neither, B has equipment_links, C has both, and C without each of them
+    "a_manual": ["material_lot_links:off", "equipment_links:off"], "b_lims_lite": ["material_lot_links:off", "equipment_links:on"], "c_context": ["material_lot_links:on", "equipment_links:on"],
+    "c_context_minus_material_lot_links": ["material_lot_links:off", "equipment_links:on"], "c_context_minus_equipment_links": ["material_lot_links:on", "equipment_links:off"],
+}
+
+
+def cell_of(cell):
+    if cell is None:
+        return {"status": "not_reachable", "kind": "not_reachable", "num": None, "den": None}
+    return {"status": "reported" if cell[1] else "none_occurred", "kind": "share" if cell[1] else "undefined", "num": str(cell[0]), "den": str(cell[1])}
+
+
+def page_of(expected=None, flags=None):
+    """What the page shows for the typed report: built from the typed table itself, so the helper is tested against a page that is right and then against one that is wrong in one place."""
+    expected = expected or bo.BREAKOUT_EXPECTED
+    out = []
+    for arch in ARCHS:
+        want = expected[arch]
+        states = (flags or FLAG_STATES)[arch]
+        out.append({"id": arch, "reach": "not_reachable" if want["d3"] is None else "readable", "d1": dict(want["d1"]), "d3": None if want["d3"] is None else dict(want["d3"]),
+                    "reflagged": want["reflagged"], "cells": {m: cell_of(c) for m, c in want["cells"].items()}, "flags": list(states)})
+    return out
+
+
+def test_the_typed_table_lists_the_five_records_in_the_order_of_the_form():
+    assert list(bo.BREAKOUT_EXPECTED) == ARCHS == bo.BREAKOUT_ARCHS
+
+
+def test_a_page_that_equals_the_typed_report_has_no_problem():
+    assert bo.breakout_problems(page_of()) == []
+
+
+def test_the_typed_table_says_what_the_design_says_about_direction_3():
+    # not reachable in A, where neither link flag is on; an empty set that was looked for in B and in C without material_lot_links; a set in C and in C without equipment_links
+    e = bo.BREAKOUT_EXPECTED
+    assert e["a_manual"]["d3"] is None and all(v is None for k, v in e["a_manual"]["cells"].items() if "direction_3" in k)
+    assert e["b_lims_lite"]["d3"] == {} and e["c_context_minus_material_lot_links"]["d3"] == {}
+    assert sum(e["c_context"]["d3"].values()) == 54 and e["c_context"]["cells"]["identification.direction_3.precision"] == (2, 54)
+    assert e["c_context"]["cells"]["retro_flag_completeness"] == (6, 6) and e["a_manual"]["cells"]["retro_flag_completeness"] == (0, 6)
+
+
+def test_a_not_reachable_figure_shown_as_recall_zero_is_a_problem():
+    page = page_of()
+    page[0]["cells"]["identification.direction_3.recall"] = {"status": "reported", "kind": "share", "num": "0", "den": "2"}
+    problems = bo.breakout_problems(page)
+    assert any("a_manual identification.direction_3.recall" in p for p in problems)
+
+
+def test_a_not_reachable_figure_that_carries_a_count_is_a_problem():
+    page = page_of()
+    page[0]["cells"]["identification.direction_3.recall"]["num"] = "0"
+    assert any("not reachable" in p and "count" in p for p in bo.breakout_problems(page))
+
+
+def test_an_empty_set_shown_as_not_reachable_and_the_reverse_are_problems():
+    page = page_of()
+    page[1]["d3"] = None  # B looked at equipment and found nothing: not "not reachable"
+    page[0]["d3"] = {}  # A could not look: not an empty set
+    problems = bo.breakout_problems(page)
+    assert any("b_lims_lite: direction 3 is not reachable, the report says a set" in p for p in problems)
+    assert any("a_manual: direction 3 is a set, the report says not reachable" in p for p in problems)
+
+
+def test_a_figure_that_differs_from_the_report_is_named_with_both_counts():
+    page = page_of()
+    page[2]["cells"]["retro_flag_completeness"]["num"] = "5"
+    page[2]["reflagged"] = 89
+    problems = bo.breakout_problems(page)
+    assert any("c_context retro_flag_completeness" in p and "6 of 6" in p for p in problems)
+    assert any("89 results re-flagged, the report says 90" in p for p in problems)
+
+
+def test_a_set_that_differs_from_the_report_is_a_problem_in_each_direction():
+    page = page_of()
+    page[2]["d3"]["material_lot"] = 2
+    page[0]["d1"] = {"batch": 1}
+    problems = bo.breakout_problems(page)
+    assert any("c_context: direction 3 returned" in p for p in problems)
+    assert any("a_manual: direction 1 returned" in p for p in problems)
+
+
+def test_reach_must_follow_the_link_flags_whatever_the_table_says():
+    page = page_of(flags={**FLAG_STATES, "b_lims_lite": ["material_lot_links:off", "equipment_links:off"]})
+    assert any(p.startswith("b_lims_lite: reach is readable") for p in bo.breakout_problems(page))
+
+
+def test_recall_without_precision_is_a_problem():
+    page = page_of()
+    del page[2]["cells"]["identification.direction_1.precision"]
+    problems = bo.breakout_problems(page)
+    assert any("direction 1 shows only ['recall', 'false_alarm']" in p for p in problems)
+
+
+def test_architectures_in_another_order_or_missing_are_a_problem():
+    page = page_of()
+    assert bo.breakout_problems(list(reversed(page)))[0].startswith("architectures")
+    assert bo.breakout_problems(page[:3])[0].startswith("architectures")
+
+
+def test_the_observed_table_is_checked_against_the_typed_plant():
+    rows = [["64", "signal_observed", "U01 · DO low"], ["64", "deviation_opened", "DEV-1 · U01"], ["66", "confirm_sample_drawn", "U01-CONF · bioburden, sterility"], ["66", "confirm_sample_drawn", "U02-CONF · bioburden, sterility"],
+            ["74", "signal_observed", "U05 · DO low"], ["76", "confirm_sample_drawn", "U05-SIG-CONF · bioburden, sterility"], ["186", "confirm_result", "U01-CONF · bioburden · detected"]]
+    assert bo.observed_problems(rows) == []
+    assert bo.observed_problems(rows[1:])[0].startswith("the first observed event")
+    assert any("confirming draws" in p for p in bo.observed_problems(rows[:3]))
+    assert any("time order" in p for p in bo.observed_problems([rows[0], rows[4], rows[1], rows[2], rows[3], rows[5]]))
+    assert bo.observed_problems([]) == ["no observed event on the page"]
+
+
+def test_a_break_out_result_with_a_key_of_the_hidden_script_is_a_problem():
+    assert bo.breakout_result_problems({"per_architecture": [{"rows": [], "walk": {}}], "event": {"type": "bacterial"}}) == []
+    assert bo.breakout_result_problems({"event": {"contamination_onset": 1}, "x": [{"answer_key": 2}]}) == ["key contamination_onset in the breakout_result", "key answer_key in the breakout_result"]

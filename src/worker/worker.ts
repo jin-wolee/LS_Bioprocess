@@ -1,3 +1,4 @@
+import { answerBreakout } from "../../engine/src/experiments/assembly/lab/breakout.ts";
 import { checkError, makeDeps, runCheck } from "../../engine/src/experiments/assembly/lab/check.ts";
 import { createChallenges } from "../../engine/src/experiments/assembly/lab/challenges.ts";
 import type { Refusal } from "../../engine/src/experiments/assembly/lab/challenges.ts";
@@ -14,6 +15,8 @@ import { LAB_DATA } from "./data.ts";
 // The Worker entry (docs/design/lab_ui.md section 4): the only file of src/ with value imports from engine/, and only from engine/src/experiments/assembly/lab/. The page sends a request of plain
 // data and gets plain data back; there is no message that asks for a truth log, an event stream, the answer key or the raw quirk key. Both sides are one build, so the page trusts the Worker's
 // messages; the Worker does not trust a request, because a shareable link is user input (invalid_spec).
+//
+// S3g adds `breakout` (the Break-out screen): one SC12 case, one seed, the chosen architectures, answered with `breakout_result`.
 //
 // S3e adds `lineage` and the four `challenge_*` requests. The challenge lives in the Worker under its id (engine/src/experiments/assembly/lab/challenges.ts): the plant leaves it only inside
 // `challenge_reveal`, and `lineage` is refused with `locked` for a run that is an unrevealed challenge (rules 2 and 3 of section 4).
@@ -130,6 +133,17 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     }
   };
 
+  /** The `breakout` request: one case, one seed, the architectures; the answer is the report of the case over that seed. It is async (the truth log is hashed before and after the architectures). */
+  const breakout = async (id: number, request: Record<string, unknown>): Promise<void> => {
+    try {
+      const out = await answerBreakout(env.data, { case: request.case, architectures: request.architectures, seed: request.seed });
+      if (out.ok) post({ type: "breakout_result", id, result: out.result });
+      else refuse(id, out);
+    } catch (e) {
+      fail(id, "engine_error", e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const onMessage = (message: unknown): Promise<void> | void => {
     if (typeof message !== "object" || message === null || Array.isArray(message)) return fail(null, "invalid_spec", "a request must be an object with a type");
     const { type, id, spec } = message as { type?: unknown; id?: unknown; spec?: unknown };
@@ -146,6 +160,7 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       if (requestId === null) return fail(null, "invalid_spec", `a ${type} request needs a numeric id`);
       return oneSeed(requestId, message as Record<string, unknown>);
     }
+    if (type === "breakout") return requestId === null ? fail(null, "invalid_spec", "a breakout request needs a numeric id") : breakout(requestId, message as Record<string, unknown>);
     return fail(requestId, "invalid_spec", `unknown request type ${JSON.stringify(type)}`);
   };
 

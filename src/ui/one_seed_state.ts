@@ -1,7 +1,7 @@
-import type { ChallengeVariant, DecisionRecordView, ErrorCode, LineageView, RecordView, RefValue, Response, Reveal, SampleRecord } from "../protocol.ts";
+import type { BreakoutResult, ChallengeVariant, DecisionRecordView, ErrorCode, LineageView, RecordView, RefValue, Response, Reveal, SampleRecord } from "../protocol.ts";
 
 // What the page knows of the one-seed screens (lab_ui.md sections 8 and 9): the lineage view of the last request, and the challenge in progress. They are folded from the Worker's messages by
-// the reducer of state.ts. A request is remembered with what it asked, because the answer carries no footer: the screen composes the result block from the request and the engine version.
+// the reducer of state.ts. S3g adds the Break-out result of the last request. A request is remembered with what it asked, because the answer carries no footer: the screen composes the result block from the request and the engine version.
 
 export interface Problem {
   /** The request it answers; null for the Worker itself. */
@@ -52,14 +52,43 @@ export interface ChallengeState {
   problem: Problem | null;
 }
 
+export interface BreakoutAsked {
+  case: string;
+  seed: number;
+  architectures: string[];
+}
+
+export interface BreakoutState {
+  /** The id of the request in flight. */
+  running: number | null;
+  asked: BreakoutAsked | null;
+  result: BreakoutResult | null;
+  problem: Problem | null;
+}
+
 export type OneSeedAction =
   | { type: "lineage_started"; id: number; asked: LineageAsked }
+  | { type: "breakout_started"; id: number; asked: BreakoutAsked }
   | { type: "challenge_starting"; id: number; meta: ChallengeMeta }
   | { type: "challenge_busy"; busy: Busy }
   | { type: "challenge_reset" };
 
 export const initialLineage: LineageState = { running: null, asked: null, answer: null, problem: null };
 export const initialChallenge: ChallengeState = { starting: null, active: null, busy: null, problem: null };
+export const initialBreakout: BreakoutState = { running: null, asked: null, result: null, problem: null };
+
+export const reduceBreakout = (state: BreakoutState, action: Response | OneSeedAction): BreakoutState => {
+  switch (action.type) {
+    case "breakout_started":
+      return { running: action.id, asked: action.asked, result: null, problem: null };
+    case "breakout_result":
+      return action.id === state.running ? { ...state, running: null, result: action.result, problem: null } : state;
+    case "error":
+      return action.id !== null && action.id === state.running ? { ...state, running: null, problem: { id: action.id, code: action.code, message: action.message } } : state;
+    default:
+      return state;
+  }
+};
 
 export const reduceLineage = (state: LineageState, action: Response | OneSeedAction): LineageState => {
   switch (action.type) {

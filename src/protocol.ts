@@ -3,7 +3,7 @@ import type { ExperimentReport } from "../engine/src/generated/experiment_report
 // The messages between the page and the Worker (docs/design/lab_ui.md section 4). Plain data only (structuredClone-safe): no function, no class instance, no truth.
 // Types only: the page imports this file for its shapes and the Worker implements it. S3b built the start-up messages and the `run` request in its Home form; S3c's Setup batch adds
 // the full `ready`, the full `run` (architectures, seeds, the two profile lists, the capture path), `progress` and `cancel`. S3e adds `lineage` and the `challenge_*` requests with their
-// answers. `breakout` joins this file when Step 6 lands. The page imports no engine module, so the shapes of the views are declared here and the Worker's plain data is assignable to them.
+// answers. S3g adds `breakout` and `breakout_result` (the Break-out screen). The page imports no engine module, so the shapes of the views are declared here and the Worker's plain data is assignable to them.
 
 export type CapturePath = "manual_transcription" | "adapter_ingest";
 
@@ -30,7 +30,8 @@ export type Request =
   | { type: "challenge_start"; id: number; variant: ChallengeVariant; spec: RunSpec; seed: number; shown: string }
   | { type: "challenge_open"; id: number; challenge: string; sample_id: string }
   | { type: "challenge_guess"; id: number; challenge: string; target: { sample_id: string } | { decision_id: string } }
-  | { type: "challenge_giveup"; id: number; challenge: string };
+  | { type: "challenge_giveup"; id: number; challenge: string }
+  | { type: "breakout"; id: number; case: string; architectures: string[]; seed: number };
 
 export type ChallengeVariant = "sample" | "decision";
 
@@ -200,6 +201,86 @@ export interface Reveal {
   };
 }
 
+// The Break-out screen (lab_ui.md sections 3 and 20). A case is one of the five bundled SC12 scenarios; the result is built from the report of the experiment over this one seed, so a status, a
+// denominator and a reason are the report's own words (engine strings, shown verbatim in a lang="en" element).
+export interface BreakoutOffer {
+  cases: { id: string; event_type: string; origin_kind: string }[];
+  /** The seed list of the SC12 config (A103). */
+  seed_list: number[];
+  /** The flags that decide what direction 3 can read: lots and the seed parent, and equipment. */
+  needs: { lots: string; equipment: string };
+}
+export interface BreakoutInput {
+  name: string;
+  ref: string;
+  value: number;
+  unit: string;
+  source: "scenario_input" | "profile_default" | "decision_setting";
+  what: string;
+}
+export interface BreakoutUse {
+  unit_id: string;
+  at_h: number;
+}
+export interface BreakoutRow {
+  metric: string;
+  status: "reported" | "none_occurred" | "not_reachable";
+  value: number | null;
+  num: number | null;
+  den: number | null;
+  denominator: string | null;
+  reason: string | null;
+}
+export interface BreakoutWalkItem {
+  kind: string;
+  id: string;
+  path: string;
+}
+export interface BreakoutInvestigationEvent {
+  type: "hold_placed" | "hold_quarantined" | "hold_released" | "hold_rejected" | "result_reflagged" | "deviation_closed";
+  t: number;
+  hold_id?: string;
+  target_kind?: string;
+  target_id?: string;
+  result_id?: string;
+  deviation_id?: string;
+}
+export type BreakoutObserved =
+  | { type: "signal_observed"; t: number; unit_id: string; signal: string; limit: string }
+  | { type: "deviation_opened"; t: number; deviation_id: string; unit_id: string }
+  | { type: "unit_stopped"; t: number; unit_id: string }
+  | { type: "confirm_sample_drawn"; t: number; sample_id: string; unit_id: string; tests: string[] }
+  | { type: "confirm_result"; t: number; sample_id: string; test: string; outcome: "detected" | "not_detected" };
+export interface BreakoutArchitecture {
+  architecture: string;
+  reach: { direction3: boolean; lots: boolean; equipment: boolean };
+  walk: { estimated_onset: number; decision_at: number; direction_1: BreakoutWalkItem[]; direction_3: BreakoutWalkItem[] | null };
+  events: BreakoutInvestigationEvent[];
+  rows: BreakoutRow[];
+  not_evaluable: { rule: string; reason: string }[];
+}
+export interface BreakoutResult {
+  kind: "simulation_result";
+  case: string;
+  scenario: string;
+  seed: number;
+  engine_version: string;
+  architectures: string[];
+  truth_log_hash: string;
+  event: { type: string; profile: string; origin_kind: string; origin_id: string; horizon_days: number; horizon_ref: string; contaminated_at: { value: number; unit: string; ref: string } | null };
+  inputs: BreakoutInput[];
+  topology: {
+    ref: string;
+    lots: { lot_id: string; kind: string; units: string[]; prepared_at_h: number; uses: BreakoutUse[] }[];
+    equipment: { equipment_id: string; name: string; units: string[]; uses: BreakoutUse[] }[];
+  };
+  observed: BreakoutObserved[];
+  needs: { lots: string; equipment: string };
+  /** The sentence of the author's ruling on C29 for the mycoplasma type; null for the other types. */
+  c29: string | null;
+  per_architecture: BreakoutArchitecture[];
+}
+
 /** Worker -> page */
 export type Response =
   | {
@@ -216,6 +297,8 @@ export type Response =
       challenge_variants: ChallengeVariant[];
       decision_seed_list: number[];
       challenge_records: { id: string; sample: boolean; decision: boolean }[];
+      /** Null when the build bundles no break-out data: the public build while a source of the screen is below main-reread. */
+      breakout: BreakoutOffer | null;
     }
   | { type: "check"; state: CheckState; detail: CheckDetail }
   | { type: "progress"; id: number; done: number; total: number }
@@ -224,4 +307,5 @@ export type Response =
   | { type: "challenge_ready"; id: number; challenge: string; announced_type: string; record: RecordView | DecisionRecordView; inputs: RefValue[] }
   | { type: "sample_record"; id: number; sample: SampleRecord }
   | { type: "challenge_reveal"; id: number; reveal: Reveal }
+  | { type: "breakout_result"; id: number; result: BreakoutResult }
   | { type: "error"; id: number | null; code: ErrorCode; message: string };

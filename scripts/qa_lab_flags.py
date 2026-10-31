@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from qa_checks import Result
-from qa_lab_browser import go, open_lab, run_small, show_lineage, wait_final
+from qa_lab_browser import go, open_lab, run_small, show_breakout, show_lineage, wait_final
 from qa_lab_helpers import flag_list_problems, missing_flag_lists
 
 
@@ -34,11 +34,15 @@ EXTRA_FLAG_JS = """(() => {
 
 
 def flag_lists(page) -> dict:
-    """Every list of flags on Setup, Results (after the small run), Lineage (after a view), Challenge (its start panel: the records to search) and Notes, with the flags `ready` gave the page."""
+    """Every list of flags on Setup, Results (after the small run), Lineage (after a view), Challenge (its start panel: the records to search), Break-out (where the build offers it, after a result:
+    the ablations to choose from and the flags of each record shown) and Notes, with the flags `ready` gave the page."""
     run_small(page)
     show_lineage(page)
-    seen = {"expected": [], "lists": []}
-    for screen in ("setup", "results", "lineage", "challenge", "notes"):
+    offered = page.query_selector("#nav-breakout") is not None
+    if offered:
+        show_breakout(page)
+    seen = {"expected": [], "lists": [], "breakout": offered}
+    for screen in ("setup", "results", "lineage", "challenge", *(("breakout",) if offered else ()), "notes"):
         go(page, screen)
         got = page.evaluate(COLLECT_FLAGS_JS)
         seen["expected"] = got["expected"]
@@ -54,7 +58,7 @@ def check_flags(browser, url) -> Result:
         with open_lab(browser, url, init_script=script) as (page, errors, _):
             wait_final(page)
             seen = flag_lists(page)
-        found = flag_list_problems(seen["lists"], seen["expected"]) + [f"no list {n}" for n in missing_flag_lists(seen["lists"])]
+        found = flag_list_problems(seen["lists"], seen["expected"]) + [f"no list {n}" for n in missing_flag_lists(seen["lists"], seen["breakout"])]
         if label != "engine" and "synthetic_extra_flag" not in seen["expected"]:
             found.append("the patched Worker did not reach the page")
         problems += [f"{label}: {p}" for p in found + [f"console: {e[:100]}" for e in errors]]

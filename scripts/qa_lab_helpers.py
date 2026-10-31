@@ -22,11 +22,14 @@ PASSED_ONLY_WORDS = ["reproducib", "byte for byte"]
 # (label, #theme-select value, emulated prefers-color-scheme)
 LAB_THEMES = [("light", "light", "light"), ("dark", "dark", "light"), ("auto-light", "auto", "light"), ("auto-dark", "auto", "dark")]
 LANGS = ("en", "ko")
-SCREENS = ["home", "setup", "results", "lineage", "challenge", "notes"]
+# Break-out joins in S3g; a build that refuses it (the public build) has no navigation link for it, so the checks take the screens the page shows (qa_lab_browser.shown_screens)
+SCREENS = ["home", "setup", "results", "lineage", "challenge", "breakout", "notes"]
 # the small run of the end-to-end path: the first two seeds of the list, A and C (a twenty-seed run is several seconds, and the gate does not time it)
 SMALL_RUN = {"seeds": 2, "architectures": ["a_manual", "c_context"]}
 # the lists of flags that exist now (lab_ui.md section 11); the legend of Results and the head of a Lineage column are one list per architecture shown
 EXPECTED_FLAG_LISTS = ["setup-matrix", "setup-ablation", "results-legend", "notes-table", "lineage-column", "lineage-ablation", "challenge-ablations"]
+# the lists of the Break-out screen (S3g), expected only where the page offers the screen: the ablations to choose from, and the flags of each record shown in a result
+BREAKOUT_FLAG_LISTS = ["breakout-ablations", "breakout-column"]
 # the label-error sentence of lab_ui.md section 10 (spec section 5, "Notes from S2g"), without the code marks
 LABEL_ERROR_SENTENCE = (
     "Without system_issued_id, a label error is not detected here. A conflict of the duplicate-file check (VR-008b) cannot tell a replayed file from two analyses that a label error gave the same "
@@ -104,10 +107,10 @@ def flag_list_problems(lists, flags) -> list[str]:
     return problems
 
 
-def missing_flag_lists(lists) -> list[str]:
-    """The lists of EXPECTED_FLAG_LISTS that are not on the screens checked."""
+def missing_flag_lists(lists, breakout: bool = False) -> list[str]:
+    """The lists of EXPECTED_FLAG_LISTS (and, where the page offers the Break-out screen, BREAKOUT_FLAG_LISTS) that are not on the screens checked."""
     present = {lst["name"] for lst in lists}
-    return [name for name in EXPECTED_FLAG_LISTS if name not in present]
+    return [name for name in EXPECTED_FLAG_LISTS + (BREAKOUT_FLAG_LISTS if breakout else []) if name not in present]
 
 
 def label_sentence_ok(text: str) -> bool:
@@ -252,3 +255,4 @@ def ubiquitous_problems(shown, record, noted, reveal) -> list[str]:
     if score.get("result") == "background" and score.get("background_type") in types:
         problems.append(f"{shown}: scored background for {score['background_type']}, a type on every sample of the record")
     return problems
+

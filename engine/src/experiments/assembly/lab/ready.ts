@@ -3,6 +3,8 @@ import { prevented } from "../../../inject/catalogue.ts";
 import { FLAG_NAMES } from "../../../record/architecture.ts";
 import { ENGINE_VERSION } from "../../../trace.ts";
 import { parseExperimentConfig } from "../config.ts";
+import { breakoutOffer } from "./breakout.ts";
+import type { BreakoutOffer } from "./breakout.ts";
 import { decisionSeeds } from "./challenge_decision.ts";
 import { offeredTypes } from "./challenge_plant.ts";
 import { evaluationRefs, presetInfos, profileInfos } from "./catalogue.ts";
@@ -15,7 +17,7 @@ import type { LabData } from "./setup.ts";
 // types how many there are), the scenarios the lab offers with every setting, its unit and its ledger id (ADR-0012: each parameter is {value, unit, ref}), the presets and the ablations of
 // C, the seed minimum and the seed list (A103, experiment 1), the evaluation inputs and the profile catalogue (spec section 4.5.6).
 
-export type { PresetInfo, ProfileInfo, RefValue };
+export type { BreakoutOffer, PresetInfo, ProfileInfo, RefValue };
 
 export interface ScenarioInfo {
   id: string;
@@ -40,6 +42,8 @@ export interface Ready {
   decision_seed_list: number[];
   /** Which records each variant of the challenge can show, per preset and ablation: the sample variant needs a drawn type the record does not prevent, the decision variant a label error it does not prevent. */
   challenge_records: { id: string; sample: boolean; decision: boolean }[];
+  /** The Break-out screen (lab_ui.md section 3, S3g): the cases, the seed list and the flags direction 3 needs; null when the build bundles no break-out data (the public build while a source is below main-reread). */
+  breakout: BreakoutOffer | null;
 }
 
 export const scenarioInfos = (data: LabData): ScenarioInfo[] =>
@@ -67,6 +71,7 @@ export const readyOf = (data: LabData): Ready => {
     evaluation: evaluationRefs(data),
     challenge_variants: data.decision ? ["sample", "decision"] : ["sample"],
     decision_seed_list: decisionSeeds(data),
+    breakout: breakoutOffer(data),
     challenge_records: architecturesOf(data).map((a) => ({ id: a.id, sample: offeredTypes(a).length > 0, decision: data.decision !== undefined && !prevented("label_error", a.flags) })),
   };
 };

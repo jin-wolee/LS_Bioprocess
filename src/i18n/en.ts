@@ -1,6 +1,7 @@
 // English texts of the lab (docs/design/lab_ui.md section 10): the source of the dictionary. A flat object, keys by screen, {name} placeholders. src/i18n/ko.ts is typed against it, so a
 // missing Korean key is a type error. A text holds no digit: every number on the page is an input with a ledger id (<Ref>), a simulation result (<ResultBlock>) or a label (invariant 3).
 // Strings that come from the engine (error messages, the reason of the check) are data and are shown verbatim in a lang="en" element under a translated label.
+import { enBreakout } from "./en_breakout.ts";
 import { enChallenge } from "./en_challenge.ts";
 import { enLineage } from "./en_lineage.ts";
 import { enNotes } from "./en_notes.ts";
@@ -18,6 +19,7 @@ export const enBase = {
   "nav.results": "Results",
   "nav.lineage": "Lineage",
   "nav.challenge": "Challenge",
+  "nav.breakout": "Break-out",
   "nav.notes": "Notes",
 
   "controls.lang.label": "Language",
@@ -85,6 +87,6 @@ export const enBase = {
   "grade.provisional": "provisional",
 } as const;
 
-export const en = { ...enBase, ...enSetup, ...enResults, ...enNotes, ...enLineage, ...enChallenge } as const;
+export const en = { ...enBase, ...enSetup, ...enResults, ...enNotes, ...enLineage, ...enChallenge, ...enBreakout } as const;
 
 export type Key = keyof typeof en;
