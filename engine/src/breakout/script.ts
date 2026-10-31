@@ -16,22 +16,29 @@ import type { BreakoutPlan } from "./plan.ts";
  * the named draw falls at the same instant in the real run (it is before the stop it causes).
  */
 export const scriptOf = (cfg: ScenarioConfig, b: BreakoutConfig): BreakoutPlan => {
-  if (b.origin.kind !== "sampling") return planBreakout(b, cfg.scenario_id, cfg.process) as BreakoutPlan;
+  if (b.origin.kind !== "sampling") return planBreakout(b, cfg.scenario_id, cfg.process);
   const probe = createRng();
   const draws = runSampling(cfg.sampling, runProcess(cfg.process, cfg.seed, probe), cfg.seed, probe).samples;
-  return planBreakout(b, cfg.scenario_id, cfg.process, (id) => draws.find((s) => s.sample_id === id && s.state === "drawn")?.drawn_s) as BreakoutPlan;
+  return planBreakout(b, cfg.scenario_id, cfg.process, (id) => draws.find((s) => s.sample_id === id && s.state === "drawn")?.drawn_s);
 };
 
-/** The process settings of the run: the scenario's, plus one stop and the multiplier moments of the event type (rule S13) per affected unit, and the seed lot of each unit the topology names. */
-export const withScript = (c: ProcessConfig, plan: BreakoutPlan): ProcessConfig => ({
-  ...c,
-  scripted: [
-    ...c.scripted,
-    ...plan.units.map((u) => ({ type: "stop" as const, unit_id: u.unit_id, at_s: u.stop_s })),
-    ...plan.units.flatMap((u) => u.effects.map((e) => ({ type: "multiplier" as const, unit_id: u.unit_id, ...e }))),
-  ],
-  ...(Object.keys(plan.seedLots).length > 0 && { seedLots: plan.seedLots }),
-});
+/**
+ * The process settings of the run: the scenario's, plus one stop and the multiplier moments of the event type (rule S13) per affected unit, the seed lot of each unit the topology names, and the
+ * pH ramp of each affected unit when the type moves pH, so that a sample drawn from it carries the pH its sensor's truth has (one pH truth, C1).
+ */
+export const withScript = (c: ProcessConfig, plan: BreakoutPlan): ProcessConfig => {
+  const phRamps = Object.fromEntries(plan.units.flatMap((u) => (u.ph_ramp === undefined ? [] : [[u.unit_id, u.ph_ramp]])));
+  return {
+    ...c,
+    scripted: [
+      ...c.scripted,
+      ...plan.units.map((u) => ({ type: "stop" as const, unit_id: u.unit_id, at_s: u.stop_s })),
+      ...plan.units.flatMap((u) => u.effects.map((e) => ({ type: "multiplier" as const, unit_id: u.unit_id, ...e }))),
+    ],
+    ...(Object.keys(plan.seedLots).length > 0 && { seedLots: plan.seedLots }),
+    ...(Object.keys(phRamps).length > 0 && { phRamps }),
+  };
+};
 
 /** An affected unit that ended before its stop (the harvest rule took it first) would leave a script that did not happen: the run says so instead of logging it. */
 export const checkStops = (scenario: string, plan: BreakoutPlan, proc: ProcessRun): void => {

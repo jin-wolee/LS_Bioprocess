@@ -32,7 +32,7 @@ export interface BreakoutCase {
     seconds: number;
     /** The ledger id of the lag of the event type (A139, A138) when the case sets none, else the id the case cites. */
     ref: string;
-    /** True when the case sets it (a sweep over the ledger range); false when it is the lag of the scenario. */
+    /** True when the case sets it (a sweep over the ledger range); false when it is the default, the lag of the event type (rule S8). */
     swept: boolean;
   };
 }
@@ -76,10 +76,13 @@ const fail = (c: Pick<BreakoutCase, "case_id">, why: string): never => {
 /** The break-out block of a case, or an error: SC12 has no meaning without one. */
 export const blockOf = (c: BreakoutCase): BreakoutConfig => c.scenario.breakout ?? fail(c, "the scenario has no breakout block");
 
-/** A case of the config with its scenario loaded (the caller reads the file, applies `patchScenario` and loads it). The assumed lag is the one the case sets, in hours, else the lag the scenario gives the event. */
+/**
+ * A case of the config with its scenario loaded (the caller reads the file, applies `patchScenario` and loads it). The assumed lag is the one the case sets, in hours, else the lag of the event
+ * type (A139, A138), as rule S8 says; the lag the scenario gives the event is the truth and the walk-back does not know it (spec 11.8.12 C41, F7).
+ */
 export const breakoutCase = (c: BreakoutCaseConfig, scenario: ScenarioConfig): BreakoutCase => {
   const b = scenario.breakout ?? fail(c, "the scenario has no breakout block");
-  if (c.assumed_lag === undefined) return { case_id: c.case_id, scenario, assumed_lag: { seconds: b.lag_s, ref: b.profile.params.onset_to_signal_lag_h?.ref ?? "A139", swept: false } };
+  if (c.assumed_lag === undefined) return { case_id: c.case_id, scenario, assumed_lag: { seconds: b.profile.lag_s, ref: b.profile.params.onset_to_signal_lag_h?.ref ?? "A139", swept: false } };
   if (c.assumed_lag.unit !== "h" || !(c.assumed_lag.value > 0)) fail(c, `assumed_lag must be above 0 and in hours, not ${c.assumed_lag.value} ${c.assumed_lag.unit}`);
   return { case_id: c.case_id, scenario, assumed_lag: { seconds: Math.round(c.assumed_lag.value * HOUR), ref: c.assumed_lag.ref, swept: true } };
 };

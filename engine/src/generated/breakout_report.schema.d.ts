@@ -53,6 +53,18 @@ export interface BreakoutReport {
       origin_kind: "seed_lot" | "medium_lot" | "shared_equipment" | "unit_equipment" | "sampling";
       origin_id: string;
       horizon_days: number;
+      /**
+       * The ledger id of the scenario horizon (a scenario setting, A189).
+       */
+      horizon_ref: "A189";
+      /**
+       * The instant the origin item became contaminated (A157): the contaminated_at of a lot or a shared equipment item, the instant of a unit's own equipment. Hidden from every recorder and printed here because the report is the evaluator's output. Null for a sampling origin, whose onset is the instant of the named draw, which the seed decides.
+       */
+      contaminated_at: null | {
+        value: number;
+        unit: "h";
+        ref: "A157";
+      };
     };
     /**
      * Every input of the case that the ledger gives no number for, and the settings of the investigation: A176 (both delays), the lag and the ramp, the inputs of the event type including the volumes, and the assumed lag of the walk-back. Printed with every result.
@@ -61,7 +73,7 @@ export interface BreakoutReport {
      */
     inputs: [Input, ...Input[]];
     /**
-     * A177 (widened to equipment): which units consume which lot or use which equipment item. A scenario input, not data.
+     * A177 (widened to equipment): which units consume which lot or use which equipment item, and when; with each lot's prepared_at. A scenario input, not data.
      */
     topology: {
       ref: "A177";
@@ -69,11 +81,17 @@ export interface BreakoutReport {
         lot_id: string;
         kind: "seed" | "medium";
         units: string[];
+        /**
+         * The instant the lot was prepared, in hours (A177).
+         */
+        prepared_at_h: number;
+        uses: Use[];
       }[];
       equipment: {
         equipment_id: string;
         name: string;
         units: string[];
+        uses: Use[];
       }[];
     };
     /**
@@ -117,15 +135,22 @@ export interface Input {
   source: "scenario_input" | "profile_default" | "decision_setting";
   what: string;
 }
+/**
+ * A unit that consumes the lot or uses the item, and the instant, in hours from the start of the scenario (A177); a seed lot is consumed at the inoculation of its unit.
+ */
+export interface Use {
+  unit_id: string;
+  at_h: number;
+}
 export interface Row {
   /**
    * Path of the metric: containment.<kind>.contained, .median_s or .p90_s (kind batch, material_lot, equipment or result), identification.direction_<1|3>.recall, .precision or .false_alarm, released_before_containment, retro_flag_completeness. A share contributes its value; a time is in seconds.
    */
   metric: string;
   /**
-   * reported: at least one seed defines the value. none_occurred: the denominator was zero in every seed, which is not a perfect score and not a zero.
+   * reported: at least one seed defines the value. none_occurred: the denominator was zero in every seed, which is not a perfect score and not a zero. not_reachable: a direction 3 row of a record that cannot read direction 3 (neither material_lot_links nor equipment_links is on): the walk-back could not look, so no value is reported (rule S8: never an empty set, never a recall of 0).
    */
-  status: "reported" | "none_occurred";
+  status: "reported" | "none_occurred" | "not_reachable";
   n_seeds: number;
   /**
    * Seeds for which the value is defined (a share with a zero denominator is not; a time is defined where at least one item was held).

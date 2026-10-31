@@ -22,7 +22,8 @@ describe("Origin kinds of the break-out script", () => {
     // signal_at = onset + 12 h (43 200 s); the first decision is U01's signal plus 2 h = 50 400 s; each unit stops at its own signal_at + 2 h
     expect(eventsOf(run, "signal_observed").map((e) => [e.unit_id, e.t])).toEqual([["U01", 43_200], ["U02", 44_100]]);
     expect(processOf(run, "unit_stopped")).toEqual([["U01", 50_400, "-"], ["U02", 51_300, "-"]]);
-    expect(eventsOf(run, "confirm_sample_drawn").map((e) => [e.unit_id, e.t])).toEqual([["U01", 50_400], ["U02", 50_400]]);
+    // the confirm list at the first decision, then the later signal of U02 draws its own sample at its own decision, 51 300 s (rule S2 as ruled on F8)
+    expect(eventsOf(run, "confirm_sample_drawn").map((e) => [e.unit_id, e.t])).toEqual([["U01", 50_400], ["U02", 50_400], ["U02", 51_300]]);
     expect(eventsOf(run, "inoculation").map((e) => [e.unit_id, e.t, e.seed_lot_id])).toEqual([["U01", 0, "SL-1"], ["U02", 900, "SL-1"], ["U03", 1800, "SL-2"]]);
   });
 

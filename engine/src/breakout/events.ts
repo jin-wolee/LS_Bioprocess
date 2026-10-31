@@ -38,18 +38,21 @@ export const breakoutEvents = (b: BreakoutConfig, plan: BreakoutPlan, seed: numb
   const first = plan.units.find((u) => u.signal_s === plan.deviation_s) as { unit_id: string; batch_id: string };
   out.push({ type: "deviation_opened", t: plan.deviation_s, deviation_id: "DEV-1", unit_id: first.unit_id, batch_id: first.batch_id, trigger: "signal" });
 
-  // the confirming samples: drawn at the decision instant unless the volume budget refuses them (the cap of the unit, A207, counts the routine draws up to this instant)
+  // the confirming samples: each drawn at its instant (the first decision, or the decision of a later signal) unless the volume budget refuses it. The cap of the unit (A207) counts the routine
+  // draws up to that instant and the confirming draws already taken from it (a unit of the confirm list that signals later is drawn twice, C5); the plan lists them in time order.
+  const confirmedUl = new Map<string, number>();
   for (const c of plan.confirm) {
     const reactor = proc.byUnit.get(c.unit_id) as { bay: number };
     const cap = (sampling.bays?.[reactor.bay - 1] ?? sampling).capUl;
-    const used = run.samples.filter((x) => x.unit_id === c.unit_id && x.state === "drawn" && x.drawn_s <= plan.decision_s).reduce((sum, x) => sum + x.volume_ul, 0);
+    const used = run.samples.filter((x) => x.unit_id === c.unit_id && x.state === "drawn" && x.drawn_s <= c.drawn_s).reduce((sum, x) => sum + x.volume_ul, 0) + (confirmedUl.get(c.unit_id) ?? 0);
     if (used + c.volume_ul > cap + 1e-9) {
-      out.push({ type: "draw_skipped_volume_budget", t: plan.decision_s, sample_id: c.sample_id, unit_id: c.unit_id, batch_id: batch(c.unit_id), volume_ul: c.volume_ul, cumulative_ul: used });
+      out.push({ type: "draw_skipped_volume_budget", t: c.drawn_s, sample_id: c.sample_id, unit_id: c.unit_id, batch_id: batch(c.unit_id), volume_ul: c.volume_ul, cumulative_ul: used });
       continue;
     }
-    const operator_id = operatorOf(sampling, plan.decision_s, rng.stream(entityKey(seed, c.sample_id, "confirm")));
+    confirmedUl.set(c.unit_id, (confirmedUl.get(c.unit_id) ?? 0) + c.volume_ul);
+    const operator_id = operatorOf(sampling, c.drawn_s, rng.stream(entityKey(seed, c.sample_id, "confirm")));
     const tests = c.aliquots.map((a) => ({ aliquot_id: a.aliquot_id, test: a.test, volume_ul: a.volume_ul }));
-    out.push({ type: "confirm_sample_drawn", t: plan.decision_s, sample_id: c.sample_id, unit_id: c.unit_id, batch_id: c.batch_id, operator_id, volume_ul: c.volume_ul, tests: tests as [(typeof tests)[number], ...typeof tests] });
+    out.push({ type: "confirm_sample_drawn", t: c.drawn_s, sample_id: c.sample_id, unit_id: c.unit_id, batch_id: c.batch_id, operator_id, volume_ul: c.volume_ul, tests: tests as [(typeof tests)[number], ...typeof tests] });
     for (const a of c.aliquots) out.push({ type: "confirm_result", t: a.result_s, sample_id: c.sample_id, aliquot_id: a.aliquot_id, test: a.test, outcome: c.affected && a.covers ? "detected" : "not_detected" });
   }
   return out;

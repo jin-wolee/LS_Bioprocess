@@ -110,13 +110,15 @@ describe("FX12e: equipment origin, an affected sibling that signals later (truth
     expect(processOf(run, "unit_stopped")).toEqual([["U01", H(19), "-"], ["U02", H(23), "-"]]);
   });
 
-  it("Given the confirm list U01 and U02 When the decision falls at 19 h Then both are drawn at 19 h, U02 still running, and both are detected at 139 h and 355 h", () => {
-    expect(eventsOf(run, "confirm_sample_drawn").map((e) => [e.unit_id, e.t])).toEqual([["U01", H(19)], ["U02", H(19)]]);
+  it("Given the confirm list U01 and U02 When the decision falls at 19 h Then both are drawn at 19 h, U02 still running, and both are detected at 139 h and 355 h; the signal of U02 draws its own at 23 h, detected at 143 h and 359 h (F8)", () => {
+    expect(eventsOf(run, "confirm_sample_drawn").map((e) => [e.unit_id, e.t])).toEqual([["U01", H(19)], ["U02", H(19)], ["U02", H(23)]]);
     expect(eventsOf(run, "confirm_result").map((e) => [e.sample_id, e.test, e.t, e.outcome])).toEqual([
       ["U01-CONF", "bioburden", H(139), "detected"],
       ["U02-CONF", "bioburden", H(139), "detected"],
+      ["U02-SIG-CONF", "bioburden", H(143), "detected"],
       ["U01-CONF", "sterility", H(355), "detected"],
       ["U02-CONF", "sterility", H(355), "detected"],
+      ["U02-SIG-CONF", "sterility", H(359), "detected"],
     ]);
   });
 

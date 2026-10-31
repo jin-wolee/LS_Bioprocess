@@ -7,7 +7,8 @@ import { BASE, byTime, sampleWithRun } from "./cell_stream.ts";
 // 2 mL bioburden volume (a test design choice, as in engine/tests/breakout/support.ts) and the sterility portions of 2 x 20 mL (A148). Every instant below is read off the fixture text.
 //
 //   A routine sample is drawn at the hour of the table, its run starts 3300 s later and its result is measured at 3600 s: "released one hour after it is drawn" (11.8.4), no rule fires.
-//   The confirming sample of a unit is `<unit>-CONF`, drawn at the first decision instant (19 h) with two aliquots: bioburden (result 120 h later, A142) and sterility (336 h, A143).
+//   The confirming sample of a unit is `<unit>-CONF`, drawn at the first decision instant (19 h) with two aliquots: bioburden (result 120 h later, A142) and sterility (336 h, A143). A later
+//   signal draws its own, `<unit>-SIG-CONF`, at its own decision (spec 11.8.2 rule S2 as ruled on F8, C5).
 
 export const H = (hours: number): number => Math.round(hours * 3600);
 
@@ -24,9 +25,8 @@ export const deviationOpened = (hours: number, unit: string): ObservableEvent =>
 /** One routine sample `<unit>-S<k>` with its run: 3300 s from draw to run start, measured at 3600 s. */
 export const routine = (unit: string, k: number, drawnHours: number): ObservableEvent[] => sampleWithRun(`${unit}-S${k}`, unit, H(drawnHours), 3300, 5.0);
 
-/** The confirming sample of a unit drawn at `drawnHours`: both tests report `outcome`. */
-export const confirming = (unit: string, drawnHours: number, outcome: Ev<"confirm_result">["outcome"]): ObservableEvent[] => {
-  const sample_id = `${unit}-CONF`;
+/** The confirming sample of a unit drawn at `drawnHours`: both tests report `outcome`. `sample_id` is that of the first signal's draw unless a later signal drew it (C5). */
+export const confirming = (unit: string, drawnHours: number, outcome: Ev<"confirm_result">["outcome"], sample_id = `${unit}-CONF`): ObservableEvent[] => {
   const aliquots = [{ aliquot_id: `${sample_id}-A1`, test: "bioburden", volume_ul: 2000 }, { aliquot_id: `${sample_id}-A2`, test: "sterility", volume_ul: 40000 }] as const;
   return [
     { type: "confirm_sample_drawn", t: H(drawnHours), sample_id, unit_id: unit, batch_id: batchOf(unit), operator_id: "OP-1", volume_ul: 42000, tests: [aliquots[0], aliquots[1]] },
@@ -47,7 +47,10 @@ export const FX12A: ObservableEvent[] = byTime([
   ...confirming("U01", 19, "detected"), ...confirming("U02", 19, "not_detected"),
 ]);
 
-/** FX12e: the transfer line TL-1 is used by U01 at 5 h and by U02 at 9 h; U03 does not use it. U01 signals at 17 h, U02 at 21 h; both stop 2 h later; U01 and U02 are confirmed at 19 h. */
+/**
+ * FX12e: the transfer line TL-1 is used by U01 at 5 h and by U02 at 9 h; U03 does not use it. U01 signals at 17 h, U02 at 21 h; both stop 2 h later; U01 and U02 are confirmed at 19 h, and the
+ * signal of U02 draws its own sample at 23 h (spec 11.8.4, the FX12e truth row as retyped for F8).
+ */
 export const FX12E: ObservableEvent[] = byTime([
   ...BASE,
   inoculationFrom("U01", "SL-1"), inoculationFrom("U02", "SL-2"), inoculationFrom("U03", "SL-3"),
@@ -57,7 +60,7 @@ export const FX12E: ObservableEvent[] = byTime([
   ...routine("U02", 1, 4), ...routine("U02", 2, 10), ...routine("U02", 3, 16), ...routine("U02", 4, 20),
   ...routine("U03", 1, 5), ...routine("U03", 2, 11), ...routine("U03", 3, 17),
   signal(17, "U01"), deviationOpened(17, "U01"), unitStopped(19, "U01"), signal(21, "U02"), unitStopped(23, "U02"),
-  ...confirming("U01", 19, "detected"), ...confirming("U02", 19, "detected"),
+  ...confirming("U01", 19, "detected"), ...confirming("U02", 19, "detected"), ...confirming("U02", 23, "detected", "U02-SIG-CONF"),
 ]);
 
 const LOTS: BreakoutInput["lots"] = [

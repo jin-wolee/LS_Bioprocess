@@ -28,7 +28,7 @@ export const MYCOPLASMA_NOTE =
 
 const NOTES = [
   "Stochastic comparison over the seed list, never a gate. No test asserts an ordering, a sign or a size (spec sections 6 and 8, anti-gaming rule 8). The report orders no architectures and carries no composite score.",
-  "Recall is shown beside precision and the false-alarm rate (section 8, anti-gaming rule 3). A ratio with a zero denominator is undefined, never 0 and never 1; a direction that the record cannot read returns nothing because it cannot look.",
+  "Recall is shown beside precision and the false-alarm rate (section 8, anti-gaming rule 3). A ratio with a zero denominator is undefined, never 0 and never 1; a direction 3 row of a record that cannot read direction 3 is not_reachable and carries no value: the walk-back could not look, which is not an empty set found.",
   "Identification is scored on the walk-back of the first signal; time to containment on the first hold from any signal (rule S10). The median time to containment equals d1 by construction wherever the first walk-back holds the item: the contained share and the later holds are the information.",
   "Every input without a default is a test design choice (assumed, grade A): A176 (both delays), A177 (the topology), the inputs of the event type and the sample volumes, and the assumed lag of the walk-back. They are printed beside the result as inputs and are not findings.",
   "Direction 2 (pools, harvests, downstream lots) and the metric draws beyond the port limit wait for S4. The tests report the truth, except the nucleic-acid test, which finds only what its target covers (A146).",
@@ -64,13 +64,15 @@ const reasonOf = (path: string, defined: number, reach: Reach): string | null =>
 };
 
 const rowOf = (path: string, cells: readonly BreakoutMetrics[], reach: Reach): Row => {
-  const values = cells.map((c) => new Map(flatten(metricsOf(c))).get(path) ?? null);
+  // a direction 3 row of a record that cannot read direction 3 reports no value: the walk-back could not look, which is not an empty set found (rule S8; C40, F6)
+  const unreachable = path.startsWith("identification.direction_3.") && !reach.direction3;
+  const values = unreachable ? [] : cells.map((c) => new Map(flatten(metricsOf(c))).get(path) ?? null);
   const defined = values.filter((v): v is number => v !== null);
   const shares = cells.map((c) => new Map(sharesOf(metricsOf(c))).get(path));
   const counts = shares.flatMap((s) => (s ? [s.den] : []));
   const time = path.endsWith("_s");
   return {
-    metric: path, status: defined.length > 0 ? "reported" : "none_occurred", n_seeds: cells.length, n_defined: defined.length,
+    metric: path, status: unreachable ? "not_reachable" : defined.length > 0 ? "reported" : "none_occurred", n_seeds: cells.length, n_defined: defined.length,
     median: quantile(defined, 0.5), lo: quantile(defined, 0.05), hi: quantile(defined, 0.95),
     denominator: time ? TIME_TEXT : (shares[0]?.denominator ?? null),
     den: time || counts.length === 0 ? null : { min: Math.min(...counts), median: quantile(counts, 0.5) as number, max: Math.max(...counts) },
@@ -83,7 +85,7 @@ const caseOf = (r: BreakoutCaseResult, head: BreakoutReportHead): BreakoutReport
   const ids = (r.outcomes[0]?.cells ?? []).map((c) => c.architecture);
   const prefix = `${head.ablations_of}_minus_`;
   return {
-    case_id: r.case.case_id, scenario_id: r.case.scenario.scenario_id, event: eventOf(r.case, b), inputs: inputsOf(r.case, b), topology: topologyOf(b),
+    case_id: r.case.case_id, scenario_id: r.case.scenario.scenario_id, event: eventOf(r.case, b), inputs: inputsOf(r.case, b), topology: topologyOf(r.case, b),
     truth_log_hashes: r.outcomes.map((o) => ({ seed: o.seed, truth_log_hash: o.truth_log_hash })),
     architectures: ids.map((id) => {
       const cells = r.outcomes.map((o) => o.cells.find((c) => c.architecture === id) as BreakoutMetrics);

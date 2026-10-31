@@ -8,7 +8,8 @@ import type { Name } from "../support/investigate_setup.ts";
 // Break-out batch 4, row 4 of spec 11.8.5: the investigation of FX12e (equipment origin, an affected sibling that signals later) under A, B, C, C without material_lot_links (C-L) and C without
 // equipment_links (C-E), including the second signal. Every expected value is typed by hand from the FX12e table of spec 11.8.4, never read off the code. U01 signals at 17 h (decision 19 h,
 // estimated onset 5 h), U02 at 21 h (decision 23 h, estimated onset 21 - 12 = 9 h). The transfer line TL-1 is used by U01 at 5 h and by U02 at 9 h. Both units are detected at 139 h and 355 h,
-// so every hold becomes quarantine at 139 + 4 = 143 h and is rejected at the review point after it, 152 h (Sunday 08:00); the deviation is closed at the last confirming result, 355 h.
+// so every hold of the first signal becomes quarantine at 139 + 4 = 143 h; the signal of U02 draws its own sample at 23 h (F8, the retyped end state of FX12e), detected at 143 h and 359 h, so the
+// holds it places become quarantine at 143 + 4 = 147 h. All are rejected at the review point after them, 152 h (Sunday 08:00); the deviation is closed at the last confirming result, 359 h.
 //   B has equipment_links on and not material_lot_links: its direction 3 equals that of C-L.
 
 const U01 = ["batch:B-U01", "result:U01-S2", "result:U01-S3"];
@@ -97,11 +98,12 @@ describe.each(ALL)("FX12e investigated under %s", (n) => {
     expect(inv.not_evaluable.map((x) => x.rule)).toEqual(n === "A" || n === "B" ? ["VR-022"] : []);
   });
 
-  it("Then both units are detected, so every hold becomes quarantine at 143 h and is rejected at 152 h, and the deviation is closed at 355 h", () => {
-    const total = cell.holds_at_19.length + cell.holds_at_23.length;
-    expect(inv.events.filter((e) => e.type === "hold_quarantined").map((e) => e.t)).toEqual(Array(total).fill(H(143)));
+  it("Then both units are detected, so the holds of 19 h become quarantine at 143 h and those of 23 h, which wait for U02-SIG-CONF, at 147 h; all are rejected at 152 h, and the deviation is closed at 359 h", () => {
+    const quarantined = (placed: number) => inv.events.filter((e) => e.type === "hold_quarantined" && (ds.quality_hold ?? []).find((h) => h.hold_id === e.hold_id)?.placed_at === placed).map((e) => e.t);
+    expect(quarantined(H(19))).toEqual(Array(cell.holds_at_19.length).fill(H(143)));
+    expect(quarantined(H(23))).toEqual(Array(cell.holds_at_23.length).fill(H(147)));
     expect((ds.quality_hold ?? []).every((h) => h.kind === "quarantine" && h.outcome === "rejected" && h.released_at === H(152) && h.state === "closed")).toBe(true);
-    expect((ds.deviation ?? []).map((d) => [d.state, d.closed_at])).toEqual([["closed", H(355)]]);
+    expect((ds.deviation ?? []).map((d) => [d.state, d.closed_at])).toEqual([["closed", H(359)]]);
   });
 
   it("Then the transfer line is quarantined where its row exists (every configuration with equipment_links) and the lots where their rows exist", () => {

@@ -52,10 +52,10 @@ describe("SC12 contamination break-out and walk-back: the experiment config and 
     expect((c?.consumption.length ?? 0) > 0).toBe(true);
   });
 
-  it("Given the config When a case sets nothing Then the walk-back assumes the lag the scenario gives the event, and a swept case says it was swept", () => {
+  it("Given the config When a case sets nothing Then the walk-back assumes the lag of the event type (rule S8; C41 as amended on F7, also in the seed-lot case whose true lag is 36 h), and a swept case says it was swept", () => {
     const by = (id: string) => input.cases.find((c) => c.case_id === id)?.assumed_lag;
     expect(by("medium_lot")).toMatchObject({ seconds: 12 * 3600, ref: "A139", swept: false });
-    expect(by("seed_lot")).toMatchObject({ seconds: 36 * 3600, swept: false });
+    expect(by("seed_lot")).toMatchObject({ seconds: 12 * 3600, ref: "A139", swept: false });
     expect(by("mycoplasma_nat_covers")).toMatchObject({ seconds: 48 * 3600, ref: "A138", swept: false });
     expect(by("medium_lot_assumed_lag_4h")).toMatchObject({ seconds: 4 * 3600, ref: "A139", swept: true });
     expect(by("mycoplasma_assumed_lag_6d")).toMatchObject({ seconds: 144 * 3600, ref: "A138", swept: true });
@@ -155,7 +155,8 @@ describe("SC12 contamination break-out and walk-back: the report", () => {
 
   it("Then the mycoplasma case prints the inputs of the event type (A219 to A224, A226) with their units, and the topology of every case is printed as A177", () => {
     const m = report.cases.find((c) => c.case_id === "mycoplasma_nat_covers");
-    expect(m?.inputs.filter((i) => i.source === "scenario_input" && i.name !== "signal_to_response" && i.name !== "positive_to_hold").map((i) => [i.ref, i.unit]).sort()).toEqual([
+    // A176 (the two delays and the release delay that reuses d2, F6) is printed as well; the inputs of the event type are the rest
+    expect(m?.inputs.filter((i) => i.source === "scenario_input" && i.ref !== "A176").map((i) => [i.ref, i.unit]).sort()).toEqual([
       ["A219", "h"], ["A220", "d"], ["A221", "factor"], ["A222", "d"], ["A223", "factor"], ["A224", "flag"], ["A226", "mL"],
     ]);
     for (const c of report.cases) expect(c.topology.ref).toBe("A177");

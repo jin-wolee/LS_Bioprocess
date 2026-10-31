@@ -79,7 +79,7 @@ export const investigate = (ds: RecordedDataset, signals: readonly Signal[], cfg
         placed_at: decision, placed_by: actor, reason: actor === null ? null : `direction ${it.direction}: ${it.path}`, released_at: null, released_by: null, outcome: null, available_at: flags.available_at ? decision : null,
       };
       holds.push(h);
-      waits.set(h.hold_id, governing(confirming, it.batch, signal));
+      waits.set(h.hold_id, governing(confirming, it.batch, signal, decision));
       events.push({ type: "hold_placed", t: decision, hold_id: h.hold_id });
       steps.push({ t: decision, hold: h, step: "place" });
     }

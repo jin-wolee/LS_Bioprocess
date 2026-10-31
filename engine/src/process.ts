@@ -27,6 +27,10 @@ export interface ScriptedEvent {
   kd?: number;
 }
 
+/** A scripted ramp on a true value of one unit (break-out rule S1): nothing up to `start_s`, linear from there to `change` at `end_s`, held after. The sensor overlay and the pH a sample carries read it alike. */
+export interface Ramp { start_s: number; end_s: number; change: number }
+export const rampAt = (r: Ramp, t: number): number => (t <= r.start_s ? 0 : r.change * (t >= r.end_s ? 1 : (t - r.start_s) / (r.end_s - r.start_s)));
+
 export interface ProcessConfig {
   reactors: number;
   baySize: number;
@@ -80,6 +84,8 @@ export interface ProcessConfig {
   scripted: ScriptedEvent[];
   /** The seed lot of a unit, by unit id, when the break-out script names one: the inoculation event carries it. Absent: no inoculation does. */
   seedLots?: Readonly<Record<string, string>>;
+  /** The scripted fall of the pH of a unit's culture, by unit id, when the break-out script moves pH (one pH truth, spec 11.8.8 C1): a sample drawn from the unit carries it. Absent: the set point. */
+  phRamps?: Readonly<Record<string, Ramp>>;
   /** The feedback settings of experiment 2 (spec 6.2); absent in every scenario that stays open loop. Nothing in this file reads it. */
   phLoop?: PhLoopConfig;
 }
@@ -254,7 +260,8 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
   const moments: Moment[] = [{ t: end_s, rank: 4, kind: "harvest" }];
   for (let day = Math.floor(t0 / DAY); day * DAY + c.decision_s < last; day++) if (day * DAY + c.decision_s > t0) moments.push({ t: day * DAY + c.decision_s, rank: 3, kind: "decision" });
   if (shift_s > t0 && shift_s < last) moments.push({ t: shift_s, rank: 2, kind: "shift" });
-  for (const e of c.scripted) if (e.unit_id === unit_id && e.at_s > t0 && e.at_s < last) moments.push({ t: e.at_s, ...SCRIPTED[e.type], ev: e });
+  // a multiplier moment at the inoculation instant applies from the first step (an onset at the inoculation with no delay, spec 11.8.11 C29); every other scripted moment comes after it
+  for (const e of c.scripted) if (e.unit_id === unit_id && (e.type === "multiplier" ? e.at_s >= t0 : e.at_s > t0) && e.at_s < last) moments.push({ t: e.at_s, ...SCRIPTED[e.type], ev: e });
   moments.sort((a, b) => a.t - b.t || a.rank - b.rank);
 
   const size = Math.ceil((last - t0) / c.step_s) + 1;
@@ -339,5 +346,6 @@ export const stateAt = (run: ProcessRun, unit_id: string, t: number): CultureSta
   const s: State = { x: r.x[k] as number, d: r.d[k] as number, g: r.g[k] as number, q: r.q[k] as number, l: r.l[k] as number, p: r.p[k] as number };
   const dt = Math.min(t, r.harvested_s) - tk;
   if (dt > 0) advance(run.cfg, s, multOf(run.cfg, tk >= r.shift_s, r.factors.filter((x) => x.t <= tk).at(-1) ?? ONE), dt, tk - r.inoculated_s);
-  return { vcd: s.x, viability: viabilityOf(s), glucose: s.g, glutamine: s.q, lactate: s.l, titer: s.p, ph: run.cfg.ph };
+  const ramp = run.cfg.phRamps?.[unit_id];
+  return { vcd: s.x, viability: viabilityOf(s), glucose: s.g, glutamine: s.q, lactate: s.l, titer: s.p, ph: ramp === undefined ? run.cfg.ph : run.cfg.ph + rampAt(ramp, t) };
 };

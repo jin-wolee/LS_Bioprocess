@@ -9,7 +9,9 @@ import type { AuditEventRow, QualityHoldRow, RecordedDataset, ResultRow, Validat
 // exists." It is not one of the rules `validate` runs over a whole dataset (it needs t, and the holds exist only once the investigation has placed them), and unlike them it does not change the
 // row it finds: version n is never modified (K8). It creates version n+1 with the same value and units (K16), the state quarantined, `supersedes` n and the `hold_id`.
 //   "Released" is a result row whose state is null or released and whose `available_at` is known at t. "Covered" is a hold on the result itself: the walk-back names every result it returns, so a
-//   hold on a batch, a lot or an equipment item does not reach the other results of its batch by itself. A hold that is ended before t covers nothing.
+//   hold on a batch, a lot or an equipment item does not reach the other results of its batch by itself. A hold that is ended before t covers nothing. "No later version exists" is read as of t
+//   (spec 11.8.10 C25, F2): a version exists from the instant it was written (`ingested_at`), so a rerun the record writes after t does not hide version n. No two versions supersede one version:
+//   a version written after the flag about the same key was appended after it, so it supersedes the flag and its number, and those of its audit event, follow.
 
 type Flags = Record<FlagName, boolean>;
 
@@ -38,11 +40,14 @@ const coveringHolds = (ds: RecordedDataset, t: number): Map<string, QualityHoldR
   return out;
 };
 
-/** The result ids VR-022 fires on at t, in table order: the released versions covered by a hold, with no later version. */
+/** A version exists at t from the instant the system wrote it. VR-022 runs only with available_at, under which every row of a system carries the stamp. */
+const writtenBy = (r: ResultRow, t: number): boolean => (r.ingested_at ?? Number.POSITIVE_INFINITY) <= t;
+
+/** The result ids VR-022 fires on at t, in table order: the released versions covered by a hold, with no later version that exists at t. */
 export const vr022Targets = (ds: RecordedDataset, t: number): string[] => {
   const covering = coveringHolds(ds, t);
   if (covering.size === 0) return [];
-  const superseded = new Set(ds.result.flatMap((r) => (r.supersedes === null ? [] : [r.supersedes])));
+  const superseded = new Set(ds.result.flatMap((r) => (r.supersedes === null || !writtenBy(r, t) ? [] : [r.supersedes])));
   return ds.result
     .filter((r) => hasValue(r) && covering.has(r.result_id) && !superseded.has(r.result_id) && (r.state === null || r.state === "released") && r.available_at !== null && r.available_at <= t)
     .map((r) => r.result_id);
@@ -71,5 +76,16 @@ export const retroFlag = (ds: RecordedDataset, t: number, log?: Transition[]): {
     findings.push({ rule: "VR-022", target: `result:${n.result_id}`, severity: "error", action: "quarantine", status: "open" });
     return v;
   });
-  return { dataset: { ...ds, result: [...ds.result, ...flagged], audit_event: [...ds.audit_event, ...audit], validation_finding: [...ds.validation_finding, ...findings] }, flagged };
+  // no fork: a version of a flagged key at n+1 or above was written after t (n was the latest at t), so it was appended after the flag; it moves up one and the one that superseded n supersedes the flag
+  const flagOf = new Map(flagged.map((v) => [`${v.request_id}/${v.analyte}`, v]));
+  const later = (x: { request_id: string; analyte: string }, version: number): ResultRow | undefined => {
+    const v = flagOf.get(`${x.request_id}/${x.analyte}`);
+    return v !== undefined && version >= v.version ? v : undefined;
+  };
+  const result = ds.result.map((r): ResultRow => {
+    const v = later(r, r.version);
+    return v === undefined ? r : { ...r, version: r.version + 1, supersedes: r.supersedes === v.supersedes ? v.result_id : r.supersedes };
+  });
+  const audit_event = ds.audit_event.map((a): AuditEventRow => (later(a, a.new_version) === undefined ? a : { ...a, old_version: a.old_version + 1, new_version: a.new_version + 1 }));
+  return { dataset: { ...ds, result: [...result, ...flagged], audit_event: [...audit_event, ...audit], validation_finding: [...ds.validation_finding, ...findings] }, flagged };
 };

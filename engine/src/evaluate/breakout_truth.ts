@@ -19,7 +19,10 @@ export interface TruthItem {
   direction: Direction;
   /** In hand at the first signal (rule S10): a batch still running, a lot or equipment item that exists (nothing is quarantined yet), a result drawn and not yet released. */
   in_hand: boolean;
-  /** A result only: the instant the truth world released it (the last passing QC of its request), null if it never was. */
+  /**
+   * A result only: the instant the truth world released it (the last passing QC of its request), null if it never was. It decides what is in hand at the first signal (C38); whether a result
+   * stood released before containment is what the record showed, read by the metrics (C39, F3).
+   */
   released_at: number | null;
 }
 

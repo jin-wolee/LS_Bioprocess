@@ -63,21 +63,26 @@ describe("A hold that no confirming sample decides", () => {
 });
 
 describe("An item whose hold has ended is held again by a later signal", () => {
-  // FX12e with both units not detected: every hold of the two signals (19 h and 23 h) is released at 355 h + 4 h = 359 h. A third signal of U02 at 500 h (decision 502 h, estimated onset 488 h) finds
-  // nothing held: the batch of U02, the lots of U02, the transfer line, the batch of U01 (a sibling through TL-1) and its two results since 5 h are held again, and decided at once by the negative
-  // verdicts that are already in. The versions of the first round (5, released again at 368 h) are not flagged again: a later version exists.
-  const NEGATIVE = byTime([...FX12E.filter((e) => e.type !== "confirm_sample_drawn" && e.type !== "confirm_result"), ...confirming("U01", 19, "not_detected"), ...confirming("U02", 19, "not_detected")]);
+  // FX12e with both units not detected. Each signal draws its own confirming sample and its holds wait for it (rule S2 as ruled on F8, C22): the holds of 19 h are released at 355 h + 4 h = 359 h,
+  // those of 23 h (U02-SIG-CONF) at 359 h + 4 h = 363 h. A third signal of U02 at 500 h (decision 502 h, estimated onset 488 h) draws its own sample at 502 h (a test-only id) and finds nothing held:
+  // the batch of U02, the lots of U02, the transfer line, the batch of U01 (a sibling through TL-1) and its two results since 5 h are held again, and released by that sample's negative verdict at
+  // 502 + 336 + 4 = 842 h. The versions of the first round (5, released again at 368 h) are not flagged again: a later version exists.
+  const NEGATIVE = byTime([
+    ...FX12E.filter((e) => e.type !== "confirm_sample_drawn" && e.type !== "confirm_result"),
+    ...confirming("U01", 19, "not_detected"), ...confirming("U02", 19, "not_detected"), ...confirming("U02", 23, "not_detected", "U02-SIG-CONF"), ...confirming("U02", 502, "not_detected", "U02-THIRD-CONF"),
+  ]);
   const third = { unit_id: "U02", batch_id: "B-U02", at: H(500) };
   const inv = investigate(rec(NEGATIVE, FX12E_MASTER, "C"), [...signalsOf(NEGATIVE), third], CFG);
   const ds = inv.dataset;
-  it("Then the first round is released at 359 h and the third signal places the seven items again at 502 h", () => {
+  const releasedAt = (placed: number) => [...new Set((ds.quality_hold ?? []).filter((h) => h.placed_at === placed).map((h) => `${h.outcome} ${h.released_at}`))];
+  it("Then the holds of 19 h are released at 359 h and those of 23 h at 363 h, and the third signal places the seven items again at 502 h", () => {
     expect(placedAt(ds, H(502))).toEqual(names("batch:B-U01", "batch:B-U02", "equipment:TL-1", "material_lot:ML-2", "material_lot:SL-2", "result:U01-S2", "result:U01-S3"));
-    expect((ds.quality_hold ?? []).filter((h) => h.placed_at < H(502)).every((h) => h.outcome === "released" && h.released_at === H(359))).toBe(true);
+    expect([releasedAt(H(19)), releasedAt(H(23))]).toEqual([[`released ${H(359)}`], [`released ${H(363)}`]]);
   });
-  it("Then the new holds are decided at their own instant, 502 h, and no version is made again", () => {
-    expect((ds.quality_hold ?? []).filter((h) => h.placed_at === H(502)).every((h) => h.outcome === "released" && h.released_at === H(502))).toBe(true);
+  it("Then the new holds are decided by the third signal's own sample, at 842 h, and no version is made again", () => {
+    expect(releasedAt(H(502))).toEqual([`released ${H(842)}`]);
     expect(ds.result.filter((r) => r.hold_id != null).length).toBe(5);
-    expect((ds.deviation ?? []).map((d) => [d.state, d.closed_at])).toEqual([["closed", H(502)]]);
+    expect((ds.deviation ?? []).map((d) => [d.state, d.closed_at])).toEqual([["closed", H(842)]]);
   });
   it("Then a hold on a result names the result by its request, as the tables do", () => {
     const h = (ds.quality_hold ?? []).find((x) => x.placed_at === H(502) && x.target_kind === "result");

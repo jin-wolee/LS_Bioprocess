@@ -103,6 +103,16 @@ export const loadBreakout = (b: Block, scenario: string, lookup: ProfileLookup):
     const v = input(name);
     return v >= 0 ? v : fail(`breakout inputs.${name} must not be negative (${refOf(name)})`);
   };
+  // the logical bounds of a host effect (rule S13; the ledger's A221 and A223), by the role the profile gives the input and never by its id: a plateau never speeds growth, a fall of viability
+  // never slows death. The plausible ranges of the delays (A220, A222) are a source's spread, not bounds: they are printed as assumed inputs and not refused.
+  const growthFactor = (name: string): number => {
+    const v = nonNegative(name);
+    return v <= 1 ? v : fail(`breakout inputs.${name} ${v} is above 1: a growth plateau never speeds growth, so the factor lies in 0 to 1 (${refOf(name)})`);
+  };
+  const deathFactor = (name: string): number => {
+    const v = nonNegative(name);
+    return v >= 1 ? v : fail(`breakout inputs.${name} ${v} is below 1: a fall of viability never slows death, so the factor is at least 1 (${refOf(name)})`);
+  };
 
   // the lag runs from the onset to the first signal and the ramp ends there, inside it (ruling D4). The ramp is the profile's default, which the block may override, or the scenario input the
   // profile names when it has no default (A219); a block that gives `ramp` to such a profile would say one thing two ways, and is refused.
@@ -176,7 +186,7 @@ export const loadBreakout = (b: Block, scenario: string, lookup: ProfileLookup):
   };
   const tests: ConfirmTest[] = profile.tests.map((t) => ({ test: t.test, turnaround_s: t.turnaround_s, volume_ml: volumeOf(t.volume) * t.portions, covers: covers(t) }));
   const effects: Effect[] = profile.effects.map((e) => ({
-    delay_s: wholeSeconds(nonNegative(e.delay) * DAY), ...(e.growth !== undefined && { mu: nonNegative(e.growth) }), ...(e.death !== undefined && { kd: nonNegative(e.death) }),
+    delay_s: wholeSeconds(nonNegative(e.delay) * DAY), ...(e.growth !== undefined && { mu: growthFactor(e.growth) }), ...(e.death !== undefined && { kd: deathFactor(e.death) }),
   }));
 
   return {

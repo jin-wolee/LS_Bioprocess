@@ -1,11 +1,12 @@
 import { batchIdOf, inoculationInstant, unitIdOf } from "../process.ts";
-import type { ProcessConfig } from "../process.ts";
+import type { ProcessConfig, Ramp } from "../process.ts";
 import { hoursText } from "./config.ts";
 import type { BreakoutConfig } from "./config.ts";
 
 // The script of a break-out event, computed from the scenario block and the process settings before anything runs (spec 11.8.2 rules S1 to S4): which units are affected and when,
 // the first signal and the stop of each, the first decision instant, the confirming samples and when their results arrive. The loader calls it for the refusals; the run calls it again
-// for the script. For a sampling origin the onset is the instant of a draw of the run, which only the run knows: the loader passes no draw and gets nothing back after the checks it can do.
+// for the script. For a sampling origin the onset is the instant of a draw of the run, which only the run knows: the loader passes no draw and the plan takes the end of the draw's day, the
+// latest instant it can have, so that what the loader accepts holds for every seed (spec 11.8.8 C6).
 
 const DAY = 86400;
 const MILLI = 1e6;
@@ -22,14 +23,21 @@ export interface UnitScript {
   stop_s: number;
   /** The moments at which the growth and death multipliers of the unit change (rule S13): the onset plus each delay of the event type. Empty for a type with no host effect. */
   effects: { at_s: number; mu?: number; kd?: number }[];
+  /** The ramp of the culture's pH when the event type moves pH (bacteria, A141): the sensor and every sample drawn from the unit read the same one (C1). Absent for a type that leaves pH alone. */
+  ph_ramp?: Ramp;
 }
+
+/** The ramp of one signal of an affected unit (rule S1): it starts at the first signal minus the ramp and reaches the change at the first signal. */
+export const rampOf = (u: Pick<UnitScript, "signal_s">, ramp_s: number, change: number): Ramp => ({ start_s: u.signal_s - ramp_s, end_s: u.signal_s, change });
 
 /** `covers` is false for a test whose target does not cover the organism: it reports not_detected even for an affected unit (A146, A224). */
 export interface AliquotScript { aliquot_id: string; test: string; volume_ul: number; result_s: number; covers: boolean }
 export interface ConfirmScript {
   unit_id: string;
   batch_id: string;
+  /** `<unit>-CONF` for a unit of the confirm list, drawn at the first decision; `<unit>-SIG-CONF` for the draw a later signal takes from its own unit at its own decision (rule S2, F8; C5). */
   sample_id: string;
+  drawn_s: number;
   /** Truth: the unit is affected, so every test reports detected. */
   affected: boolean;
   volume_ul: number;
@@ -44,7 +52,7 @@ export interface BreakoutPlan {
   units: UnitScript[];
   /** The first signal: the deviation opens here. */
   deviation_s: number;
-  /** The first signal plus d1: the confirming samples are drawn here, and the first unit stops. */
+  /** The first signal plus d1: the confirming samples of the confirm list are drawn here, and the first unit stops. */
   decision_s: number;
   records: ItemRecord[];
   seedLots: Record<string, string>;
@@ -71,9 +79,11 @@ const originId = (o: BreakoutConfig["origin"]): string =>
 
 interface Touch { unit_id: string; at_s: number; item: string }
 
-export const planBreakout = (b: BreakoutConfig, scenario: string, c: ProcessConfig, drawn?: DrawInstant): BreakoutPlan | undefined => {
+export const planBreakout = (b: BreakoutConfig, scenario: string, c: ProcessConfig, drawn?: DrawInstant): BreakoutPlan => {
+  /** What the loader assumed for a sampling origin, said beside every refusal that follows from it. */
+  let assumed = "";
   const fail = (m: string): never => {
-    throw new Error(`scenario ${scenario}: ${m}`);
+    throw new Error(`scenario ${scenario}: ${m}${assumed}`);
   };
   const unit = (id: string, where: string): UnitInfo => unitInfo(c, id) ?? fail(`breakout ${where} names the unit ${id}, which is not a unit of the run`);
   /** A record of a lot or an item must fall inside the life of its unit: from the inoculation to the scheduled end. */
@@ -94,6 +104,11 @@ export const planBreakout = (b: BreakoutConfig, scenario: string, c: ProcessConf
     else records.push({ t: at_s, unit_id: k.unit_id, kind: "medium_addition", item_id: k.lot_id });
     touches.push({ unit_id: k.unit_id, at_s, item: k.lot_id });
   }
+  // a lot is prepared before it is consumed (A177): at or before its first consumption, which for a seed lot is the inoculation of its unit (C7)
+  for (const l of b.lots) {
+    const first = touches.filter((t) => t.item === l.lot_id).sort((x, y) => x.at_s - y.at_s)[0];
+    if (first && l.prepared_s > first.at_s) fail(`breakout topology.lots ${l.lot_id} prepared_at ${hoursText(l.prepared_s)} h is after its first consumption, by ${first.unit_id} at ${hoursText(first.at_s)} h; a lot is prepared before it is consumed (A177)`);
+  }
   for (const k of b.use) {
     const u = unit(k.unit_id, "topology.use");
     inside(u, k.at_s, "topology", `use the equipment item ${k.equipment_id}`);
@@ -113,11 +128,13 @@ export const planBreakout = (b: BreakoutConfig, scenario: string, c: ProcessConf
     inside(unit(o.unit_id, "origin"), o.at_s, "origin", "have its own equipment contaminated");
     reach = [{ unit_id: o.unit_id, at_s: o.at_s, item: o.unit_id }];
   } else {
-    const m = /^(U\d+)-D\d+-\d+$/.exec(o.sample_id);
+    const m = /^(U\d+)-D(\d+)-\d+$/.exec(o.sample_id);
     if (!m) return fail(`breakout origin names the sample ${o.sample_id}, which is not a routine sample id of the form U01-D03-1`);
     unit(m[1] as string, "origin");
-    if (drawn === undefined) return undefined; // the loader: the draw instant is only known to the run
-    const at_s = drawn(o.sample_id);
+    // the loader: the instant of the draw is the seed's, so the plan takes the end of the day the id names, the latest instant the draw can have (C6); the run passes the real instant
+    const endOfDay = (Number(m[2]) + 1) * DAY;
+    if (drawn === undefined) assumed = ` (the loader plans the named draw ${o.sample_id} at ${hoursText(endOfDay)} h, the end of its day, the latest instant it can have: the seed decides the instant)`;
+    const at_s = drawn === undefined ? endOfDay : drawn(o.sample_id);
     if (at_s === undefined) return fail(`breakout origin names the sample ${o.sample_id}, which no draw of the run produces (it may have been skipped for the volume budget)`);
     reach = [{ unit_id: m[1] as string, at_s, item: o.sample_id }];
   }
@@ -128,13 +145,14 @@ export const planBreakout = (b: BreakoutConfig, scenario: string, c: ProcessConf
 
   // the first signal is the first sensor tick (of the unit, from its inoculation) at or after onset + lag
   const cadence = c.sensors.cadence_s;
+  const ph = b.profile.signals.find((s) => s.signal === "pH");
   const units: UnitScript[] = [...onsets.entries()]
     .map(([unit_id, onset_s]) => ({ info: unit(unit_id, "origin"), onset_s }))
     .sort((x, y) => x.info.index - y.info.index)
     .map(({ info, onset_s }) => {
       const signal_s = info.t0 + Math.ceil((onset_s + b.lag_s - info.t0) / cadence) * cadence;
       const effects = b.effects.map((e) => ({ at_s: onset_s + e.delay_s, ...(e.mu !== undefined && { mu: e.mu }), ...(e.kd !== undefined && { kd: e.kd }) }));
-      return { unit_id: info.unit_id, batch_id: batchIdOf(info.unit_id), onset_s, signal_s, stop_s: signal_s + b.signal_to_response_s, effects };
+      return { unit_id: info.unit_id, batch_id: batchIdOf(info.unit_id), onset_s, signal_s, stop_s: signal_s + b.signal_to_response_s, effects, ...(ph && { ph_ramp: rampOf({ signal_s }, b.ramp_s, ph.change) }) };
     });
   const deviation_s = Math.min(...units.map((u) => u.signal_s));
   const decision_s = deviation_s + b.signal_to_response_s;
@@ -151,16 +169,23 @@ export const planBreakout = (b: BreakoutConfig, scenario: string, c: ProcessConf
     if (u.stop_s >= end) fail(`breakout stops ${u.unit_id} at ${hoursText(u.stop_s)} h (its first signal at ${hoursText(u.signal_s)} h plus ${hoursText(b.signal_to_response_s)} h), but ${u.unit_id} runs only until ${hoursText(end)} h`);
   }
 
-  // one confirming sample per confirmed unit, drawn at the decision instant; one aliquot per test
-  const confirm: ConfirmScript[] = [];
-  const latest = { result_s: -1, test: "", unit_id: "" };
+  // the confirming samples, one aliquot per test: one per unit of the confirm list at the first decision, and one per later signal from its own unit at its own decision, which is its stop
+  // (rule S2 as ruled on F8). The first signal is the first unit in unit order at the earliest signal, as for the deviation.
   for (const id of b.confirm) {
     const info = unit(id, "confirm");
     if (!(info.t0 <= decision_s && decision_s < info.end)) fail(`breakout confirm names ${id}, which is not running at the first decision (${hoursText(decision_s)} h): it is inoculated at ${hoursText(info.t0)} h and ends at ${hoursText(info.end)} h`);
-    const sample_id = `${id}-CONF`;
-    const aliquots = b.tests.map((t, i): AliquotScript => ({ aliquot_id: `${sample_id}-A${i + 1}`, test: t.test, volume_ul: roundUl(t.volume_ml * 1000), result_s: decision_s + t.turnaround_s, covers: t.covers }));
-    for (const a of aliquots) if (a.result_s > latest.result_s) Object.assign(latest, { result_s: a.result_s, test: a.test, unit_id: id });
-    confirm.push({ unit_id: id, batch_id: batchIdOf(id), sample_id, affected: onsets.has(id), volume_ul: roundUl(aliquots.reduce((sum, a) => sum + a.volume_ul, 0)), aliquots });
+  }
+  const first = units.find((u) => u.signal_s === deviation_s) as UnitScript;
+  const draws = [
+    ...b.confirm.map((id) => ({ unit_id: id, sample_id: `${id}-CONF`, drawn_s: decision_s })),
+    ...units.filter((u) => u !== first).sort((x, y) => x.signal_s - y.signal_s).map((u) => ({ unit_id: u.unit_id, sample_id: `${u.unit_id}-SIG-CONF`, drawn_s: u.stop_s })),
+  ];
+  const confirm: ConfirmScript[] = [];
+  const latest = { result_s: -1, test: "", unit_id: "" };
+  for (const { unit_id, sample_id, drawn_s } of draws) {
+    const aliquots = b.tests.map((t, i): AliquotScript => ({ aliquot_id: `${sample_id}-A${i + 1}`, test: t.test, volume_ul: roundUl(t.volume_ml * 1000), result_s: drawn_s + t.turnaround_s, covers: t.covers }));
+    for (const a of aliquots) if (a.result_s > latest.result_s) Object.assign(latest, { result_s: a.result_s, test: a.test, unit_id });
+    confirm.push({ unit_id, batch_id: batchIdOf(unit_id), sample_id, drawn_s, affected: onsets.has(unit_id), volume_ul: roundUl(aliquots.reduce((sum, a) => sum + a.volume_ul, 0)), aliquots });
   }
   // no result may be open at the end of the run (rule S3): the horizon must hold the latest one
   if (latest.result_s > c.horizon_s) {

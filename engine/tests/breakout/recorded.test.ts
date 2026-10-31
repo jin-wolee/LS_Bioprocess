@@ -75,9 +75,11 @@ describe("FX12e as the engine produces it, recorded under C", () => {
     expect(edgeTuples(ds, "used_in").map((e) => e[2])).toEqual(uses.map((p) => p.event_id));
   });
 
-  it("Then both units are stopped, U01 at 19 h and U02 at 23 h, and both are confirmed detected", () => {
+  it("Then both units are stopped, U01 at 19 h and U02 at 23 h, and both are confirmed detected, U02 also by the sample of its own signal (F8)", () => {
     expect(ds.process_event.filter((p) => p.kind === "unit_stopped").map((p) => [p.unit_id, p.occurred_at])).toEqual([["U01", H(19)], ["U02", H(23)]]);
-    expect(confirming(ds).map((r) => r[3])).toEqual(["detected", "detected", "detected", "detected"]);
+    expect(confirming(ds).map((r) => [r[0], r[3]])).toEqual([
+      ["U01-CONF", "detected"], ["U02-CONF", "detected"], ["U02-SIG-CONF", "detected"], ["U01-CONF", "detected"], ["U02-CONF", "detected"], ["U02-SIG-CONF", "detected"],
+    ]);
     expect((ds.deviation ?? []).length).toBe(1);
     expect(validate(ds, { hold_limit_s: 86400 }).dataset.validation_finding.filter((f) => f.rule === "VR-021")).toEqual([]);
   });

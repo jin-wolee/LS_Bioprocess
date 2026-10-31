@@ -65,9 +65,10 @@
           "type": "string",
           "enum": [
             "reported",
-            "none_occurred"
+            "none_occurred",
+            "not_reachable"
           ],
-          "description": "reported: at least one seed defines the value. none_occurred: the denominator was zero in every seed, which is not a perfect score and not a zero."
+          "description": "reported: at least one seed defines the value. none_occurred: the denominator was zero in every seed, which is not a perfect score and not a zero. not_reachable: a direction 3 row of a record that cannot read direction 3 (neither material_lot_links nor equipment_links is on): the walk-back could not look, so no value is reported (rule S8: never an empty set, never a recall of 0)."
         },
         "n_seeds": {
           "type": "integer",
@@ -167,6 +168,24 @@
         "what": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "use": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id",
+        "at_h"
+      ],
+      "description": "A unit that consumes the lot or uses the item, and the instant, in hours from the start of the scenario (A177); a seed lot is consumed at the inoculation of its unit.",
+      "properties": {
+        "unit_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at_h": {
+          "type": "number"
         }
       }
     }
@@ -277,7 +296,9 @@
               "profile",
               "origin_kind",
               "origin_id",
-              "horizon_days"
+              "horizon_days",
+              "horizon_ref",
+              "contaminated_at"
             ],
             "description": "What the scenario injects (a scenario input, ADR-0013: no random draw). Printed in the report, which is the evaluator's output and not a recorder's.",
             "properties": {
@@ -306,6 +327,41 @@
               "horizon_days": {
                 "type": "number",
                 "exclusiveMinimum": 0
+              },
+              "horizon_ref": {
+                "type": "string",
+                "const": "A189",
+                "description": "The ledger id of the scenario horizon (a scenario setting, A189)."
+              },
+              "contaminated_at": {
+                "description": "The instant the origin item became contaminated (A157): the contaminated_at of a lot or a shared equipment item, the instant of a unit's own equipment. Hidden from every recorder and printed here because the report is the evaluator's output. Null for a sampling origin, whose onset is the instant of the named draw, which the seed decides.",
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "value",
+                      "unit",
+                      "ref"
+                    ],
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "unit": {
+                        "type": "string",
+                        "const": "h"
+                      },
+                      "ref": {
+                        "type": "string",
+                        "const": "A157"
+                      }
+                    }
+                  }
+                ]
               }
             }
           },
@@ -325,7 +381,7 @@
               "lots",
               "equipment"
             ],
-            "description": "A177 (widened to equipment): which units consume which lot or use which equipment item. A scenario input, not data.",
+            "description": "A177 (widened to equipment): which units consume which lot or use which equipment item, and when; with each lot's prepared_at. A scenario input, not data.",
             "properties": {
               "ref": {
                 "type": "string",
@@ -339,7 +395,9 @@
                   "required": [
                     "lot_id",
                     "kind",
-                    "units"
+                    "units",
+                    "prepared_at_h",
+                    "uses"
                   ],
                   "properties": {
                     "lot_id": {
@@ -357,6 +415,16 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "prepared_at_h": {
+                      "type": "number",
+                      "description": "The instant the lot was prepared, in hours (A177)."
+                    },
+                    "uses": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/use"
+                      }
                     }
                   }
                 }
@@ -369,7 +437,8 @@
                   "required": [
                     "equipment_id",
                     "name",
-                    "units"
+                    "units",
+                    "uses"
                   ],
                   "properties": {
                     "equipment_id": {
@@ -382,6 +451,12 @@
                       "type": "array",
                       "items": {
                         "type": "string"
+                      }
+                    },
+                    "uses": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/use"
                       }
                     }
                   }

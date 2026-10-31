@@ -95,9 +95,11 @@ export const breakoutMetrics = (input: BreakoutEvalInput): BreakoutMetrics => {
   // identification: the walk-back of the first signal
   const returned = (d: Direction): Set<string> => new Set(walk.items.filter((i) => i.direction === d).map((i) => keyOf(i.kind, i.id)));
 
-  // containment: the first hold on each item, from any signal
+  // containment: the first hold on each item, from any signal, that a confirming result decides; a hold still under test at the end (its sample was skipped for the budget or never drawn: rule S3
+  // leaves no result open) does not contain its item (C36, F1)
   const firstHold = new Map<string, number>();
   for (const h of ds.quality_hold ?? []) {
+    if (h.outcome === null) continue;
     const k = keyOf(h.target_kind, h.target_id);
     firstHold.set(k, Math.min(firstHold.get(k) ?? Infinity, h.placed_at));
   }
@@ -109,9 +111,17 @@ export const breakoutMetrics = (input: BreakoutEvalInput): BreakoutMetrics => {
     }),
   ) as Record<ItemKind, Containment>;
 
-  // released before containment: a result of T the truth released at or before its first hold (the investigation runs after the review of an instant, so a release at the instant of the hold stood first, C25), or never held
+  // released before containment: a result of T that the record of this architecture made available at or before its first hold (the investigation runs after the review of an instant, so a
+  // release at the instant of the hold stood first, C25), or never held. Released is what the record showed, not the truth's release (C39, F3): a version that is not a retro-flag, in state null
+  // or released, from its available_at, else its review point, else the instant it was written; a result the record rejected or still holds was never shown and is owed no retro-flag.
+  const shown = new Map<string, number>();
+  for (const r of ds.result) {
+    const at = r.hold_id != null || (r.state !== null && r.state !== "released") ? null : (r.available_at ?? r.reviewed_at ?? r.ingested_at ?? r.measured_at);
+    const k = keyOf("result", r.result_id);
+    if (at !== null) shown.set(k, Math.min(shown.get(k) ?? Infinity, at));
+  }
   const results = [...t.touched].filter(([, x]) => x.kind === "result");
-  const before = results.filter(([k, x]) => x.released_at !== null && x.released_at <= (firstHold.get(k) ?? Infinity));
+  const before = results.filter(([k]) => shown.has(k) && (shown.get(k) as number) <= (firstHold.get(k) ?? Infinity));
 
   // retro-flag completeness: a later version with the hold reference beside the version it supersedes, and the person and the reason stored
   const present = new Set(ds.result.map((r) => r.result_id));
