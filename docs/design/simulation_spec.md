@@ -543,7 +543,7 @@ Each scenario asks one question. Scenarios live in `scenarios/*.json`.
 | SC8 pH re-standardisation | How does a record error reach control? | experiment 2 (A051, A041, A042, A043, A064, A037; probe A094, A095, A108) | probe offset, control excursion, paired difference | S2 |
 | SC9 Perfusion campaign | What if the context unit is not the batch? | long perfusion with harvest intervals (A006, A003, A009) | exact reconstruction by harvest interval | S4 |
 | SC10 Pool genealogy | What happens at merges across batch boundaries? | cross-batch pool (A052, A053, A054; turnaround unset, A055) | lineage-query exact reconstruction | S4 |
-| SC11 GMP preset | Same model, different control strength? | source-of-record setting (A056); clock and audit expectations (S029, S030) | attributable rate, exact reconstruction, availability | S3 |
+| SC11 GMP preset | Same model, different control strength? | source-of-record setting (A056); clock and audit expectations (S029, S030) | attributable rate, exact reconstruction, availability | S4 (moved from S3 by the author, 2026-10-31: what `source_of_record` changes is designed first) |
 
 **Default scenario.** `scenarios/default.json` is the scenario of SC1 and the base of the others: 24 reactors in two bays of 12 and 2 analyzers (A001, A022; ADR-0009), every other setting at the ledger default of the id the spec cites. `scenarios/sc02_shift_burst.json` and `scenarios/sc05_one_analyzer_down.json` change only the settings of their rows. Three fixed neutral seeds, 1, 2 and 3, generate the golden event logs of the default scenario; they are regression fixtures, not an experiment, so the seed minimum of A103 does not apply.
 

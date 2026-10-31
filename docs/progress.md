@@ -2622,3 +2622,22 @@ A CI-like dry run: the files git would check out (806, none of the ignored ones)
 **Verdict**: PASS, no rework. The explainer agrees with the current state in English and Korean: ten flags (ADR-0017, ADR-0020) in the lead, the flag list and the presets (B with `equipment_links`), the capture path "not a flag", the extensions built in S3 with the Break-out screen held back, and a roadmap line; a new test fails if the explainer's flag count differs from the engine's. lab_ui.md section 13 ends with the corrected sentence. Executor: Sonnet xhigh.
 - Orchestrator run: `check_all --manual --lab` PASS; `qa_infographic.py` eight of eight (38.4 KB gzip; the two new flags change no cell of the explainer's outcome matrix, reported only, as they matter only with a scripted contamination).
 - Open, to the author: SC11 (the GMP preset) is listed under S3 in the scenario table of spec section 7 but is not in the S3 row of prompts/00, no scenario file exists, and the setting `source_of_record` (A056) is read by nothing.
+
+## 2026-10-31 — S3 close (orchestrator)
+
+**Verdict**: S3 PASS on the AI path at the commit of this entry. Every blocking item of the gate in `prompts/30_S3_lab_ui.md` holds; the author's gate of S3, the public flip, is the author's (00 section 4).
+- Headless end-to-end tests green: lab QA fifteen of fifteen (incl. `engines`: Firefox and WebKit reproduce the reference byte for byte under ADR-0019; `lineage_sc3`; `challenge`; `sc12`; `breakout_public`), `qa_site.py` seven of seven over the assembled `dist/site/`, `qa_infographic.py` eight of eight.
+- The full-history banned-token scan (`check_docs.py --history`) reads 0.
+- Budgets met: the public lab's first load 135.2 KB gzip (limit 300 KB), the explainer 38.4 KB (limit 150 KB), the default scenario's engine run in the Worker 117 ms median (limit 1 s).
+- The browser check of ADR-0016 is present and tested (a strict comparison under ADR-0019; an altered reference fails; a missing one errors).
+- The SC12 forced-error fixtures are exact (FX12a, FX12e, FX12m, cell by cell, under A, B, C, C-L and C-E), and so are the ablations of the ninth and tenth flags (ADR-0017, ADR-0020).
+- Earlier outputs unchanged in every recorded value: the regression pins of each batch were checked by the orchestrator in a worktree of their base commit; the goldens changed only twice, by the author's approvals (S3m: float fields of ADR-0019; the version 0.2.0: the version field and hashes).
+- The mutation spot checks of the gate, all caught: a page importing a truth module (S3b), the browser check against a wrong hash (S3b), the challenge reveal before the guess (S3e), the lot edge dropped with `material_lot_links` on (109 tests, batch 6), direction 3 two steps back (12), a break-out draw keyed by the label (2).
+- `sim-adversary` ran once on the Step 5 deliverables; its one major and eight minors are fixed (F1 to F9).
+- The three Done gates green: `uv run pytest -q`, `check_docs --all`, `check_all.sh --manual --lab`.
+
+**Scope moved**: SC11 (the GMP preset) goes to S4 by the author's choice ("S4로 옮기기 (Recommended)", chat, 2026-10-31): `source_of_record` (A056) is read by nothing yet, and what it changes is designed first; the scenario table of spec section 7 says so.
+
+**For the author, before and at the public flip**: rename the repository to `Lineage-Simulator-Bioprocessing` and point the local remote at it; set the secret `GUARDRAIL_TERMS` and the Pages source (GitHub Actions); run the `pages` workflow with `deploy` false first, then true; change the visibility. **Held for the research role**: the re-read of the extension sources (S057 to S083, S049, S099) that keeps the Break-out screen out of the public build; the bioburden and nucleic-acid sample volumes and a release delay after a negative result (A225 to A227); the earlier items of the S2 close. **Parked**: a second pass of the investigation for results that arrive after the decision; a purpose field on the skipped-draw event; the aliquot per storage condition (the author's ruling of S3c); the `feed_decision` event of spec section 2; the split of `engine/src/process.ts` (343 lines).
+
+**Next**: S4 (DSP genealogy, HPLC contention, cell-line and operating-mode profiles, SC13, SC14, and now SC11); its brief `prompts/40_*` is written at the start of that session.
