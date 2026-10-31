@@ -9,7 +9,7 @@ import type { Architecture } from "../../record/architecture.ts";
 import { record } from "../../record/recorder.ts";
 import { review } from "../../record/review.ts";
 import type { ReviewConfig } from "../../record/review.ts";
-import type { QualificationInput, RecordedDataset } from "../../record/types.ts";
+import type { BreakoutInput, QualificationInput, RecordedDataset } from "../../record/types.ts";
 import { validate } from "../../record/validate.ts";
 import type { RuleConfig } from "../../record/validate.ts";
 import { NOT_APPLICABLE, controllerObservations, observationsOf, rawMetrics } from "../../evaluate/raw_metrics.ts";
@@ -45,6 +45,8 @@ export interface SeedInput {
   raw?: RawSetup;
   /** The method's units, bounds and dilution rule for the rules on a typed entry (VR-005, VR-006, VR-013); read only on manual_transcription. */
   entry_rules?: EntryConfig;
+  /** The break-out path only (spec 11.8.9 C12): the master data of the topology, handed to the recorder beside the events. Absent: the recorder ignores the break-out events and writes none of the tables of the extension. */
+  breakout?: BreakoutInput;
   rules: RuleConfig;
   /** The review of held and quarantined rows (A213 to A215, S2 review step): the roster, the timing and the sensitivity variants. */
   review: ReviewConfig;
@@ -87,7 +89,7 @@ export const runSeed = (input: SeedInput): SeedOutput => {
       ? controllerPath({ setup: input.raw.controller, anchor_epoch_s: input.raw.anchor_epoch_s, zone_offset_s: input.raw.zone_offset_s, path: captured.path, flags: { ingest_idempotency: architecture.flags.ingest_idempotency }, events: input.events, sensors: input.sensors })
       : null;
     const capture = captured && controller ? { ...captured.capture, historian: controller.historian, findings: [...(captured.capture.findings ?? []), ...controller.findings] } : captured?.capture;
-    const recorded = record({ events: captured?.events ?? out.events, sensors: input.sensors, received_at: captured?.received_at ?? out.received_at, ...(input.qualifications && { qualifications: input.qualifications }), ...(capture && { capture }) }, architecture);
+    const recorded = record({ events: captured?.events ?? out.events, sensors: input.sensors, received_at: captured?.received_at ?? out.received_at, ...(input.qualifications && { qualifications: input.qualifications }), ...(capture && { capture }), ...(input.breakout && { breakout: input.breakout }) }, architecture);
     const tables = captured?.tables && controller ? mergeTables(captured.tables, controller.tables) : captured?.tables;
     if (captured) {
       const head = { engine_version: input.engine_version, scenario_id: input.scenario_id, seed: input.seed, architecture: architecture.id, capture_path: captured.path };

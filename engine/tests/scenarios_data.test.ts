@@ -12,12 +12,12 @@ import { makeAjv, ledgerIds, refsOf, rejected } from "./support/schemas.ts";
 
 const KINDS = ["bioreactor", "analyzer", "staff"] as const;
 const profileFiles = KINDS.flatMap((k) => listFiles("scenarios", "profiles", k).map((f) => [k, f.replace(/\.json$/, "")] as const));
-const scenarioFiles = ["default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down", "sc08_ph_restandardisation"]; // sc03 joined in S2c1, sc08 in S2c3
+const scenarioFiles = ["default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down", "sc08_ph_restandardisation", "sc12_medium_lot", "sc12_seed_lot", "sc12_sampling", "sc12_equipment", "sc12_mycoplasma"]; // sc03 joined in S2c1, sc08 in S2c3, the five SC12 scenarios in break-out batch 6
 
 describe("Data: scenarios and profiles", () => {
   const ajv = makeAjv();
 
-  it("lists the eight profiles of the spec (4.1 to 4.3) and the scenarios of S1b, S2c1 and S2c3 (default, SC2, SC3, SC5, SC8)", () => {
+  it("lists the eight profiles of the spec (4.1 to 4.3) and the scenarios of S1b, S2c1, S2c3 and the break-out batch 6 (default, SC2, SC3, SC5, SC8, the five of SC12)", () => {
     expect(profileFiles.map(([, id]) => id).sort()).toEqual(["allinone_atline", "bench_manual", "experienced", "hplc", "micro_mini_parallel", "pilot", "split_cellcounter_metabolite", "trainee"]);
     expect(listFiles("scenarios").filter((f) => f.endsWith(".json")).map((f) => f.replace(".json", ""))).toEqual([...scenarioFiles].sort());
   });

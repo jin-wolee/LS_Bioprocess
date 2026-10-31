@@ -1,3 +1,4 @@
+import type { BreakoutConfig } from "../../breakout/config.ts";
 import type { Contrast } from "../../evaluate/effects.ts";
 import type { EvaluationSettings } from "../../evaluate/config.ts";
 import { truthFromRun } from "../../evaluate/truth.ts";
@@ -6,7 +7,7 @@ import { observeEvents } from "../../observe.ts";
 import type { Params } from "../../profiles.ts";
 import type { Architecture } from "../../record/architecture.ts";
 import type { ReviewConfig, Roster } from "../../record/review.ts";
-import type { QualificationInput } from "../../record/types.ts";
+import type { BreakoutInput, QualificationInput } from "../../record/types.ts";
 import type { ScenarioRun } from "../../run.ts";
 import type { SamplingConfig } from "../../sampling.ts";
 import { ENGINE_VERSION } from "../../trace.ts";
@@ -32,7 +33,15 @@ export interface RunSettings {
   /** The raw device layer (ADR-0014); absent with the layer off. */
   raw?: RawSetup;
   entry_rules?: EntryConfig;
+  /** The break-out block of the scenario (spec 11.8): present only on the break-out path, where the recorder is handed its master data and the evaluator the topology. Absent: nothing changes. */
+  breakout?: BreakoutConfig;
 }
+
+/** The master data of the topology that the event stream does not carry (data_model 15.6, spec 11.8.9 C12): each lot with its kind and preparation time, each equipment item with its name. Never the hidden `contaminated_at`. */
+export const breakoutMasterOf = (b: BreakoutConfig): BreakoutInput => ({
+  lots: b.lots.map((l) => ({ lot_id: l.lot_id, kind: l.kind, prepared_at: l.prepared_s })),
+  equipment: b.equipment.map((e) => ({ equipment_id: e.equipment_id, name: e.name })),
+});
 
 /** The roster of A201 as the scenario sets it (its sampling settings), as plain data for the review: the engine hard-codes no clock time. */
 export const rosterOf = (s: SamplingConfig): Roster => ({ start_s: s.start_s, shift_change_s: s.shiftChange_s, end_weekday_s: s.endWeekday_s, end_weekend_s: s.endWeekend_s });
@@ -49,7 +58,7 @@ export const seedInputFromRun = (run: ScenarioRun, s: RunSettings): SeedInput =>
   scenario_id: s.scenario_id,
   seed: run.l3Input.seed,
   engine_version: ENGINE_VERSION,
-  truth: truthFromRun(run),
+  truth: { ...truthFromRun(run), ...(s.breakout && { breakout: breakoutMasterOf(s.breakout) }) },
   events: observeEvents(run.events),
   sensors: run.observableSensors,
   architectures: s.architectures,
@@ -58,6 +67,7 @@ export const seedInputFromRun = (run: ScenarioRun, s: RunSettings): SeedInput =>
   qualifications: qualificationsOf(run),
   ...(s.raw && { raw: withLayout(s.raw, run) }),
   ...(s.entry_rules && { entry_rules: s.entry_rules }),
+  ...(s.breakout && { breakout: breakoutMasterOf(s.breakout) }),
   // the tolerances of VR-003 and VR-004 have no ledger entry (scenarios/evaluation/default.json): those two rules are reported as not evaluable
   rules: { hold_limit_s: s.evaluation.hold_limit_s },
   review: s.review,

@@ -67,6 +67,7 @@ export const runOpenLoop = async (input: OpenLoopInput): Promise<OpenLoopResult>
         days: input.scenario.process.horizon_s / DAY,
         review: { roster: rosterOf(input.scenario.sampling), timing: review.timing, reject_also: review.reject_also },
         ...(input.contrast && { contrast: input.contrast }), ...(input.clock_offsets && { clock_offsets: input.clock_offsets }),
+        ...(input.scenario.breakout && { breakout: input.scenario.breakout }),
       }),
     );
     const after = await logHash(run.events);

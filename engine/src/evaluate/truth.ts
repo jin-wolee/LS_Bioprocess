@@ -1,4 +1,5 @@
 import type { Event } from "../generated/event.schema";
+import type { BreakoutInput } from "../record/types.ts";
 import type { ScenarioRun } from "../run.ts";
 
 // What the evaluator knows of the truth world (it is allowed to: spec section 3, rule 2). Plain data, so a hand-built fixture and a real run
@@ -29,7 +30,12 @@ export interface Truth {
   analyzers: readonly string[];
   /** The analyzer profile of each instrument, by instrument id (ADR-0015, spec section 4.5.6); absent in a hand-built world, which then has no per-profile utilisation. */
   analyzer_profiles?: Readonly<Record<string, string>>;
+  /** The topology of the break-out block (its lots and equipment items), present only on the break-out path: the universe of the extension metrics (spec 11.6, rule S10). Plain data from the assembly. */
+  breakout?: BreakoutInput;
 }
+
+/** The sample id of a confirming sample is `<unit>-CONF` (spec 11.8.8 C5). A confirming sample is not an analysis request (rule S10): the section 8 metrics count routine requests only. */
+const CONFIRMING_ID = /-CONF$/;
 
 export const truthFrom = (events: readonly Event[], extras: Pick<Truth, "visits" | "deadlines" | "operators" | "analyzers" | "analyzer_profiles">): Truth => ({
   events,
@@ -37,7 +43,7 @@ export const truthFrom = (events: readonly Event[], extras: Pick<Truth, "visits"
   requests: events.flatMap((e): TruthRequest[] =>
     e.type === "sample_drawn"
       ? [{ request_id: e.sample_id, unit_id: e.unit_id, batch_id: e.batch_id, operator_id: e.operator_id, sampled_at: e.t, skipped: false }]
-      : e.type === "draw_skipped_volume_budget"
+      : e.type === "draw_skipped_volume_budget" && !CONFIRMING_ID.test(e.sample_id)
         ? [{ request_id: e.sample_id, unit_id: e.unit_id, batch_id: e.batch_id, operator_id: null, sampled_at: null, skipped: true }]
         : [],
   ),

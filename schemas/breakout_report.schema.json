@@ -1,0 +1,481 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "breakout_report.schema.json",
+  "title": "BreakoutReport",
+  "description": "The stochastic report of the break-out experiment SC12 (docs/design/simulation_spec.md sections 11.5, 11.6 and 11.8, rule S10): per case (one scenario, or one scenario with a swept input) and architecture the median and the spread across seeds of the six extension metrics, each with its denominator. Reported, never gated: no test requires an ordering, a sign or a size, and the report orders no architectures and carries no composite score. Every input without a default (A176, A177, the inputs of the event type, the volumes) and the assumed lag of the investigation are printed as inputs of the case. A zero denominator is reported as such, never as 0 or 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine_version",
+    "experiment_id",
+    "seeds",
+    "n_seeds",
+    "min_seeds",
+    "meets_min_seeds",
+    "interval",
+    "review",
+    "mycoplasma_note",
+    "notes",
+    "cases"
+  ],
+  "$defs": {
+    "number_or_null": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "string_or_null": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric",
+        "status",
+        "n_seeds",
+        "n_defined",
+        "median",
+        "lo",
+        "hi",
+        "denominator",
+        "den",
+        "reason"
+      ],
+      "properties": {
+        "metric": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path of the metric: containment.<kind>.contained, .median_s or .p90_s (kind batch, material_lot, equipment or result), identification.direction_<1|3>.recall, .precision or .false_alarm, released_before_containment, retro_flag_completeness. A share contributes its value; a time is in seconds."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "reported",
+            "none_occurred"
+          ],
+          "description": "reported: at least one seed defines the value. none_occurred: the denominator was zero in every seed, which is not a perfect score and not a zero."
+        },
+        "n_seeds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "n_defined": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seeds for which the value is defined (a share with a zero denominator is not; a time is defined where at least one item was held)."
+        },
+        "median": {
+          "$ref": "#/$defs/number_or_null"
+        },
+        "lo": {
+          "$ref": "#/$defs/number_or_null",
+          "description": "Lower end of the spread across seeds (see the report's interval)."
+        },
+        "hi": {
+          "$ref": "#/$defs/number_or_null",
+          "description": "Upper end of the spread across seeds (see the report's interval)."
+        },
+        "denominator": {
+          "$ref": "#/$defs/string_or_null",
+          "description": "What the denominator counts, in words (spec section 8: a metric without a stated denominator is a defect)."
+        },
+        "den": {
+          "description": "The denominator count per seed (min, median, max over the seeds); null for a time, which is over the held items and has the contained share beside it.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "min",
+                "median",
+                "max"
+              ],
+              "properties": {
+                "min": {
+                  "type": "number"
+                },
+                "median": {
+                  "type": "number"
+                },
+                "max": {
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/string_or_null",
+          "description": "A sentence the reader needs beside the number: that the denominator is zero in every seed, that direction 3 is not reachable from this record, or that a time is over the held items only. Null when there is nothing to add."
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "ref",
+        "value",
+        "unit",
+        "source",
+        "what"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "type": "string",
+          "pattern": "^[AS][0-9]{3}$",
+          "description": "The ledger id the scenario cites for this input."
+        },
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "scenario_input",
+            "profile_default",
+            "decision_setting"
+          ],
+          "description": "scenario_input: a number the scenario has to give because the ledger has none (assumed, grade A: A176, the inputs of the event type, the volumes). profile_default: the ledger default of the event-type profile (the lag, the ramp). decision_setting: a setting of the investigation, not truth (the assumed lag)."
+        },
+        "what": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "engine_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seeds": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "description": "The seed list of the run, in config order."
+    },
+    "n_seeds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "min_seeds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The seed minimum of the report (A103)."
+    },
+    "meets_min_seeds": {
+      "type": "boolean"
+    },
+    "interval": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What lo and hi are."
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timing",
+        "reject_also"
+      ],
+      "description": "The review settings of the run (A213 to A215), as in the report of experiment 1.",
+      "properties": {
+        "timing": {
+          "type": "string",
+          "enum": [
+            "next_shift_start",
+            "shift_end",
+            "next_day_start"
+          ]
+        },
+        "reject_also": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^VR-[0-9]{3}[a-z]?$"
+          }
+        }
+      }
+    },
+    "mycoplasma_note": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The author's ruling of 2026-10-31 on C29: the growth and viability effects of mycoplasma come after the signalling unit is stopped, so they show on a sibling that signals later or with a longer lag, not on the signalling unit."
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "scenario_id",
+          "event",
+          "inputs",
+          "topology",
+          "truth_log_hashes",
+          "architectures"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scenario_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "event": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "profile",
+              "origin_kind",
+              "origin_id",
+              "horizon_days"
+            ],
+            "description": "What the scenario injects (a scenario input, ADR-0013: no random draw). Printed in the report, which is the evaluator's output and not a recorder's.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "profile": {
+                "type": "string",
+                "minLength": 1
+              },
+              "origin_kind": {
+                "type": "string",
+                "enum": [
+                  "seed_lot",
+                  "medium_lot",
+                  "shared_equipment",
+                  "unit_equipment",
+                  "sampling"
+                ]
+              },
+              "origin_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "horizon_days": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          },
+          "inputs": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Every input of the case that the ledger gives no number for, and the settings of the investigation: A176 (both delays), the lag and the ramp, the inputs of the event type including the volumes, and the assumed lag of the walk-back. Printed with every result.",
+            "items": {
+              "$ref": "#/$defs/input"
+            }
+          },
+          "topology": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ref",
+              "lots",
+              "equipment"
+            ],
+            "description": "A177 (widened to equipment): which units consume which lot or use which equipment item. A scenario input, not data.",
+            "properties": {
+              "ref": {
+                "type": "string",
+                "const": "A177"
+              },
+              "lots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "lot_id",
+                    "kind",
+                    "units"
+                  ],
+                  "properties": {
+                    "lot_id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "seed",
+                        "medium"
+                      ]
+                    },
+                    "units": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "equipment": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "equipment_id",
+                    "name",
+                    "units"
+                  ],
+                  "properties": {
+                    "equipment_id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "units": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "truth_log_hashes": {
+            "type": "array",
+            "description": "The hash of the truth log of each seed; the same truth was shared by every architecture of the seed and read again after all of them.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "seed",
+                "truth_log_hash"
+              ],
+              "properties": {
+                "seed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "truth_log_hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          },
+          "architectures": {
+            "type": "array",
+            "description": "In the order of the experiment config: the presets, then the ablations of C. No rank and no order is derived.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "role",
+                "ablated_flag",
+                "n_seeds",
+                "reach",
+                "rows"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "preset",
+                    "ablation"
+                  ]
+                },
+                "ablated_flag": {
+                  "$ref": "#/$defs/string_or_null"
+                },
+                "n_seeds": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "reach": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "direction3",
+                    "lots",
+                    "equipment"
+                  ],
+                  "description": "What direction 3 can read from this record (rule S8): lots and the seed parent need material_lot_links, equipment needs equipment_links, and direction 3 as a whole is unreachable only when both are off. A direction that cannot be read returns nothing; that is not an empty set found.",
+                  "properties": {
+                    "direction3": {
+                      "type": "boolean"
+                    },
+                    "lots": {
+                      "type": "boolean"
+                    },
+                    "equipment": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/row"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

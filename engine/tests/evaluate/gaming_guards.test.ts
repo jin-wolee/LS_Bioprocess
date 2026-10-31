@@ -139,11 +139,11 @@ describe("Guard 5: the output carries the seed count and the spread, in the aggr
 });
 
 describe("Guard 6: the metrics are computed from recorded datasets, the truth and the key, not from recorder internals", () => {
-  it("Then no module of engine/src/evaluate imports the recorder or the result builder, only the as-of reads, the evidence checks, the types and the rule helper", () => {
+  it("Then no module of engine/src/evaluate imports the recorder or the result builder, only the as-of reads, the evidence checks, the types (those of the walk-back among them, which the break-out metrics read) and the rule helper", () => {
     const dir = join(ROOT, "engine", "src", "evaluate");
     const imports = readdirSync(dir).flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(/from "(\.\.\/record\/[^"]+)"/g)].map((m) => m[1] as string));
     expect(imports.length).toBeGreaterThan(3);
-    expect([...new Set(imports)].sort()).toEqual(["../record/asof.ts", "../record/evidence.ts", "../record/types.ts", "../record/validate.ts"]);
+    expect([...new Set(imports)].sort()).toEqual(["../record/asof.ts", "../record/evidence.ts", "../record/investigate/types.ts", "../record/types.ts", "../record/validate.ts"]);
   });
   it("Then the evaluator runs on a dataset typed by hand that no recorder produced (the 10-request fixture of metrics.test.ts does the same)", () => {
     const m = evaluate({ truth: WORLD, dataset: emptyDataset(), not_evaluable: [], key_text: out.key_text, architecture: "A", config: CONFIG }).metrics;

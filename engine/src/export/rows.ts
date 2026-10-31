@@ -18,7 +18,8 @@ export const exportRows = (ds: RecordedDataset, opts: RowOptions): Record<string
   const samples = new Map(ds.sample.map((s) => [s.sample_id, s]));
   const runs = new Map(ds.run.map((x) => [x.run_id, x]));
   const states = new Map(ds.instrument_state.map((x) => [x.instrument_state_id, x]));
-  const rows = ds.result.filter(released).map((r): Record<string, Cell> => {
+  // A confirming result (break-out, data_model 15.3) carries an outcome and no value (K18): it has no canonical unit and is not a row of this table. The break-out export package is not built in S3 (spec 11.8.1).
+  const rows = ds.result.filter((r) => released(r) && r.outcome == null).map((r): Record<string, Cell> => {
     const unit = ANALYTE_UNITS[r.analyte];
     if (unit === undefined) throw new Error(`export: no canonical unit for analyte ${r.analyte} (data_model section 9: a conversion that is not defined is a finding, not a guess)`);
     const sample = samples.get(r.request_id);
