@@ -9,7 +9,7 @@
     "lint": "eslint engine src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build:lab": "uv run --frozen --quiet python scripts/lab_ledger.py --check && node --no-maglev-escape-analysis engine/tests/support/lab_reference_cli.ts dist/lab-public/reference.json && vite build -c vite.lab.config.ts",
+    "build:lab": "uv run --frozen --quiet python scripts/lab_ledger.py --check && node --no-maglev-escape-analysis engine/tests/support/lab_reference_cli.ts dist/lab-public/reference.json && vite build -c src/vite.config.ts",
     "gen:types": "json2ts --input schemas --output engine/src/generated --cwd schemas",
     "check": "npm run lint && npm run typecheck && npm run test"
   },

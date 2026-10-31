@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Headless QA for the infographic (`infographic/index.html`): eight checks, exit 1 if any fails.
+"""Headless QA for the infographic (`site/infographic/index.html`): eight checks, exit 1 if any fails.
 
-    uv run python scripts/qa_infographic.py [--root infographic] [--out qa_out]
+    uv run python scripts/qa_infographic.py [--root site/infographic] [--out qa_out]
 
 Serves --root over http.server on a free localhost port, drives headless Chromium (Playwright sync API),
 writes results.json, summary.md and shots/*.png to --out. This file is the CLI, the server, the checks that sweep
@@ -166,7 +166,7 @@ def report(results: list[Result], out: Path) -> str:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--root", type=Path, default=REPO / "infographic", help="directory served; must contain index.html")
+    ap.add_argument("--root", type=Path, default=REPO / "site" / "infographic", help="directory served; must contain index.html")
     ap.add_argument("--out", type=Path, default=REPO / "qa_out")
     args = ap.parse_args(argv)
     page_file = args.root / "index.html"

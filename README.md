@@ -30,7 +30,7 @@ A record that stores only `measured_at` pairs the result with the post-feed proc
 
 ## What you can inspect today
 
-- **Infographic**: open `infographic/index.html` in a browser. A scroll explainer of the problem, English first with a Korean toggle (ADR-0006), with a measurement-time slider and a flag-by-error outcome matrix.
+- **Infographic**: open `site/infographic/index.html` in a browser. A scroll explainer of the problem, English first with a Korean toggle (ADR-0006), with a measurement-time slider and a flag-by-error outcome matrix.
 - **Design**: `docs/design/simulation_spec.md` (layers, the truth/recorded-world contract, profiles, flags, experiments) and `docs/design/data_model.md` (canonical names and time fields).
 - **Decisions**: `docs/adr/`, ADR-0001 to ADR-0014, accepted by the author on 2026-10-29 in the author's own commit (the review record is `docs/adr/review_2026-10-29.json`).
 - **Evidence ledgers**: `docs/research/`. Sources (`S###`) and assumptions (`A###`) carry a grade (S sourced, P proxy, D derived, A assumed) and a verification level (snippet, agent-read, main-reread). Only main-reread sources back numbers on public pages; anything else is labelled provisional.
@@ -56,7 +56,7 @@ docs/design/      simulation_spec.md, data_model.md
 docs/research/    sources.yaml, assumptions.yaml, README.md (grades, verification)
 docs/reviews/     review dispositions
 docs/progress.md  dated log, newest entry last
-infographic/      src/ -> build.py -> index.html
+site/infographic/ src/ -> build.py -> index.html
 prompts/          briefs, principles, review rubric
 scripts/          check_docs.py, check_all.sh, hooks, QA scripts
 tests/            pytest for the guards and the docs check
@@ -71,7 +71,7 @@ tests/            pytest for the guards and the docs check
 uv run pytest -q
 uv run --frozen python scripts/check_docs.py --all
 bash scripts/check_all.sh --manual                 # the full gate: docs check, pytest, Node checks
-uv run python infographic/build.py                 # rebuild infographic/index.html from infographic/src
+uv run python site/infographic/build.py             # rebuild site/infographic/index.html from site/infographic/src
 uv run python scripts/qa_infographic.py            # headless page QA, output in qa_out/
 ```
 
@@ -87,11 +87,11 @@ Python dependencies go through `uv` (`uv.lock`). Run `git config core.hooksPath 
 
 ## License
 
-Code (scripts, tests, build and engine code) is under the MIT licence (`LICENSE`). Text, figures and data tables in `docs/`, `prompts/` and the infographic are under CC BY 4.0 (`LICENSE-docs.md`). Sources cited in the ledgers keep their own terms; the ledgers hold only short quotes and links (ADR-0008).
+Code (scripts, tests, build and engine code) is under the MIT licence (`LICENSE`). Text, figures and data tables in `docs/`, `prompts/` and the infographic are under CC BY 4.0 (`docs/LICENSE-docs.md`). Sources cited in the ledgers keep their own terms; the ledgers hold only short quotes and links (ADR-0008).
 
 ## 한국어 요약
 
 Sample Lineage Lab은 합성 데이터로 만드는 포트폴리오용 시뮬레이터입니다. 바이오리액터 여러 대가 분석기 두 대를 공유할 때, 샘플이 나중에 측정되면서 잃게 되는 공정 맥락(어느 리액터, 어느 시점, 어떤 장비 상태)을 데이터 아키텍처별로 얼마나 복원할 수 있는지 비교합니다.
 현재는 설계 단계입니다. 엔진 코드와 시뮬레이션 결과는 아직 없고, 모든 데이터는 합성이며 실제 설비를 예측하지 않습니다.
-지금 볼 수 있는 것은 인포그래픽(`infographic/index.html`, 영어 기본에 한국어 전환), 설계 문서, ADR, 근거 장부(`S###`, `A###`), 검증 하네스입니다.
+지금 볼 수 있는 것은 인포그래픽(`site/infographic/index.html`, 영어 기본에 한국어 전환), 설계 문서, ADR, 근거 장부(`S###`, `A###`), 검증 하네스입니다.
 ADR 14건은 저자가 2026-10-29에 직접 커밋해 수락했습니다. DDL, SQL 쿼리 세 개, SimPy 핵심 루프는 저자가 직접 구현합니다(ADR-0010).

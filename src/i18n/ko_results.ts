@@ -1,6 +1,6 @@
 import type { enResults } from "./en_results.ts";
 
-// Korean texts of the Results screen (ADR-0006: no number, claim or source that the English text lacks). Terms follow infographic/src/i18n.js.
+// Korean texts of the Results screen (ADR-0006: no number, claim or source that the English text lacks). Terms follow site/infographic/src/i18n.js.
 export const koResults: Record<keyof typeof enResults, string> = {
   "results.heading": "각 기록이 복원할 수 있는 것",
   "results.lead": "아키텍처마다 블록 하나씩, 명세의 각 지표를 시드에 걸친 중앙값과 분포 범위, 그 뒤에 있는 시드 수, 분모, 상태와 함께 보여 줍니다. 표시된 수치는 표시된 입력 아래의 시뮬레이션 결과이며 실제 공장에 대한 예측이 아니고, 하나의 점수로 합치지도 않습니다.",

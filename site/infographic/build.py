@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build the infographic from infographic/src into two files (stdlib only).
+"""Build the infographic from site/infographic/src into two files (stdlib only).
 
-    uv run python infographic/build.py
+    uv run python site/infographic/build.py
 
-  infographic/index.html        full standalone document (GitHub Pages)
-  infographic/dist/artifact.html body-only fragment for the Artifact viewer (gitignored)
+  site/infographic/index.html         full standalone document (GitHub Pages)
+  site/infographic/dist/artifact.html body-only fragment for the Artifact viewer (gitignored)
 
 While assembling, the ledgers are read so that every `data-src` element gets its grade chip and any
 citation of a source below `main-reread` without `data-status="provisional"` fails the build.
@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent
+REPO = HERE.parents[1]
 SRC = HERE / "src"
 FONTS = ("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800"
          "&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap")

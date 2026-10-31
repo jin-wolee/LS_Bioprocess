@@ -317,7 +317,7 @@ def test_known_references_pass_after_bootstrap(repo):
     assert repo.check("--all").returncode == 0
 
 
-GATED = ["README.md", "docs/research/README.md", "infographic/index.html"]
+GATED = ["README.md", "docs/research/README.md", "site/infographic/index.html"]
 
 
 def gated(repo, rel, text, assumptions=ASSUMPTIONS):

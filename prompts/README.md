@@ -56,7 +56,7 @@ The brief, the scope and the rule against commits stay the same; the progress en
 
 ```
 You are the executor for <session>. Work in the repo root. Never run git commit or push.
-Read first: CLAUDE.md, docs/progress.md (last entry), prompts/PRINCIPLES.md,
+Read first: .claude/CLAUDE.md, docs/progress.md (last entry), prompts/PRINCIPLES.md,
 prompts/00_master_build.md, prompts/<NN>_<name>.md, and .guardrails.local.txt (never write its tokens).
 <header: Stage, Principles, HITL gates touched, Done — the four lines from prompts/PRINCIPLES.md section 7>
 Scope: <paths you may create or edit>. Everything else is out of scope.

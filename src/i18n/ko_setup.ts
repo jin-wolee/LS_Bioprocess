@@ -1,6 +1,6 @@
 import type { enSetup } from "./en_setup.ts";
 
-// Korean texts of the Setup screen (ADR-0006: the Korean text introduces no number, claim or source that the English text lacks). Terms follow infographic/src/i18n.js.
+// Korean texts of the Setup screen (ADR-0006: the Korean text introduces no number, claim or source that the English text lacks). Terms follow site/infographic/src/i18n.js.
 export const koSetup: Record<keyof typeof enSetup, string> = {
   "setup.heading": "무엇을 실행할지 고르세요",
   "setup.lead": "시나리오, 공장 규모, 각 베이와 분석기의 프로파일, 기록할 데이터 아키텍처, 수집 경로, 시드를 고릅니다. 그러면 페이지가 Worker의 엔진에 실행을 요청하고, 각 기록이 무엇을 복원할 수 있는지 보여 줍니다.",

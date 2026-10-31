@@ -14,7 +14,7 @@ honest comparison, not a prediction about any real plant.
 - `prompts/`: briefs for executors (`00_master_build.md` first).
 - `docs/private/`: gitignored raw material. Never copy text, numbers or file names out of it into tracked files.
 - `.guardrails.local.txt`: gitignored banned-token list. Never print it into a tracked file.
-- `.claude/`: `settings.json` (hooks), `skills/`, `agents/`, `user_owned.txt`.
+- `.claude/`: `CLAUDE.md` (this file), `settings.json` (hooks), `skills/`, `agents/`, `user_owned.txt`.
 
 ## Invariants
 1. Truth world and recorded world stay separate. Recorders see observable events only, never the hidden truth state.

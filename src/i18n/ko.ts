@@ -7,7 +7,7 @@ import { koResults } from "./ko_results.ts";
 import { koSetup } from "./ko_setup.ts";
 
 // Korean texts (ADR-0006: English first, Korean on a toggle). Typed Record<Key, string>, so a missing key is a type error. The Korean text introduces no number, claim or source that the
-// English text lacks (engine/tests/lab/i18n.test.ts). Terms follow infographic/src/i18n.js where one exists there (the grades, the provisional chip).
+// English text lacks (engine/tests/lab/i18n.test.ts). Terms follow site/infographic/src/i18n.js where one exists there (the grades, the provisional chip).
 const koBase: Record<keyof typeof enBase, string> = {
   "app.title": "샘플 계보 랩",
   "app.footer": "합성 데이터입니다. 표시된 입력 아래의 시뮬레이션 결과이며 실제 공장에 대한 예측이 아닙니다.",

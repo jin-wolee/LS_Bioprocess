@@ -20,7 +20,7 @@ Never touch: `sql/`, `reference/`, `src/`, `docs/research/*.yaml`, `docs/private
 
 ## Step 0
 
-- [ ] Read `.guardrails.local.txt`, `CLAUDE.md`, `docs/design/simulation_spec.md`, `docs/design/data_model.md`, the S1a and S1b progress entries. Confirm `npm run check`, `uv run pytest -q` and `bash scripts/check_all.sh --manual` are green before changing anything (paste the tails).
+- [ ] Read `.guardrails.local.txt`, `.claude/CLAUDE.md`, `docs/design/simulation_spec.md`, `docs/design/data_model.md`, the S1a and S1b progress entries. Confirm `npm run check`, `uv run pytest -q` and `bash scripts/check_all.sh --manual` are green before changing anything (paste the tails).
 - [ ] ESLint `no-restricted-imports` zones (S2 owns these; each rule is shown failing on a planted import in a scratch copy, then passing):
   - Truth modules (`process`, `sampling`, `analysis`, the truth log) may be imported only from `engine/src/observe/**`, `engine/src/experiments/assembly/**`, `engine/src/experiments/oracle/**` and `engine/src/evaluate/**`. Nothing in `record/`, `ingest/`, `raw/`, `inject/`, `export/` or `experiments/arms/` may import them; the injector receives plain data from the assembly.
   - The error answer key (`engine/src/evaluate/answer_key.ts`) may be imported only inside `engine/src/evaluate/**`. The injector returns the materialised errors as plain data and the assembly writes them to the key file.

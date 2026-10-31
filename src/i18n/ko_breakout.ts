@@ -1,6 +1,6 @@
 import type { enBreakout } from "./en_breakout.ts";
 
-// Korean texts of the Break-out screen (ADR-0006: the Korean text introduces no number, claim or source that the English text lacks). Terms follow infographic/src/i18n.js where one exists there.
+// Korean texts of the Break-out screen (ADR-0006: the Korean text introduces no number, claim or source that the English text lacks). Terms follow site/infographic/src/i18n.js where one exists there.
 export const koBreakout: Record<keyof typeof enBreakout, string> = {
   "breakout.heading": "오염 이벤트 역추적",
   "breakout.lead": "스크립트된 오염 이벤트가 리액터 하나에 닿습니다. 공장은 신호를 보이고, 확인 시료를 채취하고, 보류를 걸고, 조사는 신호에서부터 거슬러 올라갑니다. 사례와 시드, 비교할 기록을 고르세요. 각 기록은 자신이 저장한 것만으로 조사하고, 이벤트가 실제로 건드린 것과 대조해 측정합니다. 수치는 표시된 입력 아래의 시뮬레이션 결과이며 실제 공장의 예측이 아닙니다.",

@@ -821,7 +821,7 @@ Written for `prompts/30` Step 5 on base commit b7abfb4 and revised in S3f part 2
 | Extension metrics of 11.6 | six of seven | Time to containment, identification recall, precision and false-alarm rate, released-before-containment share, retro-flag completeness. "Draws beyond the port limit" needs perfusion (S4). Their S3 reading is rule S10. |
 | `harvest_window`, `port_change`, `cell_line_id`, lot withdrawal (A187) | not built | S4: perfusion, cell lines, distributed batches. |
 | Export package; `tests/user_track/` acceptance tests for K15 to K19 | not built | Not in Step 5. The fixtures of 11.8.4 are plain data and can feed those tests later. Until the break-out export is built, the export skips confirming results (they carry an outcome and no value, K18) and writes the routine rows exactly as before; the outcome stays in the recorded tables (answered by the orchestrator, 2026-10-31; `engine/src/export/rows.ts`). |
-| `infographic/` | unchanged | The extension stays off every public page until the sources are re-read. Step 6 may make a link-only change. |
+| `site/infographic/` | unchanged | The extension stays off every public page until the sources are re-read. Step 6 may make a link-only change. |
 | Break-out screen of the lab | Step 6 | Waits for batch 6 (11.8.5). |
 
 #### 11.8.2 Modelling rules fixed for S3
@@ -1020,7 +1020,7 @@ Lab changes by batch (the other executor works in `src/` now; nothing here is in
 | `src/i18n/{en,ko}_notes.ts`, `src/ui/fixture.ts`, `scripts/qa_lab_*.py` | the lab batch after batch 1 (dictionary entries, the fixture list, the check). |
 | `README.md`, `prompts/00_master_build.md` (invariant 7), `prompts/90_review_rubric.md` | "eight" becomes "ten"; the orchestrator owns the prompts. |
 | ADR-0017, ADR-0020 | the two flags (lot links, Accepted; equipment links, accepted by the author in chat with B on, commit 3b8b809); neither needs a text change for this design. ADR-0005 is not edited (Accepted). |
-| `infographic/` | unchanged (11.8.1). |
+| `site/infographic/` | unchanged (11.8.1). |
 
 #### 11.8.7 Decisions, as ruled
 

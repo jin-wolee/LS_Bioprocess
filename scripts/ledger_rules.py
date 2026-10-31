@@ -11,7 +11,7 @@ GRADES = {"S", "P", "D", "A"}
 GRADE_RANK = {g: i for i, g in enumerate("SPDA")}  # strongest first: a bundle is only as good as its weakest component
 ID_RE = re.compile(r"\b([SA]\d{3})\b")
 PROVISIONAL_RE = re.compile(r"\bprovisional\b", re.I)
-PUBLIC_NUMBER_FILES = ("README.md", "docs/research/README.md", "infographic/index.html")  # numbers here need main-reread sources
+PUBLIC_NUMBER_FILES = ("README.md", "docs/research/README.md", "site/infographic/index.html")  # numbers here need main-reread sources
 LEDGER_FILES = {"docs/research/sources.yaml", "docs/research/assumptions.yaml"}  # they define ids, so they are not checked as references
 
 

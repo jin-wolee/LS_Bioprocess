@@ -32,7 +32,7 @@ describe("the size budget of the lab", () => {
     const reference = spawnSync(process.execPath, [...ENGINE_NODE_FLAGS, join(ROOT, "engine", "tests", "support", "lab_reference_cli.ts"), join(publicDir, "reference.json")], { cwd: ROOT, encoding: "utf8" });
     expect(reference.status, reference.stderr).toBe(0);
 
-    await build({ configFile: join(ROOT, "vite.lab.config.ts"), publicDir, logLevel: "silent", build: { outDir: out, emptyOutDir: true } });
+    await build({ configFile: join(ROOT, "src", "vite.config.ts"), publicDir, logLevel: "silent", build: { outDir: out, emptyOutDir: true } });
 
     const files = filesUnder(out).map((f) => relative(out, f)).sort();
     expect(files).toContain("index.html");

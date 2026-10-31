@@ -98,7 +98,7 @@ def check_sc12(browser, url) -> Result:
 def build_public(out: Path) -> subprocess.CompletedProcess:
     """The lab built as the public build is: Vite with no VITE_LAB_LOCAL, into `out`. reference.json comes from dist/lab-public, where `npm run build:lab` put it."""
     env = {k: v for k, v in os.environ.items() if k != "VITE_LAB_LOCAL"}
-    return subprocess.run(["npx", "vite", "build", "-c", "vite.lab.config.ts", "--outDir", str(out), "--emptyOutDir"], cwd=REPO, env=env, capture_output=True, text=True)
+    return subprocess.run(["npx", "vite", "build", "-c", "src/vite.config.ts", "--outDir", str(out), "--emptyOutDir"], cwd=REPO, env=env, capture_output=True, text=True)
 
 
 def check_breakout_public(browser) -> Result:

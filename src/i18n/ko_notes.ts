@@ -1,6 +1,6 @@
 import type { enNotes } from "./en_notes.ts";
 
-// Korean texts of the Notes screen and of the flags (ADR-0006: no number, claim or source that the English text lacks). Terms follow infographic/src/i18n.js.
+// Korean texts of the Notes screen and of the flags (ADR-0006: no number, claim or source that the English text lacks). Terms follow site/infographic/src/i18n.js.
 export const koNotes: Record<keyof typeof enNotes, string> = {
   "notes.heading": "수치가 무엇이고 무엇이 아닌지",
   "notes.scope.heading": "범위와 비목표",

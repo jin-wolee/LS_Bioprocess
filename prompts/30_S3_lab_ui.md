@@ -18,11 +18,11 @@ Decisions already made by the author (do not reopen them): Preact pinned, no oth
 ## Allowed paths
 
 `src/` (the lab page, new), `engine/src/` (the Worker-facing entry and the break-out modules of Step 5), `scenarios/`, `schemas/`, `tests/` (incl. `tests/fixtures/`, `tests/e2e/` if the design puts the end-to-end tests there), `scripts/` (a lab QA script beside `qa_infographic.py`; `check_all.sh` only if the design adds the lab checks to it), `docs/design/` (the new `lab_ui.md` and clarifications), `docs/progress.md`, Proposed ADRs. `package.json` and `package-lock.json` only in the batch that installs Preact (exact versions, each release at least two weeks old). `vite.config.ts`, `tsconfig.json` and `eslint.config.js` only to add what the lab needs: no existing rule loosened, removed or downgraded; the report includes their diff. `.github/workflows/` only in Step 6 (a Pages build workflow; nothing is published).
-Never touch: `sql/`, `reference/`, `docs/research/*.yaml` (a new number goes to the orchestrator as a ledger request), `docs/private/`, `infographic/`, `tests/golden/`.
+Never touch: `sql/`, `reference/`, `docs/research/*.yaml` (a new number goes to the orchestrator as a ledger request), `docs/private/`, `site/infographic/`, `tests/golden/`.
 
 ## Step 0
 
-- [ ] Read `.guardrails.local.txt` once (never write its tokens), `CLAUDE.md`, ADR-0003, ADR-0005, ADR-0006, ADR-0013 to ADR-0018, `docs/design/simulation_spec.md` sections 5, 7, 8 and 11, `docs/design/data_model.md` sections 7, 8 and 15, `docs/design/single_sample_trace.md`, and the last entries of `docs/progress.md`. Confirm the three Done gates are green before changing anything (paste the tails).
+- [ ] Read `.guardrails.local.txt` once (never write its tokens), `.claude/CLAUDE.md`, ADR-0003, ADR-0005, ADR-0006, ADR-0013 to ADR-0018, `docs/design/simulation_spec.md` sections 5, 7, 8 and 11, `docs/design/data_model.md` sections 7, 8 and 15, `docs/design/single_sample_trace.md`, and the last entries of `docs/progress.md`. Confirm the three Done gates are green before changing anything (paste the tails).
 
 ## Step 1 — the lab design note (SDD; a spike allowed)
 

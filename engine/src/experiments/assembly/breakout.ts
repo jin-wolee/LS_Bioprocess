@@ -5,7 +5,7 @@ import type { BreakoutMetrics } from "../../evaluate/breakout_metrics.ts";
 import type { Params } from "../../profiles.ts";
 import type { Architecture } from "../../record/architecture.ts";
 import { investigate, signalsOf } from "../../record/investigate/investigate.ts";
-import type { InvestigationConfig } from "../../record/investigate/investigate.ts";
+import type { Investigation, InvestigationConfig } from "../../record/investigate/investigate.ts";
 import type { ReviewTiming } from "../../record/review.ts";
 import { runScenario } from "../../run.ts";
 import type { ScenarioConfig } from "../../scenario.ts";
@@ -14,6 +14,7 @@ import type { BreakoutCaseConfig } from "./breakout_config.ts";
 import { rosterOf, seedInputFromRun } from "./from_run.ts";
 import type { ReviewUsed } from "./open_loop.ts";
 import { runSeed } from "./run_seed.ts";
+import type { SeedInput } from "./run_seed.ts";
 
 // Experiment SC12, the break-out event (spec 11.5, 11.8): for each case and seed the truth is run once and shared by every architecture. Each architecture records the events with the master data of
 // the topology, validates and reviews as in experiment 1, and then the investigation walks back from the signal (rule S9, on the recorded side). The evaluator scores the result against `T`, the
@@ -87,7 +88,16 @@ export const breakoutCase = (c: BreakoutCaseConfig, scenario: ScenarioConfig): B
   return { case_id: c.case_id, scenario, assumed_lag: { seconds: Math.round(c.assumed_lag.value * HOUR), ref: c.assumed_lag.ref, swept: true } };
 };
 
-export const runBreakoutSeed = async (c: BreakoutCase, seed: number, input: Omit<BreakoutRunInput, "cases" | "seeds">, review: ReviewUsed): Promise<BreakoutSeedOutcome> => {
+/** One seed of a case in full: the outcome the experiment keeps, and what the lab screen shows besides it (the walk-back and the holds), which the cells reduce. */
+export interface BreakoutSeedRun {
+  outcome: BreakoutSeedOutcome;
+  /** The events of the truth run of the seed. */
+  events: SeedInput["events"];
+  /** One per architecture, in the order of `architectures`. */
+  investigations: Investigation[];
+}
+
+export const investigateBreakoutSeed = async (c: BreakoutCase, seed: number, input: Omit<BreakoutRunInput, "cases" | "seeds">, review: ReviewUsed): Promise<BreakoutSeedRun> => {
   const b = blockOf(c);
   const run = runScenario({ ...c.scenario, seed });
   const truth_log_hash = await logHash(run.events);
@@ -99,13 +109,17 @@ export const runBreakoutSeed = async (c: BreakoutCase, seed: number, input: Omit
   // the decision settings of the investigation: the delays are the scenario's (A176), the assumed lag is the case's
   const cfg: InvestigationConfig = { decision_delay_s: b.signal_to_response_s, conclusion_delay_s: b.positive_to_hold_s, assumed_lag_s: c.assumed_lag.seconds, review: seedInput.review };
   const signals = signalsOf(seedInput.events);
-  const cells = input.architectures.map((a) =>
-    breakoutMetrics({ truth: seedInput.truth, investigation: investigate(out.datasets[a.id] as NonNullable<(typeof out.datasets)[string]>, signals, cfg), key_text: out.key_text, architecture: a.id }),
+  const investigations = input.architectures.map((a) => investigate(out.datasets[a.id] as NonNullable<(typeof out.datasets)[string]>, signals, cfg));
+  const cells = input.architectures.map((a, i) =>
+    breakoutMetrics({ truth: seedInput.truth, investigation: investigations[i] as Investigation, key_text: out.key_text, architecture: a.id }),
   );
   const after = await logHash(run.events);
   if (after !== truth_log_hash) fail(c, `the truth log of seed ${seed} changed while the architectures were recorded and investigated (${truth_log_hash} before, ${after} after)`);
-  return { seed, truth_log_hash, cells };
+  return { outcome: { seed, truth_log_hash, cells }, events: seedInput.events, investigations };
 };
+
+export const runBreakoutSeed = async (c: BreakoutCase, seed: number, input: Omit<BreakoutRunInput, "cases" | "seeds">, review: ReviewUsed): Promise<BreakoutSeedOutcome> =>
+  (await investigateBreakoutSeed(c, seed, input, review)).outcome;
 
 export const runBreakout = async (input: BreakoutRunInput): Promise<BreakoutResult> => {
   const review: ReviewUsed = { timing: input.review?.timing ?? "next_shift_start", reject_also: [...(input.review?.reject_also ?? [])] };

@@ -19,13 +19,13 @@ Not in S1a (S1b): L1, L2, profiles and their loader, scenarios, instrument state
 
 Create or edit: `engine/` (modules in Step 5 only), `schemas/`, `tests/` (incl. `tests/fixtures/{hand,traces,schemas,sql}/`, `tests/golden/parity/`, `tests/user_track/`), root `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `eslint.config.js`, `pyproject.toml`/`uv.lock` (via `uv add --dev`), `.claude/user_owned.txt` (Step 0), `docs/design/` (only if a design doc needs an S1a clarification), `docs/progress.md`, Proposed ADRs for stack choices not already covered.
 Not expected to change: `scripts/check_all.sh` already runs `npm run check` once `package.json` exists and carries the `Math.random` grep. If either is missing or wrong, report it to the orchestrator instead of editing.
-Never create or edit: `sql/`, `reference/`, `src/` (UI, S3), `scenarios/` and `tests/golden/*` other than `tests/golden/parity/` (S1b), `docs/research/*.yaml`, `docs/private/`, `infographic/`.
+Never create or edit: `sql/`, `reference/`, `src/` (UI, S3), `scenarios/` and `tests/golden/*` other than `tests/golden/parity/` (S1b), `docs/research/*.yaml`, `docs/private/`, `site/infographic/`.
 
 ## Step 0 — rails, ownership, live hooks
 
 The session must have been started inside the repo, so the hooks of `.claude/settings.json` are live.
 
-- [ ] Read `.guardrails.local.txt`, `CLAUDE.md`, the last entry of `docs/progress.md`, `docs/design/simulation_spec.md` (§2.3, §3), `docs/design/data_model.md` (§5, §6), `docs/research/assumptions.yaml` (ids only, for the `ref` checks of Step 2; never copy values into code).
+- [ ] Read `.guardrails.local.txt`, `.claude/CLAUDE.md`, the last entry of `docs/progress.md`, `docs/design/simulation_spec.md` (§2.3, §3), `docs/design/data_model.md` (§5, §6), `docs/research/assumptions.yaml` (ids only, for the `ref` checks of Step 2; never copy values into code).
 - [ ] The SessionStart brief (last progress entry and every `Proposed` ADR) must already be printed at the top of this session. If it is not, stop and report.
 - [ ] Run `bash scripts/check_all.sh --manual`, `uv run pytest -q` and `uv run --frozen python scripts/check_docs.py --all` once before changing anything (paste the tails).
 - [ ] Replace the commented placeholder lines of `.claude/user_owned.txt` with the five author paths, one per line, no duplicates: `sql/schema.sql`, `sql/queries/asof_join.sql`, `sql/queries/lineage_recursive.sql`, `sql/queries/bridging_offset.sql`, `reference/sim_core.py`. Do not create these files. This is the first Write or Edit of the session: immediately afterwards `ls -l .claude/.dirty` must show the marker (the PostToolUse hook creates it; the Stop gate removes it at the end of the turn). Paste it.

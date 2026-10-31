@@ -1,6 +1,6 @@
 import type { enLineage } from "./en_lineage.ts";
 
-// Korean texts of the Lineage screen (ADR-0006: the Korean text introduces no number, claim or source that the English text lacks). Terms follow infographic/src/i18n.js where one exists there.
+// Korean texts of the Lineage screen (ADR-0006: the Korean text introduces no number, claim or source that the English text lacks). Terms follow site/infographic/src/i18n.js where one exists there.
 export const koLineage: Record<keyof typeof enLineage, string> = {
   "lineage.heading": "시료 하나를 각 기록에서 따라가기",
   "lineage.lead": "실행과 시료를 고르세요. 각 열은 한 데이터 아키텍처가 그 시료에 대해 저장한 행을 상자로, 행들을 잇는 키를 선으로 그립니다. 분석가가 나중에 던지는 세 가지 질문은 기록에서 답하고, 시뮬레이션의 진실과 비교해 판정합니다.",

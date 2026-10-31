@@ -17,11 +17,11 @@ The rest of the deterministic TypeScript engine: L1 process model, L2 sampling a
 
 Create or edit: `engine/` (new modules `process`, `sampling`, `profiles`, `scenario`; additions to `analysis`, `observe`, `trace`), `schemas/` (additive only: the L1 and L2 event types of `event.schema.json`, and the scenario and profile content; `trace.schema.json` and `trace_result.schema.json` are frozen because the author's code reads them, a change needs the orchestrator), `scenarios/` (incl. `scenarios/profiles/`), `tests/` (incl. `tests/fixtures/`, `tests/golden/`), `docs/design/` (only if a design doc needs an S1b clarification), `docs/progress.md`, Proposed ADRs. Dependencies: nothing new without a Proposed ADR.
 Not expected to change: `package.json`, `eslint.config.js`, `scripts/check_all.sh`; if one is wrong, report it to the orchestrator instead of editing.
-Never create or edit: `sql/`, `reference/`, `src/` (UI, S3), `tests/user_track/`, `docs/research/*.yaml`, `docs/private/`, `infographic/`.
+Never create or edit: `sql/`, `reference/`, `src/` (UI, S3), `tests/user_track/`, `docs/research/*.yaml`, `docs/private/`, `site/infographic/`.
 
 ## Step 0 — inputs and rails
 
-- [ ] Read `.guardrails.local.txt`, `CLAUDE.md`, the S1a progress entry and everything it lists as open, `docs/design/simulation_spec.md` (§2, §3, §4, §7), `docs/design/data_model.md` (§5, §6), `schemas/`.
+- [ ] Read `.guardrails.local.txt`, `.claude/CLAUDE.md`, the S1a progress entry and everything it lists as open, `docs/design/simulation_spec.md` (§2, §3, §4, §7), `docs/design/data_model.md` (§5, §6), `schemas/`.
 - [ ] Ledger inputs: every `A###` and `S###` id cited in `simulation_spec.md` §2 and §4, and in the SC2 and SC5 rows of §7, resolves in `docs/research/assumptions.yaml` or `docs/research/sources.yaml` with a default, range and unit (`uv run --frozen python scripts/check_docs.py --all` passes in strict mode). List any that do not. If a value the engine needs has no id, stop and report it to the orchestrator; never invent one.
 - [ ] Run `npm run check`, `uv run pytest -q`, `uv run --frozen python scripts/check_docs.py --all` and `bash scripts/check_all.sh --manual` once before changing anything (paste the tails). The S1a fixtures and the M/M/c test must be green at the start.
 

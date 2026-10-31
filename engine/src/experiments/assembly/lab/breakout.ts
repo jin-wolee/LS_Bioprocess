@@ -1,20 +1,16 @@
-import { breakoutMetrics } from "../../../evaluate/breakout_metrics.ts";
 import type { BreakoutMetrics } from "../../../evaluate/breakout_metrics.ts";
 import { evaluationSettings } from "../../../evaluate/config.ts";
 import type { BreakoutReport } from "../../../generated/breakout_report.schema";
 import { loadProfile } from "../../../profiles.ts";
 import type { ProfileLookup } from "../../../profiles.ts";
-import { investigate, signalsOf } from "../../../record/investigate/investigate.ts";
-import type { Investigation, InvestigationConfig, Reach } from "../../../record/investigate/investigate.ts";
-import { runScenario } from "../../../run.ts";
+import type { signalsOf } from "../../../record/investigate/investigate.ts";
+import type { Investigation, Reach } from "../../../record/investigate/investigate.ts";
 import { loadScenario } from "../../../scenario.ts";
-import { ENGINE_VERSION, logHash } from "../../../trace.ts";
-import { blockOf, breakoutCase } from "../breakout.ts";
+import { ENGINE_VERSION } from "../../../trace.ts";
+import { breakoutCase, investigateBreakoutSeed } from "../breakout.ts";
 import { parseBreakoutConfig } from "../breakout_config.ts";
 import { MYCOPLASMA_NOTE, buildBreakoutReport } from "../breakout_report.ts";
-import { rosterOf, seedInputFromRun } from "../from_run.ts";
 import type { ReviewUsed } from "../open_loop.ts";
-import { runSeed } from "../run_seed.ts";
 import { checkSeed } from "./challenges.ts";
 import type { Refusal } from "./challenges.ts";
 import { architecturesNamed } from "./seed_setup.ts";
@@ -23,11 +19,9 @@ import { ablationBaseId, architectureIds } from "./spec.ts";
 
 // 2026-10-31 S3g (docs/design/lab_ui.md sections 3, 4 and 12): the `breakout` request. One SC12 case (one of the five bundled scenarios), one seed, the chosen architectures. The truth is run once
 // and recorded under every architecture, each record is investigated from the first signal (rule S9) and scored (rule S10), exactly as the experiment SC12 does it for one seed
-// (assembly/breakout.ts `runBreakoutSeed`; the investigations are kept here because the screen shows the walk-back and the holds and `runBreakoutSeed` returns only the cells). The numbers
+// (assembly/breakout.ts `investigateBreakoutSeed`, which `runBreakoutSeed` wraps; the investigations are kept because the screen shows the walk-back and the holds, while the experiment keeps only the cells). The numbers
 // and their words are the report's: the result is built from `buildBreakoutReport` over this one seed, so the screen cannot differ from the report in a status, a denominator or a reason.
 // Plain data only: the truth log, the answer key and the hidden script stay here (spec section 3, rule 2). What leaves is what the report prints of a case as a simulation result.
-
-const DAY = 86400;
 
 /** The flags that decide what direction 3 can read (rule S8): lots and the seed parent need the first, equipment the second. The page names them from here and types no flag. */
 export const BREAKOUT_NEEDS = { lots: "material_lot_links", equipment: "equipment_links" } as const;
@@ -225,37 +219,25 @@ export const answerBreakout = async (data: LabData, raw: { case: unknown; archit
   const lookup: ProfileLookup = (kind, id) =>
     kind === "breakout" ? (offer.profiles.find((p) => (p as { profile_id?: string }).profile_id === id) ?? ((): never => { throw new Error(`no bundled breakout profile ${id}`); })()) : data.lookup(kind, id);
   const c = breakoutCase({ case_id: raw.case, scenario: doc.scenario_id, set: {} }, loadScenario(structuredClone(doc), lookup));
-  const b = blockOf(c);
   const evaluation = evaluationSettings(data.evaluation);
   const architectures = architecturesNamed(data, raw.architectures as string[]);
   const review: ReviewUsed = { timing: "next_shift_start", reject_also: [] };
 
-  const run = runScenario({ ...c.scenario, seed: seed.seed });
-  const truth_log_hash = await logHash(run.events);
-  const input = seedInputFromRun(run, {
-    scenario_id: c.scenario.scenario_id, staff: loadProfile(lookup("staff", doc.profiles.staff), "staff").params, evaluation, architectures, days: c.scenario.process.horizon_s / DAY,
-    review: { roster: rosterOf(c.scenario.sampling), timing: review.timing, reject_also: review.reject_also }, breakout: b,
-  });
-  const out = runSeed(input);
-  const cfg: InvestigationConfig = { decision_delay_s: b.signal_to_response_s, conclusion_delay_s: b.positive_to_hold_s, assumed_lag_s: c.assumed_lag.seconds, review: input.review };
-  const signals = signalsOf(input.events);
-  const investigations = architectures.map((a) => investigate(out.datasets[a.id] as NonNullable<(typeof out.datasets)[string]>, signals, cfg));
-  const cells = architectures.map((a, i) => breakoutMetrics({ truth: input.truth, investigation: investigations[i] as Investigation, key_text: out.key_text, architecture: a.id }));
-  const after = await logHash(run.events);
-  if (after !== truth_log_hash) throw new Error(`break-out: the truth log of seed ${seed.seed} changed while the architectures were recorded and investigated (${truth_log_hash} before, ${after} after)`);
+  const staff = loadProfile(lookup("staff", doc.profiles.staff), "staff").params;
+  const { outcome, events, investigations } = await investigateBreakoutSeed(c, seed.seed, { staff, evaluation, architectures }, review);
 
   const report = buildBreakoutReport(
-    { engine_version: ENGINE_VERSION, seeds: [seed.seed], review, cases: [{ case: c, outcomes: [{ seed: seed.seed, truth_log_hash, cells }] }] },
+    { engine_version: ENGINE_VERSION, seeds: [seed.seed], review, cases: [{ case: c, outcomes: [outcome] }] },
     { experiment_id: "lab", min_seeds: evaluation.min_seeds, ablations_of: ablationBaseId(data) },
   );
   const reported = report.cases[0] as Case;
   return {
     ok: true,
     result: {
-      kind: "simulation_result", case: raw.case, scenario: doc.scenario_id, seed: seed.seed, engine_version: ENGINE_VERSION, architectures: architectures.map((a) => a.id), truth_log_hash,
-      event: reported.event, inputs: reported.inputs, topology: reported.topology, observed: observedOf(input.events), needs: { ...BREAKOUT_NEEDS },
+      kind: "simulation_result", case: raw.case, scenario: doc.scenario_id, seed: seed.seed, engine_version: ENGINE_VERSION, architectures: architectures.map((a) => a.id), truth_log_hash: outcome.truth_log_hash,
+      event: reported.event, inputs: reported.inputs, topology: reported.topology, observed: observedOf(events), needs: { ...BREAKOUT_NEEDS },
       c29: reported.event.type === "mycoplasma" ? MYCOPLASMA_NOTE : null,
-      per_architecture: architectures.map((a, i) => viewOf(investigations[i] as Investigation, cells[i] as BreakoutMetrics, reported.architectures.find((x) => x.id === a.id)?.rows ?? [])),
+      per_architecture: architectures.map((a, i) => viewOf(investigations[i] as Investigation, outcome.cells[i] as BreakoutMetrics, reported.architectures.find((x) => x.id === a.id)?.rows ?? [])),
     },
   };
 };
