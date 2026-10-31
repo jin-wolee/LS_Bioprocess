@@ -117,9 +117,9 @@
   }
   slider.addEventListener('input', function () { updateTimeline(); followMarker(); });
 
-  /* architectures: eight flags drive the outcome matrix (a design hypothesis, not a result) */
-  var FLAGS = ['system_issued_id', 'two_clocks', 'available_at', 'instrument_state_snapshot', 'append_only_versions', 'write_time_keys', 'ingest_idempotency', 'audit_trail'];
-  var PRESETS = { A: [], B: ['system_issued_id', 'ingest_idempotency', 'audit_trail'], C: FLAGS };
+  /* architectures: the flags drive the outcome matrix (a design hypothesis, not a result); the last two drive no row of it, they act only with a contamination event */
+  var FLAGS = ['system_issued_id', 'two_clocks', 'available_at', 'instrument_state_snapshot', 'append_only_versions', 'write_time_keys', 'ingest_idempotency', 'audit_trail', 'material_lot_links', 'equipment_links'];
+  var PRESETS = { A: [], B: ['system_issued_id', 'ingest_idempotency', 'audit_trail', 'equipment_links'], C: FLAGS };
   var ROWS = { /* p = flags that prevent, d = flags that let a rule detect (design hypothesis) */
     label: { p: ['system_issued_id'], d: ['two_clocks'] },
     feed: { p: ['two_clocks'], d: [] },

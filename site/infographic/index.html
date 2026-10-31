@@ -513,7 +513,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <p class="rail" aria-hidden="true">architectures</p>
 <div>
 <h2 id="h-arch" data-i18n="a.h2">One sample, three ways to record it</h2>
-<p data-i18n="a.lead">Three hard-coded architectures would hide which mechanism makes the difference. The design uses eight independent feature flags instead. A, B and C are presets of those flags (ADR-0005), and the ablation is C with exactly one flag switched off. B is not a straw man: barcodes, automatic capture and an audit trail are real features of simple laboratory systems.</p>
+<p data-i18n="a.lead">Three hard-coded architectures would hide which mechanism makes the difference. The design uses ten independent feature flags instead. A, B and C are presets of those flags (ADR-0005, ADR-0017, ADR-0020), and the ablation is C with exactly one flag switched off. B is not a straw man: barcodes, automatic capture and an audit trail are real features of simple laboratory systems.</p>
 <div class="presets" id="flag-presets" role="group" aria-label="Presets" data-i18n-aria="a.presets">
 <button type="button" class="btn" data-preset="A" aria-pressed="false"><span data-i18n="a.pA">A manual / Excel</span></button>
 <button type="button" class="btn" data-preset="B" aria-pressed="false"><span data-i18n="a.pB">B LIMS-lite</span></button>
@@ -528,8 +528,11 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <label class="flag"><input type="checkbox" id="flag-write_time_keys" checked><span class="fn">write_time_keys</span><span class="fd" data-i18n="a.f6">sample, unit and batch keys fixed at write time</span></label>
 <label class="flag"><input type="checkbox" id="flag-ingest_idempotency" checked><span class="fn">ingest_idempotency</span><span class="fd" data-i18n="a.f7">duplicates and replays are no-ops</span></label>
 <label class="flag"><input type="checkbox" id="flag-audit_trail" checked><span class="fn">audit_trail</span><span class="fd" data-i18n="a.f8">who, when, what changed; operator and qualification</span></label>
+<label class="flag"><input type="checkbox" id="flag-material_lot_links" checked><span class="fn">material_lot_links</span><span class="fd" data-i18n="a.f9">the lot used in an inoculation or addition stored as a key</span></label>
+<label class="flag"><input type="checkbox" id="flag-equipment_links" checked><span class="fn">equipment_links</span><span class="fd" data-i18n="a.f10">the equipment item a batch used stored as a key</span></label>
 </fieldset>
 <p id="preset-readout" aria-live="polite" data-now="C"><span data-pr="A" data-i18n="a.rA">Flags match preset A.</span><span data-pr="B" data-i18n="a.rB">Flags match preset B.</span><span data-pr="C" data-i18n="a.rC">Flags match preset C.</span><span data-pr="custom" data-i18n="a.rX">Custom flag set: not one of the presets.</span></p>
+<p data-i18n="a.fnote"><code>material_lot_links</code> and <code>equipment_links</code> matter only when a contamination event is scripted: they decide whether an investigation can reach the other batches that shared a lot or an item. The matrix below has no row for that, so ticking them changes none of its cells.</p>
 <h3 data-i18n="a.h3a">The same sample under each preset</h3>
 <p data-i18n="a.recintro">Synthetic example record for the sample of the timeline above. A dash means the architecture cannot store that field.</p>
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
@@ -548,7 +551,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <tr><th scope="row" data-i18n="a.rec.who">operator</th><td data-i18n="a.rec.wA">initials, free text</td><td data-i18n="a.rec.wB">OP-07, audit trail</td><td data-i18n="a.rec.wC">OP-07 with the qualification in force</td></tr>
 <tr><th scope="row" data-i18n="a.rec.join">context joined by</th><td class="cell-dev"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-dev"/></svg><code>measured_at</code>: <span data-i18n="a.rec.jp">post-feed state, mismatch</span></td><td class="cell-dev"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-dev"/></svg><code>measured_at</code>: <span data-i18n="a.rec.jp">post-feed state, mismatch</span></td><td class="cell-ok"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-ok"/></svg><code>sampled_at</code>: <span data-i18n="a.rec.jc">pre-feed state, correct</span></td></tr>
 </tbody></table></div>
-<p data-i18n="a.recpath">The capture path is a separate setting, not a ninth flag, and any preset can switch it, so automatic linkage can be tested on its own (for example preset A with parsed instrument files).</p>
+<p data-i18n="a.recpath">The capture path is a separate setting, not a flag, and any preset can switch it, so automatic linkage can be tested on its own (for example preset A with parsed instrument files).</p>
 <h3 data-i18n="a.h3b">What the flags prevent, detect or leave invisible</h3>
 <div class="hyp"><svg class="ico" aria-hidden="true"><use href="#i-hyp"/></svg><p data-i18n="a.hyp"><b>Design hypothesis, to be tested by the simulator.</b> The matrix below is the expected outcome from the design documents, not a result. The simulator checks each cell with a hand-built forced-error fixture before any stochastic run.</p></div>
 <div class="legend" aria-label="Legend" data-i18n-aria="a.legend"><span class="ok-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><b data-i18n="a.lg1">prevented</b></span><span class="warn-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><b data-i18n="a.lg2">detected</b></span><span class="dev-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><b data-i18n="a.lg3">invisible</b></span></div>
@@ -760,7 +763,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 </tbody></table></div>
 <h3 data-i18n="m.h3b">Scenario catalogue</h3>
 <div tabindex="0" class="tablewrap"><table class="sc">
-<caption data-i18n="m.sc.cap">Each scenario asks one question; no result is stated for any of them yet</caption>
+<caption data-i18n="m.sc.cap">Each scenario asks one question; this page states no result for any of them</caption>
 <thead><tr><th>ID</th><th data-i18n="m.sc.q">Question</th><th data-i18n="m.sc.s">Session</th></tr></thead>
 <tbody>
 <tr><td>SC1</td><td data-i18n="m.sc1">What disappears on an ordinary day?</td><td>S2</td></tr>
@@ -806,6 +809,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <footer class="foot">
 <p data-i18n="m.ai">Built with AI coding tools. Design decisions are recorded as ADRs and accepted by the author in the author's own commits.</p>
 <p data-i18n="m.lic">Code: MIT licence. Text and figures: CC BY 4.0.</p>
+<p data-i18n="m.rst">Where it stands: S0 to S3 are built, S4 and S5 are not built yet.</p>
 <ol class="road" aria-label="Roadmap" data-i18n-aria="m.road">
 <li><b>S0</b> <span data-i18n="m.r0">foundations, design, this page</span></li>
 <li><b>S1</b> <span data-i18n="m.r1">engine, layers L1 to L3, profiles</span></li>
@@ -814,7 +818,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <li><b>S4</b> <span data-i18n="m.r4">downstream genealogy, HPLC contention, cell-line and operating-mode profiles</span></li>
 <li><b>S5</b> <span data-i18n="m.r5">release and write-up</span></li>
 </ol>
-<p data-i18n="m.ext">Planned extensions (designed, not built yet): break-out events such as a contamination or sterility failure with the investigation walk-back through the lineage (S3), and per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4).</p>
+<p data-i18n="m.ext">Extensions: break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3); the lab's Break-out screen is held back in the public build until the sources behind it are re-read. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed, not built yet.</p>
 <p><span class="placeholder" id="repo-link" data-i18n="m.repo">repository link: added at publication</span></p>
 </footer>
 </div>
@@ -935,7 +939,7 @@ window.I18N_KO = {
 "ph.t.r3": "250 L 일회용 용기, 주사기 채취",
 "ph.note": "오프셋의 크기는 장비와 현장 절차에 따라 달라지므로, 시뮬레이터는 이 범위를 훑으며 민감도를 보고합니다. 어떤 단일 오프셋도 일반값으로 제시하지 않으며, 제어에 미치는 영향은 명시한 가정 아래의 모델 내부 결과이지 예측이 아닙니다.",
 "a.h2": "하나의 시료를 세 가지 방식으로 기록하기",
-"a.lead": "아키텍처 세 개를 통째로 고정하면 어떤 메커니즘이 차이를 만드는지 가려집니다. 이 설계는 대신 독립적인 기능 플래그 여덟 개를 씁니다. A, B, C는 그 플래그의 프리셋(ADR-0005)이고, 절제(ablation)는 C에서 플래그를 정확히 하나만 끈 상태입니다. B는 허수아비가 아닙니다. 바코드, 자동 수집, 감사 추적은 단순한 실험실 시스템에도 실제로 있는 기능입니다.",
+"a.lead": "아키텍처 세 개를 통째로 고정하면 어떤 메커니즘이 차이를 만드는지 가려집니다. 이 설계는 대신 독립적인 기능 플래그 열 개를 씁니다. A, B, C는 그 플래그의 프리셋(ADR-0005, ADR-0017, ADR-0020)이고, 절제(ablation)는 C에서 플래그를 정확히 하나만 끈 상태입니다. B는 허수아비가 아닙니다. 바코드, 자동 수집, 감사 추적은 단순한 실험실 시스템에도 실제로 있는 기능입니다.",
 "a.presets": "프리셋",
 "a.pA": "A 수기 / 엑셀",
 "a.pB": "B LIMS-lite",
@@ -949,10 +953,13 @@ window.I18N_KO = {
 "a.f6": "시료, 유닛, 배치 키를 기록 시점에 고정",
 "a.f7": "중복과 재전송은 아무 일도 하지 않음",
 "a.f8": "누가, 언제, 무엇을 바꿨는지, 작업자와 자격",
+"a.f9": "접종이나 첨가에 쓴 로트를 키로 저장",
+"a.f10": "배치가 쓴 장비를 키로 저장",
 "a.rA": "플래그가 프리셋 A와 일치합니다.",
 "a.rB": "플래그가 프리셋 B와 일치합니다.",
 "a.rC": "플래그가 프리셋 C와 일치합니다.",
 "a.rX": "사용자 지정 조합입니다. 어떤 프리셋과도 일치하지 않습니다.",
+"a.fnote": "<code>material_lot_links</code>와 <code>equipment_links</code>는 오염 이벤트가 시나리오에 들어 있을 때만 의미가 있습니다. 조사가 같은 로트나 장비를 쓴 다른 배치에 닿을 수 있는지를 정하기 때문입니다. 아래 행렬에는 해당하는 행이 없으므로, 이 둘을 켜고 꺼도 행렬의 어느 칸도 바뀌지 않습니다.",
 "a.h3a": "프리셋별로 본 같은 시료",
 "a.recintro": "위 타임라인의 시료에 대한 합성 예시 기록입니다. 대시는 그 아키텍처가 해당 필드를 저장할 수 없음을 뜻합니다.",
 "a.rec.cap": "하나의 시료를 세 가지로 기록한 예 (합성 예시)",
@@ -1106,7 +1113,7 @@ window.I18N_KO = {
 "m.pr.s1": "라벨 및 계수 오류율은 임상 및 비드 연구에서 빌려 왔습니다",
 "m.pr.s2": "모든 배수는 가정입니다. 교육 효과에 대한 근거는 확립하지 못했습니다",
 "m.h3b": "시나리오 목록",
-"m.sc.cap": "각 시나리오는 질문 하나를 던집니다. 아직 어느 시나리오에도 결과는 없습니다",
+"m.sc.cap": "각 시나리오는 질문 하나를 던집니다. 이 페이지는 어느 시나리오에도 결과를 제시하지 않습니다",
 "m.sc.q": "질문",
 "m.sc.s": "세션",
 "m.sc1": "평범한 하루에 무엇이 사라지는가?",
@@ -1144,7 +1151,8 @@ window.I18N_KO = {
 "m.r3": "브라우저 실험실 UI, 이탈 이벤트와 조사 역추적",
 "m.r4": "하류 계보, HPLC 경합, 세포주·운전 모드 프로파일",
 "m.r5": "릴리스와 정리 글",
-"m.ext": "예정된 확장(설계만 했고 아직 구현하지 않음): 오염이나 무균성 실패 같은 이탈 이벤트와 계보를 거슬러 올라가는 조사 추적(S3), 그리고 리액터별 세포주 프로파일과 배치·페드배치·관류 같은 운전 모드 전환(S4).",
+"m.rst": "현재 상태: S0~S3 단계는 만들어져 있고, S4와 S5는 아직 만들지 않았습니다.",
+"m.ext": "확장: 오염이나 무균성 실패 같은 이탈 이벤트와, 같은 로트나 장비를 쓴 다른 배치로 거슬러 올라가는 조사 추적은 구현되어 있습니다(S3). 랩의 오염 이벤트 역추적 화면은 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다. 리액터별 세포주 프로파일과 배치·페드배치·관류 같은 운전 모드 전환(S4)은 설계만 했고 아직 구현하지 않았습니다.",
 "m.repo": "저장소 링크: 공개 시점에 추가"
 };
 
@@ -1267,9 +1275,9 @@ window.I18N_KO = {
   }
   slider.addEventListener('input', function () { updateTimeline(); followMarker(); });
 
-  /* architectures: eight flags drive the outcome matrix (a design hypothesis, not a result) */
-  var FLAGS = ['system_issued_id', 'two_clocks', 'available_at', 'instrument_state_snapshot', 'append_only_versions', 'write_time_keys', 'ingest_idempotency', 'audit_trail'];
-  var PRESETS = { A: [], B: ['system_issued_id', 'ingest_idempotency', 'audit_trail'], C: FLAGS };
+  /* architectures: the flags drive the outcome matrix (a design hypothesis, not a result); the last two drive no row of it, they act only with a contamination event */
+  var FLAGS = ['system_issued_id', 'two_clocks', 'available_at', 'instrument_state_snapshot', 'append_only_versions', 'write_time_keys', 'ingest_idempotency', 'audit_trail', 'material_lot_links', 'equipment_links'];
+  var PRESETS = { A: [], B: ['system_issued_id', 'ingest_idempotency', 'audit_trail', 'equipment_links'], C: FLAGS };
   var ROWS = { /* p = flags that prevent, d = flags that let a rule detect (design hypothesis) */
     label: { p: ['system_issued_id'], d: ['two_clocks'] },
     feed: { p: ['two_clocks'], d: [] },
