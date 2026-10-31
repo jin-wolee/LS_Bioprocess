@@ -334,3 +334,53 @@ def test_the_committed_constant_equals_a_fresh_generation_and_the_view():
     committed = (REPO / "src/generated/breakout_public.ts").read_text(encoding="utf-8")
     assert committed == ll.render_public(ll.build(REPO)), "run: uv run python scripts/lab_ledger.py --write"
     assert f"BREAKOUT_PUBLIC = {'true' if real_breakout()['public'] else 'false'};" in committed
+
+
+# ---------- the public view (S3h1): the bundle of a build that refuses the screen holds no id that only the Break-out files name ----------
+# src/ledger.ts imports ledger_view.json for a build that offers the screen and ledger_view_public.json for one that refuses it; the second is the first without the ids (and the sources behind them) of
+# the files that the refusing build does not bundle: the SC12 scenarios, the event-type profiles, the SC12 config and the Break-out dictionaries. It has no `breakout` block, which lists those ids.
+PUBLIC_VIEW = "src/generated/ledger_view_public.json"
+
+
+def public_of(root):
+    assert ll.main(["--root", str(root), "--write"]) == 0
+    return json.loads((root / PUBLIC_VIEW).read_text(encoding="utf-8"))
+
+
+def test_the_public_view_lacks_an_id_that_only_the_break_out_files_name_and_the_sources_behind_it(tmp_path):
+    # A001 is named by scenarios/x.json too; A002 (S001 and S002) only by the block of the SC12 scenario; A003 only by its process settings
+    root = make_breakout_root(tmp_path, block_refs=("A001", "A002"), other_refs=("A003",))
+    public = public_of(root)
+    assert list(public["assumptions"]) == ["A001"] and public["sources"] == {"S001": {"verification": "main-reread"}}
+    assert "breakout" not in public
+    assert list(view_of(root)["assumptions"]) == ["A001", "A002", "A003"] and "S002" in view_of(root)["sources"]  # the full view keeps them: a local build offers the screen
+
+
+def test_the_public_view_lacks_an_id_of_a_break_out_profile_and_of_a_break_out_dictionary(tmp_path):
+    root = make_breakout_root(tmp_path, block_refs=("A001",), profile_refs=("A002",), i18n_text='export const enBreakout = { "x": "see A003" } as const;\n')
+    assert list(public_of(root)["assumptions"]) == ["A001"]
+
+
+def test_the_public_view_keeps_an_id_that_a_dictionary_of_the_rest_of_the_lab_names(tmp_path):
+    root = make_breakout_root(tmp_path, block_refs=("A002",))
+    (root / "src/i18n").mkdir(exist_ok=True)
+    (root / "src/i18n/en.ts").write_text('export const en = { "x": "see A002" } as const;\n', encoding="utf-8")
+    assert list(public_of(root)["assumptions"]) == ["A001", "A002"]
+
+
+def test_a_build_with_no_break_out_file_has_the_same_view_public_or_not(tmp_path):
+    root = make_root(tmp_path, ("A002",))
+    public = public_of(root)
+    assert public == {k: v for k, v in view_of(root).items() if k != "breakout"}
+
+
+def test_check_fails_when_only_the_public_view_is_stale(tmp_path):
+    root = make_breakout_root(tmp_path, block_refs=("A001", "A002"))
+    ll.main(["--root", str(root), "--write"])
+    (root / PUBLIC_VIEW).write_text(json.dumps(view_of(root)), encoding="utf-8")  # the full view under the public name
+    assert ll.main(["--root", str(root), "--check"]) == 1
+
+
+def test_the_committed_public_view_equals_a_fresh_generation():
+    committed = (REPO / PUBLIC_VIEW).read_text(encoding="utf-8")
+    assert committed == ll.render(ll.build(REPO, public=True)), "run: uv run python scripts/lab_ledger.py --write"
