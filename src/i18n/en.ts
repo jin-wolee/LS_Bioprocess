@@ -22,6 +22,7 @@ export const enBase = {
   "nav.breakout": "Break-out",
   "nav.notes": "Notes",
 
+  "controls.site": "Explainer page",
   "controls.lang.label": "Language",
   "controls.lang.switch": "한국어",
   "controls.theme.label": "Theme",

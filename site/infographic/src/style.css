@@ -63,6 +63,7 @@ a { color: var(--pen1); text-underline-offset: .18em; }
 .brand svg { width: 2.2rem; height: 1.1rem; }
 .controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .controls select, .controls button, .btn { font: 500 .85rem var(--font-mono); color: var(--fg); background: var(--surface); border: 1px solid var(--line-2); border-radius: 2px; padding: .42rem .7rem; min-height: 2.25rem; cursor: pointer; box-shadow: var(--glow); }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 .controls label { font: 500 .78rem var(--font-mono); color: var(--fg-2); display: flex; align-items: center; gap: .45rem; }
 .controls button[aria-pressed="true"] { background: var(--pen1); color: var(--on-pen); border-color: var(--pen1); }
 .controls button:disabled { opacity: .55; cursor: not-allowed; }

@@ -9,6 +9,7 @@ window.I18N_KO = {
 "ui.story": "스토리 모드",
 "ui.off": "꺼짐",
 "ui.on": "켜짐",
+"ui.lab": "랩 열기",
 "ui.opts": "표시 옵션",
 "ui.lang": "언어 전환 (영어/한국어)",
 "ui.nav": "섹션",

@@ -102,34 +102,40 @@ def build_public(out: Path) -> subprocess.CompletedProcess:
 
 
 def check_breakout_public(browser) -> Result:
-    expected = public_rule()
     with tempfile.TemporaryDirectory(prefix="lab-public-") as tmp:
         out = Path(tmp)
         built = build_public(out)
         if built.returncode != 0:
             return Result("breakout_public", False, f"the public build failed: {(built.stderr or built.stdout)[-200:]}")
-        worker = "".join(p.read_text(encoding="utf-8") for p in (out / "assets").glob("worker-*.js"))
-        bundled = bool(re.search(r"sc12_medium_lot", worker))
-        problems: list[str] = []
-        if bundled != expected:
-            problems.append(f"the Worker of the public build {'holds' if bundled else 'lacks'} the SC12 files, the rule says {'public' if expected else 'not public'}")
-        with serve(out) as url, open_lab(browser, url, init_script=RECORD_JS) as (page, errors, _):
-            page.wait_for_selector("#main[data-ready=true]", timeout=60_000)
-            link = page.query_selector("#nav-breakout") is not None
-            if link != expected:
-                problems.append(f"the navigation {'has' if link else 'has no'} link to the Break-out screen in the public build")
-            ready = next(m for m in page.evaluate("window.__labMessages") if m["type"] == "ready")
-            if (ready["breakout"] is not None) != expected:
-                problems.append(f"ready.breakout is {'set' if ready['breakout'] is not None else 'null'} in the public build")
-            page.evaluate("window.location.hash = '#/breakout'")
-            page.wait_for_selector("#main[data-screen=breakout]", timeout=10_000)
-            refused = page.query_selector("[data-note=refused]") is not None
-            form = page.query_selector("#breakout-form") is not None
-            if refused == expected or form != expected:
-                problems.append(f"the address of the screen shows {'the refusal' if refused else 'no refusal'} and {'a form' if form else 'no form'} in the public build")
-            marked = page.query_selector("[data-note=not-for-publication]") is not None
-            if marked:
-                problems.append("the public build marks the screen not for publication instead of refusing it")
-            problems += [f"console: {e[:100]}" for e in errors]
+        with serve(out) as url:
+            return public_build_result(browser, url, out)
+
+
+def public_build_result(browser, url, out: Path, name="breakout_public") -> Result:
+    """The page of a public build, served at `url` from the folder `out`, against the public rule. scripts/qa_site.py runs it on the lab of the assembled site folder as well."""
+    expected = public_rule()
+    worker = "".join(p.read_text(encoding="utf-8") for p in (out / "assets").glob("worker-*.js"))
+    bundled = bool(re.search(r"sc12_medium_lot", worker))
+    problems: list[str] = []
+    if bundled != expected:
+        problems.append(f"the Worker of the public build {'holds' if bundled else 'lacks'} the SC12 files, the rule says {'public' if expected else 'not public'}")
+    with open_lab(browser, url, init_script=RECORD_JS) as (page, errors, _):
+        page.wait_for_selector("#main[data-ready=true]", timeout=60_000)
+        link = page.query_selector("#nav-breakout") is not None
+        if link != expected:
+            problems.append(f"the navigation {'has' if link else 'has no'} link to the Break-out screen in the public build")
+        ready = next(m for m in page.evaluate("window.__labMessages") if m["type"] == "ready")
+        if (ready["breakout"] is not None) != expected:
+            problems.append(f"ready.breakout is {'set' if ready['breakout'] is not None else 'null'} in the public build")
+        page.evaluate("window.location.hash = '#/breakout'")
+        page.wait_for_selector("#main[data-screen=breakout]", timeout=10_000)
+        refused = page.query_selector("[data-note=refused]") is not None
+        form = page.query_selector("#breakout-form") is not None
+        if refused == expected or form != expected:
+            problems.append(f"the address of the screen shows {'the refusal' if refused else 'no refusal'} and {'a form' if form else 'no form'} in the public build")
+        marked = page.query_selector("[data-note=not-for-publication]") is not None
+        if marked:
+            problems.append("the public build marks the screen not for publication instead of refusing it")
+        problems += [f"console: {e[:100]}" for e in errors]
     state = "offered (every source re-read)" if expected else "refused (a source is below main-reread)"
-    return Result("breakout_public", not problems, f"public build: Break-out screen {state}; the Worker " + ("holds" if bundled else "holds none of") + " the SC12 files" + (f" | {problems[0]}" if problems else ""), {"problems": problems})
+    return Result(name, not problems, f"public build: Break-out screen {state}; the Worker " + ("holds" if bundled else "holds none of") + " the SC12 files" + (f" | {problems[0]}" if problems else ""), {"problems": problems})

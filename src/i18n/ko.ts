@@ -22,6 +22,7 @@ const koBase: Record<keyof typeof enBase, string> = {
   "nav.breakout": "역추적",
   "nav.notes": "노트",
 
+  "controls.site": "해설 페이지",
   "controls.lang.label": "언어",
   "controls.lang.switch": "English",
   "controls.theme.label": "테마",

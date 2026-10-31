@@ -20,6 +20,7 @@ import { Results } from "./Results.tsx";
 import { SCREENS, hashOf, parseHash } from "./route.ts";
 import type { Route, Screen } from "./route.ts";
 import { Setup } from "./Setup.tsx";
+import { SiteLink } from "./SiteLink.tsx";
 import { HOME_ID, initial, reduce } from "./state.ts";
 import { LangContext, T } from "./T.tsx";
 
@@ -168,6 +169,7 @@ export function App({ worker }: { worker: Worker }) {
           ))}
         </nav>
         <div class="controls">
+          <SiteLink />
           <button id="lang-toggle" type="button" lang={other} aria-label={text(lang, "controls.lang.label")} onClick={() => setLang(other)}>
             <T k="controls.lang.switch" />
           </button>

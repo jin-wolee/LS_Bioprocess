@@ -7,7 +7,8 @@ Modes
   --all       Check every tracked + untracked (not ignored) file. Exit 1 on failure.
   --staged    git pre-commit: check staged blobs and refuse private paths. Exit 1 on failure.
   --history   git pre-push: scan the full history (`git log -p --all`). Exit 1 on failure.
-  --ci        With --all: warnings about ADR decider notes become failures.
+  --ci        With --all: warnings about ADR decider notes become failures, ID references are enforced, and a banned-token list with no term in it fails
+              (the Pages workflow runs `--all --ci` with the list in the secret GUARDRAIL_TERMS).
 
 Banned tokens come from .guardrails.local.txt (gitignored) or the GUARDRAIL_TERMS environment
 variable (CI secret, one term per line). If neither exists the check FAILS rather than passing.
@@ -156,8 +157,8 @@ def main() -> int:
     args = ap.parse_args()
     root = repo_root()
     terms = load_terms(root)
-    if terms is None:
-        msg = "FAIL  no banned-token list (.guardrails.local.txt or GUARDRAIL_TERMS) — refusing to pass silently\n"
+    if terms is None or (args.ci and not terms):  # --ci is the Pages job: a secret that is blank or all comments would scan for nothing
+        msg = "FAIL  no banned-token list (.guardrails.local.txt or GUARDRAIL_TERMS), or no term in it — refusing to pass silently\n"
         sys.stderr.write(msg)
         return 2 if args.hook else 1
     if args.hook:

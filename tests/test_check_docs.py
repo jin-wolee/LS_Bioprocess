@@ -92,6 +92,25 @@ def test_terms_can_come_from_environment(repo):
     assert repo.check("--all", env={"GUARDRAIL_TERMS": f"{BANNED}\n"}).returncode == 1
 
 
+def test_ci_reads_the_terms_from_the_secret_alone(repo):
+    # the Pages job has no .guardrails.local.txt, only the secret in GUARDRAIL_TERMS
+    (repo.root / ".guardrails.local.txt").unlink()
+    secret = {"GUARDRAIL_TERMS": f"{BANNED}\n"}
+    repo.write("notes.md", f"{BANNED}\n")
+    assert repo.check("--all", "--ci", env=secret).returncode == 1
+    repo.write("notes.md", "clean\n")
+    assert repo.check("--all", "--ci", env=secret).returncode == 0
+
+
+@pytest.mark.parametrize("secret", ["", "   \n", "# only a comment\n\n"])
+def test_ci_refuses_a_secret_that_holds_no_term(repo, secret):
+    # a secret that is unset, blank or all comments would scan for nothing and pass: --ci fails instead
+    (repo.root / ".guardrails.local.txt").unlink()
+    r = repo.check("--all", "--ci", env={"GUARDRAIL_TERMS": secret})
+    assert r.returncode == 1
+    assert "banned-token list" in r.stderr
+
+
 # ---------- --hook ----------
 def test_hook_blocks_banned_token_and_marks_dirty(repo):
     p = repo.write("notes.md", f"{BANNED}\n")

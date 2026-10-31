@@ -74,6 +74,7 @@ a { color: var(--pen1); text-underline-offset: .18em; }
 .brand svg { width: 2.2rem; height: 1.1rem; }
 .controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .controls select, .controls button, .btn { font: 500 .85rem var(--font-mono); color: var(--fg); background: var(--surface); border: 1px solid var(--line-2); border-radius: 2px; padding: .42rem .7rem; min-height: 2.25rem; cursor: pointer; box-shadow: var(--glow); }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 .controls label { font: 500 .78rem var(--font-mono); color: var(--fg-2); display: flex; align-items: center; gap: .45rem; }
 .controls button[aria-pressed="true"] { background: var(--pen1); color: var(--on-pen); border-color: var(--pen1); }
 .controls button:disabled { opacity: .55; cursor: not-allowed; }
@@ -284,6 +285,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <header class="top">
 <p class="brand"><svg viewBox="0 0 44 22" aria-hidden="true"><path class="ax" d="M2 20h40"/><path class="p1" d="M4 16l10-9 8 5"/><path class="p2" d="M22 12l8 2 10-9"/><circle class="p1f" cx="14" cy="7" r="2.6"/><circle class="p2f" cx="30" cy="14" r="2.6"/></svg>Sample Lineage Lab</p>
 <div class="controls" role="group" aria-label="Display options" data-i18n-aria="ui.opts">
+<a class="btn" id="lab-link" href="lab/" data-i18n="ui.lab">Open the lab</a>
 <label><span data-i18n="ui.theme">Theme</span> <select id="theme-select"><option value="auto" data-i18n="ui.t.auto">Auto</option><option value="light" data-i18n="ui.t.light">Light</option><option value="dark" data-i18n="ui.t.dark">Dark</option><option value="neon" data-i18n="ui.t.neon">Neon</option></select></label>
 <button id="lang-toggle" type="button" aria-label="Switch language" data-i18n-aria="ui.lang"><span class="lg-en">EN</span> &#8644; <span class="lg-ko">KO</span></button>
 <button id="story-toggle" type="button" aria-pressed="false"><span data-i18n="ui.story">Story mode</span>: <span class="st-off" data-i18n="ui.off">off</span><span class="st-on" data-i18n="ui.on">on</span></button>
@@ -831,6 +833,7 @@ window.I18N_KO = {
 "ui.story": "스토리 모드",
 "ui.off": "꺼짐",
 "ui.on": "켜짐",
+"ui.lab": "랩 열기",
 "ui.opts": "표시 옵션",
 "ui.lang": "언어 전환 (영어/한국어)",
 "ui.nav": "섹션",

@@ -1,0 +1,64 @@
+# The public site: the infographic at the root and the lab under lab/ (docs/design/lab_ui.md section 13).
+# Run by the author only, from the Actions tab or `gh workflow run`: nothing here runs on push or pull request. With `deploy` false (the default) it builds and checks, and the folder
+# stays an artifact of the run; with `deploy` true the second job publishes it to GitHub Pages. The Pages setting of the repository ("Build and deployment: GitHub Actions") is the author's.
+# Secret GUARDRAIL_TERMS: the banned-token list, one term per line (what .guardrails.local.txt holds, without its # comment lines).
+name: pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy the built site to GitHub Pages (false: build and check only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.9.28"
+          enable-cache: false
+      - name: Install the Node packages
+        run: npm ci
+      - name: Install the Python packages
+        run: uv sync --frozen
+      - name: Banned tokens, ADR format, ledgers and id references (the list comes from the secret)
+        env:
+          GUARDRAIL_TERMS: ${{ secrets.GUARDRAIL_TERMS }}
+        run: uv run --frozen python scripts/check_docs.py --all --ci
+      - name: Python tests
+        run: uv run --frozen pytest -q
+      - name: Node checks (lint, types, Vitest; the Vitest workers carry the flag of ADR-0016)
+        run: npm run check
+      - name: Build the public lab and assemble dist/site
+        run: uv run --frozen python scripts/assemble_site.py
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist/site
+          include-hidden-files: true # keeps the empty .nojekyll
+
+  deploy:
+    needs: build
+    if: ${{ inputs.deploy }}
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
