@@ -1,97 +1,104 @@
 # Sample Lineage Lab
 
-A portfolio simulator for one question: when a bioreactor sample is analysed later on a shared instrument, how much of its process context can still be recovered, and which parts of the data architecture decide that?
+In a synthetic plant, bench-scale bioreactors share a few at-line analyzers, and the same run is recorded under several data architectures so that each record can be compared on what it can still reconstruct afterwards: which reactor a sample came from, which moment it describes, which instrument state measured it. All data are synthetic, and nothing here predicts a real plant (ADR-0001).
 
-> **Status: design phase.** All data are synthetic. The scenario is generic, built from public sources and labelled assumptions (ADR-0001). No engine code exists yet and there are no simulation results. Nothing here predicts a real laboratory.
+## The two pages
 
-## The problem
+- [Explainer](https://jin-wolee.github.io/Lineage-Simulator-Bioprocessing/): a scroll page on the problem, with a slider that moves the measurement time and a matrix of which flag covers which error.
+- [Lab](https://jin-wolee.github.io/Lineage-Simulator-Bioprocessing/lab/): runs the synthetic plant in the browser and shows what the record of each architecture can reconstruct. It also follows one sample through each record, and sets a challenge: find the planted error in a record.
 
-In a process-development laboratory, a few at-line analyzers serve many bench-scale bioreactors. Samples queue, so a result is measured some time after the draw, on an instrument with its own clock, calibration and reagent lot. If the record keeps only the time of measurement, the result can be joined to the wrong process state, a rerun can overwrite the original, and a replayed file can count twice.
+The site goes live when the author publishes it. Until then these addresses do not answer, and the pages can be built and served locally (see "Run it"). Both pages open in English and have a Korean toggle (ADR-0006); the language chosen on one page is kept when you follow the link to the other.
 
-The simulator records one synthetic "truth" run under several data architectures, so the only thing that changes is how data is captured and stored. It then scores what each architecture can reconstruct afterwards. The default scenario has 24 reactors in two bays and 2 analyzers (A001, A022; ADR-0009). Average load is low, 12.6 to 14.4 percent of analyzer time over a 10 h staffed window (design arithmetic from A074 and A098, not a simulation result). If samples still wait, the cause would be bursts rather than average capacity; that is a hypothesis the simulator tests.
+## What is compared
 
-## The central case: feed in the gap
+The standing example is a feed in the gap. A sample is drawn at 08:40, a bolus feed happens at 09:00 and the analyzer measures the sample at 09:25 (example times, A102). A record that keeps only the time of measurement joins the result to the process state after the feed, although the sample was drawn before it. A record that also keeps the time of the draw joins it correctly.
 
-Example times (A102): a sample is drawn at 08:40, a bolus feed happens at 09:00, and the analyzer measures the sample at 09:25.
+A data architecture is a set of ten flags, each one a property of the record. Presets switch groups of them on (ADR-0005, ADR-0017, ADR-0020).
 
-```
-08:40 sampled_at ---- 09:00 feed ---- 09:25 measured_at      (draw to measurement: 45 min, A102, derived)
-```
-
-A record that stores only `measured_at` pairs the result with the post-feed process state, although the sample was drawn before the feed. A record that also stores `sampled_at` pairs it correctly. The simulator replays the same synthetic sample under each architecture and compares the outcome. Whether and how often this matters in a given lab is what the experiments are for, and they have not run yet.
-
-## What the simulator will compare
-
-- **Feature flags** (ADR-0005; the last two ADR-0017 and ADR-0020), each tied to the error it targets: `system_issued_id`, `two_clocks`, `available_at`, `instrument_state_snapshot`, `append_only_versions`, `write_time_keys`, `ingest_idempotency`, `audit_trail`, `material_lot_links`, `equipment_links`. The last two matter only when a contamination event is scripted: they decide whether the record can reach the other batches that shared a lot or an equipment item.
-- **Presets** built from the flags: A manual/Excel (no flags), B LIMS-lite (issued id, idempotent ingest, audit trail, equipment links), C context-preserving (all flags). B is meant as a fair baseline, not a straw man. Ablations switch one flag off from C.
-- **Labelling setting** (layer L2, independent of the flags): handwritten, pre-printed barcode, or issued at draw (ADR-0005).
-- **Capture path setting** (ADR-0014; read when the optional raw device layer is on): `manual_transcription`, where a person types the value from the instrument screen or printout (preset A default), or `adapter_ingest`, where synthetic device files modeled on public documentation are parsed by adapters (B and C default). Any preset can switch it, so automatic linkage can be tested on its own.
-- **Judging**: the gate is structural, with hand-typed forced-error fixtures. Stochastic comparisons run over at least 20 seeds (A103), are reported with intervals and are never gated. Orderings between presets must emerge from mechanisms; C is not built to win, and its residual errors are reported.
-
-## What you can inspect today
-
-- **Infographic**: open `site/infographic/index.html` in a browser. A scroll explainer of the problem, English first with a Korean toggle (ADR-0006), with a measurement-time slider and a flag-by-error outcome matrix.
-- **Design**: `docs/design/simulation_spec.md` (layers, the truth/recorded-world contract, profiles, flags, experiments) and `docs/design/data_model.md` (canonical names and time fields).
-- **Decisions**: `docs/adr/`, ADR-0001 to ADR-0014, accepted by the author on 2026-10-29 in the author's own commit (the review record is `docs/adr/review_2026-10-29.json`).
-- **Evidence ledgers**: `docs/research/`. Sources (`S###`) and assumptions (`A###`) carry a grade (S sourced, P proxy, D derived, A assumed) and a verification level (snippet, agent-read, main-reread). Only main-reread sources back numbers on public pages; anything else is labelled provisional.
-- **Harness and tests**: `scripts/check_docs.py` (ADR format, ledger ids, the public-number rule), Claude Code hooks, git hooks and the pytest suite in `tests/`.
-
-## What comes next
-
-| Session | Builds |
+| Flag | When it is on, the record keeps |
 |---|---|
-| S1 engine | Contracts, schemas, hand-calculated fixtures, TypeScript engine for process, sampling and analysis (L1 to L3); the author's SimPy core loop and DDL |
-| S2 capture and metrics | Flags and presets, error injector, evaluator, experiments 1 and 2, raw device layer, data dictionary; the author's three SQL queries |
-| S3 lab UI | Browser UI with presets and a lineage view, end-to-end tests; contamination break-out events and the investigation walk-back (ADR-0013, SC12) |
-| S4 downstream | Genealogy (many-to-many lineage) and HPLC contention; cell-line and operating-mode profiles (ADR-0013, SC13, SC14) |
-| S5 release | Model card, demo, case write-up, external-review dispositions |
+| `system_issued_id` | the sample key, issued by the system when the label is made |
+| `two_clocks` | the time of the draw and the time of the measurement, separately |
+| `available_at` | for each row, when it became knowable |
+| `instrument_state_snapshot` | the link from a run to the instrument, its calibration and its reagent lot |
+| `append_only_versions` | corrections, reruns and reprocessing as new versions |
+| `write_time_keys` | the sample, unit and batch keys, fixed when written and never re-keyed |
+| `ingest_idempotency` | a duplicated or replayed file as a no-op |
+| `audit_trail` | who changed what, and when |
+| `material_lot_links` | the lot used in an inoculation or addition, as a key |
+| `equipment_links` | the equipment item used by a batch, as a key |
 
-Planned extensions (ADR-0013) are designed but not built before S2: contamination break-out events come with S3, cell-line profiles and operating modes with S4.
+The last two matter only when a contamination event is scripted: they decide whether an investigation can reach the other batches that shared a lot or an item.
+
+- A, manual or Excel: no flag on.
+- B, LIMS-lite: `system_issued_id`, `ingest_idempotency`, `audit_trail` and `equipment_links`. It is modelled on what simple laboratory systems already do.
+- C, context-preserving: all ten. Some errors remain even here, for example a correct barcode stuck on the wrong tube, and the comparison reports them.
+
+C with one flag off, for each flag, shows which flag carries which effect. Two settings are independent of the flags: how a sample is labelled, and how a result becomes a record, by typing from the instrument screen or by parsing a synthetic device file (ADR-0005, ADR-0014).
+
+The gate is structural: each flag has a forced-error case whose expected outcome is written by hand before any run. Across seeds the lab shows a range per metric, with no composite score and no ranking column. It calls a run a comparison only when it has at least the minimum number of seeds (A103).
+
+## Numbers
+
+Every number on the pages carries the id of a ledger entry: `S###` in `docs/research/sources.yaml` for a source, `A###` in `docs/research/assumptions.yaml` for a simulator parameter. An assumption has a grade (sourced, proxy, derived or assumed) and a source has a verification level (snippet, agent-read or main-reread). Only main-reread sources back a figure on a public page. A figure that rests on a weaker source is shown with a dashed provisional chip, and `scripts/check_docs.py` fails a public file that cites one without that label. `docs/research/README.md` explains the grades.
+
+The lab's Break-out screen, a contamination walk-back, is held back. Its inputs rest on sources that have not been re-read, so the public build refuses the screen; a local build shows it marked not for publication. It stays out of the public build until those sources are re-read.
+
+The pages ship no result. The lab computes its results in your browser on each visit, from the scenario and the seeds you choose.
 
 ## Repository map
 
 ```
-docs/adr/         decision records (0000-template.md is the format)
-docs/design/      simulation_spec.md, data_model.md
-docs/research/    sources.yaml, assumptions.yaml, README.md (grades, verification)
-docs/reviews/     review dispositions
-docs/progress.md  dated log, newest entry last
-site/infographic/ src/ -> build.py -> index.html
-prompts/          briefs, principles, review rubric
-scripts/          check_docs.py, check_all.sh, hooks, QA scripts
-tests/            pytest for the guards and the docs check
-.claude/          hook settings, skills, agents, author-owned path list
+engine/              the TypeScript simulation engine (seeded, no Math.random); its tests sit beside it
+src/                 the lab page (Preact), its Web Worker, the English and Korean dictionaries
+site/infographic/    the explainer: src/ -> build.py -> index.html
+scenarios/           scenarios, profiles, architectures and experiments, as data with ledger references
+schemas/             JSON schemas for the data the engine reads and writes
+docs/                adr/ decisions, design/ specifications, research/ ledgers, reviews/, progress.md
+prompts/             the briefs and principles that the AI sessions work from
+scripts/             checks, site assembly, headless page QA, Claude Code hooks, git hooks
+tests/               pytest for the scripts, the hooks, the docs check and the Pages workflow
+.github/workflows/   the Pages workflow, started by hand
+.claude/             CLAUDE.md, hook settings, skills, agents, the list of author-owned paths
 ```
 
-`engine/`, `src/`, `schemas/`, `scenarios/`, `sql/` and `reference/` appear as the sessions above land.
+The root also holds the project files: `package.json` with `package-lock.json`, `pyproject.toml` with `uv.lock`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts` (the Vitest settings), `.nvmrc`, `.python-version` and `LICENSE`. `sql/` and `reference/` are reserved for the author's own implementation track (see "How the work is done") and are not in the repository yet.
 
-## Run the checks
+## Run it
 
 ```bash
-uv run pytest -q
-uv run --frozen python scripts/check_docs.py --all
-bash scripts/check_all.sh --manual                 # the full gate: docs check, pytest, Node checks
-uv run python site/infographic/build.py             # rebuild site/infographic/index.html from site/infographic/src
-uv run python scripts/qa_infographic.py            # headless page QA, output in qa_out/
+npm ci                                          # Node as in .nvmrc
+uv sync --frozen                                # Python through uv
+git config core.hooksPath scripts/git-hooks     # once per clone
+
+uv run pytest -q                                # scripts, hooks, docs check, site
+uv run --frozen python scripts/check_docs.py --all   # banned tokens, ADR format, ledgers, id references
+npm run check                                   # lint, typecheck, Vitest
+bash scripts/check_all.sh --manual              # the full gate; add --lab for the end-to-end checks of the lab
+
+uv run python site/infographic/build.py         # rebuild the explainer page
+uv run python scripts/qa_infographic.py         # headless check of the explainer, output in qa_out/
+uv run python scripts/assemble_site.py          # build dist/site/: the explainer at the root, the lab under lab/
+uv run python scripts/qa_site.py                # headless check of dist/site/
+uv run python -m http.server --directory dist/site 8000   # then open http://127.0.0.1:8000/
 ```
 
-Python dependencies go through `uv` (`uv.lock`). Run `git config core.hooksPath scripts/git-hooks` once per clone.
+The lab needs a web server, not a file URL, because its Worker fetches a file.
 
-## How this was built
+## How the work is done
 
-- AI coding tools implement the work under an orchestrator. The orchestrator writes a brief per increment, spawns executors, verifies the result on disk against a rubric and commits locally. Executors never commit or push.
-- Design decisions, assumptions and acceptance criteria are recorded as ADRs. Tools write them as Proposed only; the decider's note and the Accepted flip are the author's own commits.
-- The author implements the canonical DDL, three SQL queries (an as-of join of results to process context, a recursive lineage query, a bridging correction) and the SimPy core loop personally (ADR-0010). AI may review these files but not write them, and an edit guard enforces that. None of them exist yet, so parity between the TypeScript engine and the SimPy loop is unproven.
-- Principles, briefs and the review rubric live in `prompts/` (`PRINCIPLES.md` first, then `README.md`).
-- Pushing, remote changes and publishing are done by the author.
+Decisions are written as ADRs in `docs/adr/`. The AI tools write them as Proposed; the decider's note and the change to Accepted are the author's own commits (ADR-0002).
 
-## License
+Much of the engine, the lab and the documents were written with AI coding tools (Claude Code) working from written briefs in `prompts/`. Scripts and tests check what they produce, and the author decides at set gates: accepting an ADR, anything published, the author's own track, and release (`prompts/PRINCIPLES.md`, section 1). Pushing and publishing are the author's alone, and hooks stop the tools from doing either.
 
-Code (scripts, tests, build and engine code) is under the MIT licence (`LICENSE`). Text, figures and data tables in `docs/`, `prompts/` and the infographic are under CC BY 4.0 (`docs/LICENSE-docs.md`). Sources cited in the ledgers keep their own terms; the ledgers hold only short quotes and links (ADR-0008).
+The author writes the database schema, three SQL queries (an as-of join of results to process context, a recursive lineage query and a bridging correction) and a SimPy core loop personally. The tools may review those files but not write them, and an edit guard enforces that (ADR-0010). Because the files do not exist yet, the tests that would compare the SimPy loop with the TypeScript engine skip, and agreement between the two is unproven.
+
+## Licences
+
+Code is under the MIT licence (`LICENSE`). Text, figures and data tables in `docs/`, `prompts/` and the explainer are under CC BY 4.0 (`docs/LICENSE-docs.md`). Sources cited in the ledgers keep their own terms; the ledgers hold only short quotes and links (ADR-0008).
 
 ## 한국어 요약
 
-Sample Lineage Lab은 합성 데이터로 만드는 포트폴리오용 시뮬레이터입니다. 바이오리액터 여러 대가 분석기 두 대를 공유할 때, 샘플이 나중에 측정되면서 잃게 되는 공정 맥락(어느 리액터, 어느 시점, 어떤 장비 상태)을 데이터 아키텍처별로 얼마나 복원할 수 있는지 비교합니다.
-현재는 설계 단계입니다. 엔진 코드와 시뮬레이션 결과는 아직 없고, 모든 데이터는 합성이며 실제 설비를 예측하지 않습니다.
-지금 볼 수 있는 것은 인포그래픽(`site/infographic/index.html`, 영어 기본에 한국어 전환), 설계 문서, ADR, 근거 장부(`S###`, `A###`), 검증 하네스입니다.
-ADR 14건은 저자가 2026-10-29에 직접 커밋해 수락했습니다. DDL, SQL 쿼리 세 개, SimPy 핵심 루프는 저자가 직접 구현합니다(ADR-0010).
+합성 데이터로 만든 시뮬레이터입니다. 바이오리액터 여러 대가 분석기 몇 대를 공유하는 가상의 플랜트를 한 번 돌려, 같은 실행을 여러 데이터 아키텍처로 기록하고 각 기록이 나중에 무엇을 복원할 수 있는지 비교합니다. 실제 설비를 예측하지 않습니다.
+해설 페이지와 랩 두 곳이 있고, 저자가 공개하면 위 주소에서 열립니다. 모든 수치에는 근거 장부의 id(`S###`, `A###`)가 붙고, 오염 이벤트 역추적 화면은 근거 출처를 다시 읽을 때까지 공개 빌드에서 빠져 있습니다.
+DDL, SQL 쿼리 세 개, SimPy 핵심 루프는 저자가 직접 작성합니다(ADR-0010).

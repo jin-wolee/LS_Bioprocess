@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Headless QA for the assembled site folder (`dist/site`, written by scripts/assemble_site.py): six checks, exit 1 if any fails.
+"""Headless QA for the assembled site folder (`dist/site`, written by scripts/assemble_site.py): seven checks, exit 1 if any fails.
 
     uv run python scripts/qa_site.py [--root dist/site] [--out qa_out/site]
 
@@ -9,6 +9,8 @@ at the root of a server and fail there. Drives headless Chromium (Playwright syn
   folder         the files of the folder: the page, the lab, an empty .nojekyll, and nothing of site/infographic/ besides index.html
   links          the infographic opens, its link opens the lab, the browser check of the lab reads `identical`, the lab's link opens the infographic again; both link texts in English and Korean;
                  no request of the lab leaves the path of the site or the origin
+  language       nothing chosen: both pages open in English (ADR-0006); Korean chosen on the infographic is the language of the lab after the click, and a choice made in the lab (English, then
+                 Korean) is the language of the infographic after the click back: the pages are one origin and share one localStorage key, `sll.lang`
   infographic_size, lab_size, lab_time    the budgets of docs/design/lab_ui.md section 12 over the assembled pages (the lab's are the checks of qa_lab.py, served from here)
   lab_public     the lab of the folder is the public build: the Break-out screen is refused while a source of it is below main-reread (the check `breakout_public` of qa_lab.py, on this folder)
 """
@@ -70,12 +72,25 @@ def check_folder(root: Path) -> Result:
     return Result("folder", not problems, detail + (f" | {problems[0]}" if problems else ""), {"files": files, "problems": problems})
 
 
+def lang_of(page) -> str:
+    return (page.evaluate("document.documentElement.lang") or "en").lower()[:2]
+
+
+def wait_lang(page, want: str) -> None:
+    page.wait_for_function("l => document.documentElement.lang.toLowerCase().startsWith(l)", arg=want, timeout=5_000)
+
+
 def toggle_lang(page) -> None:
     """Press the language button of either page and wait for the other language."""
-    now = (page.evaluate("document.documentElement.lang") or "en").lower()[:2]
-    want = "en" if now == "ko" else "ko"
+    want = "en" if lang_of(page) == "ko" else "ko"
     page.click("#lang-toggle")
-    page.wait_for_function("l => document.documentElement.lang.toLowerCase().startsWith(l)", arg=want, timeout=5_000)
+    wait_lang(page, want)
+
+
+def show_lang(page, want: str) -> None:
+    """Make the page read `want`: press the button only when it does not already (the link may have carried the language over)."""
+    if lang_of(page) != want:
+        toggle_lang(page)
 
 
 def check_links(browser, base: str) -> Result:
@@ -105,12 +120,63 @@ def check_links(browser, base: str) -> Result:
         page.click("#site-link")
         page.wait_for_url(base, timeout=15_000)
         page.wait_for_selector("#lab-link", timeout=15_000)
-        toggle_lang(page)
+        show_lang(page, "ko")
         if page.text_content("#lab-link").strip() != LAB_TEXTS["ko"]:
             problems.append(f"the link of the infographic reads {page.text_content('#lab-link').strip()!r} in Korean")
         problems += [f"console: {e[:140]}" for e in errors]
     detail = f"infographic -> lab (check {final['state']}) -> infographic; {len(lab_requests)} requests of the lab, all under /{SUBPATH}/; link texts in English and Korean"
     return Result("links", not problems, detail + (f" | {problems[0]}" if problems else ""), {"problems": problems})
+
+
+def to_lab(page, base: str) -> None:
+    page.click("#lab-link")
+    page.wait_for_url(base + "lab/", timeout=15_000)
+    page.wait_for_selector("#site-link", timeout=15_000)
+
+
+def to_infographic(page, base: str) -> None:
+    page.click("#site-link")
+    page.wait_for_url(base, timeout=15_000)
+    page.wait_for_selector("#lab-link", timeout=15_000)
+
+
+def check_language(browser, base: str) -> Result:
+    """The links carry the language: a fresh context (empty localStorage) stays on the one origin; with nothing chosen both pages read English (ADR-0006)."""
+    problems: list[str] = []
+
+    def expect(page, where: str, want: str) -> None:
+        try:
+            wait_lang(page, want)
+        except Exception:
+            problems.append(f"{where}: reads {lang_of(page)!r}, expected {want!r}")
+
+    def link_text(page, selector: str, where: str, want: str) -> None:
+        got = page.text_content(selector).strip()
+        if got != want:
+            problems.append(f"{where}: the link reads {got!r}, expected {want!r}")
+
+    with open_lab(browser, base) as (page, errors, _):
+        page.wait_for_selector("#lab-link", timeout=15_000)
+        expect(page, "the infographic with nothing chosen", "en")
+        to_lab(page, base)
+        expect(page, "the lab with nothing chosen", "en")
+        to_infographic(page, base)
+        toggle_lang(page)  # Korean on the infographic
+        to_lab(page, base)
+        expect(page, "the lab after Korean on the infographic", "ko")
+        link_text(page, "#site-link", "the lab after Korean on the infographic", BACK_TEXTS["ko"])
+        toggle_lang(page)  # English in the lab
+        to_infographic(page, base)
+        expect(page, "the infographic after English in the lab", "en")
+        link_text(page, "#lab-link", "the infographic after English in the lab", LAB_TEXTS["en"])
+        to_lab(page, base)
+        toggle_lang(page)  # Korean in the lab
+        to_infographic(page, base)
+        expect(page, "the infographic after Korean in the lab", "ko")
+        link_text(page, "#lab-link", "the infographic after Korean in the lab", LAB_TEXTS["ko"])
+        problems += [f"console: {e[:140]}" for e in errors]
+    detail = "nothing chosen: English on both pages; Korean carried infographic to lab, English and Korean carried lab to infographic (one key, sll.lang)"
+    return Result("language", not problems, detail + (f" | {problems[0]}" if problems else ""), {"problems": problems})
 
 
 def renamed(result: Result, name: str) -> Result:
@@ -149,6 +215,7 @@ def main(argv=None) -> int:
             try:
                 results = [guarded("folder", lambda: check_folder(args.root)),
                            guarded("links", lambda: check_links(browser, base)),
+                           guarded("language", lambda: check_language(browser, base)),
                            guarded("infographic_size", lambda: renamed(check_page_size(args.root / "index.html"), "infographic_size")),
                            guarded("lab_size", lambda: renamed(check_lab_size(browser, lab, mount / "lab"), "lab_size")),
                            guarded("lab_time", lambda: renamed(check_time(browser, lab), "lab_time")),

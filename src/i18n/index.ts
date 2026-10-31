@@ -6,7 +6,8 @@ export type { Key };
 export type Lang = "en" | "ko";
 
 const DICTIONARIES: Record<Lang, Record<Key, string>> = { en, ko };
-const STORAGE_KEY = "lab.lang";
+// The infographic keeps its language under this key (site/infographic/src/app.js): on Pages the two pages are one origin, so the choice made on one page is carried to the other.
+const STORAGE_KEY = "sll.lang";
 
 /** The text of a key in a language, with {name} placeholders filled from `params`. */
 export const text = (lang: Lang, key: Key, params: Readonly<Record<string, string>> = {}): string =>

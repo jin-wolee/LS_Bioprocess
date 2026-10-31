@@ -22,8 +22,8 @@ REPO = HERE.parents[1]
 SRC = HERE / "src"
 FONTS = ("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800"
          "&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap")
-DESCRIPTION = ("A design-phase explainer: N bioreactors send samples to two shared analyzers, "
-               "and results lose their process context in transit. Synthetic data, no simulation results yet.")
+DESCRIPTION = ("An explainer of how results lose their process context when N bioreactors send samples to two shared analyzers, "
+               "with a link to the lab that runs the synthetic plant. Synthetic data; this page states no simulation result.")
 RANK = {g: i for i, g in enumerate("SPDA")}
 LABELS = {"S": ("sourced", "출처 확인"), "P": ("proxy", "대리지표"), "D": ("derived", "유도"), "A": ("assumed", "가정")}
 PROVISIONAL = ("provisional", "잠정")
