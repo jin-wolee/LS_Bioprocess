@@ -1,0 +1,72 @@
+{
+  "description": "The small default scenario (6 reactors in one bay, 8 days), seed 1. Written by hand from plant_ui.md section 5.2; never produced by the code under test. At day 3 09:00 the reader adds a feed to U03, moves the draw of U03-D03-1 to 10:30 and takes AN-1 down from 13:00 for 120 min. Canonical order: same instant, so by kind: add_feed, analyzer_down, move_draw.",
+  "actions": [
+    {
+      "kind": "move_draw",
+      "at": 291600,
+      "sample_id": "U03-D03-1",
+      "to": 297000
+    },
+    {
+      "kind": "analyzer_down",
+      "at": 291600,
+      "analyzer": "AN-1",
+      "from": 306000,
+      "length_min": 120
+    },
+    {
+      "kind": "add_feed",
+      "at": 291600,
+      "unit_id": "U03"
+    }
+  ],
+  "hand": {
+    "scenario_fields": {
+      "scripted_events": [
+        {
+          "type": "feed",
+          "unit_id": "U03",
+          "at": {
+            "value": 4860,
+            "unit": "min",
+            "ref": "A228"
+          }
+        },
+        {
+          "type": "move_draw",
+          "sample_id": "U03-D03-1",
+          "at": {
+            "value": 4860,
+            "unit": "min",
+            "ref": "A228"
+          },
+          "to": {
+            "value": 4950,
+            "unit": "min",
+            "ref": "A228"
+          }
+        }
+      ],
+      "maintenance": [
+        {
+          "analyzer": "AN-1",
+          "start": {
+            "value": 5100,
+            "unit": "min",
+            "ref": "A228"
+          },
+          "length": {
+            "value": 2,
+            "unit": "h",
+            "ref": "A096"
+          }
+        }
+      ]
+    },
+    "architectures": [
+      "a_manual",
+      "b_lims_lite",
+      "c_context"
+    ]
+  }
+}

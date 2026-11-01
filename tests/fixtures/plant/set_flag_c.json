@@ -1,0 +1,37 @@
+{
+  "description": "The small default scenario (6 reactors in one bay, 8 days), seed 1. Written by hand from plant_ui.md section 5.2; never produced by the code under test. At day 3 09:00 the reader switches audit_trail off in the record of C: the existing ablation c_context_minus_audit_trail, for the whole run.",
+  "actions": [
+    {
+      "kind": "set_flag",
+      "at": 291600,
+      "architecture": "c_context",
+      "flag": "audit_trail",
+      "on": false
+    }
+  ],
+  "hand": {
+    "scenario_fields": {},
+    "architectures": [
+      "a_manual",
+      "b_lims_lite",
+      {
+        "schema_version": "1",
+        "id": "c_context_minus_audit_trail",
+        "flags": {
+          "system_issued_id": true,
+          "two_clocks": true,
+          "available_at": true,
+          "instrument_state_snapshot": true,
+          "append_only_versions": true,
+          "write_time_keys": true,
+          "ingest_idempotency": true,
+          "audit_trail": false,
+          "material_lot_links": true,
+          "equipment_links": true
+        },
+        "labelling": "issued_at_draw",
+        "capture_path": "adapter_ingest"
+      }
+    ]
+  }
+}

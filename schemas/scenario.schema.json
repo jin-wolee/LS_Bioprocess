@@ -69,14 +69,30 @@
     "scripted_events": {
       "type": "array",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["type", "unit_id", "at"],
-        "properties": {
-          "type": { "type": "string", "enum": ["feed", "alarm"] },
-          "unit_id": { "type": "string", "minLength": 1 },
-          "at": { "$ref": "profile.schema.json#/$defs/param" }
-        }
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "unit_id", "at"],
+            "properties": {
+              "type": { "type": "string", "enum": ["feed", "alarm"] },
+              "unit_id": { "type": "string", "minLength": 1 },
+              "at": { "$ref": "profile.schema.json#/$defs/param" }
+            }
+          },
+          {
+            "description": "A scripted move of one draw (spec 2.2; ADR-0021, ledger A228): at `at` an operator moves the planned instant of the named sample to `to`. Both are in minutes from scenario start, whole minutes, and are scenario inputs chosen by the reader. The keyed draws of the sample stay as they are.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "sample_id", "at", "to"],
+            "properties": {
+              "type": { "const": "move_draw" },
+              "sample_id": { "type": "string", "minLength": 1 },
+              "at": { "$ref": "profile.schema.json#/$defs/param" },
+              "to": { "$ref": "profile.schema.json#/$defs/param" }
+            }
+          }
+        ]
       }
     },
     "stability": {

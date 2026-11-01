@@ -1,0 +1,30 @@
+{
+  "description": "The small default scenario (6 reactors in one bay, 8 days), seed 1. Written by hand from plant_ui.md section 5.2; never produced by the code under test. At day 3 09:00 the reader changes the reagent lot of AN-2, effective at the start of day 4 (5760 min = 345600 s).",
+  "actions": [
+    {
+      "kind": "change_lot",
+      "at": 291600,
+      "analyzer": "AN-2",
+      "effective": 345600
+    }
+  ],
+  "hand": {
+    "scenario_fields": {
+      "lot_changes": [
+        {
+          "analyzer": "AN-2",
+          "at": {
+            "value": 5760,
+            "unit": "min",
+            "ref": "A228"
+          }
+        }
+      ]
+    },
+    "architectures": [
+      "a_manual",
+      "b_lims_lite",
+      "c_context"
+    ]
+  }
+}

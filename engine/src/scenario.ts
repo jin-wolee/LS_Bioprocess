@@ -118,7 +118,8 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
   const analyzer = loadProfile(lookup("analyzer", sc.profiles.analyzer), "analyzer");
   const staff = loadProfile(lookup("staff", sc.profiles.staff), "staff");
   if (!bio.containers?.default) throw new Error(`profile ${bio.profile_id}: containers needs a default entry`);
-  const scripted = (sc.scripted_events ?? []).map((e) => ({ type: e.type, unit_id: e.unit_id, at_s: minutes(e.at) }));
+  const scripted = (sc.scripted_events ?? []).flatMap((e) => (e.type === "move_draw" ? [] : [{ type: e.type, unit_id: e.unit_id, at_s: minutes(e.at) }]));
+  const moves = (sc.scripted_events ?? []).flatMap((e) => (e.type === "move_draw" ? [{ sample_id: e.sample_id, at_s: minutes(e.at), to_s: minutes(e.to) }] : []));
   const base = processConfig(settings, bio.params, scripted);
   const bays = sc.bay_profiles === undefined ? undefined : loadBays(sc.scenario_id, sc.bay_profiles, { reactors: base.reactors, baySize: base.baySize }, lookup);
   if (bays && base.phLoop) throw new Error(`scenario ${sc.scenario_id}: bay_profiles cannot be combined with the pH loop of experiment 2, which reads one container for every bay (spec section 4.5)`);
@@ -139,7 +140,7 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
     ...(rawLayer && { raw: rawLayer }),
     ...(breakout && { breakout }),
     process: proc,
-    sampling: { ...samplingConfig(settings, staff.params, bio.params, (fleet.plan[0] as StageCfg).storage, plan, label), ...(bays && { bays: bays.map((b) => drawVolumes(settings, b.params)) }) },
+    sampling: { ...samplingConfig(settings, staff.params, bio.params, (fleet.plan[0] as StageCfg).storage, plan, label), ...(bays && { bays: bays.map((b) => drawVolumes(settings, b.params)) }), ...(moves.length > 0 && { moves }) },
     analysis: {
       analyzers: fleet.analyzers,
       instruments: fleet.instruments,

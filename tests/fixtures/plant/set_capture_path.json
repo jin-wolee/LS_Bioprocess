@@ -1,0 +1,19 @@
+{
+  "description": "The small default scenario (6 reactors in one bay, 8 days), seed 1. Written by hand from plant_ui.md section 5.2; never produced by the code under test. At day 3 09:00 the reader sets the capture path to adapter ingest, for the whole run (the spec's capture_path, which turns the raw layer on).",
+  "actions": [
+    {
+      "kind": "set_capture_path",
+      "at": 291600,
+      "path": "adapter_ingest"
+    }
+  ],
+  "hand": {
+    "scenario_fields": {},
+    "capture_path": "adapter_ingest",
+    "architectures": [
+      "a_manual",
+      "b_lims_lite",
+      "c_context"
+    ]
+  }
+}

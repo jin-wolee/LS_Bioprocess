@@ -1,0 +1,30 @@
+{
+  "description": "The small default scenario (6 reactors in one bay, 8 days), seed 1. Written by hand from plant_ui.md section 5.2; never produced by the code under test. The reader raises an alarm on U05 on day 3 at 10:00 (4920 min = 295200 s).",
+  "actions": [
+    {
+      "kind": "raise_alarm",
+      "at": 295200,
+      "unit_id": "U05"
+    }
+  ],
+  "hand": {
+    "scenario_fields": {
+      "scripted_events": [
+        {
+          "type": "alarm",
+          "unit_id": "U05",
+          "at": {
+            "value": 4920,
+            "unit": "min",
+            "ref": "A228"
+          }
+        }
+      ]
+    },
+    "architectures": [
+      "a_manual",
+      "b_lims_lite",
+      "c_context"
+    ]
+  }
+}

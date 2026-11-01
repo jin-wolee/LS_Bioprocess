@@ -40,6 +40,8 @@ export interface SamplingConfig {
   /** The same two numbers for each bay when the scenario names a profile per bay (spec 4.5.2); absent: `volumeUl` and `capUl` for every bay. */
   bays?: { volumeUl: number; capUl: number }[];
   stagger: { start_s: number; window_s: number; offset_s: number; baySize: number };
+  /** Scripted moves of a draw (spec 2.2, `move_draw`; ADR-0021): at `at_s` the planned instant of the named sample becomes `to_s`. Absent when the scenario has none, so no earlier config changes. */
+  moves?: { sample_id: string; at_s: number; to_s: number }[];
   delaySd_s: number;
   qualified: boolean;
   /** Clock time of the earliest-deadline rule (A206). */
@@ -138,10 +140,29 @@ export const plannedInstant = (cfg: SamplingConfig, rng: Rng, seed: number, s: S
   return s.day * DAY + wholeSeconds(planned);
 };
 
+/** What is wrong with a move (spec 2.2), or null. `kind` tells a move into the past from one outside the staffed window; the plant maps them to its refusals (plant_ui.md section 5.6). */
+export type MoveFault = { kind: "past" | "outside_window"; message: string };
+
+/** A move of the draw of `sample_id`, planned at `planned_s` on culture day `day`, checked against the staffed window of that day. */
+export const moveFault = (cfg: SamplingConfig, day: number, planned_s: number, m: { sample_id: string; at_s: number; to_s: number }): MoveFault | null => {
+  const fault = (kind: MoveFault["kind"], why: string): MoveFault => ({ kind, message: `move_draw of ${m.sample_id}: ${why}` });
+  if (m.at_s >= planned_s) return fault("past", `the sample is already planned at ${planned_s} s, at or before the action at ${m.at_s} s`);
+  if (m.to_s < m.at_s) return fault("past", `the target ${m.to_s} s is before the action at ${m.at_s} s`);
+  if (m.to_s % 60 !== 0) return fault("outside_window", `the target ${m.to_s} s is not a whole minute (A200)`);
+  if (Math.floor(m.to_s / DAY) !== day) return fault("outside_window", `the target ${m.to_s} s is not on the same day as the planned instant (day ${day})`);
+  if (m.to_s - day * DAY < cfg.start_s || m.to_s - day * DAY > endOf(cfg, day)) return fault("outside_window", `the target ${m.to_s} s is outside the staffed window of day ${day} (A201, A202)`);
+  return null;
+};
+
 export const runSampling = (cfg: SamplingConfig, proc: ProcessRun, seed: number, rng: Rng): SamplingRun => {
   const events: Event[] = [];
   const samples: SampleRecord[] = [];
   const draw = (sample: string, purpose: string) => rng.stream([seed, sample, "-", 0, purpose]);
+  const moves = new Map<string, NonNullable<SamplingConfig["moves"]>[number]>();
+  for (const m of cfg.moves ?? []) {
+    if (moves.has(m.sample_id)) throw new Error(`move_draw of ${m.sample_id}: the sample is moved more than once`);
+    moves.set(m.sample_id, m);
+  }
   const opId = (n: number): string => `OP-${String(n).padStart(2, "0")}`;
   const operators: Operator[] = Array.from({ length: 2 * cfg.opsPerShift }, (_, i) => ({ operator_id: opId(i + 1), qualified: cfg.qualified }));
 
@@ -151,8 +172,14 @@ export const runSampling = (cfg: SamplingConfig, proc: ProcessRun, seed: number,
     for (let day = Math.floor(r.inoculated_s / DAY) + 1; day * DAY < r.harvested_s; day++) {
       for (const n of [1, 2] as const) {
         const id = `${r.unit_id}-D${String(day).padStart(2, "0")}-${n}`;
-        const plannedS = plannedInstant(cfg, rng, seed, { sample_id: id, bay: r.bay, slot: r.slot, day, n });
+        let plannedS = plannedInstant(cfg, rng, seed, { sample_id: id, bay: r.bay, slot: r.slot, day, n });
         if (plannedS === null) continue;
+        const move = moves.get(id);
+        if (move) {
+          const fault = moveFault(cfg, day, plannedS, move);
+          if (fault) throw new Error(fault.message);
+          plannedS = move.to_s; // only the planned instant moves; the delay, the transport and the operator below are keyed by the sample id and stay as they were
+        }
         // the draw: the planned instant plus a delay (half-normal with the sd of the staff profile, A063), kept inside the staffed window (A202)
         const delay = wholeSeconds(Math.abs(draw(id, "delay").gaussian()) * cfg.delaySd_s);
         const drawn = Math.min(Math.max(plannedS + delay, day * DAY + cfg.start_s), day * DAY + endOf(cfg, day));
@@ -163,6 +190,7 @@ export const runSampling = (cfg: SamplingConfig, proc: ProcessRun, seed: number,
         const shift = weekend || drawn - day * DAY < cfg.shiftChange_s ? 0 : 1;
         const operator = opId(shift * cfg.opsPerShift + 1 + draw(id, "operator").int(0, pool - 1));
         cands.push({ id, day, planned: plannedS, drawn, arrived, operator });
+        moves.delete(id);
       }
     }
     cands.sort((a, b) => a.drawn - b.drawn || (a.id < b.id ? -1 : 1));
@@ -196,5 +224,7 @@ export const runSampling = (cfg: SamplingConfig, proc: ProcessRun, seed: number,
       samples.push(rec);
     }
   }
+  const [unplanned] = moves.values(); // every move whose sample was drawn is gone from the map
+  if (unplanned) throw new Error(`move_draw of ${unplanned.sample_id}: the run does not draw the sample (no such unit or day, no second sample that day, or its draw falls after the harvest)`);
   return { events, samples, operators };
 };

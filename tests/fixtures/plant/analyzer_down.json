@@ -1,0 +1,36 @@
+{
+  "description": "The small default scenario (6 reactors in one bay, 8 days), seed 1. Written by hand from plant_ui.md section 5.2; never produced by the code under test. At day 3 09:00 the reader takes AN-1 down from day 3 13:00 (5100 min = 306000 s) for 120 min.",
+  "actions": [
+    {
+      "kind": "analyzer_down",
+      "at": 291600,
+      "analyzer": "AN-1",
+      "from": 306000,
+      "length_min": 120
+    }
+  ],
+  "hand": {
+    "scenario_fields": {
+      "maintenance": [
+        {
+          "analyzer": "AN-1",
+          "start": {
+            "value": 5100,
+            "unit": "min",
+            "ref": "A228"
+          },
+          "length": {
+            "value": 2,
+            "unit": "h",
+            "ref": "A096"
+          }
+        }
+      ]
+    },
+    "architectures": [
+      "a_manual",
+      "b_lims_lite",
+      "c_context"
+    ]
+  }
+}

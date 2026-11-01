@@ -1,0 +1,36 @@
+{
+  "description": "The small default scenario (6 reactors in one bay, 8 days), seed 1. Written by hand from plant_ui.md section 5.2; never produced by the code under test. At day 3 09:00 the reader moves the draw of U03-D03-1 (planned 12:50) to 10:30 (4950 min = 297000 s).",
+  "actions": [
+    {
+      "kind": "move_draw",
+      "at": 291600,
+      "sample_id": "U03-D03-1",
+      "to": 297000
+    }
+  ],
+  "hand": {
+    "scenario_fields": {
+      "scripted_events": [
+        {
+          "type": "move_draw",
+          "sample_id": "U03-D03-1",
+          "at": {
+            "value": 4860,
+            "unit": "min",
+            "ref": "A228"
+          },
+          "to": {
+            "value": 4950,
+            "unit": "min",
+            "ref": "A228"
+          }
+        }
+      ]
+    },
+    "architectures": [
+      "a_manual",
+      "b_lims_lite",
+      "c_context"
+    ]
+  }
+}

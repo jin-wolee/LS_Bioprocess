@@ -75,11 +75,19 @@ export interface Scenario {
     analyzer: string;
     at: Param;
   }[];
-  scripted_events?: {
-    type: "feed" | "alarm";
-    unit_id: string;
-    at: Param;
-  }[];
+  scripted_events?: (
+    | {
+        type: "feed" | "alarm";
+        unit_id: string;
+        at: Param;
+      }
+    | {
+        type: "move_draw";
+        sample_id: string;
+        at: Param;
+        to: Param;
+      }
+  )[];
   stability?: {
     effect: "linear_rate" | "first_order_offset";
     analyte: string;

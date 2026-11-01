@@ -1,0 +1,37 @@
+{
+  "description": "The small default scenario (6 reactors in one bay, 8 days), seed 1. Written by hand from plant_ui.md section 5.2; never produced by the code under test. At day 3 09:00 the reader switches available_at on in the record of B: a derived document, whose id is the base id plus _plus_available_at, for the whole run.",
+  "actions": [
+    {
+      "kind": "set_flag",
+      "at": 291600,
+      "architecture": "b_lims_lite",
+      "flag": "available_at",
+      "on": true
+    }
+  ],
+  "hand": {
+    "scenario_fields": {},
+    "architectures": [
+      "a_manual",
+      {
+        "schema_version": "1",
+        "id": "b_lims_lite_plus_available_at",
+        "flags": {
+          "system_issued_id": true,
+          "two_clocks": false,
+          "available_at": true,
+          "instrument_state_snapshot": false,
+          "append_only_versions": false,
+          "write_time_keys": false,
+          "ingest_idempotency": true,
+          "audit_trail": true,
+          "material_lot_links": false,
+          "equipment_links": true
+        },
+        "labelling": "preprinted_barcode",
+        "capture_path": "adapter_ingest"
+      },
+      "c_context"
+    ]
+  }
+}
