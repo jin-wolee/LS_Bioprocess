@@ -1,0 +1,384 @@
+# Plant UI design note
+
+Status: S3p1 deliverable (design note and a throwaway spike), written for the build batches of section 11. Proposed: nothing here is decided until the author accepts ADR-0021 and answers section 12. Synthetic data only. No simulation result of the plant exists yet and this note states none. It builds on ADR-0021 (the lab centres on an interactive 3D virtual plant: option 3, the author's choices of 2026-10-31, and the author's reference of 2026-11-01), on the lab design note (`docs/design/lab_ui.md`: the Worker protocol, the numbers rule, the texts, the budgets, the end-to-end tests) and on ADR-0003, ADR-0005, ADR-0009, ADR-0013, ADR-0015, ADR-0016, ADR-0018 and ADR-0019, which it does not reopen. Where this note and `lab_ui.md` differ, section 6 names the amendment and the author or orchestrator rules on it (Open, item 6).
+
+Numbers in this note: domain numbers carry the `A###` or `S###` id of the ledgers; budgets are those of `prompts/00_master_build.md` section 4 and the proposals of section 8; the measurements of section 8 come from a throwaway spike of 2026-11-01 and are the project's own measurements of its tooling and runtime, so they carry no ledger id (the precedent is section 12 of `lab_ui.md` and the Evidence section of ADR-0016).
+
+## 1. What the plant is, and the rules it keeps
+
+The plant is the lab's main place: a walkable 3D floor on which the synthetic run of one seed plays as motion. Two bays of bioreactors (24 reactors in two bays of 12, A001; N by M adjustable, ADR-0009, ADR-0015), the analyzers (2 by default, A022), the staff of the roster, the sample path from the draw to the analyzer, and one record hall per data architecture that shows what that architecture stored. The reader is an operator: walks the floor, looks, picks an object to see what a record holds, and acts through a bottom bar. The five S3 screens stay as drill-downs that objects open (section 7). The plant makes no claim about a real plant and predicts nothing.
+
+| Rule | What it means in the plant |
+|---|---|
+| Truth and recorded world stay separate (invariant 1) | Three layers (section 3.3): the floor (the plant as it happened, the simulation's own view), the truth overlay (the hidden facts, only on request) and the record halls (only what each architecture stored). The page imports no engine module (`lab_ui.md` section 2). The Worker sends a scene plan, a projection of the truth run onto drawn things with every hidden field and every truth-only event type removed, never a log (section 4.1); section 6 states this as an amendment of rule 1 of `lab_ui.md` section 4. A record hall never shows the absence of a row; absence appears only in the truth overlay (section 3.3). |
+| Determinism (invariant 2) | The scene is a pure function of the scene plan and the clock (section 4.2); no `Math.random` in `src` (the grep of `check_all.sh` covers it): decor such as dust and sway comes from a fixed integer sequence. Wall time moves the clock and nothing else. An operator action is plain data keyed by the canonical tuple, and the run it makes is recomputed from its start (section 5). The reader's avatar is a view object: its position is in no request and changes no result. |
+| Every number carries an id or a result label (invariant 3) | The three classes of `lab_ui.md` section 6 hold in every panel. Text inside the 3D scene is ids and labels only (sample, unit, analyzer, batch), drawn as DOM overlays that follow their object, never as canvas text, so no font file ships and the Korean texts are ordinary DOM. The clock stamp (`day 8 08:31`) and the speed (`x120`) are labels. A figure in a panel is `<Ref>` or `<ResultBlock>`. |
+| No result before it exists (invariant 9) | The plant shows one seed as a replay under the inputs shown, with the footer notice of every screen ("synthetic, not a prediction of a real plant"). It has no score, no ranking and no text that says which architecture wins; its feedback is the visible consequence of an action. |
+| Headless browsers only (invariant 7); no publishing (invariant 6) | The end-to-end checks of section 10 run headless Chromium through Python Playwright and close it. Nothing here publishes anything. |
+| Nothing copied from another product (ADR-0021) | Section 2. Every model, texture and sound is made for this project or carries a recorded licence the project can ship. |
+
+## 2. The feel: what is taken from the reference, and what is not
+
+The author's reference (chat, 2026-11-01: "이런 느낌이야. 가상공간이지.") is an online temple built with three.js. From the two screenshots the orchestrator took headless and the page's own scripts, the traits below are what it does; the plant takes the feel of a place you walk through and act in, not its look. No file, model, texture, icon, font, sound, text or name of the reference is used.
+
+| Trait of the reference (observed) | In the plant | Not taken |
+|---|---|---|
+| A named place and a small panel at the top left, with a count of people | The HUD names the room or bay in view, the scenario, the clock (`day 8 08:31`), the run state (playing, paused, the speed) and the browser-check chip of the lab | Its name, logo, icons and wording |
+| People present, live, from other visitors (WebSocket) | The staff of the roster on duty at the clock instant (two operators per shift, A098; fewer at a weekend, A201) as figures that walk to the reactors for their draws, with a count in the HUD. It comes from the log; there is no network and no multiplayer (YAGNI) | Live visitors |
+| A third-person avatar, click the floor to walk, drag to look around, wheel to zoom, one line of hint under the HUD | The same three controls for a plain operator figure with no likeness of any product's character, a one-line hint (translated) until the first move, and keyboard and touch equivalents (section 3.4) | Its character, its hint text |
+| A bottom bar with a few gestures | A bottom bar of the operator actions (section 5): a few at a time, the rest in an overflow, each with an icon and a label, disabled with the reason when refused | Its gestures |
+| Semi-realistic ground, shadows, fog, sky, soft light, a few particles | A clean lab floor with soft shadows, light fog for depth, daylight through the windows (dim outside the staffed window, A098, A201), a few dust motes; two light presets that follow the theme; no neon (ADR-0011) | Its palette, models and terrain |
+| Ambient sound and a mute toggle in the HUD | An optional room hum made in code from oscillators, off until the reader turns it on (browsers refuse autoplay), never the only carrier of information; the mute choice is remembered in `localStorage` inside `try/catch` | Its sounds |
+| A settings button | A settings sheet: language, theme, quality tier, reduced motion, sound | |
+| A boot screen with a message while the scene loads | A boot line while the plant chunk and the first plan arrive (section 8) | |
+| A scene chunk of about 290 KB gzip (measured by the orchestrator) | The plant's own chunk budget (section 8), set from the spike | |
+
+**Assets.** Version one is procedural: geometry built in code from primitives, the floor and label textures drawn on a canvas, sound from oscillators. That is 0 bytes of asset files, under the licence of the code (MIT, ADR-0008). If the author wants authored models (glTF), they are made for the project (by the author, or by a script kept in the repository) and carry the licence the author picks (Open, item 4). A third-party file with a permissive licence (for example a CC0 model) is allowed only after the author approves that file, with its source and licence written next to it; no asset ships without a recorded licence. The look itself (proportions, palette, mood, how the figures are drawn) is the author's choice and is still open (Open, item 1); version one builds a clean daylight lab as the default.
+
+## 3. The scene
+
+### 3.1 The layout comes from data
+
+`layoutOf(layoutSpec)` is a pure function (no three.js, unit-tested in Node) that returns positions in metres for everything the scene holds. Its input is the shape of the run, nothing else: the bays (`{ size, profile }` per bay, from N, the bay size and `bay_profiles`; ADR-0015), the analyzers (`{ profile, group }` each, from M and `analyzer_profiles`), the break-out items when the scenario has a `breakout` block (lots and equipment), and the architectures of the record halls.
+
+- Bays: the number of bays is N over the bay size, rounded up (N from 5 to 100, A001); a bay is a plinth with its vessels in rows of at most six (12 vessels: two rows of six, as the spike drew it) and a bay plate; bays are placed in rows of at most three with an aisle between rows and columns, so that for N = 100 the floor stays within 100 m on both axes (a layout test checks the bounds, an expected value typed by hand).
+- Analyzers: M from 1 to 6 (A022), in a row at a central bench, each with its intake position; the intake lane (the queue tray) is shared by analyzers of one group, as the engine's queue is (`request_queued` carries a `group`).
+- A walk graph: the aisles as nodes and edges, from which the avatar's click-to-walk path, the staff's walks and the tube's carry path come. Every vessel, analyzer, shelf and object of interest is reachable on it (a layout test: connectivity for N from 5 to 100 and M from 1 to 6).
+- Profiles change the look and nothing else: the bioreactor profile picks the vessel class (bench vessel, mini-parallel block, pilot tank: `bench_manual`, `micro_mini_parallel`, `pilot`), the analyzer profile the analyzer model (all-in-one box, chromatography unit with a tray, the split pair); each profile's grade chip comes from the ledger view as on Setup (A065 to A073). A mixed fleet shows mixed bays.
+
+### 3.2 Objects, and how each is drawn
+
+Shape and text carry the meaning; colour only repeats it (ADR-0011, `lab_ui.md` section 8). Repeated meshes are instanced.
+
+| Object | Drawn as | Shows (from the scene plan) | Opens |
+|---|---|---|---|
+| Reactor | A vessel per profile with a status lamp: idle, running, fed (a pulse), alarm, stopped, harvested; a tag with the batch id on proximity | Its marks at the clock instant (section 4.3) | Reactor panel (batch, status, the newest samples, a trend strip of its recorded process values) |
+| Sampling board (one per bay) | A board listing the day's plan: unit and planned time | `samples[].planned_s` of the day | The target of `move_draw` (section 5) |
+| Staff | A figure per rostered operator with an id tag, on duty or off at the clock instant | Walks from the bench to the reactor of a draw and back | Staff panel (the operator id, draws so far, the qualification as the lens record holds it; the truth overlay adds the truth-side status) |
+| Sample | A tube on a carrier; a label glyph by labelling method (handwritten, pre-printed barcode, issued at the draw); a ring cue per phase (transport, wait, in the analyzer, done), not colour alone | Position by phase (section 4.3); its id on proximity | Sample panel, then Lineage |
+| Intake lane | A tray with slots in queue order | The queue length, by the slots that are filled | Analyzer panel |
+| Analyzer | A model per profile; lamps idle, setup, run, QC, maintenance, closed; a door; a run bar | Visits, setup, runs, QC outcome, windows | Analyzer panel, then Results (utilisation) |
+| Record hall | One wall of shelves per architecture (A, B, C and the picked ablation of C), cards on the shelves (section 3.3) | Cards at the instants the record holds | Record panel, then Lineage or Results |
+| Flags board | A wall panel listing every flag of `ready.flags` as on or off per architecture shown | The preset flag matrix of Setup | Setup (the flag matrix); the surface of the `set_flag` action |
+| Lot rack, equipment stations (break-out scenes) | Crates with lot ids, stations with equipment ids | The addition or use at its instant (a hose or a hand-over animation, then gone) | Break-out |
+| Challenge desk, notes board | A desk with a folder, a board | | Challenge, Notes |
+| Beacon, tag, tape (break-out) | A beacon on a unit that signalled, a deviation tag, tape on a held item | `signal_observed`, `deviation_opened`, holds | Break-out |
+
+### 3.3 Three layers: the floor, the truth overlay, the record halls
+
+| Layer | What it is | Built from | Visible | Label |
+|---|---|---|---|---|
+| Floor | The plant as it happened: the true instants and places of the physical events (draws, carries, queues, runs, feeds, alarms), every hidden field removed | The scene plan (section 4.1) | Always | "Floor: the simulation's own view" in the HUD |
+| Truth overlay | What the simulation knows and no record can hold: for a picked sample its truth column and verdicts (the unit, the true `sampled_at`, the true process context; each field of each record correct, wrong or unanswerable) and the errors the injector materialised on it (`lab_ui.md` section 8); in a break-out scene the hidden onset, origin and affected units; in a record hall a dashed placeholder for a row the plant produced that this record does not hold | A `plant_truth` answer (section 6), made by the existing lineage and break-out functions; no new kind of truth reaches the page | Off by default; a switch "Show what the simulation knows"; refused while a challenge is open (`locked`) | "Simulation's own view, not available to any record" on every overlay element |
+| Record halls | What each architecture stored, and when | The recorded datasets of that architecture (`RecordedDataset` of the lab functions), as cards in the scene plan | One hall per architecture; the HUD's lens chip picks the one the panels read, the others dim | The architecture id and its flags on, on the hall's sign |
+
+A card is the three questions of the lineage view, with the result, made an object: the unit key, `sampled_at`, the process context (with the join basis, `sampled_at` or `measured_at`, as a dashed tether to the physical sample) and the result value. A slot is solid when the record stores the field and dashed and hollow ("not stored") when it does not; the view never guesses a value. A card appears at the earliest instant the record holds for the row (`ingested_at` where stored, otherwise `measured_at`; the build batch reads the dataset and states the rule it found) and turns "knowable" at `available_at` where stored. Pennants mark the record's own validation findings (rule id) and, in a break-out scene, holds and re-flags. A superseded version is a stack behind the card where the architecture keeps versions (`append_only_versions`); where it does not, the card is replaced in place and no stack exists. A card is never marked wrong inside a hall, because "wrong" needs truth; the verdict appears only in the truth overlay.
+
+*Absence is truth, so a hall never shows it.* A row the record does not hold (a duplicate dropped by `ingest_idempotency`, a draw skipped by the volume budget, a lost rerun, a field of a version that was overwritten) leaves no mark in the hall, because a record cannot know what it lacks. With the truth overlay on, a dashed placeholder appears at the slot where the plant produced a row and names the architecture that holds none. This is the comparison the lab exists to make, drawn at the place it happens.
+
+### 3.4 Camera and navigation
+
+| Input | Mouse | Touch | Keyboard |
+|---|---|---|---|
+| Walk | Click the floor | Tap the floor | `W A S D` or the arrow keys |
+| Look | Drag | One-finger drag | `Q E` turn, `R F` tilt |
+| Zoom | Wheel | Pinch | `+` and `-` |
+| Pick | Click an object | Tap an object | `Tab` and `Shift+Tab` cycle the objects of interest, `Enter` opens the panel, `Esc` closes it |
+| Overview | The overview button | The overview button | `O` (a top-down plan of the whole floor, the default on a narrow viewport) |
+| Follow | Click a moving sample, then "follow" | The same | `F` on a picked sample |
+
+The exact bindings other than `Tab`, `Enter`, `Esc`, `Space` (play and pause) and `O` are the executor's call. Rules: click-to-walk follows the walk graph (no walking through a vessel); the camera is third person, limited in zoom (4 to 40 m) and pitch, and never goes below the floor or inside a vessel; walking speed is in wall time and independent of the playback speed; a double click or `Enter` on an object flies the camera to it (a cut under reduced motion, section 9). Near an object (within a few metres) a small card names it and offers its panel, like the place card of the reference. The camera is not in the link (YAGNI).
+
+## 4. From event log to motion
+
+### 4.1 What the page receives: the scene plan
+
+The Worker runs the engine and the recorders for one seed, then builds a `ScenePlan`: plain data, a tree of numbers, strings, booleans, null and arrays, listing only what the scene draws. It is a projection of the truth run with the hidden fields of `engine/src/observe.ts` removed (`HIDDEN_FIELDS`) and the truth-only types dropped (`TRUTH_ONLY_TYPES`), plus the cards of the recorded datasets; it is not a log and carries no sensor tick.
+
+```ts
+interface ScenePlan {
+  schema_version: "1"; seed: number; horizon_s: number;          // integer seconds from the scenario start; day 0 is a Monday (spec 2.1)
+  layout: LayoutSpec;                                            // the input of layoutOf (section 3.1)
+  units: { id: string; bay: number; slot: number; profile: string; batch: string | null; start_s: number | null; end_s: number | null }[];
+  analyzers: { id: string; profile: string; group: string }[];
+  staff: { id: string; on_duty: [number, number][] }[];          // the roster as shift intervals (A098, A201)
+  samples: { id: string; unit: number; operator: number | null; planned_s: number; drawn_s: number | null; arrived_s: number | null; label: string | null;
+             kind: "routine" | "confirm"; skipped: boolean;
+             visits: { analyzer: number; queued_s: number; started_s: number; run_started_s: number; ended_s: number; attempt: number; qc: string | null; setup_s: number }[] }[];
+  marks: { t: number; unit: number; kind: string; source: "rule" | "scheduled" | "scripted" | null; item: string | null }[];   // feed, temperature_shift, alarm, harvest, unit_stopped, medium_addition, equipment_use, signal_observed, deviation_opened
+  windows: { analyzer: number; kind: "qc" | "maintenance" | "closed"; from_s: number; to_s: number }[];
+  records: { architecture: string; flags_on: string[]; cards: { sample: number; shown_s: number; available_s: number | null;
+            slots: { name: "unit" | "sampled_at" | "context" | "value"; stored: boolean; basis?: "sampled_at" | "measured_at" }[];
+            findings: string[]; versions: number }[] }[];
+}
+```
+
+The spike's plan for the default scenario (394 drawn samples, 192 feeds, three records, a slimmer card than above) was 28,112 bytes of JSON and posted in 0.3 ms. Rules: ids are strings (a sample is `U10-D08-1`), indices point into the arrays of the same plan, times are integer seconds of the run, and no field holds a value of a result, a true state or a noise term (a result value appears only as the `value` slot's stored flag; the number itself is read in the record panel through `plant_record`).
+
+### 4.2 The time base: a stateless scene
+
+- The run's time is the engine's integer seconds. The view clock `t_view` is a real number. Wall time advances it by `dt x speed` only while playing; nothing else reads wall time and no result contains a wall-clock value.
+- `sceneAt(plan, t)` is a pure function that returns the state of every drawn object at `t` (positions, phases, lamp states, cards shown). It depends on nothing but its arguments, so seeking, pausing and playing backwards need no replay, and a screenshot at a fixed `t` shows the same scene every time. A property test calls it for a shuffled list of instants and compares each answer with the one from an ordered list.
+- Playback: play and pause (`Space`); speed presets of 30, 120 (the default), 600 and 3600 simulated seconds per wall second; step to the next or previous event of the picked object or kind; seek by a scrubber over the horizon with ticks for day boundaries, actions and alarms, and by keys (plus or minus one hour, plus or minus one day). A frame never skips the start of a carry that the reader could have seen: at the top speed one frame advances well under a sample's transport time (10 to 25 min, A018).
+- Lights follow the roster: the floor is lit inside the staffed window of the day (A098, A201) and dim outside; the analyzers wear a "closed" sign in their closed windows (the engine's `closed` windows) and the queue builds in front of a sign for the reader to see.
+
+### 4.3 From event type to what the reader sees
+
+The table is total: a unit test lists every `type` of `schemas/event.schema.json` and fails on a type that has no row here or no explicit "not drawn" reason. The record side follows the recorders' outputs (spec section 2, layer L4), not the engine's events.
+
+| Event (type) | On the floor | In the record halls |
+|---|---|---|
+| `log_header` | Nothing; the HUD shows the engine and schema versions and the seed | Nothing |
+| `inoculation` | The vessel lamp goes to running; the batch tag appears; in a break-out scene the seed-lot crate is handed over | The batch row, where the architecture stores batches |
+| `process_event`: `feed` (source rule, scheduled or scripted) | A bolus pulse: a line from the feed station to the vessel and an amber lamp for a view-constant stretch of simulated minutes; a scripted feed carries an "operator" ring | A process row card where stored; the context epoch ticks over |
+| `process_event`: `temperature_shift`, `harvest` | A jacket tint change; the vessel empties and its lamp goes off | A process row card where stored |
+| `process_event`: `alarm` | A red beacon on the vessel for a view-constant stretch | The process row |
+| `process_event`: `unit_stopped`, `medium_addition`, `equipment_use` (break-out) | A "stopped" tag; the lot crate or equipment item connects to the vessel at the addition or use, then the link fades | The `consumed_in` or `used_in` edge on the card where `material_lot_links` or `equipment_links` is on; otherwise nothing a query could join |
+| `sensor_tick` | Not animated (a tick every 60 s, A100, for three signals of every reactor is too much); the reactor panel draws a trend strip of the recorded process values when asked | The historian rows |
+| `sample_planned` | An entry on the sampling board of the bay | `planned_at` where stored (preset B) |
+| `sample_drawn` | The operator walks to the vessel; a tube appears in their hand at the true draw instant | The sample row, at the card's `shown_s` |
+| `label_bound` | The label glyph on the tube, by method | The key as the record keys it |
+| `sample_received` | The carrier arrives at the intake lane (`arrived_at`) | `arrived_at` where stored |
+| `aliquot_created` | Not drawn in version one (one tube stands for the aliquot; the aliquot per storage condition stays parked, `docs/progress.md`) | The aliquot row where stored |
+| `draw_skipped_volume_budget` | The operator reaches the vessel and no tube appears; a "volume cap" tag (A207) | Nothing (a record cannot know a draw that left no sample); the truth overlay shows the placeholder |
+| `request_queued` | The tube takes its slot in the intake lane, at its rank | The request row |
+| `visit_started` | The tube moves into the analyzer through its door; a setup lamp when `setup_s` is more than 0 | The run row (start) |
+| `run_started` | The run lamp and the run bar to the visit's end (the all-in-one cycle is 4.5 min, A023) | `started_at` where stored |
+| `result_measured` | One slip per visit prints at the analyzer at `ended_s` (never one per analyte) | The value slot of the card, at `shown_s`, written or not per architecture |
+| `qc_result` | The analyzer lamp: passed or failed | The run's QC outcome |
+| `visit_finished` | The tube leaves for the rack; the analyzer goes idle | `ended_at` |
+| `rerun_requested`, `dilution_applied` | The tube returns to the lane with a ring; a dilution mark | A new run row; a version stack where versions are kept, an in-place replacement where not |
+| `qc_window_started`, `qc_window_ended`, `maintenance_started`, `maintenance_ended` | The analyzer is covered with a sign; the queue builds in front of it | The maintenance log row |
+| `calibration_recorded` | A calibration card on the analyzer | The instrument state row where `instrument_state_snapshot` is on |
+| `contamination_onset` (truth only) | Never on the floor | Never in a hall; only in the truth overlay on request |
+| `signal_observed`, `deviation_opened` | A beacon and a deviation tag on the unit | The deviation row where stored |
+| `confirm_sample_drawn`, `confirm_result` | A different tube (a square cue) waits on the confirmation shelf for its long turnaround, then a stamp | The confirming result, holds and re-flags of the break-out function, as pennants |
+| Record outputs `record_written`, `record_corrected`, `flag_raised`, `ingest_received` | | A card slides in from the ingest slot at its instant; a version stack grows on a correction; a pennant on a finding |
+
+A visit chain of one sample with two attempts shows the second attempt as a second pass through the lane and the analyzer; the plan holds each visit.
+
+## 5. Operator actions
+
+### 5.1 Principle
+
+An operator action is plain data that says what the reader did and when, in the units of the run. The list of actions is part of the plant's spec; the page sends it, the Worker checks it, applies it to the scenario, recomputes the run from its start and answers a new scene plan; the view resumes at the instant of the action. The page computes nothing: no result, no consequence. `at` is the clock reading when the reader acted, in integer seconds and a whole minute (scheduled events sit at whole minutes, A200); the page rounds it up to the next whole minute.
+
+### 5.2 The actions
+
+```ts
+type Action =
+  | { kind: "add_feed"; at: number; unit_id: string }
+  | { kind: "raise_alarm"; at: number; unit_id: string }
+  | { kind: "move_draw"; at: number; sample_id: string; to: number }
+  | { kind: "analyzer_down"; at: number; analyzer: string; from: number; length_min: number }
+  | { kind: "change_lot"; at: number; analyzer: string; effective: number }
+  | { kind: "set_flag"; at: number; architecture: string; flag: string; on: boolean }
+  | { kind: "set_capture_path"; at: number; path: "manual_transcription" | "adapter_ingest" }
+  | { kind: "set_labelling"; at: number; method: "handwritten" | "preprinted_barcode" | "issued_at_draw" }
+  | { kind: "place_contamination"; at: number; origin: { kind: string; item_id: string }; contaminated_at: number };
+```
+
+| Kind | Class | Becomes, in the scenario | In the engine today | Ids the panel prints (`<Ref>`) | Bounds (a breach is refused, section 5.6) |
+|---|---|---|---|---|---|
+| `add_feed` | Plant | `scripted_events[]` `{ type: "feed", unit_id, at }`: a fixed bolus (spec 2.1) | Yes (SC3 uses it) | A192, A193, A208 | `at` falls inside the unit's culture (after its inoculation, before its harvest) |
+| `raise_alarm` | Plant | `scripted_events[]` `{ type: "alarm", unit_id, at }` | Yes | A197 | As `add_feed` |
+| `move_draw` | Plant | A new scripted event type `move_draw`: the planned instant of one named sample that is not yet planned at `at` becomes `to`; the keyed draws of that sample (its delay, its transport, its operator) stay as they are | **No**: an engine and schema addition, section 5.8 (the spike emulated it with one patched module) | A016, A202, A063 | `to` on the same staffed day as the original, inside the staffed window (A201, A202), a whole minute |
+| `analyzer_down` | Plant | `maintenance[]` `{ analyzer, start, length }` | Yes (SC5) | A096, A205 | `from` not before `at`; one window per analyzer at a time |
+| `change_lot` | Plant | `lot_changes[]` `{ analyzer, at }` | Yes | A093 | `effective` not before `at` |
+| `set_flag` | Lab setting | The architecture document of the named record with one flag overridden; for C with one flag off it is the existing id `c_context_minus_<flag>` | Yes for C and its ablations; a flag switched on A or B needs the Worker to accept a derived architecture document | The flag's ADR (ADR-0005, ADR-0017, ADR-0020) | The flag is one of `ready.flags` |
+| `set_capture_path` | Lab setting | `capture_path` of the spec, which turns the raw layer on (S3c) | Yes | A161, A036 | One of the two paths |
+| `set_labelling` | Lab setting | `label_method` of the scenario | Yes | A047, A061 | One of the three methods |
+| `place_contamination` | Plant | `breakout.origin` of a Break-out scene: the origin kind, the declared lot or equipment item, the instant | Yes, in SC12 scenes only (a scenario with a `breakout` block) | A157, A176, A177 | The item is declared in the scene's topology; `contaminated_at` is not before `at`; refused in a public build (section 5.6) |
+
+*Proposed for the first build (P6 of section 11):* `add_feed`, `move_draw`, `analyzer_down`, `set_flag`, `set_capture_path`. *With the break-out scenes (P7):* `place_contamination`. *Cheap, because the engine has them, and optional:* `raise_alarm`, `change_lot`, `set_labelling`. The author confirms the list (Open, item 2). One example of the author's brief is not offered as asked: "delay or advance a feed" is the engine's daily rule decision, a scenario setting (`feed_decision_min`) that applies to every reactor on every day, so a per-reactor change from now is not expressible without a new scripted event type like `move_draw`; the plant offers `add_feed` (a scripted bolus now), which the engine has, and parks the rule shift (Open, item 2).
+
+### 5.3 Two classes of action
+
+- **Plant actions** change the truth run. They act on the future of `at` only: nothing the reader sees before `at` changes (the causality rule; the spike measured it: the events before `at` were identical for a feed and for a moved draw, section 8). They enter the scenario as scripted events or as the scenario fields of the table.
+- **Lab settings** change what is recorded and not what happened: the truth run's log hash is unchanged (a test). An architecture is a property of the lab, not of an instant, so the record is re-made for the whole run and earlier cards change too; the HUD says so in one line ("applies to the whole run"), and the view still resumes at `at`. The alternative, a flag with an effective-from instant (a recorder that changes behaviour mid-run), is a new mechanism the spec does not define and is not proposed (Open, item 2).
+
+### 5.4 Keys, order and determinism
+
+- Targets are named by id (unit, sample, analyzer, lot, equipment item), never by position in a list, so an added action moves no other draw (spec section 3, rule 3).
+- An action adds no random draw of its own. Where a mechanism needs one it takes the canonical tuple `(run_seed, <target id>, "-", 0, "operator:<kind>")`, listed in a table of the action keys and checked for collisions as the run's keys are.
+- The Worker sorts the list by `(class, at, kind, target id, parameters)` and names the actions `act-1`, `act-2` ... in that order; the entry order never reaches the scenario, so the same set of actions gives the same scenario and the same bytes in any order of entry.
+- No wall clock, no entry timestamp. A duplicate (same kind, target and instant) is refused. The list is capped at 16 actions per run (a view constant that bounds the link and the recompute, not a domain number).
+
+### 5.5 Recompute and resume
+
+1. The reader acts; the page adds the action to its list and posts `plant_run` with the whole list and a new epoch. The view holds the clock at `at` and shows "recomputing" in the HUD (a status line, no spinner under reduced motion).
+2. The Worker checks the list (section 5.6), applies it to a copy of the scenario document, runs the scenario and the recorders from the start, builds the plan, and answers `plant_ready` with the epoch, `resume_at` (the first `at` of the actions that changed), the hashes of section 5.7 (the truth hash and the cells digest of each hall built so far) and two checks: `prefix_equal` (the events before `at` equal those of the previous answer, expected true for a plant action) and `truth_equal` (the truth hash equals the previous one, expected true for a lab setting). A newer epoch cancels an unfinished older one; the page drops an answer whose epoch is not the latest.
+3. The page replaces its plan, sets the clock to `resume_at`, and draws `sceneAt(plan, resume_at)`. A false check is shown as "causality check failed", keeps the old plan and is a defect to report, never a state to tolerate.
+4. Undo removes an action from the list and recomputes the same way.
+
+There is no incremental update: the engine has no checkpoint and a recompute from the start of the default scenario costs a fraction of a second (section 8). For a larger fleet the records dominate the cost (section 8, Node times), so the Worker answers `plant_ready` as soon as the truth run and the lens record are built and sends the other halls afterwards, one `plant_halls` message each, which the page draws as they arrive; the floor and the lens hall never wait for the others. The default scenario needs none of this. The Worker keeps the last run keyed by the canonical JSON of its spec, so a drill-down of the same run (a lineage view of a sample the plant shows) does not recompute; the cache must not change a byte, and the equality tests of section 5.7 cover it.
+
+### 5.6 What is refused, and why
+
+A refusal is an `error` with `code: "refused"` and a reason (section 6); the bar shows the action disabled with the reason, so the reader learns the rule at the place they met it.
+
+| Refused | Reason | Code |
+|---|---|---|
+| A target instant earlier than `at`, or a target already planned, started or over at `at` (a sample already planned, a window already begun) | The past is not rewritten; the view resumes at `at` and everything before it must be unchanged | `past` |
+| A unit, sample, analyzer, flag, lot or item that the run does not have; a kind that is not in the table | A request is user input (a link); ids are checked as for `RunSpec` | `unknown_target` |
+| A draw moved outside the staffed window or to another day | The staffed window and the draw rule (A201, A202), checked by the Worker before the engine runs; any other value the engine itself rejects arrives as `engine_error` with the engine's message, verbatim | `outside_window` |
+| Writing a value: a result, a recorded field, a true state, a probe offset, a noise term | No instrument produced it; the page never computes a result and a record cannot be edited by its reader. There is no such kind, and the UI never offers one | `unknown_target` |
+| Anything whose answer would show a hidden field: "test this sample for contamination now", "what is the true value" | Truth is shown only by the truth overlay, on request, under its label. Confirming tests exist only as the scenario's own scripted response with its turnaround (A176), visible as events | `unknown_target` |
+| Acting on a recorded result: hold, release, reject, readjust or stop a unit because a record said so | That closes the loop; the plant is open loop (ADR-0004: detection never changes the truth run). The closed loop exists only in SC8 and in the challenge's decision variant | `closed_loop` |
+| Planting an error: a label error, a re-key, a replay | The challenge plants by keyed draws and relies on the reader not knowing; a free plant would also hand the reader the reveal of `outcomeOf`. Parked (Open, item 9) | `unknown_target` |
+| `place_contamination` in a public build, or in a scenario with no `breakout` block | The figures of Break-out rest on sources below `main-reread` and are refused in the public build (ADR-0013, `lab_ui.md` section 20, item 7) | `public_build` |
+| Any action or truth request while a challenge is open on the same run | The same lock as `lineage` (`lab_ui.md` section 4, rule 2) | `locked` |
+| The seventeenth action; a duplicate | The cap and the duplicate rule of section 5.4 | `limit` |
+| A value outside the ledger range of its id | Not refused: a warning chip beside the input, as on Setup (`lab_ui.md` section 3), and the run goes on | none |
+| Changing the seed or the scenario | Not an action: it starts a new run (Setup) | none |
+
+The unit test of the action kinds compares the kinds of the code with the first column of the table of section 5.2, read from this file (the pattern of `tests/test_explainer_flags.py`), so a kind cannot be added without a row here.
+
+### 5.7 How a recomputed run is proven equal to the run with the actions written in by hand
+
+Let S0 be the base scenario document, `a` an action, `applyActions(S0, [a])` the pure function that returns the scenario with the action applied, and H the same scenario written by hand as a fixture under `tests/fixtures/plant/` (typed from the mapping of section 5.2, never produced by the code under test). The hashes are those of `lab_ui.md` section 7: the strict log hash of the truth run (sensor ticks excluded) and, for each architecture, the SHA-256 of the canonical JSON of its metric cells (`cells`).
+
+1. **Mapping.** `applyActions(S0, [a])` equals H as JSON (canonical key order). A wrong field, a wrong unit or a minute off fails here.
+2. **Run.** The truth hash and the cells digest of the run of `applyActions(S0, [a])` equal those of the run of H, for each action kind and for two or three actions together.
+3. **Worker path.** The `plant_ready` of the Worker for `(spec, [a])` carries the same hashes. A command-line reference, built like `lab_reference_cli.ts` under the engine's flags from the hand fixtures, writes `plant_reference.json`; because a seed gives the same bytes in Node and in every browser (ADR-0019), the page in Chromium must show hashes equal to the Node run of H. The end-to-end check `plant_equal` compares them.
+4. **Order of entry.** Every permutation of a set of three actions gives one scenario and one set of hashes.
+5. **Undo.** Removing the action returns the base hashes. The spike returned to the base hash every time.
+6. **Repeat.** The same list asked ten times gives one hash. The spike gave one hash in ten of ten.
+7. **Prefix.** For a plant action, the events before `at` equal those of the previous run, the same list without the action (`prefix_equal`, section 5.5). The Worker computes it by comparing the two runs event by event; the QA reads it from the answer.
+8. **Lab settings.** The truth hash equals the base hash and only the cells of the architecture that changed differ.
+9. **Mutations**, each run in a scratch copy and reverted, must make a test fail: the action applied to the neighbouring unit, `at` rounded to the wrong minute, an action dropped from the list, a hand fixture a minute off, a derived architecture whose flag is not overridden.
+
+### 5.8 Engine work an action needs
+
+Everything but `move_draw` and the derived architecture of `set_flag` on A or B maps onto fields the scenario already has. `move_draw` is a new scripted event type: spec first (a clause in `docs/design/simulation_spec.md`, section 2.2 and the scenario schema), a schema addition (`scripted_events[].type` gains `move_draw`, with `sample_id` and `to`), a change in `engine/src/sampling.ts` that replaces the planned instant before the keyed delay is added, and the regression rule of spec section 11.1: with no `move_draw` the golden event logs stay byte-identical. The spike emulated it with one extra line in a copy of `sampling.ts` held outside the repository; that line is the whole behaviour. Whether the schema addition needs its own ADR (Proposed) is for the orchestrator (Open, item 10).
+
+## 6. The Worker protocol additions
+
+These add to section 4 of `lab_ui.md`; nothing there changes except the amendment of rule 1 below.
+
+```ts
+interface PlantSpec { run: RunSpec; seed: number; actions: Action[] }     // run.architectures is the set of record halls
+
+type PlantRequest =
+  | { type: "plant_run"; id: number; epoch: number; spec: PlantSpec }
+  | { type: "plant_truth"; id: number; epoch: number; pick: { sample_id: string } | { unit_id: string } | { breakout: true } }
+  | { type: "plant_record"; id: number; epoch: number; architecture: string; sample_id: string };   // the drill-down of lab_ui section 4 (`sample_record`), tied to an epoch
+
+type PlantResponse =
+  | { type: "plant_ready"; id: number; epoch: number; plan: ScenePlan; resume_at: number;
+      hashes: { truth: string; cells: Record<string, string> }; checks: { prefix_equal: boolean | null; truth_equal: boolean | null } }
+  | { type: "plant_truth_view"; id: number; epoch: number; view: TruthOverlay }
+  | { type: "plant_halls"; id: number; epoch: number; records: ScenePlan["records"]; cells: Record<string, string> }     // the halls that were not ready with plant_ready (section 5.5); the lens hall is in the plan
+  | { type: "plant_record_view"; id: number; epoch: number; sample: SampleRecord };
+// `error` gains code "refused" with a `reason` of section 5.6 and the index of the action
+```
+
+Rules, each with a test:
+
+1. **Amendment of rule 1 of `lab_ui.md` section 4.** The page still imports no engine module and cannot ask for a truth log, an event stream, the answer key or the raw quirk key. The plant adds one message whose payload is a scene plan: events projected onto drawn things, at their true instants, with every hidden field removed and every truth-only type dropped. The test walks the plan and fails on a key of `HIDDEN_FIELDS`, on a type of `TRUTH_ONLY_TYPES`, on a key outside an allow-list, and on a record card that holds a slot its architecture does not store. The ruling is the author's or the orchestrator's (Open, item 6).
+2. The truth overlay is a separate request, answered only on the reader's switch, and refused with `locked` while a challenge is open on the same run; no `plant_ready` carries a verdict, a materialised error or a hidden onset.
+3. Epochs: the Worker echoes the epoch; a newer `plant_run` cancels an unfinished one; the page drops a stale answer.
+4. A request is checked, because a link is user input: kinds from the whitelist, ids against the run, bounds, count and duplicates (section 5.6); `invalid_spec` for a malformed request, `refused` for a well-formed action that a rule refuses.
+5. The one-seed drill-down requests `lineage` and `breakout` accept `actions`, checked the same way, so a lineage view of a sample shows the run the plant shows; `challenge_*` does not (it holds a blind plant). Results takes none (section 7).
+6. Code zones: `three` is imported only under `src/plant/gl/**`; `layout.ts`, `scene_at.ts` and the controls' state import none, so Vitest runs them without WebGL; `src/worker/**` never imports `three` or the DOM; the page imports no engine module (the zone test of `lab_ui.md` section 2 gains `src/plant/**`). The Worker-facing functions live in `engine/src/experiments/assembly/lab/` as the others do (`plant.ts`, `actions.ts`, `plant_records.ts`).
+
+## 7. The S3 screens as drill-downs
+
+A drill-down is a route change. The plant's state (the spec, the actions, the clock, the lens) stays in the page store and the run stays in the Worker, so "Back to the plant" returns to the same instant; the GL context is disposed on leaving and rebuilt from the plan on return. The link is `#/plant?scenario=..&seed=..&arch=..&actions=..&t=..&schema=1&engine=<version>`: it holds the spec, the actions and the instant, never a result (rule 5 of `lab_ui.md` section 4); the actions in a link are checked like the spec.
+
+| From (object) | Panel | Opens | What it carries |
+|---|---|---|---|
+| Reactor | Reactor panel | Lineage, on the unit's newest sample by the reader's pick | The spec, the actions, the seed, the sample id |
+| Sample (tube, carrier) | Sample panel: the times as the floor has them, the fields as the lens record holds them | Lineage of that sample | The same, with `pick: { sample_id }` |
+| Card on a shelf | Record panel (the tables of `RecordView` of the lens, filtered to the sample) | Lineage; or Results for the architecture | Lineage as above; Results opens Setup prefilled with the scenario, the settings and the architecture, over the seed list (Results takes no action: actions name the samples of one seed, so Results runs the unmodified scenario and says so; Open, item 7) |
+| Analyzer | Analyzer panel: its visits, windows and the intake lane; no metric on the floor | Results (the utilisation block, stated per window, A098) | As Results |
+| Staff | Staff panel | Notes (what the qualification of a record is) | |
+| Lot rack, equipment station, beacon (break-out) | Item panel | Break-out, on the scene's case | The case and the seed |
+| Flags board | The flag matrix | Setup (the matrix) | |
+| Challenge desk | | Challenge (start form) | Nothing: a challenge locks the plant (section 5.6) |
+| Notes board | | Notes | |
+
+The landing route is Home, which keeps the first load within its budget (section 8): when the capability check passes it offers "Enter the plant" as its primary action, and the plant is then the screen the others are reached from. Home keeps the notice and the browser-check chip, which the plant's HUD also shows; when WebGL2 is missing it offers the text alternative instead (section 9).
+
+## 8. Budgets, and the spike
+
+**Budgets** (`prompts/00_master_build.md` section 4; a breach is a major finding). The first load of the lab stays at most 300 KB gzip (`gzip -c <file> | wc -c` over the files fetched on a cold load of `dist/lab/index.html`): the plant is a dynamically imported chunk and is not in it. The plant view's own chunk, its frame time and the action round trip get budgets of their own, proposed below from the spike; the author sets them when accepting ADR-0021.
+
+*Why the plant chunk must stay out of the first load.* The public lab's first load at the S3 close is 135.2 KB (`docs/progress.md`, the S3 close). With the spike's crude scene the plant chunk alone is 136,113 B and the loader 2,053 B, so a first load that fetched them would be about 270 KB of 300 KB, with 30 KB of headroom for everything the scene still lacks. So the entry screen (Home, with a primary action to enter the plant, and the same boot line the reference uses while its scene loads) is the first load, and the plant chunk is fetched on entering. The size test of the lab (`engine/tests/lab/size_budget.test.ts`) today sums every built file; the batch that adds the chunk makes it read Vite's manifest and separate the static imports from the dynamic ones, and checks the plant chunk against its own budget.
+
+**Spike, 2026-11-01** (a scratch project outside the repository, deleted after measuring; the repository's engine imported by path and never edited; one module, `sampling.ts`, was swapped in the scratch bundle for a copy with one extra line, to emulate `move_draw`). macOS arm64; three.js 0.186.1 (published 2026-09-24, the newest release at least two weeks old on 2026-11-01; 0.187.0 of 2026-10-30 is newer than that and was not used); Vite 8.3.5 for the build; headless Chromium 156.0.8078.4 through Python Playwright under `uv`, software WebGL (ANGLE over SwiftShader), a 1280 by 720 viewport at device pixel ratio 1; every browser closed. The scene: the default scenario's 24 reactors in two bays, two analyzers, a bench with an intake lane, three record shelves with cards, four staff, the reader's avatar, 300 dust points, one directional light with a 1024 shadow map, fog, procedural geometry and a canvas floor texture; 90 draw calls and 10,210 triangles per frame; samples and cards instanced; click to walk, drag and wheel. The Worker ran the real engine for one seed and the three recorders and built the plan of section 4.1. It is a crude scene: a floor for the budgets, not a ceiling.
+
+| Measure | Spike result | Proposed budget |
+|---|---|---|
+| Plant chunk (three.js and the scene), `gzip -c` | 136,113 B (547,028 B raw). three.js's renderer alone, in a trivial scene (a renderer, a scene, a camera, one mesh, one light), builds to 129,639 B, so the scene code of the spike was about 6.5 KB | At most 200 KB gzip for code (three.js about 130 KB, the scene, controls and HUD, a glTF loader if models are authored); assets, if any, are lazy and counted apart, with a budget the author sets when choosing them (0 B in version one) |
+| Loader chunk (the capability check and the dynamic import) | 2,053 B gzip | Counted in the first load, at most 4 KB |
+| Worker bundle (the lab surface and the spike's track builder) | 57,311 B gzip. The lab's own Worker is already inside the first load of 135.2 KB | The existing size test; the plant functions add a few KB to the Worker |
+| Time to the first plan | 315 ms from the start of the page script (the Worker starts and runs the scenario and the three records), then 24 ms to import and mount the chunk | At most 1 s in the gate, the engine run budget |
+| Frame interval, 1280 by 720, median and 95th percentile, 300 frames per repeat with the first five dropped, three repeats, samples moving | 33.4 and 50.1 ms; 33.4 and 50.1 ms; 49.9 and 50.1 ms (20 to 30 frames a second). Frames with the scene static were the same (33.4 to 49.9 ms), so the cost is rasterising in software, not the update. JS update per frame: median 0.0 ms, 95th percentile 0.1 ms. At 960 by 540: 33.2 and 33.4 ms in all three repeats. At 390 by 844 (a phone-sized viewport): 16.7 and 16.7 ms. The intervals are steps of the 16.7 ms display refresh | In software WebGL at 1280 by 720: median at most 50 ms and 95th percentile at most 80 ms (at least 20 frames a second at the median), measured over at least 300 frames while samples move. No budget on a real GPU: the gate cannot measure one, and none is claimed |
+| Action round trip: the click to the first frame with the new run at the action's instant, default scenario, seed 1, records A, B and C; ten runs of each action, the first one (cold) apart and the statistics over the other nine | Add a feed: median 299.8 ms, 95th percentile 303.5 ms, first (cold) 375.9 ms. Move a draw: median 292.7 ms, 95th percentile 303.9 ms, first 302.4 ms. Of the 300 ms, the Worker took about 230 ms (truth run 132 ms, three records 90 to 95 ms, plan 0.7 ms, hash 2.6 ms), the message 0.3 ms, and the page 66 to 67 ms to its first new frame (two software frames) | Median at most 600 ms, 95th percentile at most 1 s, for the default scenario. A larger fleet gets no budget of this kind but a progressive answer (section 5.5) |
+
+A larger fleet, measured in Node under the engine's flags (the spike's set-up, one seed, the three records, medians of three warm runs): 24 reactors 0.26 s (truth 0.12 s, records 0.15 s), 50 reactors 0.77 s (0.22 s, 0.55 s), 100 reactors 3.0 s (0.39 s, 2.6 s), with 394, 839 and 1,376 drawn samples. The truth run grows about linearly and the records faster, so a round trip at N = 100 is several seconds with three halls; hence the progressive answer of section 5.5.
+
+Other results of the spike that the design leans on: for a feed at day 8, 09:00 and for a draw moved 30 minutes at 07:30 the events before the action's instant were identical to the run without it (3,458 and 3,277 events); each action gave one hash in ten repeats and returned to the base hash on undo; with WebGL disabled in the browser (3D APIs off) the loader saw no WebGL2, showed the text alternative and did not request the plant chunk; the plan was 28,112 bytes. Not measured: a real GPU, Firefox and WebKit, a fleet larger than the default in the browser, a scene with authored models and textures, the cost of sound.
+
+## 9. Fallbacks and access
+
+- **No WebGL2.** The loader checks for a WebGL2 context before the dynamic import, so a reader without it never downloads the plant chunk (the spike confirmed this). The page then lands on Home and offers the text alternative below plus the S3 screens, which are the complete comparison without 3D. A 2D floor plan (the option 1 of ADR-0021) as a further fallback is a later batch if the author wants it (Open, item 5).
+- **Phone.** The overview camera is the default on a narrow viewport; tap to select, one finger to look, pinch to zoom; the bottom bar becomes a scrollable chip row; panels open as sheets. Two quality tiers: `high` (soft shadows, device pixel ratio up to 2, dust) and `low` (no shadows, ratio 1, no dust, fewer decor objects). `low` is the default under 600 px; on any device, if the median frame interval over the first 60 frames is above 50 ms the page offers `low` once and never switches silently; the choice is kept in `localStorage` inside `try/catch`.
+- **Reduced motion** (`prefers-reduced-motion`): the plant starts paused; no camera easing (cuts), no auto-follow, no dust, no lamp pulses; the reader steps with "next event" and plays by choice, since the sample motion is the content. The click-to-walk moves the avatar without a glide.
+- **Keyboard and screen reader.** Every control is reachable: the order is the top bar, the scene, the objects list, the bottom bar. The objects list is a DOM list of every object of interest (reactors, analyzers, shelves, board) with the same panels and drill-downs, so the plant can be operated without aiming at a 3D object. The canvas has `role="img"`, a label and a description that points at the text summary.
+- **Text alternative of the scene.** A static description of the layout; "the plant as a table" at the clock instant (reactors with their status, analyzers with their queue length and lamp, the record halls with their card counts); and an `aria-live="polite"` log of events ("08:31 sample U10-D08-1 drawn by OP-02 at reactor U10"), at most one line every two seconds of wall time and switchable off. All of it from the plan, in English and Korean.
+- **English and Korean.** Every HUD, panel, action, refusal and live-region text is in the dictionaries (`src/i18n/*_plant.ts`) under the parity rules of `lab_ui.md` section 10: the same placeholders, the same ids, no digit in Korean that English lacks. Engine strings (a refusal's engine message) are shown verbatim in a `lang="en"` element under a translated heading.
+- **Colour and contrast.** Status is a shape or a ring plus a label, colour only repeats it. The DOM parts (HUD, bars, panels, sheets) are in the contrast sweep per theme; the canvas is not.
+- **Sound.** Off by default, one mute control in the HUD, never the only channel.
+
+## 10. QA
+
+Headless Chromium with software WebGL (the launch arguments of the spike: `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`), through Python Playwright under `uv`, in `scripts/qa_plant.py` (CLI, server, report to `qa_out/`) and `scripts/qa_plant_checks.py` with pytest tests of the pure helpers in `tests/test_qa_plant.py`, in the style of `qa_lab.py`; every browser and context is closed. `bash scripts/check_all.sh` gains a flag `--plant` that appends it, as `--lab` appends the lab's run; the Stop hook does not run it. The page exposes its state as attributes on the plant host (`data-plant-t`, `data-plant-epoch`, `data-plant-speed`, `data-plant-playing`, `data-plant-tier`, `data-plant-calls`, `data-plant-objects` as a count per kind, `data-run-hash`, `data-cells-hash` as a map by architecture), so a check reads the DOM and the page ships no test global.
+
+| Check | Given-When-Then in one line |
+|---|---|
+| `plant_load` | Given the built lab, then Home loads without the plant chunk; entering the plant requests it; no request to another origin; no console error; the status line names the renderer |
+| `plant_frames` | Given the plant playing at the default speed while samples move, the frame interval over 300 frames stays within the budget of section 8; a screenshot is saved and is not blank (a pixel-variance check) and the object counts of the scene equal those of `layoutOf` (no pixel golden: software rendering is deterministic on one build and not across builds) |
+| `size` | The first load, summed as the lab's size check sums it, stays at most 300 KB and the plant chunk within its own budget |
+| `plant_action` | Given an action, when the reader clicks it, then the epoch increases, the clock reads the action's instant and the next frame is drawn within the budget; median of five |
+| `plant_equal` | Given a fixed script of actions, the hashes on the page after each step equal `plant_reference.json`, built in Node from the hand-written scenarios (section 5.7, item 3) |
+| `plant_prefix` | Given a plant action, `prefix_equal` is true; given a lab setting, `truth_equal` is true |
+| `plant_truth` | Given every Worker message recorded through a wrapper of the Worker class, no plan carries a key of `HIDDEN_FIELDS`, a truth-only type, a verdict or a placeholder; no `plant_truth_view` arrives before the switch; with a challenge open, the truth request and the actions are `locked`; no card holds a slot its architecture does not store |
+| `plant_a11y` | Given only the keyboard, the reader reaches the objects list, opens a panel, runs an action and reads the live-region line; given reduced motion the plant starts paused; given WebGL off (`--disable-3d-apis`) the text alternative shows and the plant chunk is never requested |
+| `numbers`, `flags`, `ko`, `matrix`, `contrast` | The existing sweeps visit the plant's DOM (HUD, bars, panels) at the two viewports, both themes and both languages; the flags board and the flag lists of the plant carry `data-flag-list`; a number is an input, an output or a label |
+| `drilldown` | Each row of section 7 opens its screen with the spec of the plant; Back returns to the same instant |
+
+What stays a unit test (Vitest, no browser, written red first): `layoutOf` (bounds, no overlap, connectivity of the walk graph for N from 5 to 100 and M from 1 to 6; expected values typed by hand); `sceneAt` (positions and phases of a hand-built plan at hand-chosen instants, the queue rank, the seek property of section 4.2); the event-to-screen table is total over `schemas/event.schema.json`; `applyActions` against the hand fixtures, the order of entry, the refusal of each row of section 5.6 and the canonical order; the action keys are listed and collide with none; the plan walk of section 6 (rule 1); the action kinds against the table of section 5.2; the dictionary parity; the import zones; the size test. A WebGL image is judged only by the structural checks above.
+
+## 11. Build plan
+
+Each batch ends in something testable and committable (Small Batches); the orchestrator commits. Stage and principles: P2 is an engine addition (SDD + TDD + EDD + BDD + YAGNI + HITL, as the break-out engine was); P3 to P8 follow the S3 combination (YOLO + FAFO + KISS for the exploration of the scene, then lock what stays with TDD and the end-to-end checks); all of them add always KISS, AHA, SRP, Small Batches. Done for every batch: `uv run pytest -q`, `uv run --frozen python scripts/check_docs.py --all` and `bash scripts/check_all.sh --manual --lab`, plus `--plant` from P3.
+
+| Batch | Builds | Red tests first | Gate added |
+|---|---|---|---|
+| P1 (this one) | This note and the spike | | `check_docs` |
+| P2 engine | `applyActions`, the refusals and canonical order; the scripted event `move_draw` (spec clause, schema, `sampling.ts`, regression: no `move_draw` leaves the goldens byte-identical); the Worker-facing `plant.ts`, `actions.ts`, `plant_records.ts` and the scene plan; the hand fixtures and `plant_reference.json`; the progressive halls (`plant_halls`) and the time of N = 100 in the Worker reported. Needs the orchestrator's go for the schema addition (Open, item 10) | mapping against hand fixtures, hashes equal, order of entry, undo, prefix, the plan walk, the keys | none of its own |
+| P3 shell | The route and capability check, the lazy chunk (the dependency `three` and `@types/three`, exact versions, the newest release at least two weeks old on the day of install, ADR-0018's rule), `layoutOf`, the static floor, bays, bench, camera, click-to-walk, keyboard, the HUD shells, the objects list and the text alternative, the dictionaries, the size test split by the manifest | layout bounds and connectivity, import zones, capability fallback | `plant_load`, `plant_frames`, `size`, `matrix` |
+| P4 motion | `sceneAt` for every row of section 4.3, the clock, speed, seek and scrubber, staff, samples, the queue, analyzers, windows, lights | the hand-built plans, the seek property, the total table | `plant_frames` on moving samples |
+| P5 records | The record halls (cards, versions, pennants), the truth overlay, the panels, the drill-downs (the `actions` field of the one-seed requests) | the card slots against the datasets, the truth boundary, `locked` | `plant_truth`, `drilldown` |
+| P6 actions | The action bar for the five core actions, the plan board, the refusals' texts, the recompute and resume, undo, the link | refusals, round trip, `plant_equal` fixtures | `plant_action`, `plant_equal`, `plant_prefix` |
+| P7 break-out | The lot rack, the equipment stations, beacons, tape, `place_contamination` (local build only; refused in the public build), on the break-out scenes (six reactors in one bay) laid out by `layoutOf` | as `sc12` | `sc12` on the plant |
+| P8 access | Reduced motion, the phone tier and overview, sound, the optional 2D plan if the author wants it, the access checks | `plant_a11y` fixtures | `plant_a11y` |
+| P9 release | The size test over the assembled site, `qa_site.py` gains the plant route, the README and the explainer say what exists, the public-build decision | | the full-history scan |
+
+HITL gates in this plan: the author accepts ADR-0021 and sets the budgets (before P3); chooses the look and the asset policy (before P3); confirms the action list (before P6); decides the 2D fallback and the public flip's timing (before P8 and P9).
+
+## 12. Open
+
+1. **The look.** The author's reference is in (section 2) and the feel is translated. The look itself (the palette, the proportions, how the operator and the staff are drawn, the lighting mood) is the author's to choose. Proposed: build a clean daylight lab first, show it, and adjust; the author may send more references (the feel only; nothing is copied).
+2. **The action list.** Confirm the core five (`add_feed`, `move_draw`, `analyzer_down`, `set_flag`, `set_capture_path`), `place_contamination` with the break-out scenes, and the three optional ones. Decide two readings: a flag switched mid-run applies to the whole run (proposed) or from an instant (a new recorder mechanism); and whether the daily rule decision may be shifted per reactor from now (a new scripted event type, not proposed; the plant offers a scripted feed instead).
+3. **The budgets** of section 8: the plant chunk, the frame interval in software WebGL and the action round trip, from the spike (a crude scene; each batch re-measures against them). A budget for assets once models exist.
+4. **The asset policy and licences.** Procedural only (proposed for version one), or authored models and under which licence (the code is MIT and the documents CC BY 4.0, ADR-0008; the author picks a licence for model and texture files), and whether the optional hum ships.
+5. **A fallback where WebGL is missing.** The text alternative is built in any case (section 9); whether a 2D floor plan is built as well (ADR-0021, Open).
+6. **The amendment of rule 1 of `lab_ui.md` section 4** (section 6, rule 1): the page receives a scene plan of true instants with no hidden field. The orchestrator or the author rules.
+7. **Results from the plant.** Actions name the samples of one seed, so Results (many seeds) runs the unmodified scenario and says so. Alternatives: refuse Results from an acted plant, or carry only the actions that name units and analyzers.
+8. **Entry and landing.** Home as the landing route with an "enter the plant" action keeps the first load within 300 KB (section 8); the plant as the landing route does not, with a scene that grows.
+9. **Parked** (a good idea, not built, YAGNI): planting an error as a free action; the challenge played inside the plant; a ghost of the previous run for the same instants; a shift of the rule decision per reactor; live visitors; a pixel-golden for screenshots; a Firefox and WebKit run of the plant.
+10. **The schema addition of `move_draw`** and whether it needs its own ADR (Proposed); and a ledger entry for the instant an operator chooses (a grade A scenario input chosen by the reader and printed as an assumed input, the precedent being A176 and A177), which the research role adds; until then an action's instant carries the id of the thing it perturbs (A192 for a feed, A096 for a maintenance window).
+11. **Not measured** (section 8): a real GPU, other browsers, a fleet larger than the default in the browser (Node times are in section 8), authored assets, and sound; the budgets above are for software WebGL in headless Chromium.
