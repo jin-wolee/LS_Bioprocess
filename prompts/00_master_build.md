@@ -52,7 +52,7 @@ The portfolio centre is not the screen. It is: the single-sample failure trace, 
 
 Scenario-to-session assignment: spec §7 (SC12 to SC14: §11.5). Prompts `30_*`, `40_*`, `50_*` are written at the start of their session, not before.
 
-**Budgets (measured, not estimated).** Default scenario, one seed: the engine run (scenario start to the complete in-memory truth log and observable events, excluding sensor-tick serialisation and log hashing) at most 1 s in a Web Worker (S1b checks a Node median of 5 runs as a proxy; S3 checks the Worker). Infographic at most 150 KB gzip; lab first load at most 300 KB gzip (`gzip -c <file> | wc -c`). A breach is a major finding.
+**Budgets (measured, not estimated).** Default scenario, one seed: the engine run (scenario start to the complete in-memory truth log and observable events, excluding sensor-tick serialisation and log hashing) at most 1 s in a Web Worker (S1b checks a Node median of 5 runs as a proxy; S3 checks the Worker). Infographic at most 150 KB gzip; lab first load at most 300 KB gzip (`gzip -c <file> | wc -c`). The plant (ADR-0021, accepted; `docs/design/plant_ui.md` sections 8 and 12): its chunk at most 200 KB gzip and outside the first load, the loader chunk at most 4 KB; frame interval median at most 50 ms and 95th percentile at most 80 ms in software WebGL in headless Chromium at 1280 by 720; the action round trip median at most 600 ms and at most 1 s for the default scenario. A breach is a major finding.
 
 ## 5. Verification ladder
 
