@@ -336,6 +336,25 @@ def test_known_references_pass_after_bootstrap(repo):
     assert repo.check("--all").returncode == 0
 
 
+def test_a_unicode_code_point_is_not_a_ledger_id(repo):
+    # `unicode-range: U+A720-A7FF` in a stylesheet (the explainer's latin-ext font face) names a character range; the id pattern must not read the code point U+A720 as an assumption
+    ledgers(repo)
+    repo.write(".claude/.bootstrap-done", "")
+    repo.write("docs/design/notes.md", "unicode-range: U+A720-A7FF, U+A640-A69F; written as u+A720 as well\n")
+    r = repo.check("--all")
+    assert r.returncode == 0, r.stdout
+
+
+@pytest.mark.parametrize("text", ["value A720 here", "value (A720) here", "the range U+A720-A7FF and also A720", "S720, not U+S720"])
+def test_a_bare_or_bracketed_id_that_looks_like_a_code_point_is_still_unknown(repo, text):
+    ledgers(repo)
+    repo.write(".claude/.bootstrap-done", "")
+    repo.write("docs/design/notes.md", text + "\n")
+    r = repo.check("--all")
+    assert r.returncode == 1
+    assert "references unknown" in r.stdout and ("A720" in r.stdout or "S720" in r.stdout)
+
+
 GATED = ["README.md", "docs/research/README.md", "site/infographic/index.html"]
 
 
