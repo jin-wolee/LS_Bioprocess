@@ -1,5 +1,6 @@
 import type { Event } from "../../../generated/event.schema";
 import type { Metrics } from "../../../generated/metrics.schema";
+import type { MaterialisedError } from "../../../inject/types.ts";
 import { loadScenario } from "../../../scenario.ts";
 import type { ScenarioConfig } from "../../../scenario.ts";
 import type { ScenarioRun } from "../../../run.ts";
@@ -19,7 +20,7 @@ import { recordsOf } from "./plant_records.ts";
 import type { PlanRecord } from "./plant_records.ts";
 import { runSeed } from "../run_seed.ts";
 import type { SeedInput } from "../run_seed.ts";
-import { architecturesNamed, labSeedOf } from "./seed_setup.ts";
+import { architecturesNamed, labSeedOf, materialisedOf } from "./seed_setup.ts";
 import { scenarioConfig, scenarioDocument, useCapturePath } from "./setup.ts";
 import type { LabData } from "./setup.ts";
 import { checkRunSpec } from "./spec.ts";
@@ -48,10 +49,15 @@ export interface PlantAnswer {
   checks: { prefix_equal: boolean | null; truth_equal: boolean | null };
 }
 
-/** A record hall the Worker has built: the recorded dataset, and the ids of the samples it holds a card of (the only samples the record panel may ask it about). */
+/**
+ * A record hall the Worker has built: the recorded dataset, the ids of the samples it holds a card of (the only samples the record panel may ask it about) and the errors the injector
+ * materialised on this record, which the truth overlay lists for a sample (plant_truth.ts). The injector is a keyed function of the run, so reading its plain output when the hall is built
+ * changes nothing, and the overlay needs no second look at the run.
+ */
 export interface KeptHall {
   dataset: RecordedDataset;
   cards: ReadonlySet<string>;
+  materialised: readonly MaterialisedError[];
 }
 
 /**
@@ -62,6 +68,11 @@ export interface PlantKept {
   actions: Action[];
   events: readonly Event[];
   halls: Map<string, KeptHall>;
+  /** The checked run and its seed: the lock of a challenge is asked of them at the moment of a truth request. */
+  run: RunSpec;
+  seed: number;
+  /** The ids of the planned samples in the order of the plan's `samples` (the placeholders of the truth overlay point into this order). */
+  samples: string[];
 }
 
 export type PlantRunResult = { ok: true; answer: PlantAnswer; kept: PlantKept } | PlantRefusal;
@@ -156,11 +167,13 @@ export const planOf = (data: LabData, t: PlantTruth, records: PlanRecord[]): Sce
 /** The digest of the metric cells of one hall (lab_ui.md section 7). */
 export const cellsDigest = (cell: Metrics): Promise<string> => sha256Hex(canonicalJson(cell));
 
-/** What the Worker keeps of a built hall: its dataset and the samples it holds a card of. */
-export const keptHall = (dataset: RecordedDataset, record: PlanRecord, samples: readonly string[]): KeptHall => ({ dataset, cards: new Set(record.cards.map((c) => samples[c.sample] as string)) });
+/** What the Worker keeps of a built hall: its dataset, the samples it holds a card of and the errors the injector materialised on it. */
+export const keptHall = (dataset: RecordedDataset, record: PlanRecord, samples: readonly string[], materialised: readonly MaterialisedError[]): KeptHall =>
+  ({ dataset, cards: new Set(record.cards.map((c) => samples[c.sample] as string)), materialised });
 
 /** The kept state of an answer that has no halls yet; the answer adds them. */
-export const keptOf = (t: PlantTruth): PlantKept => ({ actions: canonicalActions(t.spec.actions).map((n) => n.action), events: t.run.events, halls: new Map() });
+export const keptOf = (t: PlantTruth): PlantKept =>
+  ({ actions: canonicalActions(t.spec.actions).map((n) => n.action), events: t.run.events, halls: new Map(), run: t.spec.run, seed: t.spec.seed, samples: t.samples });
 
 /**
  * Run a checked spec in one build: the truth run, then every architecture in one call of the recorders. This is the whole answer at once, and the reference that the progressive answer of
@@ -176,7 +189,8 @@ export const runPlant = async (data: LabData, spec: PlantSpec, previous?: PlantK
   const records = recordsOf(datasets, t.samples);
   const cells = Object.fromEntries(await Promise.all(out.cells.map(async (cell, i) => [ids[i] as string, await cellsDigest(cell)] as const)));
   const kept = keptOf(t);
-  for (const [i, id] of ids.entries()) kept.halls.set(id, keptHall(datasets[i] as RecordedDataset, records[i] as PlanRecord, t.samples));
+  const materialised = materialisedOf(t.input);
+  for (const [i, id] of ids.entries()) kept.halls.set(id, keptHall(datasets[i] as RecordedDataset, records[i] as PlanRecord, t.samples, materialised[id] as MaterialisedError[]));
   return {
     ok: true,
     answer: { plan: planOf(data, t, records), ...compare(previous, spec.actions, t.run.events), hashes: { truth: await logHash(t.run.events), cells } },

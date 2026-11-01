@@ -38,26 +38,50 @@ export interface HallRow {
 
 export const hallRowsAt = (plan: ScenePlan, t: number): HallRow[] => hallsAt(plan, t).map((h) => ({ architecture: h.architecture, flags: h.flags_on.length, cards: h.shown, knowable: h.knowable }));
 
-export type ObjectKind = "reactor" | "analyzer" | "hall";
+export type ObjectKind = "reactor" | "analyzer" | "staff" | "hall";
 
 export interface PlantObject {
   kind: ObjectKind;
-  /** `reactor:U01`, `analyzer:AN-1`, `hall:a_manual`: what the scene and the list name an object by. */
+  /** `reactor:U01`, `analyzer:AN-1`, `staff:OP-01`, `hall:a_manual`: what the scene and the list name an object by. */
   key: string;
   id: string;
-  /** The index into the plan's `units`, `analyzers` or the architectures of its layout. */
+  /** The index into the plan's `units`, `analyzers`, `staff` or the architectures of its layout. */
   index: number;
 }
 
-/** The objects of interest, in the order of the list: the reactors, the analyzers, the record halls (one for each architecture of the layout, so the list agrees with the floor before every hall has arrived). */
+/** The objects of interest, in the order of the list: the reactors, the analyzers, the staff, the record halls (one for each architecture of the layout, so the list agrees with the floor before every hall has arrived). */
 export const objectsOf = (plan: ScenePlan): PlantObject[] => [
   ...plan.units.map((u, index): PlantObject => ({ kind: "reactor", key: `reactor:${u.id}`, id: u.id, index })),
   ...plan.analyzers.map((a, index): PlantObject => ({ kind: "analyzer", key: `analyzer:${a.id}`, id: a.id, index })),
+  ...plan.staff.map((s, index): PlantObject => ({ kind: "staff", key: `staff:${s.id}`, id: s.id, index })),
   ...plan.layout.architectures.map((architecture, index): PlantObject => ({ kind: "hall", key: `hall:${architecture}`, id: architecture, index })),
 ];
 
 export const countsOf = (objects: readonly PlantObject[]): Record<ObjectKind, number> => ({
   reactor: objects.filter((o) => o.kind === "reactor").length,
   analyzer: objects.filter((o) => o.kind === "analyzer").length,
+  staff: objects.filter((o) => o.kind === "staff").length,
   hall: objects.filter((o) => o.kind === "hall").length,
 });
+
+/** What a click or a button can pick, to open a panel and to step between the events of (section 3.4): a reactor, an analyzer, an operator or a sample. The index is into the plan's `units`, `analyzers`, `staff` or `samples`. */
+export type PickKind = "reactor" | "analyzer" | "staff" | "sample";
+export interface Picked {
+  kind: PickKind;
+  index: number;
+}
+
+const LISTS = { reactor: "units", analyzer: "analyzers", staff: "staff", sample: "samples" } as const;
+const PICK_KINDS = Object.keys(LISTS) as PickKind[];
+
+/** The key of a picked object, as `data-plant-pick` and the objects list name it: the kind and the id of the plan (`reactor:U01`, `sample:U10-D08-1`). */
+export const keyOf = (plan: ScenePlan, p: Picked): string => `${p.kind}:${(plan[LISTS[p.kind]][p.index] as { id: string }).id}`;
+
+/** The pick a key names, or null for a key the plan does not hold or of a kind that is not a pick (a hall opens the record panel, not an object panel). */
+export const pickedOfKey = (plan: ScenePlan, key: string): Picked | null => {
+  const at = key.indexOf(":");
+  const kind = key.slice(0, at) as PickKind;
+  if (at < 0 || !PICK_KINDS.includes(kind)) return null;
+  const index = (plan[LISTS[kind]] as { id: string }[]).findIndex((x) => x.id === key.slice(at + 1));
+  return index < 0 ? null : { kind, index };
+};

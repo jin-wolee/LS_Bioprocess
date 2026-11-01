@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ScenePlan } from "../protocol.ts";
-import { DEFAULT_VIEW, LIMITS, cameraAt, drag, heading, keyDirection, lifted, tilt, turn, zoom } from "./controls.ts";
+import { DEFAULT_VIEW, LIMITS, cameraAt, drag, followGoal, heading, keyDirection, lifted, tilt, turn, zoom } from "./controls.ts";
 import { layoutOf } from "./layout.ts";
 
 // docs/design/plant_ui.md section 3.4: drag to look, wheel to zoom, the keys of the table, a camera limited in zoom (4 to 40 m) and pitch that never goes below the floor or inside a vessel.
@@ -95,5 +95,26 @@ describe("the keys that walk", () => {
   it("Given a direction Then the heading of the figure is the angle it faces (0 north, a quarter turn east)", () => {
     expect(heading({ x: 0, z: -1 })).toBeCloseTo(0, 9);
     expect(heading({ x: 1, z: 0 })).toBeCloseTo(Math.PI / 2, 9);
+  });
+});
+
+// P5b (docs/design/plant_ui.md sections 3.4 and 9): follow keeps the camera on a tube; under reduced motion there is no follow while the clock plays, and the camera cuts to the tube at each step and
+// each seek of a paused clock.
+describe("where the camera follows a tube to", () => {
+  const tube = { x: 13.5, z: 14.2 };
+
+  it("Given the run playing and no reduced motion Then the camera goes to the tube at every reading of the clock", () => {
+    expect(followGoal(tube, false, true)).toEqual({ x: 13.5, z: 14.2 });
+    expect(followGoal(tube, false, false)).toEqual({ x: 13.5, z: 14.2 });
+  });
+
+  it("Given reduced motion Then the camera cuts to the tube when the clock is paused (a step or a seek) and does not follow while it plays", () => {
+    expect(followGoal(tube, true, false)).toEqual({ x: 13.5, z: 14.2 });
+    expect(followGoal(tube, true, true)).toBeNull();
+  });
+
+  it("Given a tube that is not on the floor Then there is no place to go to and the camera stays where it was", () => {
+    expect(followGoal(undefined, false, true)).toBeNull();
+    expect(followGoal(undefined, true, false)).toBeNull();
   });
 });

@@ -8,7 +8,7 @@ import { Label, T } from "./T.tsx";
 // The lineage view of one sample (lab_ui.md section 8): the truth column and one column per record. Used by the Lineage screen and by the reveal of the challenge. It sits inside a result
 // block of its screen, so every identifier and count in it is marked (invariant 3).
 
-export function LineageTruth({ view }: { view: View }) {
+export function LineageTruth({ view }: { view: Pick<View, "truth" | "sample"> }) {
   const { truth, sample } = view;
   return (
     <section class="lg-truth" data-lineage-truth aria-labelledby="lg-truth-heading">
@@ -36,6 +36,31 @@ export function LineageTruth({ view }: { view: View }) {
   );
 }
 
+/** The errors the injector materialised on the sample in one record: the heading, then the list (or "none"). The lineage columns and the truth block of the plant's record panel draw it. */
+export function RealisedErrors({ column }: { column: Pick<View["columns"][number], "architecture" | "realised_errors"> }) {
+  return (
+    <>
+      <T as="h4" k="lineage.errors.heading" />
+      {column.realised_errors.length === 0 ? (
+        <T as="p" k="lineage.errors.none" data-realised={column.architecture} />
+      ) : (
+        <ul class="lg-errors" data-realised={column.architecture}>
+          {column.realised_errors.map((e, i) => (
+            <li key={i} data-error-type={e.type}>
+              <ErrorTypeName type={e.type} />{" "}
+              {Object.entries(e.detail).map(([name, value]) => (
+                <span key={name} class="lg-detail">
+                  <code>{name}</code> <Label>{value}</Label>{" "}
+                </span>
+              ))}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
 export function LineageColumns({ view, ready }: { view: View; ready: ReadyInfo }) {
   return (
     <>
@@ -56,23 +81,7 @@ export function LineageColumns({ view, ready }: { view: View; ready: ReadyInfo }
             <T as="h4" k="lineage.column.flags" />
             <FlagLegend ready={ready} architecture={column.architecture} list="lineage-column" />
             <RecordSvg column={column} sample={view.sample.sample_id} truth={view.truth} />
-            <T as="h4" k="lineage.errors.heading" />
-            {column.realised_errors.length === 0 ? (
-              <T as="p" k="lineage.errors.none" data-realised={column.architecture} />
-            ) : (
-              <ul class="lg-errors" data-realised={column.architecture}>
-                {column.realised_errors.map((e, i) => (
-                  <li key={i} data-error-type={e.type}>
-                    <ErrorTypeName type={e.type} />{" "}
-                    {Object.entries(e.detail).map(([name, value]) => (
-                      <span key={name} class="lg-detail">
-                        <code>{name}</code> <Label>{value}</Label>{" "}
-                      </span>
-                    ))}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <RealisedErrors column={column} />
           </section>
         ))}
       </div>

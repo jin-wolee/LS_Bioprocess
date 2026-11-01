@@ -9,9 +9,9 @@ import { clockOf } from "./view.ts";
 
 // The controls of the clock (docs/design/plant_ui.md section 4.2): play and pause, the step to the previous and the next event, the four speed presets and the scrubber over the run with a tick at
 // every day boundary. DOM controls, all reachable by the keyboard; the speed and the clock reading are labels. The keys that do the same (Space, the number keys, the comma and the period, the
-// brackets) are the route's.
+// brackets) are the route's. With an object picked (P5b) the step buttons go to the previous and the next event of that object (`times`), and over the whole floor with none.
 
-export function TimeBar({ plan, playback }: { plan: ScenePlan; playback: Playback }) {
+export function TimeBar({ plan, playback, times }: { plan: ScenePlan; playback: Playback; times?: readonly number[] }) {
   const lang = useContext(LangContext);
   const playing = usePlayback(playback, (c) => c.playing);
   const speed = usePlayback(playback, (c) => c.speed);
@@ -23,13 +23,13 @@ export function TimeBar({ plan, playback }: { plan: ScenePlan; playback: Playbac
   return (
     <div class="plant-time" role="group" aria-label={text(lang, "plant.time.label")} data-plant-time>
       <div class="plant-time-buttons">
-        <button type="button" class="plant-step" data-time="prev" title={text(lang, "plant.time.prev")} aria-label={text(lang, "plant.time.prev")} onClick={() => playback.step(-1)}>
+        <button type="button" class="plant-step" data-time="prev" title={text(lang, "plant.time.prev")} aria-label={text(lang, "plant.time.prev")} onClick={() => playback.step(-1, times)}>
           «
         </button>
         <button type="button" class="plant-play" data-time="play" aria-pressed={playing} onClick={() => playback.toggle()}>
           <T k={playing ? "plant.time.pause" : "plant.time.play"} />
         </button>
-        <button type="button" class="plant-step" data-time="next" title={text(lang, "plant.time.next")} aria-label={text(lang, "plant.time.next")} onClick={() => playback.step(1)}>
+        <button type="button" class="plant-step" data-time="next" title={text(lang, "plant.time.next")} aria-label={text(lang, "plant.time.next")} onClick={() => playback.step(1, times)}>
           »
         </button>
       </div>

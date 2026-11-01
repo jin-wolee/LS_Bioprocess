@@ -25,7 +25,7 @@ FRAMES_DROPPED = 5
 MEDIAN_LIMIT_MS = 50.0
 P95_LIMIT_MS = 80.0
 # What the default scenario's plant holds, typed from the scenario file: 24 reactors in two bays, two analyzers, and one hall for each of the three presets A, B and C.
-DEFAULT_OBJECTS = {"reactor": 24, "analyzer": 2, "hall": 3}
+DEFAULT_OBJECTS = {"reactor": 24, "analyzer": 2, "staff": 4, "hall": 3}
 # The plan opens on day 0, 08:00 (28800 s), when the first shift starts and the first reactor is inoculated; the clock plays from there once the scene is drawn.
 DEFAULT_START_S = 28800
 DEFAULT_HALLS = ["a_manual", "b_lims_lite", "c_context"]

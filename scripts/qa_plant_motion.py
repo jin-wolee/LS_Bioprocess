@@ -27,7 +27,7 @@ def clock_t(page) -> int:
 
 
 def check_plant_frames(browser, url, out: Path) -> Result:
-    """Given the clock playing at the default speed from day 8 at 08:30, through the morning's draws with samples on the floor, the frame interval over 300 frames at 1280 by 720 is within the
+    """Given the clock playing at the default speed from day 8 at 08:30, through the morning's draws with samples on the floor and the truth overlay on, the frame interval over 300 frames at 1280 by 720 is within the
     budget, the clock moved on while the frames were measured, and a tube was on the floor; a screenshot is saved and is not blank, and the object counts equal those of the scenario."""
     problems: list[str] = []
     with open_plant(browser, url, init_script=FRAMES_JS) as (page, errors, _):
@@ -35,6 +35,9 @@ def check_plant_frames(browser, url, out: Path) -> Result:
         pause(page)
         seek(page, BUSY_START_S)
         settle(page)
+        # P5b: the budget is for the scene with the cards drawn, the samples moving and the truth overlay on
+        page.click("[data-truth-switch]")
+        page.wait_for_function("() => !!document.querySelector('#plant').dataset.plantAbsences", timeout=30_000)
         start = state(page)
         page.evaluate("window.__plantFrames.length = 0; window.__plantTubes.length = 0")
         page.click("[data-time=play]")
@@ -51,7 +54,7 @@ def check_plant_frames(browser, url, out: Path) -> Result:
         if not not_blank(shot):
             problems.append(f"the screenshot is blank: luminance spread {shot['std']:.1f}, {shot['colours']} colours")
         problems += [f"console: {e[:140]}" for e in errors]
-    detail = (f"{stats['n']} frames from day 8 08:30 playing at x{DEFAULT_SPEED}, median {stats['median']:.1f} ms (limit {MEDIAN_LIMIT_MS:.0f}), 95th percentile {stats['p95']:.1f} ms (limit {P95_LIMIT_MS:.0f}); "
+    detail = (f"{stats['n']} frames from day 8 08:30 playing at x{DEFAULT_SPEED} with the truth overlay on, median {stats['median']:.1f} ms (limit {MEDIAN_LIMIT_MS:.0f}), 95th percentile {stats['p95']:.1f} ms (limit {P95_LIMIT_MS:.0f}); "
               f"{end['calls']} draw calls, up to {max(seen)} tubes on the floor, the clock moved {int(end['t']) - int(start['t'])} s; screenshot spread {shot['std']:.0f}, {shot['colours']} colours") if stats["n"] else "no frames"
     return Result("plant_frames", not problems, detail + (f" | {problems[0]}" if problems else ""), {"stats": stats, "problems": problems, "calls": end["calls"], "tubes_max": max(seen)})
 

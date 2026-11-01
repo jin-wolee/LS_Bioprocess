@@ -113,17 +113,20 @@ def test_the_size_budgets(first, loader, plant, expected):
 
 # ---------- the objects ----------
 def test_the_default_scene_holds_what_the_scenario_has():
-    assert qp.DEFAULT_OBJECTS == {"reactor": 24, "analyzer": 2, "hall": 3}  # the scenario file's 24 reactors and 2 analyzers, and the three presets
-    assert qp.counts_problems({"reactor": 24, "analyzer": 2, "hall": 3}, {"reactor": 24, "analyzer": 2, "hall": 3}) == []
+    # the scenario file's 24 reactors and 2 analyzers, the four operators of its two shifts (P5b: the staff are objects of the list), and the three presets
+    assert qp.DEFAULT_OBJECTS == {"reactor": 24, "analyzer": 2, "staff": 4, "hall": 3}
+    assert qp.counts_problems({"reactor": 24, "analyzer": 2, "staff": 4, "hall": 3}, {"reactor": 24, "analyzer": 2, "staff": 4, "hall": 3}) == []
 
 
 def test_a_scene_or_a_list_with_a_different_count_is_a_problem():
-    scene = qp.counts_problems({"reactor": 23, "analyzer": 2, "hall": 3}, {"reactor": 24, "analyzer": 2, "hall": 3})
+    full = {"reactor": 24, "analyzer": 2, "staff": 4, "hall": 3}
+    scene = qp.counts_problems({**full, "reactor": 23}, full)
     assert scene == ["the scene built 23 reactor objects, the scenario has 24"]
-    listed = qp.counts_problems({"reactor": 24, "analyzer": 2, "hall": 3}, {"reactor": 24, "analyzer": 1, "hall": 3})
+    listed = qp.counts_problems(full, {**full, "analyzer": 1})
     assert listed == ["the objects list holds 1 analyzer entries, the scenario has 2"]
-    assert qp.counts_problems({"reactor": 24, "analyzer": 2, "hall": 3, "tank": 1}, {"reactor": 24, "analyzer": 2, "hall": 3}) == ["the scene built tank objects, which the scenario does not have"]
-    assert len(qp.counts_problems({}, {})) == 6  # nothing built, nothing listed: both fail for each of the three kinds
+    assert qp.counts_problems({**full, "tank": 1}, full) == ["the scene built tank objects, which the scenario does not have"]
+    assert qp.counts_problems({**full, "staff": 3}, full) == ["the scene built 3 staff objects, the scenario has 4"]
+    assert len(qp.counts_problems({}, {})) == 8  # nothing built, nothing listed: both fail for each of the four kinds
 
 
 # ---------- the hashes the page shows ----------

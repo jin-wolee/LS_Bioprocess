@@ -1,5 +1,6 @@
 import { BoxGeometry, Color, CylinderGeometry, Group, InstancedMesh, MeshStandardMaterial } from "three";
 import type { BufferGeometry, Material } from "three";
+import { BENCH_TOP, PLINTH, analyzerShape, vesselShape } from "../dims.ts";
 import { SHELF } from "../hall_shelves.ts";
 import type { Layout } from "../layout.ts";
 import { laneLength, trayZ } from "../scene_at.ts";
@@ -12,35 +13,20 @@ import { placed } from "./place.ts";
 // position. This file builds what does not move (P3); the lamps, the liquid, the tubes and the staff that follow the clock are drawn by motion.ts from `sceneAt`, and the cards on the shelves
 // (P5a) by motion_halls.ts from `hallsAt`; the boards are the ones hall_shelves.ts lays the cards on.
 
-export const PLINTH = 0.2; // metres
-export const BENCH_TOP = 1.2;
+// the sizes are dims.ts's (the pick reads the same numbers); the files of the scene keep importing them from here
+export { ANALYZERS, BENCH_TOP, PLINTH, VESSELS, analyzerShape, vesselShape } from "../dims.ts";
+
 /** The height of the top of the intake lane's table (a tube stands on it: LOOK.level.lane is just above). */
 const LANE_TOP = 0.68;
 
-/** The vessel of each bioreactor profile: a bench vessel, a small one of a mini-parallel block, a pilot tank. Unknown profiles are drawn as the bench vessel. */
-export const VESSELS: Record<string, { radius: number; height: number }> = {
-  bench_manual: { radius: 0.42, height: 1 },
-  micro_mini_parallel: { radius: 0.26, height: 0.7 },
-  pilot: { radius: 0.62, height: 1.7 },
-};
-/** The analyzer of each profile: width, height and depth of its body on the bench. */
-export const ANALYZERS: Record<string, [number, number, number]> = {
-  allinone_atline: [1.5, 0.85, 0.75],
-  hplc: [1.1, 1.15, 0.85],
-  split_cellcounter_metabolite: [1.8, 0.7, 0.6],
-};
-
 const standard = (color: number, roughness = 0.6, metalness = 0.05): MeshStandardMaterial => new MeshStandardMaterial({ color, roughness, metalness });
-
-export const vesselShape = (profile: string): { radius: number; height: number } => VESSELS[profile] ?? (VESSELS.bench_manual as { radius: number; height: number });
-export const analyzerShape = (profile: string): [number, number, number] => ANALYZERS[profile] ?? (ANALYZERS.allinone_atline as [number, number, number]);
 
 export interface Built {
   group: Group;
   /** The glass of each reactor, by unit: the mesh and the instance, so that the jacket can be tinted. */
   jackets: { mesh: InstancedMesh; index: number }[];
   /** What was built, by kind: the number of instances of the main mesh of each. */
-  objects: Record<ObjectKind, number>;
+  objects: Record<Exclude<ObjectKind, "staff">, number>;
   /** The geometries and materials to free on dispose. */
   disposables: (BufferGeometry | Material)[];
 }

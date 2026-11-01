@@ -14,6 +14,8 @@ export interface Labels {
   halls(records: readonly { architecture: string; flags_on: readonly string[] }[], lens: string): void;
   /** Where the figures of the staff are (in the order of the plan's `staff`; an operator who is off duty has x and z that are NaN): their id tags follow them. */
   follow(places: readonly { x: number; z: number }[]): void;
+  /** The labels of the truth overlay (P5b): one element over each place given, which the caller fills; null removes them. Returns the elements, in the order of the places. */
+  overlay(places: readonly { x: number; y: number; z: number }[] | null): HTMLElement[];
   dispose(): void;
 }
 
@@ -55,9 +57,31 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
   });
 
   const staff = plan.staff.map((s) => add(s.id, "staff", 0, STAFF_HEAD, 0, false));
+  // the labels of the truth overlay: made when the overlay is switched on, removed when it is switched off
+  let absences: { el: HTMLElement; at: Vector3; on: boolean }[] = [];
 
   const v = new Vector3();
+  const place = (camera: PerspectiveCamera, width: number, height: number, { el, at, on }: { el: HTMLElement; at: Vector3; on: boolean }): void => {
+    v.copy(at).project(camera);
+    const distance = camera.position.distanceTo(at);
+    const far = distance > 45;
+    const near = distance < 16 ? "1" : "0";
+    if (el.dataset.near !== near) el.dataset.near = near;
+    const hidden = !on || v.z > 1 || far || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1;
+    el.style.visibility = hidden ? "hidden" : "visible";
+    if (!hidden) el.style.transform = `translate(${((v.x * 0.5 + 0.5) * width).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * height).toFixed(1)}px) translate(-50%, -100%)`;
+  };
   return {
+    overlay(places) {
+      for (const a of absences) a.el.remove();
+      absences = (places ?? []).map((p) => {
+        const el = document.createElement("span");
+        el.className = "plant-label plant-label-absence";
+        layer.appendChild(el);
+        return { el, at: new Vector3(p.x, p.y, p.z), on: true };
+      });
+      return absences.map((a) => a.el);
+    },
     halls(records, lens) {
       for (const sign of signs) {
         const record = records.find((r) => r.architecture === sign.architecture);
@@ -73,16 +97,8 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
       }
     },
     update(camera, width, height) {
-      for (const { el, at, on } of items) {
-        v.copy(at).project(camera);
-        const distance = camera.position.distanceTo(at);
-        const far = distance > 45;
-        const near = distance < 16 ? "1" : "0";
-        if (el.dataset.near !== near) el.dataset.near = near;
-        const hidden = !on || v.z > 1 || far || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1;
-        el.style.visibility = hidden ? "hidden" : "visible";
-        if (!hidden) el.style.transform = `translate(${((v.x * 0.5 + 0.5) * width).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * height).toFixed(1)}px) translate(-50%, -100%)`;
-      }
+      for (const item of items) place(camera, width, height, item);
+      for (const item of absences) place(camera, width, height, item);
     },
     dispose() {
       layer.remove();

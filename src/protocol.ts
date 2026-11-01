@@ -33,7 +33,9 @@ export type Request =
   | { type: "challenge_giveup"; id: number; challenge: string }
   | { type: "breakout"; id: number; case: string; architectures: string[]; seed: number }
   | { type: "plant_run"; id: number; epoch: number; spec: PlantSpec }
-  | { type: "plant_record"; id: number; epoch: number; architecture: string; sample_id: string };
+  | { type: "plant_record"; id: number; epoch: number; architecture: string; sample_id: string }
+  // the picks the plant offers (plant_ui.md section 6, rule 8): a pick of a unit and of the break-out wait, and the Worker refuses them as `invalid_spec`
+  | { type: "plant_truth"; id: number; epoch: number; pick: { sample_id: string } | { halls: true } };
 
 export type ChallengeVariant = "sample" | "decision";
 
@@ -230,6 +232,19 @@ export interface LineageView {
   columns: LineageColumn[];
 }
 
+/**
+ * The truth overlay of the plant (docs/design/plant_ui.md sections 3.3 and 6, rule 8), the answer of `plant_truth`: for a sample the lineage view's truth column and, for each hall built, its three answers
+ * with their verdicts and the errors the injector materialised on the sample; for the halls the placeholders, the planned samples (an index into the plan's `samples`) a hall holds no card for.
+ * It is the only message that carries a verdict, a materialised error or an absence.
+ */
+export interface TruthPlaceholder {
+  sample: number;
+  why: "skipped" | "not_recorded";
+}
+export type TruthOverlay =
+  | { kind: "sample"; sample: LineageView["sample"]; truth: LineageView["truth"]; columns: Pick<LineageColumn, "architecture" | "answers" | "realised_errors">[] }
+  | { kind: "halls"; halls: { architecture: string; placeholders: TruthPlaceholder[] }[] };
+
 // The challenge (lab_ui.md section 9). A record is what the reader searches; a reveal exists only after the guess or the give-up.
 export interface RecordView {
   architecture: string;
@@ -385,5 +400,7 @@ export type Response =
   | { type: "plant_halls"; id: number; epoch: number; records: ScenePlan["records"]; cells: Record<string, string> }
   /** The rows one architecture holds for one card, from the run the Worker keeps for the epoch: the record of the lineage view, with no truth and no verdict. */
   | { type: "plant_record_view"; id: number; epoch: number; sample: SampleRecord }
+  /** What the simulation knows and no record can hold, asked for on the reader's switch only (the truth overlay); refused with `locked` while a challenge is open on the same run. */
+  | { type: "plant_truth_view"; id: number; epoch: number; view: TruthOverlay }
   /** `epoch` is echoed on every error of a plant request (the page drops the error of an older epoch); `reason` and `index` come with `refused` only. */
   | { type: "error"; id: number | null; code: ErrorCode; message: string; epoch?: number; reason?: RefusalReason; index?: number };

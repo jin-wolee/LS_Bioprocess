@@ -44,6 +44,12 @@ export const lifted = (l: Layout, c: Camera): Camera => {
   return y === c.position.y ? c : { ...c, position: { ...c.position, y } };
 };
 
+/**
+ * Where the camera goes to when it follows a tube at a new reading of the clock (section 3.4): the tube's place. Under reduced motion (section 9) there is no follow while the clock plays: the camera
+ * cuts to the tube only when the clock is paused (a step, a seek), so it never glides along with the play. Null: stay where it was (the tube is not on the floor, or reduced motion while playing).
+ */
+export const followGoal = (tube: Point | undefined, reducedMotion: boolean, playing: boolean): Point | null => (tube && (!reducedMotion || !playing) ? { x: tube.x, z: tube.z } : null);
+
 const KEYS = { forward: ["w", "ArrowUp"], back: ["s", "ArrowDown"], left: ["a", "ArrowLeft"], right: ["d", "ArrowRight"] } as const;
 const held = (keys: ReadonlySet<string>, names: readonly string[]): number => (names.some((k) => keys.has(k)) ? 1 : 0);
 

@@ -77,8 +77,8 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-label-hall[data-near="1"]:has(.plant-hall-flags:not(:empty)) { border-radius: 8px; padding: 2px 8px; }
 
 /* The record panel: the rows of one card as the lineage screen draws a record, over the right side of the scene (a sheet over the foot of it at the narrow viewport). */
-.plant-record { position: absolute; top: 96px; right: 12px; bottom: 12px; width: min(25rem, calc(100% - 24px)); overflow-y: auto; z-index: 3; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px 12px; }
-.plant-record:focus-visible { outline: 3px solid var(--accent); }
+.plant-record, .plant-panel { position: absolute; top: 150px; right: 12px; bottom: 12px; width: min(25rem, calc(100% - 24px)); overflow-y: auto; z-index: 3; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px 12px; }
+.plant-record:focus-visible, .plant-panel:focus-visible { outline: 3px solid var(--accent); }
 .plant-record-head { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
 .plant-record-head h2 { margin: 6px 0; font-size: 1.05rem; overflow-wrap: anywhere; }
 .plant-record-close { flex: 0 0 auto; min-width: 36px; font-size: 1.2rem; line-height: 1; }
@@ -87,6 +87,33 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-cards { margin-top: 16px; }
 
 @media (max-width: 599px) {
-  .plant-record { top: auto; left: 12px; right: 12px; width: auto; bottom: 12px; max-height: 58%; }
+  .plant-record, .plant-panel { top: auto; left: 12px; right: 12px; width: auto; bottom: 12px; max-height: 58%; }
   .plant-hud-lens { top: 52px; }
+}
+
+/* The truth overlay and the panels of the picked object (P5b, plant_ui.md sections 3.2 and 3.3). The switch sits under the lens chip; the sentence of the label is under it and on every element of the
+   overlay. The label of a rail of placeholders is a dashed pill over the wall (a dashed outline is the shape of "no row"), and the panel of an object is the record panel sheet. */
+.plant-hud-truth { top: 92px; right: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; max-width: min(26rem, calc(100% - 24px)); padding: 4px 8px; z-index: 1; }
+.plant-hud-truth button { min-height: 28px; padding: 0 10px; font-size: 0.85rem; background: var(--bg); }
+.plant-hud-truth button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-overlay-label { display: block; color: var(--muted); font-size: 0.75rem; font-weight: 400; text-align: right; }
+.plant-truth-locked { margin: 2px 0 0; font-size: 0.8rem; text-align: right; }
+.plant-label-absence { border-style: dashed; border-radius: 8px; padding: 1px 8px; text-align: center; font-weight: 600; }
+.plant-label-absence .plant-overlay-label { text-align: center; font-family: inherit; }
+.plant-label-absence[data-lens="0"] { opacity: 0.6; }
+.plant-truth-block { border: 1px dashed var(--border); border-radius: 8px; padding: 2px 10px 8px; margin: 8px 0; }
+.plant-truth-block h3 { margin: 6px 0 2px; font-size: 1rem; overflow-wrap: anywhere; }
+.plant-truth-block .plant-overlay-label { text-align: left; }
+.plant-panel h3 { font-size: 0.95rem; margin: 10px 0 2px; }
+.plant-panel .plant-facts { margin: 4px 0; }
+.plant-panel .plant-object-list { margin: 2px 0; }
+.plant-panel button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-panel-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+.plant-panel-lens { margin: 0; font-size: 0.85rem; }
+.plant-visits, .plant-window-list { margin: 4px 0; padding-left: 1.2em; }
+.plant-tubes { margin-top: 16px; }
+.plant-record[data-record-truth="on"] { width: min(56rem, calc(100% - 24px)); }
+.plant-record-body[data-truth-layout="beside"] { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 4px 12px; align-items: start; }
+@media (max-width: 899px) {
+  .plant-record-body[data-truth-layout="beside"] { grid-template-columns: minmax(0, 1fr); }
 }

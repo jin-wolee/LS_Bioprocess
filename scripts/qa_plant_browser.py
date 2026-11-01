@@ -26,12 +26,19 @@ FRAMES_JS = """(() => {
 # ships none of it.
 RECORD_PLANT_JS = """(() => {
   window.__plantMessages = [];
+  window.__plantSent = [];
   const Original = window.Worker;
   window.Worker = class extends Original {
+    postMessage(data, ...rest) {
+      // what the page asks of the Worker (the type, the epoch and the pick of a request: no data of a run), so that a check can see that nothing is asked before the reader presses the switch
+      if (data && typeof data.type === 'string') window.__plantSent.push({at: performance.now(), type: data.type, epoch: data.epoch, pick: data.pick});
+      return super.postMessage(data, ...rest);
+    }
     constructor(...args) {
       super(...args);
       this.addEventListener('message', (e) => {
-        if (e.data && typeof e.data.type === 'string' && e.data.type.startsWith('plant_')) {
+        // every message of a plant request: the plan, the halls, the record and the truth, and the errors that echo an epoch
+        if (e.data && typeof e.data.type === 'string' && (e.data.type.startsWith('plant_') || (e.data.type === 'error' && e.data.epoch !== undefined))) {
           try { window.__plantMessages.push({at: performance.now(), data: JSON.parse(JSON.stringify(e.data))}); } catch (err) { /* not plain data: a finding of its own */ }
         }
       });

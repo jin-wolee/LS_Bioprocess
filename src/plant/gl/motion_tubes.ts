@@ -1,6 +1,7 @@
 import { BoxGeometry, ConeGeometry, CylinderGeometry, MeshBasicMaterial, MeshStandardMaterial, TorusGeometry } from "three";
 import type { BufferGeometry, Group, Material } from "three";
 import type { SceneState, TubePhase } from "../scene_at.ts";
+import { HELD } from "../dims.ts";
 import { makePool } from "./pool.ts";
 
 // The tubes that follow the clock (docs/design/plant_ui.md sections 3.2 and 4.3): one tube for each sample on the floor, a carrier under it while it rides, a label glyph by method (handwritten, barcode,
@@ -10,7 +11,6 @@ import { makePool } from "./pool.ts";
 const TUBE = { radius: 0.1, height: 0.42 };
 const CUE_Y = TUBE.height + 0.17; // above the tube's base
 const CARRIER = 0.42;
-const HELD = 0.32; // metres: how far in front of the operator a tube in the hand is held
 
 export const buildTubeMotion = (capacity: number, group: Group, disposables: (BufferGeometry | Material)[]): ((state: SceneState) => void) => {
   const geometry = <G extends BufferGeometry>(g: G): G => {

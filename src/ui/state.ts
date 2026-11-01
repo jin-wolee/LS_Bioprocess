@@ -93,6 +93,9 @@ export const reduce = (state: State, action: Action): State => {
     case "plant_record_started":
     case "plant_record_closed":
     case "plant_record_view":
+    case "plant_truth_switched":
+    case "plant_truth_started":
+    case "plant_truth_view":
       return { ...state, plant: reducePlant(state.plant, action) };
     case "ready": {
       const { type, ...ready } = action;

@@ -5,7 +5,8 @@ import type { SampleRecord as EngineRecord } from "../../src/experiments/assembl
 import type { PlantAnswer } from "../../src/experiments/assembly/lab/plant.ts";
 import type { PlantHall } from "../../src/experiments/assembly/lab/plant_stage.ts";
 import type { ScenePlan as EnginePlan } from "../../src/experiments/assembly/lab/plant_plan.ts";
-import type { PlantAction, RefusalReason as PageReason, Request, Response, SampleRecord, ScenePlan } from "../../../src/protocol.ts";
+import type { TruthOverlay as EngineTruth, TruthPick } from "../../src/experiments/assembly/lab/plant_truth.ts";
+import type { PlantAction, RefusalReason as PageReason, Request, Response, SampleRecord, ScenePlan, TruthOverlay } from "../../../src/protocol.ts";
 
 // P3 (docs/design/plant_ui.md section 6): the page imports no engine module, so src/protocol.ts declares the shapes of the plant's plain data. Nothing here runs at run time but the list of kinds;
 // the checks are types, which `npm run typecheck` verifies: a field added to the engine's scene plan or action without the same field in the protocol fails to compile.
@@ -27,6 +28,12 @@ describe("the plant shapes of src/protocol.ts are the engine's", () => {
     expectTypeOf<Extract<Response, { type: "plant_record_view" }>["sample"]>().toEqualTypeOf<EngineRecord>();
     expectTypeOf<SampleRecord>().toEqualTypeOf<EngineRecord>();
     expectTypeOf<Extract<Request, { type: "plant_record" }>>().toEqualTypeOf<{ type: "plant_record"; id: number; epoch: number; architecture: string; sample_id: string }>();
+  });
+
+  it("Given the truth overlay of P5b Then plant_truth_view carries the engine's overlay and plant_truth is asked for by a sample id or the halls, the two picks the Worker answers", () => {
+    expectTypeOf<TruthOverlay>().toEqualTypeOf<EngineTruth>();
+    expectTypeOf<Extract<Response, { type: "plant_truth_view" }>["view"]>().toEqualTypeOf<EngineTruth>();
+    expectTypeOf<Extract<Request, { type: "plant_truth" }>["pick"]>().toEqualTypeOf<TruthPick>();
   });
 
   it("Given the kinds of the engine Then there are eight, as in section 5.2", () => {

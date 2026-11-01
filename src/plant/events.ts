@@ -1,4 +1,5 @@
 import type { ScenePlan } from "../protocol.ts";
+import type { Picked } from "./view.ts";
 
 // The events of the plan that the floor draws (docs/design/plant_ui.md sections 4.2, 4.3 and 9): the instants "next event" steps between, and the lines of the event log of the text alternative.
 // Pure functions of the plan, no clock: the plan lists each instant the log has and the floor draws.
@@ -75,6 +76,41 @@ const buildOf = (plan: ScenePlan): Built => {
 
 /** The instants of the table of section 4.3 that the plan carries, in order and without repeats, inside the run: where "next event" and "previous event" stop. */
 export const eventTimes = (plan: ScenePlan): number[] => buildOf(plan).times;
+
+const unique = (times: readonly number[], horizon: number): number[] => [...new Set(times)].filter((t) => t >= 0 && t <= horizon).sort((a, b) => a - b);
+
+/**
+ * The instants of one picked object (section 4.2, "the picked object"): the ones `,` and `.` step between when something is picked. A sample's are its draw, its arrival and the queue, start, run
+ * start and end of each of its visits; a reactor's its inoculation and end, its marks and the draws on it; an analyzer's the start, run start and end of the visits it holds, its window edges and its
+ * calibrations; an operator's their draws. From the plan alone, sorted and without repeats, as the floor's `eventTimes` are.
+ */
+export const objectTimes = (plan: ScenePlan, p: Picked): number[] => {
+  const draws = (own: (s: ScenePlan["samples"][number]) => boolean): number[] => plan.samples.filter(own).flatMap((s) => (s.drawn_s === null ? [] : [s.drawn_s]));
+  let times: number[];
+  switch (p.kind) {
+    case "sample": {
+      const s = plan.samples[p.index] as ScenePlan["samples"][number];
+      times = [...(s.drawn_s === null ? [] : [s.drawn_s]), ...(s.arrived_s === null ? [] : [s.arrived_s]), ...s.visits.flatMap((v) => [v.queued_s, v.started_s, v.run_started_s, v.ended_s])];
+      break;
+    }
+    case "reactor": {
+      const u = plan.units[p.index] as ScenePlan["units"][number];
+      times = [...(u.start_s === null ? [] : [u.start_s]), ...(u.end_s === null ? [] : [u.end_s]), ...plan.marks.filter((m) => m.unit === p.index).map((m) => m.t), ...draws((s) => s.unit === p.index)];
+      break;
+    }
+    case "analyzer":
+      times = [
+        ...plan.samples.flatMap((s) => s.visits.filter((v) => v.analyzer === p.index).flatMap((v) => [v.started_s, v.run_started_s, v.ended_s])),
+        ...plan.windows.filter((w) => w.analyzer === p.index).flatMap((w) => [w.from_s, w.to_s]),
+        ...plan.calibrations.filter((c) => c.analyzer === p.index).map((c) => c.t),
+      ];
+      break;
+    case "staff":
+      times = draws((s) => s.operator === p.index);
+      break;
+  }
+  return unique(times, plan.horizon_s);
+};
 
 /** The first instant after `t`, or null. `times` is the sorted list of `eventTimes`. */
 export const nextEvent = (times: readonly number[], t: number): number | null => {

@@ -79,6 +79,25 @@ export function Hud({ plan, playback, scenario, check, lens, onLens }: { plan: S
   );
 }
 
+/** The switch of the truth overlay (section 3.3): pressed or not, and whether the Worker refused the overlay because a challenge is open on the run. */
+export interface TruthSwitch {
+  on: boolean;
+  locked: boolean;
+}
+
+/** The switch "Show what the simulation knows", off by default; the sentence of the label is under it, and the `locked` answer is said in words beside it. */
+export function TruthControl({ truth, onTruth }: { truth: TruthSwitch; onTruth: (on: boolean) => void }) {
+  return (
+    <div class="plant-hud plant-hud-truth" data-plant-hud="truth" data-overlay>
+      <button type="button" data-truth-switch aria-pressed={truth.on} onClick={() => onTruth(!truth.on)}>
+        <T k="plant.truth.switch" />
+      </button>
+      <T as="span" k="plant.truth.label" class="plant-overlay-label" data-note="label" />
+      {truth.on && truth.locked && <T as="p" k="plant.truth.locked" class="plant-truth-locked warn" data-truth-locked />}
+    </div>
+  );
+}
+
 /** The one line of hints under the HUD until the first move (section 2): it sits above the bottom bar. */
 export function Hint() {
   return <T as="p" k="plant.hud.hint" class="plant-hint" />;

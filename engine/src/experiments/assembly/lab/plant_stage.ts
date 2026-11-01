@@ -1,4 +1,5 @@
 import type { Metrics } from "../../../generated/metrics.schema";
+import type { MaterialisedError } from "../../../inject/types.ts";
 import { logHash } from "../../../trace.ts";
 import { runSeed } from "../run_seed.ts";
 import type { RecordedDataset } from "../../../record/types.ts";
@@ -8,6 +9,7 @@ import type { PlantAnswer, PlantKept, PlantSpec } from "./plant.ts";
 import type { PlantRefusal } from "./actions.ts";
 import type { PlanRecord } from "./plant_records.ts";
 import { recordsOf } from "./plant_records.ts";
+import { materialisedOf } from "./seed_setup.ts";
 import type { LabData } from "./setup.ts";
 
 // The progressive answer of the `plant_run` request (docs/design/plant_ui.md section 5.5): the truth run and the record of the first architecture of the spec are built and answered at once, as the
@@ -43,7 +45,8 @@ export const stagePlant = async (data: LabData, spec: PlantSpec, previous?: Plan
     const out = runSeed({ ...t.input, architectures: [architecture] });
     const dataset = out.datasets[architecture.id] as RecordedDataset;
     const records = recordsOf([dataset], t.samples);
-    kept.halls.set(architecture.id, keptHall(dataset, records[0] as PlanRecord, t.samples));
+    const errors = materialisedOf({ ...t.input, architectures: [architecture] })[architecture.id] as MaterialisedError[];
+    kept.halls.set(architecture.id, keptHall(dataset, records[0] as PlanRecord, t.samples, errors));
     return { records, cells: { [architecture.id]: await cellsDigest(out.cells[0] as Metrics) } };
   };
   const first = await build(0)();

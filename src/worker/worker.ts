@@ -7,6 +7,7 @@ import { answerLineage } from "../../engine/src/experiments/assembly/lab/lineage
 import type { PlantKept } from "../../engine/src/experiments/assembly/lab/plant.ts";
 import { answerPlantRecord } from "../../engine/src/experiments/assembly/lab/plant_record.ts";
 import { answerPlantStart } from "../../engine/src/experiments/assembly/lab/plant_stage.ts";
+import { answerPlantTruth, checkTruthPick } from "../../engine/src/experiments/assembly/lab/plant_truth.ts";
 import { readyOf } from "../../engine/src/experiments/assembly/lab/ready.ts";
 import { runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
@@ -32,6 +33,10 @@ import { LAB_DATA } from "./data.ts";
 // the spec, as soon as the truth run and that record are built; the other architectures follow as one `plant_halls` message each, in the order of the spec, a turn of the event loop apart, so a newer
 // epoch (which the Worker sees between two halls) cancels the halls still pending and nothing is posted for them. The halls that are built are kept with the truth log (`PlantKept`), and `plant_record`
 // reads the rows of one card from them for the epoch asked for, with no recompute; a request for another epoch is `cancelled` and one for a hall or a sample the run does not hold is refused.
+//
+// P5b adds `plant_truth` (docs/design/plant_ui.md section 6, rule 8): the truth overlay, asked for on the reader's switch only. It is read from the run the Worker kept (the truth log, the halls with
+// the errors the injector materialised on them) with no recompute: for a sample the lineage view's truth column and verdicts, for the halls the placeholders. A challenge open on the same run answers
+// `locked` at the moment of the request; no plant_ready, plant_halls or plant_record_view carries any of it.
 //
 // createWorker holds the whole protocol and touches no global, so the unit tests drive it directly. The entry at the bottom wires it to postMessage when this file runs as a Worker.
 
@@ -202,6 +207,21 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     post({ type: "plant_record_view", id, epoch, sample: out.sample });
   };
 
+  /**
+   * `plant_truth`: what the simulation knows and no record can hold, for the run the Worker kept (plant_truth.ts). The order of the checks: a malformed request, then the epoch (another one is
+   * `cancelled`), then the lock of a challenge on the same run, asked at this moment, then the sample. Answered at once; the epoch is echoed on every message about it.
+   */
+  const plantTruth = (id: number, message: Record<string, unknown>): void => {
+    const { epoch, pick } = message;
+    if (typeof epoch !== "number" || !Number.isInteger(epoch) || epoch < 0) return fail(id, "invalid_spec", "a plant_truth request needs a whole epoch, 0 or more");
+    const checked = checkTruthPick(pick);
+    if (!checked.ok) return post({ type: "error", id, epoch, code: "invalid_spec", message: checked.message });
+    if (plantKept === undefined || epoch !== keptEpoch) return post({ type: "error", id, epoch, code: "cancelled", message: `the Worker holds no plant run of epoch ${epoch}` });
+    const out = answerPlantTruth(plantKept, challenges, checked.pick);
+    if (!out.ok) return post(out.code === "locked" ? { type: "error", id, epoch, code: "locked", message: out.message } : { type: "error", id, epoch, code: "refused", reason: out.reason, message: out.message });
+    post({ type: "plant_truth_view", id, epoch, view: out.view });
+  };
+
   const plantRun = (id: number, message: Record<string, unknown>): Promise<void> | void => {
     const epoch = message.epoch;
     if (typeof epoch !== "number" || !Number.isInteger(epoch) || epoch < 0) return fail(id, "invalid_spec", "a plant_run request needs a whole epoch, 0 or more");
@@ -230,6 +250,7 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     if (type === "breakout") return requestId === null ? fail(null, "invalid_spec", "a breakout request needs a numeric id") : breakout(requestId, message as Record<string, unknown>);
     if (type === "plant_run") return requestId === null ? fail(null, "invalid_spec", "a plant_run request needs a numeric id") : plantRun(requestId, message as Record<string, unknown>);
     if (type === "plant_record") return requestId === null ? fail(null, "invalid_spec", "a plant_record request needs a numeric id") : plantRecord(requestId, message as Record<string, unknown>);
+    if (type === "plant_truth") return requestId === null ? fail(null, "invalid_spec", "a plant_truth request needs a numeric id") : plantTruth(requestId, message as Record<string, unknown>);
     return fail(requestId, "invalid_spec", `unknown request type ${JSON.stringify(type)}`);
   };
 

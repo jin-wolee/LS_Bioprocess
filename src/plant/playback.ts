@@ -19,8 +19,8 @@ export interface Playback {
   seek(t: number): void;
   /** Seek by a number of simulated seconds (an hour, a day), held to the run. */
   jump(seconds: number): void;
-  /** To the next (1) or the previous (-1) event of the plan; pauses. At the first or the last it stays where it is. */
-  step(direction: 1 | -1): void;
+  /** To the next (1) or the previous (-1) event; pauses. At the first or the last it stays where it is. `times` is the sorted list of instants of the picked object (`objectTimes`); without it the events of the whole floor. */
+  step(direction: 1 | -1, times?: readonly number[]): void;
   subscribe(listener: () => void): () => void;
 }
 
@@ -44,8 +44,8 @@ export const createPlayback = (plan: ScenePlan, playing: boolean): Playback => {
     setSpeed: (speed) => set(withSpeed(clock, speed)),
     seek: (t) => set(seek(clock, t, horizon)),
     jump: (seconds) => set(seek(clock, clock.t + seconds, horizon)),
-    step: (direction) => {
-      const to = direction === 1 ? nextEvent(times, clock.t) : previousEvent(times, clock.t);
+    step: (direction, own = times) => {
+      const to = direction === 1 ? nextEvent(own, clock.t) : previousEvent(own, clock.t);
       set({ ...(to === null ? clock : seek(clock, to, horizon)), playing: false });
     },
     subscribe: (listener) => {

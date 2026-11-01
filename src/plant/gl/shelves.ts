@@ -16,6 +16,8 @@ export interface PickedCard {
   architecture: string;
   /** The index into the plan's `samples`. */
   sample: number;
+  /** The distance along the ray to the face of the hall the card is on: the scene compares it with the distance to the other things a click can reach. */
+  distance: number;
 }
 
 export interface Shelves {
@@ -71,7 +73,7 @@ export const buildShelves = (host: HTMLElement, layout: Layout, plan: ScenePlan,
         const distance = ray.origin.distanceTo(hit);
         if (card && distance < nearest) {
           nearest = distance;
-          picked = { architecture: h.architecture, sample: card.sample };
+          picked = { architecture: h.architecture, sample: card.sample, distance };
         }
       }
       return picked;

@@ -94,15 +94,36 @@ export function App({ worker }: { worker: Worker }) {
     worker.postMessage({ type: "plant_run", id, epoch, spec: DEFAULT_PLANT } satisfies Request);
   }, [route.screen, ready !== null, state.plant.ready === null, state.plant.running, state.plant.problem === null]);
 
-  // a card of a record hall is opened: the Worker reads the rows of one sample from the run it keeps for the epoch of the plan on screen (plant_ui.md section 6)
-  const openCard = (architecture: string, sample_id: string): void => {
+  // a card of a record hall is opened: the Worker reads the rows of one sample from the run it keeps for the epoch of the plan on screen (plant_ui.md section 6); the sample panel asks the same for its
+  // own sample, and the answer goes to a slot of its own (`role: "fields"`)
+  const askRecord = (architecture: string, sample_id: string, role?: "fields"): void => {
     const epoch = state.plant.ready?.epoch;
     if (epoch === undefined) return;
     const id = take();
-    dispatch({ type: "plant_record_started", id, epoch, architecture, sample_id });
+    dispatch({ type: "plant_record_started", id, epoch, architecture, sample_id, ...(role && { role }) });
     worker.postMessage({ type: "plant_record", id, epoch, architecture, sample_id } satisfies Request);
   };
+  const openCard = (architecture: string, sample_id: string): void => askRecord(architecture, sample_id);
   const closeCard = (): void => dispatch({ type: "plant_record_closed" });
+  const openFields = (architecture: string, sample_id: string): void => askRecord(architecture, sample_id, "fields");
+  const closeFields = (): void => dispatch({ type: "plant_record_closed", role: "fields" });
+
+  // the truth overlay (plant_ui.md section 3.3): nothing is asked of the Worker before the switch is on. Then, under the epoch of the plan on screen, the placeholders of the halls built so far (asked
+  // again when another hall arrives) and the truth of the sample the record panel shows
+  const plantEpoch = state.plant.ready?.epoch;
+  const hallsBuilt = state.plant.ready ? state.plant.ready.plan.records.length + state.plant.halls.length : 0;
+  const askTruth = (epoch: number, pick: { halls: true } | { sample_id: string }): void => {
+    const id = take();
+    dispatch({ type: "plant_truth_started", id, epoch, pick });
+    worker.postMessage({ type: "plant_truth", id, epoch, pick } satisfies Request);
+  };
+  useEffect(() => {
+    if (state.plant.truth.on && plantEpoch !== undefined) askTruth(plantEpoch, { halls: true });
+  }, [state.plant.truth.on, plantEpoch, hallsBuilt]);
+  const cardOpen = state.plant.record?.sample_id;
+  useEffect(() => {
+    if (state.plant.truth.on && plantEpoch !== undefined && cardOpen !== undefined) askTruth(plantEpoch, { sample_id: cardOpen });
+  }, [state.plant.truth.on, plantEpoch, cardOpen]);
 
   // the form starts from the defaults of the first scenario, or from the link the page was opened with; a link opened later (a hash change) fills it again
   useEffect(() => {
@@ -208,7 +229,7 @@ export function App({ worker }: { worker: Worker }) {
       </header>
       <main id="main" data-ready={ready ? "true" : "false"} data-screen={route.screen} {...(ready && { "data-flags": ready.flags.join(",") })}>
         {route.screen === "home" && <Home state={state} />}
-        {route.screen === "plant" && (ready ? <PlantRoute plant={state.plant} check={state.check.state} onCard={openCard} onCardClose={closeCard} /> : <T as="p" k="app.loading" />)}
+        {route.screen === "plant" && (ready ? <PlantRoute plant={state.plant} check={state.check.state} onCard={openCard} onCardClose={closeCard} onFields={openFields} onFieldsClose={closeFields} onTruth={(on) => dispatch({ type: "plant_truth_switched", on })} /> : <T as="p" k="app.loading" />)}
         {route.screen === "setup" &&
           (ready && form ? (
             <Setup ready={ready} form={form} setForm={setForm} state={state} link={pageAddress()} linkEngine={linkEngine} onRun={run} onCancel={cancel} />

@@ -108,6 +108,15 @@ def matrix_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme
             page.bring_to_front()
             page.evaluate("document.querySelector('.plant-wrap').scrollIntoView({block: 'start'})")  # the scene fills the viewport, bottom bar and all
             page.screenshot(path=str(out / "shots" / f"{name}.png"))
+            # P5b: the panel of a reactor and the truth switch pressed are in the sweep of the numbers too (a figure of a panel is a label)
+            page.click("[data-object-key='reactor:U10']")
+            page.wait_for_selector("[data-plant-panel=reactor]", timeout=10_000)
+            page.click("[data-truth-switch]")
+            page.wait_for_function("() => !!document.querySelector('#plant').dataset.plantAbsences", timeout=30_000)
+            page.wait_for_timeout(200)
+            problems += [f"a number outside a data-ref, data-result or data-label with the panel open: '{o['text']}' in {o['where']}" for o in number_offenders(page.evaluate(NUMBERS_JS))]
+            if page.query_selector("[data-overlay]") is None:
+                problems.append("the truth switch pressed left no element of the overlay")
             problems += [f"console: {e[:140]}" for e in errors]
     except Exception as e:  # a cell that crashed is a failed cell
         problems.append(first_line(e))
