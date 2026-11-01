@@ -1,4 +1,4 @@
-"""Pure helpers of scripts/qa_plant_checks.py (the headless QA of the plant, docs/design/plant_ui.md section 10).
+"""Pure helpers of scripts/qa_plant_helpers.py (the headless QA of the plant, docs/design/plant_ui.md section 10).
 
 Expected values are hand arithmetic, never taken from the code under test. The browser checks themselves run through `uv run python scripts/qa_plant.py`.
 """
@@ -12,7 +12,7 @@ import pytest
 from helpers import REPO
 
 sys.path.insert(0, str(REPO / "scripts"))
-import qa_plant_checks as qp  # noqa: E402
+import qa_plant_helpers as qp  # noqa: E402
 
 HASH = "a" * 64
 
@@ -148,6 +148,63 @@ def test_a_screenshot_is_blank_when_it_has_no_spread_or_almost_no_colours(std, c
 def test_the_plan_opens_at_eight_on_day_zero_and_the_halls_are_the_three_presets():
     assert qp.DEFAULT_START_S == 8 * 3600
     assert qp.DEFAULT_HALLS == ["a_manual", "b_lims_lite", "c_context"]
+
+
+# ---------- the clock and the motion (P4) ----------
+def test_the_speed_presets_are_the_ones_of_the_design():
+    assert qp.SPEEDS == [30, 120, 600, 3600]  # section 4.2
+    assert qp.DEFAULT_SPEED == 120
+
+
+def test_the_busy_stretch_and_the_instants_of_the_shots_are_typed_by_hand():
+    # a day is 86400 s; day 8 at 08:30 is 691200 + 28800 + 1800 s, 08:40 is 600 s later; day 6 at 08:35 is 518400 + 28800 + 2100; day 6 at 23:00 is 518400 + 82800
+    assert qp.BUSY_START_S == 721800
+    assert qp.SHOT_INSTANTS == {"rush": 722400, "rerun": 549300, "night": 601200}
+    assert qp.FIXED_INSTANT_S == 722400
+
+
+@pytest.mark.parametrize("t, day, time", [(0, 0, "00:00"), (86399, 0, "23:59"), (28800, 0, "08:00"), (722400, 8, "08:40"), (549300, 6, "08:35"), (601200, 6, "23:00"), (86400 + 1800, 1, "00:30")])
+def test_the_clock_reading_is_the_day_and_the_time(t, day, time):
+    assert qp.clock_reading(t) == (day, time)
+
+
+def test_a_clock_that_played_through_the_busy_stretch_has_no_problem():
+    assert qp.motion_problems(721800, 722300, "true", 10, "120") == []
+
+
+@pytest.mark.parametrize("start, end, playing, tubes, speed, fragment", [
+    (721800, 722300, "false", 10, "120", "should be playing"),
+    (721800, 721800, "true", 10, "120", "did not advance"),
+    (721800, 721000, "true", 10, "120", "did not advance"),
+    (721800, 722300, "true", 10, "600", "expected 120"),
+    (721800, 722300, "true", 0, "120", "no tube"),
+])
+def test_a_clock_that_did_not_move_samples_is_a_problem(start, end, playing, tubes, speed, fragment):
+    problems = qp.motion_problems(start, end, playing, tubes, speed)
+    assert len(problems) == 1 and fragment in problems[0]
+
+
+def test_screenshots_of_different_instants_must_differ():
+    one = {"rush": qp.shot_digest(b"a"), "rerun": qp.shot_digest(b"b"), "night": qp.shot_digest(b"c")}
+    assert qp.shots_problems(one) == []
+    same = {"rush": qp.shot_digest(b"a"), "rerun": qp.shot_digest(b"a"), "night": qp.shot_digest(b"c")}
+    assert qp.shots_problems(same) == ["the pictures of rerun and rush are identical: the scene did not change with the clock"]
+    assert len(qp.shots_problems({"a": "x", "b": "x", "c": "x"})) == 3  # every identical pair is named
+
+
+def test_the_digest_is_sha256_of_the_bytes():
+    assert qp.shot_digest(b"") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+
+def test_two_runs_at_the_fixed_instant_must_differ_in_no_pixel():
+    assert qp.repro_problems(0, 921600) == []
+    assert qp.repro_problems(7, 921600) == ["two runs at the fixed instant differ in 7 of 921600 pixels"]
+
+
+def test_each_script_of_the_plant_qa_is_a_small_file_of_one_concern():
+    # the repository's target for a source file is 300 lines (prompts/PRINCIPLES.md section 3): the checks are split by concern as the lab's are
+    for path in sorted((REPO / "scripts").glob("qa_plant*.py")):
+        assert len(path.read_text(encoding="utf-8").splitlines()) <= 300, path.name
 
 
 # ---------- the launch arguments are those of the spike ----------

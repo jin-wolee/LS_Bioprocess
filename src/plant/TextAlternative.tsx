@@ -1,12 +1,20 @@
+import { useMemo } from "preact/hooks";
 import { Label, T } from "../ui/T.tsx";
 import type { ScenePlan } from "../protocol.ts";
-import { analyzerRowsAt, clockOf, hallRowsAt, onDuty, statusOf } from "./view.ts";
+import { LiveLog } from "./LiveLog.tsx";
+import type { Playback } from "./playback.ts";
+import { sceneAt } from "./scene_at.ts";
+import { useSlowClock } from "./usePlayback.ts";
+import { clockOf, hallRowsAt, onDuty } from "./view.ts";
 
-// The text alternative of the scene (docs/design/plant_ui.md section 9), at the plan's start: a description of the layout; "the plant as a table" at the clock instant (the reactors with their status,
-// the analyzers with their queue and lamp, the record halls with their cards); and a polite live region that says the plan is ready. It is built from the plan alone, so it is the whole plant when
-// WebGL is missing. The log of events in the live region comes with the clock of P4. Every number is a label.
+// The text alternative of the scene (docs/design/plant_ui.md section 9): a description of the layout; "the plant as a table" at the clock instant (the reactors with their status, the analyzers with
+// their queue and lamp, the record halls with their cards), which follows the clock about once a second of wall time while it plays and at once when it is paused or sought; and a polite live region
+// with the log of events. It is built from the plan alone, so it is the whole plant when WebGL is missing (then the clock stays at the plan's start). Every number is a label.
 
-export function TextAlternative({ plan, at }: { plan: ScenePlan; at: number }) {
+export function TextAlternative({ plan, playback }: { plan: ScenePlan; playback: Playback }) {
+  const shown = useSlowClock(playback, 1);
+  const at = Math.floor(shown.t);
+  const state = useMemo(() => sceneAt(plan, at), [plan, at]);
   const clock = clockOf(at);
   // elements are made fresh for each place a text uses them: a vnode is drawn once
   const clockPart = () => <T k="plant.clock.reading" parts={{ day: <Label>{clock.day}</Label>, time: <Label>{clock.time}</Label> }} />;
@@ -16,9 +24,8 @@ export function TextAlternative({ plan, at }: { plan: ScenePlan; at: number }) {
     <section id="plant-text" class="plant-text" aria-labelledby="plant-text-heading">
       <T as="h2" k="plant.text.heading" id="plant-text-heading" />
       <T as="p" k="plant.text.layout" parts={counts()} />
-      <p id="plant-live" role="status" aria-live="polite" data-plant-live>
-        <T k="plant.text.live" parts={{ ...counts(), clock: clockPart() }} />
-      </p>
+      <T as="h3" k="plant.log.heading" />
+      <LiveLog plan={plan} playback={playback} ready={() => <T k="plant.text.live" parts={{ ...counts(), clock: clockPart() }} />} />
       <T as="h3" k="plant.text.at" parts={{ clock: clockPart() }} />
       {staff.length === 0 ? <T as="p" k="plant.text.staff.none" /> : <T as="p" k="plant.text.staff" parts={{ staff: <Label>{staff.join(", ")}</Label> }} />}
 
@@ -34,7 +41,7 @@ export function TextAlternative({ plan, at }: { plan: ScenePlan; at: number }) {
             </tr>
           </thead>
           <tbody>
-            {plan.units.map((u) => (
+            {plan.units.map((u, i) => (
               <tr key={u.id} data-object-row={`reactor:${u.id}`}>
                 <td>
                   <Label>{u.id}</Label>
@@ -43,7 +50,7 @@ export function TextAlternative({ plan, at }: { plan: ScenePlan; at: number }) {
                   <Label>{u.bay}</Label>
                 </td>
                 <td>{u.batch === null ? <T k="plant.batch.none" /> : <Label>{u.batch}</Label>}</td>
-                <T as="td" k={`plant.status.${statusOf(u, at)}`} />
+                <T as="td" k={`plant.status.${(state.vessels[i] as { lamp: "idle" | "running" | "harvested" | "stopped" }).lamp}`} />
               </tr>
             ))}
           </tbody>
@@ -63,7 +70,7 @@ export function TextAlternative({ plan, at }: { plan: ScenePlan; at: number }) {
             </tr>
           </thead>
           <tbody>
-            {analyzerRowsAt(plan, at).map((a) => (
+            {plan.analyzers.map((a, i) => (
               <tr key={a.id} data-object-row={`analyzer:${a.id}`}>
                 <td>
                   <Label>{a.id}</Label>
@@ -75,9 +82,9 @@ export function TextAlternative({ plan, at }: { plan: ScenePlan; at: number }) {
                   <Label>{a.group}</Label>
                 </td>
                 <td>
-                  <Label>{a.queue}</Label>
+                  <Label>{(state.analyzers[i] as { queue: number }).queue}</Label>
                 </td>
-                <T as="td" k={`plant.lamp.${a.lamp}`} />
+                <T as="td" k={`plant.lamp.${(state.analyzers[i] as { lamp: "idle" | "setup" | "run" | "qc" | "maintenance" | "closed" }).lamp}`} />
               </tr>
             ))}
           </tbody>

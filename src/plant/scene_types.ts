@@ -1,4 +1,5 @@
 import type { Layout } from "./layout.ts";
+import type { Playback } from "./playback.ts";
 import type { ObjectKind } from "./view.ts";
 import type { ScenePlan } from "../protocol.ts";
 
@@ -13,8 +14,8 @@ export interface SceneOptions {
   layout: Layout;
   plan: ScenePlan;
   tier: Tier;
-  /** Where the avatar starts and the clock of the plan it shows: the scene draws the plan at this instant (the static floor of P3). */
-  at: number;
+  /** The clock: the frame loop gives it the wall seconds of each frame and draws `sceneAt` at the instant it reads (docs/design/plant_ui.md section 4.2). */
+  playback: Playback;
   /** Reduced motion: the camera cuts and the avatar steps without a glide. */
   reducedMotion: boolean;
 }

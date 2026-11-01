@@ -4,15 +4,18 @@ import { DEFAULT_VIEW, cameraAt, drag, heading, keyDirection, lifted, tilt, turn
 import type { View } from "../controls.ts";
 import type { Point } from "../layout.ts";
 import type { Scene, SceneOptions } from "../scene_types.ts";
+import { sceneAt } from "../scene_at.ts";
 import { SPEED, advance, pathOf, stepTo } from "../walk.ts";
 import { PALETTE, buildRoom } from "./floor.ts";
 import { listen } from "./input.ts";
 import { buildLabels } from "./labels.ts";
+import { buildMotion } from "./motion.ts";
 import { buildThings } from "./shapes.ts";
 
 // The scene of the plant (docs/design/plant_ui.md sections 2, 3 and 9): the one module that makes a WebGL renderer. It builds the room and the things from the layout, puts a plain operator figure
 // at the entrance, and runs a frame loop that walks the figure (click, or the keys), moves the third-person camera (drag, wheel, pinch, keys) and draws. Everything it decides with is in the
-// pure modules (layout, walk, controls); this file is the glue to three.js and the DOM. It draws the plan at one instant (P3: the static floor); the motion of the run is P4.
+// pure modules (layout, walk, controls, scene_at); this file is the glue to three.js and the DOM. Its frame loop is the one place that passes wall seconds to the clock of the run, and the scene it
+// draws is `sceneAt` at the instant the clock reads (P4).
 
 const HEAD = 1.3; // metres: the point the camera looks at, on the figure
 const SKY = new Color(PALETTE.sky);
@@ -43,7 +46,7 @@ const buildAvatar = (disposables: (BufferGeometry | Material)[]): Group => {
   return figure;
 };
 
-export const mountScene = ({ host, layout, plan, tier, at, reducedMotion }: SceneOptions): Scene => {
+export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion }: SceneOptions): Scene => {
   const canvas = document.createElement("canvas");
   canvas.className = "plant-canvas";
   host.appendChild(canvas);
@@ -58,7 +61,8 @@ export const mountScene = ({ host, layout, plan, tier, at, reducedMotion }: Scen
   const scene = new ThreeScene();
   scene.background = SKY;
   scene.fog = new Fog(PALETTE.sky, 60, 160);
-  scene.add(new HemisphereLight(0xffffff, 0xc9d4dc, 1.6));
+  const hemi = new HemisphereLight(0xffffff, 0xc9d4dc, 1.6);
+  scene.add(hemi);
   const sun = new DirectionalLight(0xffffff, 1.6);
   const span = Math.max(layout.width, layout.depth);
   sun.position.set(layout.width * 0.75, span * 0.8, layout.depth * 1.15); // from the south, over the shoulder of a walker who enters there: the faces toward the camera are lit
@@ -69,8 +73,8 @@ export const mountScene = ({ host, layout, plan, tier, at, reducedMotion }: Scen
   sun.shadow.camera.updateProjectionMatrix();
   scene.add(sun, sun.target);
 
-  const built = buildThings(layout, plan, at);
-  const room = buildRoom(layout);
+  const built = buildThings(layout);
+  const { room, glass } = buildRoom(layout);
   scene.add(room, built.group);
 
   const disposables = [...built.disposables];
@@ -87,6 +91,9 @@ export const mountScene = ({ host, layout, plan, tier, at, reducedMotion }: Scen
 
   const camera = new PerspectiveCamera(50, 1, 0.1, 300);
   const labels = buildLabels(host, layout, plan);
+  const motion = buildMotion(layout, plan, built, { scene, hemi, sun, glass }, labels, disposables);
+  scene.add(motion.group);
+  let drawn = Number.NaN; // the clock reading `motion` was last written for
 
   // the state of the walker and the view
   let position: Point = { ...layout.entrance };
@@ -162,6 +169,17 @@ export const mountScene = ({ host, layout, plan, tier, at, reducedMotion }: Scen
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
+
+    // the clock of the run: wall seconds in, and the scene written again only when the reading changed
+    playback.tick(dt);
+    const t = playback.get().t;
+    if (t !== drawn) {
+      drawn = t;
+      const state = sceneAt(plan, t);
+      motion.update(state);
+      const tubes = String(state.tubes.length);
+      if (host.dataset.plantTubes !== tubes) host.dataset.plantTubes = tubes;
+    }
 
     const direction = keyDirection(keys, view.yaw);
     let moving = false;

@@ -1,7 +1,7 @@
 import type { ScenePlan } from "../protocol.ts";
 
-// What the HUD, the objects list and the text alternative say about a scene plan at an instant (docs/design/plant_ui.md sections 3.2 and 9). Pure functions of the plan and of integer seconds of
-// the run: no clock of the page, no three.js. P3 draws the plan at its start; P4's `sceneAt` becomes the one source of what is where at an instant, and these answer from the plan until then.
+// What the HUD, the objects list and the text alternative say about a scene plan (docs/design/plant_ui.md sections 3.2 and 9). Pure functions of the plan and of seconds of the run: no clock of the
+// page, no three.js. What is where at an instant is `sceneAt` (scene_at.ts), the one source; the clock reading, the roster and the lists of objects are here.
 
 const DAY = 86400;
 
@@ -21,37 +21,6 @@ export const startInstant = (plan: ScenePlan): number => {
 
 /** The operators whose shift contains the instant: a shift is on from its first second and off at its last. */
 export const onDuty = (plan: ScenePlan, t: number): string[] => plan.staff.filter((s) => s.on_duty.some(([from, to]) => from <= t && t < to)).map((s) => s.id);
-
-export type UnitStatus = "idle" | "running" | "ended";
-
-/** A reactor is idle before its inoculation (and for ever when it has none), running from it, and ended from its harvest or stop. */
-export const statusOf = (unit: ScenePlan["units"][number], t: number): UnitStatus => {
-  if (unit.start_s === null || t < unit.start_s) return "idle";
-  return unit.end_s !== null && t >= unit.end_s ? "ended" : "running";
-};
-
-export type Lamp = "idle" | "qc" | "maintenance" | "closed";
-
-export interface AnalyzerRow {
-  id: string;
-  profile: string;
-  group: string;
-  /** The tubes waiting in the intake lane of its group: queued and not yet started. */
-  queue: number;
-  lamp: Lamp;
-}
-
-export const analyzerRowsAt = (plan: ScenePlan, t: number): AnalyzerRow[] => {
-  const waiting = (group: string): number =>
-    plan.samples.reduce((n, s) => n + s.visits.filter((v) => (plan.analyzers[v.analyzer] as { group: string }).group === group && v.queued_s <= t && t < v.started_s).length, 0);
-  return plan.analyzers.map((a, i) => ({
-    id: a.id,
-    profile: a.profile,
-    group: a.group,
-    queue: waiting(a.group),
-    lamp: plan.windows.find((w) => w.analyzer === i && w.from_s <= t && t < w.to_s)?.kind ?? "idle",
-  }));
-};
 
 export interface HallRow {
   architecture: string;

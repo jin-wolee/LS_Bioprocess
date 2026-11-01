@@ -66,6 +66,7 @@ export interface PlanVisit {
   attempt: number;
   qc: string | null;
   setup_s: number;
+  diluted: boolean;
 }
 
 export interface PlanSlot {
@@ -95,6 +96,7 @@ export interface ScenePlan {
   samples: { id: string; unit: number; operator: number | null; planned_s: number; drawn_s: number | null; arrived_s: number | null; label: string | null; kind: "routine" | "confirm"; skipped: boolean; visits: PlanVisit[] }[];
   marks: { t: number; unit: number; kind: string; source: "rule" | "scheduled" | "scripted" | null; item: string | null }[];
   windows: { analyzer: number; kind: "qc" | "maintenance" | "closed"; from_s: number; to_s: number }[];
+  calibrations: { analyzer: number; t: number }[];
   records: { architecture: string; flags_on: string[]; cards: PlanCard[] }[];
 }
 

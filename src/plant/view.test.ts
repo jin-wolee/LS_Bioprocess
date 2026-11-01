@@ -5,7 +5,8 @@ import { labData } from "../../engine/tests/support/lab_data.ts";
 import { SMALL } from "../../engine/tests/support/scenarios.ts";
 import type { ScenePlan } from "../protocol.ts";
 import { layoutOf } from "./layout.ts";
-import { analyzerRowsAt, clockOf, countsOf, hallRowsAt, objectsOf, onDuty, startInstant, statusOf } from "./view.ts";
+import { sceneAt } from "./scene_at.ts";
+import { clockOf, countsOf, hallRowsAt, objectsOf, onDuty, startInstant } from "./view.ts";
 
 // docs/design/plant_ui.md sections 3.2 and 9: what the HUD, the objects list and the text alternative say about a plan at an instant. Pure functions of the plan; the expected values are typed by hand
 // from a plan built by hand (a day is 86400 s; the first shift of a weekday is 08:00 to 13:00, 28800 to 46800 s, as in the default roster).
@@ -28,12 +29,13 @@ const plan: ScenePlan = {
   ],
   samples: [
     { id: "U01-D00-1", unit: 0, operator: 0, planned_s: 30000, drawn_s: 30100, arrived_s: 30900, label: "handwritten", kind: "routine", skipped: false,
-      visits: [{ analyzer: 0, queued_s: 31000, started_s: 31500, run_started_s: 31500, ended_s: 31770, attempt: 1, qc: "qc_passed", setup_s: 0 }] },
+      visits: [{ analyzer: 0, queued_s: 31000, started_s: 31500, run_started_s: 31500, ended_s: 31770, attempt: 1, qc: "qc_passed", setup_s: 0, diluted: false }] },
     { id: "U02-D00-1", unit: 1, operator: 1, planned_s: 30500, drawn_s: 30600, arrived_s: 31100, label: "handwritten", kind: "routine", skipped: false,
-      visits: [{ analyzer: 1, queued_s: 31200, started_s: 31800, run_started_s: 31800, ended_s: 32070, attempt: 1, qc: "qc_passed", setup_s: 0 }] },
+      visits: [{ analyzer: 1, queued_s: 31200, started_s: 31800, run_started_s: 31800, ended_s: 32070, attempt: 1, qc: "qc_passed", setup_s: 0, diluted: false }] },
   ],
   marks: [],
   windows: [{ analyzer: 0, kind: "qc", from_s: 28800, to_s: 30600 }, { analyzer: 0, kind: "closed", from_s: 64800, to_s: 115200 }],
+  calibrations: [],
   records: [
     { architecture: "a_manual", flags_on: ["audit_trail"], cards: [
       { sample: 0, shown_s: 30000, available_s: null, slots: [], findings: [], versions: 1 },
@@ -66,39 +68,6 @@ describe("the staff on duty", () => {
     expect(onDuty(plan, 64800)).toEqual([]);
     expect(onDuty(plan, 0)).toEqual([]);
     expect(onDuty(plan, 115200)).toEqual(["OP-01", "OP-02"]); // day 1
-  });
-});
-
-describe("the reactors at an instant", () => {
-  it("Given a unit that is inoculated and harvested Then it is idle before its start, running from it, and ended from its end", () => {
-    const u = plan.units[0] as ScenePlan["units"][number];
-    expect([28799, 28800, 547199, 547200].map((t) => statusOf(u, t))).toEqual(["idle", "running", "running", "ended"]);
-  });
-  it("Given a unit with no end in the plan Then it runs to the end; a unit with no start stays idle", () => {
-    expect(statusOf(plan.units[1] as ScenePlan["units"][number], 600000)).toBe("running");
-    expect(statusOf(plan.units[2] as ScenePlan["units"][number], 600000)).toBe("idle");
-  });
-});
-
-describe("the analyzers at an instant", () => {
-  it("Given the QC window of AN-1 (28800 to 30600) Then its lamp is qc inside it and idle after it; AN-2 has no window", () => {
-    expect(analyzerRowsAt(plan, 28800).map((a) => a.lamp)).toEqual(["qc", "idle"]);
-    expect(analyzerRowsAt(plan, 30600).map((a) => a.lamp)).toEqual(["idle", "idle"]);
-  });
-
-  it("Given its closed window (64800 to 115200) Then its lamp reads closed", () => {
-    expect(analyzerRowsAt(plan, 70000)[0]?.lamp).toBe("closed");
-  });
-
-  it("Given two tubes in the lane of the group (queued at 31000 and 31200, started at 31500 and 31800) Then the queue at 31300 is 2, at 31600 is 1, and at 31800 is 0 for both analyzers of the group", () => {
-    expect(analyzerRowsAt(plan, 31300).map((a) => a.queue)).toEqual([2, 2]);
-    expect(analyzerRowsAt(plan, 31600).map((a) => a.queue)).toEqual([1, 1]);
-    expect(analyzerRowsAt(plan, 31800).map((a) => a.queue)).toEqual([0, 0]);
-    expect(analyzerRowsAt(plan, 28800).map((a) => a.queue)).toEqual([0, 0]);
-  });
-
-  it("Given the rows Then each names its analyzer, profile and group", () => {
-    expect(analyzerRowsAt(plan, 0)[1]).toMatchObject({ id: "AN-2", profile: "allinone_atline", group: "AIO" });
   });
 });
 
@@ -135,6 +104,6 @@ describe("the plan and the layout agree (the real plan of the small default scen
     // at the start of the plan: nobody before 08:00 of day 0; two operators from it (A098), one reactor inoculated (U01 at 28800 s)
     expect(startInstant(real)).toBe(28800);
     expect(onDuty(real, startInstant(real))).toEqual(["OP-01", "OP-02"]);
-    expect(real.units.map((u) => statusOf(u, 28800))).toEqual(["running", "idle", "idle", "idle", "idle", "idle"]);
+    expect(sceneAt(real, 28800).vessels.map((v) => v.lamp)).toEqual(["running", "idle", "idle", "idle", "idle", "idle"]);
   }, 60_000);
 });

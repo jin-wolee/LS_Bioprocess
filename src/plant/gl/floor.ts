@@ -49,8 +49,8 @@ const tileTexture = (): CanvasTexture => {
   return texture;
 };
 
-/** The floor, the walls and the painted aisles. */
-export const buildRoom = (layout: Layout): Group => {
+/** The floor, the walls and the painted aisles; and the material of the windows, which the light of the day changes (motion.ts). */
+export const buildRoom = (layout: Layout): { room: Group; glass: MeshBasicMaterial } => {
   const room = new Group();
   const { width, depth } = layout;
 
@@ -99,5 +99,5 @@ export const buildRoom = (layout: Layout): Group => {
   paint.instanceMatrix.needsUpdate = true;
   paint.receiveShadow = true;
   room.add(paint);
-  return room;
+  return { room, glass };
 };

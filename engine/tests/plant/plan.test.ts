@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { HIDDEN_FIELDS, TRUTH_ONLY_TYPES, observeEvents } from "../../src/observe.ts";
+import type { ObservableEvent } from "../../src/observe.ts";
 import { runSeed } from "../../src/experiments/assembly/run_seed.ts";
 import { layoutSpec, plannedIds, scenePlan } from "../../src/experiments/assembly/lab/plant_plan.ts";
 import type { ScenePlan } from "../../src/experiments/assembly/lab/plant_plan.ts";
@@ -17,11 +18,11 @@ import { SMALL } from "../support/scenarios.ts";
 
 const data = labData();
 const HALLS = ["a_manual", "b_lims_lite", "c_context"];
-const build = (settings: Record<string, number>) => {
+const build = (settings: Record<string, number>, extra: ObservableEvent[] = []) => {
   const spec: RunSpec = { schema_version: "1", scenario: "default", settings, architectures: HALLS, seeds: [1] };
   const { run, input } = labSeed(data, spec, 1, architecturesNamed(data, HALLS));
   const out = runSeed(input);
-  const events = observeEvents(run.events);
+  const events = [...observeEvents(run.events), ...extra];
   const cfg = scenarioConfig(data, "default", settings, 1);
   const records = recordsOf(HALLS.map((id) => out.datasets[id] as RecordedDataset), plannedIds(events));
   return scenePlan({ seed: 1, cfg, events, operators: run.operators.map((o) => o.operator_id), windows: run.l3Input.windows, layout: layoutSpec(data, spec, cfg, HALLS), records });
@@ -72,7 +73,7 @@ describe("The scene plan of the small default scenario", () => {
   it("Given sample U03-D03-1 Then its times, its tube, its label and its one visit are the ones of the log", () => {
     expect(sample("U03-D03-1")).toEqual({
       id: "U03-D03-1", unit: 2, operator: 1, planned_s: 305421, drawn_s: 305626, arrived_s: 306770, label: "handwritten", kind: "routine", skipped: false,
-      visits: [{ analyzer: 0, queued_s: 306770, started_s: 306770, run_started_s: 306770, ended_s: 307040, attempt: 1, qc: "qc_passed", setup_s: 0 }],
+      visits: [{ analyzer: 0, queued_s: 306770, started_s: 306770, run_started_s: 306770, ended_s: 307040, attempt: 1, qc: "qc_passed", setup_s: 0, diluted: false }],
     });
   });
 
@@ -101,6 +102,21 @@ describe("The scene plan of the small default scenario", () => {
     ]);
     expect(plan.windows.every((w) => w.from_s < plan.horizon_s)).toBe(true);
   });
+
+  it("Given eight days and a calibration every two hours (7200 s) on each of two analyzers Then the plan lists 97 each, from the start of the run to its end, by instant and then analyzer", () => {
+    // 691200 s of horizon over 7200 s is 96 intervals, so 97 calibrations an analyzer: the first at 0 and the last at 691200 s, the horizon itself (the log holds the event at the end);
+    // only the instant and the analyzer reach the plan (drift_before_pct is hidden)
+    expect(plan.calibrations).toHaveLength(194);
+    expect(plan.calibrations.slice(0, 5)).toEqual([{ analyzer: 0, t: 0 }, { analyzer: 1, t: 0 }, { analyzer: 0, t: 7200 }, { analyzer: 1, t: 7200 }, { analyzer: 0, t: 14400 }]);
+    expect(plan.calibrations[193]).toEqual({ analyzer: 1, t: 691200 });
+  });
+
+  it("Given a dilution_applied event for the first visit of U03-D03-1 (typed by hand) Then that visit alone is marked diluted, with no factor in the plan", () => {
+    const diluted = build(SMALL, [{ type: "dilution_applied", t: 306770, request_id: "U03-D03-1", attempt: 1, visit: 1, dilution_factor: 2 }]);
+    const marked = diluted.samples.flatMap((s) => s.visits.map((v) => [s.id, v.attempt, v.diluted] as const)).filter(([, , d]) => d);
+    expect(marked).toEqual([["U03-D03-1", 1, true]]);
+    expect(JSON.stringify(diluted)).not.toContain("dilution_factor");
+  }, 60_000);
 });
 
 describe("The record halls of the plan", () => {
@@ -163,7 +179,7 @@ describe("A skipped draw (the volume cap lowered to 0.1 percent, A207): U05-D05-
 describe("The truth boundary of the plan (lab_ui.md section 4, rule 1 as amended)", () => {
   // The allow-list is typed from plant_ui.md section 4.1: the exact keys at every level.
   const SHAPE: Record<string, readonly string[]> = {
-    plan: ["schema_version", "seed", "horizon_s", "layout", "units", "analyzers", "staff", "samples", "marks", "windows", "records"],
+    plan: ["schema_version", "seed", "horizon_s", "layout", "units", "analyzers", "staff", "samples", "marks", "windows", "calibrations", "records"],
     layout: ["bays", "analyzers", "architectures"],
     bay: ["size", "profile"],
     layoutAnalyzer: ["profile", "group"],
@@ -171,9 +187,10 @@ describe("The truth boundary of the plan (lab_ui.md section 4, rule 1 as amended
     analyzer: ["id", "profile", "group"],
     staff: ["id", "on_duty"],
     sample: ["id", "unit", "operator", "planned_s", "drawn_s", "arrived_s", "label", "kind", "skipped", "visits"],
-    visit: ["analyzer", "queued_s", "started_s", "run_started_s", "ended_s", "attempt", "qc", "setup_s"],
+    visit: ["analyzer", "queued_s", "started_s", "run_started_s", "ended_s", "attempt", "qc", "setup_s", "diluted"],
     mark: ["t", "unit", "kind", "source", "item"],
     window: ["analyzer", "kind", "from_s", "to_s"],
+    calibration: ["analyzer", "t"],
     record: ["architecture", "flags_on", "cards"],
     card: ["sample", "shown_s", "available_s", "slots", "findings", "versions"],
     slot: ["name", "stored", "basis"],
@@ -195,6 +212,7 @@ describe("The truth boundary of the plan (lab_ui.md section 4, rule 1 as amended
     plan.samples.forEach((s) => { within(s, "sample", "sample"); s.visits.forEach((v) => within(v, "visit", "visit")); });
     plan.marks.forEach((m) => within(m, "mark", "mark"));
     plan.windows.forEach((w) => within(w, "window", "window"));
+    plan.calibrations.forEach((c) => within(c, "calibration", "calibration"));
     plan.records.forEach((r) => { within(r, "record", "record"); r.cards.forEach((c) => { within(c, "card", "card"); c.slots.forEach((s) => within(s, "slot", "slot")); }); });
   });
 

@@ -46,4 +46,18 @@ a.primary-link:hover { text-decoration: underline; }
 
 @media (max-width: 599px) {
   .plant-hud-place { max-width: calc(100% - 24px); }
+  .plant-time-keys { display: none; }
 }
+
+/* The controls of the clock of the run (plant_ui.md section 4.2): play and pause, the step between events, the four speeds and the scrubber with a tick at every day boundary. A pressed button
+   (the playing state, the chosen speed) is filled, so the state is shown by the fill and by the label as well as by colour. */
+.plant-time { width: min(44rem, 100%); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px 10px; }
+.plant-time-buttons, .plant-speeds { display: flex; gap: 4px; }
+.plant-time button { min-width: 36px; padding: 2px 10px; background: var(--bg); }
+.plant-time button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-scrub { position: relative; flex: 1 1 12rem; min-width: 8rem; height: 36px; display: flex; align-items: center; }
+.plant-scrub input[type="range"] { position: relative; width: 100%; margin: 0; }
+.plant-ticks { position: absolute; left: 8px; right: 8px; top: 0; bottom: 0; pointer-events: none; }
+.plant-tick { position: absolute; top: 8px; bottom: 8px; width: 1px; background: var(--muted); opacity: 0.6; }
+.plant-time-keys { flex: 1 0 100%; margin: 0; color: var(--muted); font-size: 0.8rem; }
+.plant-log-switch { display: block; margin: 4px 0; font-size: 0.9rem; }

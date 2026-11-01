@@ -6,7 +6,7 @@ import type { PlantAction, PlantState } from "./plant_state.ts";
 // docs/design/plant_ui.md section 5.5 and section 6, rule 3: the page asks for a plan under an epoch and drops every answer, and every error, whose epoch is not the newest it asked for. The plan
 // it already has stays drawn until the newer one arrives.
 
-const plan = (seed: number): ScenePlan => ({ schema_version: "1", seed, horizon_s: 0, layout: { bays: [], analyzers: [], architectures: [] }, units: [], analyzers: [], staff: [], samples: [], marks: [], windows: [], records: [] });
+const plan = (seed: number): ScenePlan => ({ schema_version: "1", seed, horizon_s: 0, layout: { bays: [], analyzers: [], architectures: [] }, units: [], analyzers: [], staff: [], samples: [], marks: [], windows: [], calibrations: [], records: [] });
 const ready = (id: number, epoch: number, seed = epoch): Extract<Response, { type: "plant_ready" }> => ({
   type: "plant_ready", id, epoch, plan: plan(seed), resume_at: 0, hashes: { truth: `t${epoch}`, cells: { a_manual: `c${epoch}` } }, checks: { prefix_equal: null, truth_equal: null },
 });

@@ -30,6 +30,8 @@ export interface PlanVisit {
   attempt: number;
   qc: string | null;
   setup_s: number;
+  /** A `dilution_applied` event for this visit: the mark on the tube. The factor is not in the plan. */
+  diluted: boolean;
 }
 
 export interface ScenePlan {
@@ -43,6 +45,8 @@ export interface ScenePlan {
   samples: { id: string; unit: number; operator: number | null; planned_s: number; drawn_s: number | null; arrived_s: number | null; label: string | null; kind: "routine" | "confirm"; skipped: boolean; visits: PlanVisit[] }[];
   marks: { t: number; unit: number; kind: string; source: "rule" | "scheduled" | "scripted" | null; item: string | null }[];
   windows: { analyzer: number; kind: "qc" | "maintenance" | "closed"; from_s: number; to_s: number }[];
+  /** The instants of `calibration_recorded` on each analyzer, once for each (analyzer, instant), by instant and then analyzer: the card on the analyzer. The drift is hidden and not in the plan. */
+  calibrations: { analyzer: number; t: number }[];
   records: PlanRecord[];
 }
 
@@ -107,6 +111,7 @@ export const scenePlan = ({ seed, cfg, events, operators, windows, layout, recor
   const labels = new Map<string, string>();
   const visits = new Map<string, Map<string, VisitParts>>();
   const marks: { event: ObservableEvent; unit_id: string }[] = [];
+  const calibrations = new Map<string, { analyzer: number; t: number }>();
   const visit = (e: { request_id: string; attempt: number; visit: number }): VisitParts => {
     const of = visits.get(e.request_id) ?? new Map<string, VisitParts>();
     visits.set(e.request_id, of);
@@ -134,6 +139,12 @@ export const scenePlan = ({ seed, cfg, events, operators, windows, layout, recor
       case "run_started": visit(e).run_started_s = e.t; break;
       case "qc_result": visit(e).qc = e.outcome; break;
       case "visit_finished": visit(e).ended_s = e.t; break;
+      case "dilution_applied": visit(e).diluted = true; break;
+      case "calibration_recorded": {
+        const analyzer = analyzerIndex.get(e.analyzer) as number;
+        calibrations.set(`${analyzer}@${e.t}`, { analyzer, t: e.t });
+        break;
+      }
       default: break;
     }
   }
@@ -166,7 +177,7 @@ export const scenePlan = ({ seed, cfg, events, operators, windows, layout, recor
         if (analyzer === undefined || queued_s === undefined || started_s === undefined || run_started_s === undefined || ended_s === undefined || setup_s === undefined) {
           throw new Error(`scene plan: visit ${key} of ${id} is incomplete in the log (queued, started, run started and finished are all needed)`);
         }
-        return { analyzer, queued_s, started_s, run_started_s, ended_s, attempt: v.attempt, qc: v.qc ?? null, setup_s };
+        return { analyzer, queued_s, started_s, run_started_s, ended_s, attempt: v.attempt, qc: v.qc ?? null, setup_s, diluted: v.diluted ?? false };
       }),
     };
   });
@@ -188,6 +199,7 @@ export const scenePlan = ({ seed, cfg, events, operators, windows, layout, recor
       item: e.type === "process_event" ? (e.lot_id ?? e.equipment_id ?? null) : null,
     })),
     windows: windows.filter((w) => w.start_s < horizon_s).map((w) => ({ analyzer: analyzerIndex.get(w.analyzer) as number, kind: w.kind ?? "qc", from_s: w.start_s, to_s: w.end_s })),
+    calibrations: [...calibrations.values()].sort((a, b) => a.t - b.t || a.analyzer - b.analyzer),
     records,
   };
 };
