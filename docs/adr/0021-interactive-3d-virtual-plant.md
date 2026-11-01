@@ -50,5 +50,7 @@ Proposed: option 3 (the author's choice).
 
 > Chose "3D", "게임처럼 직접 운영" and "S4 전에 먼저 (Recommended)" (chat, 2026-10-31)
 
+> "https://sansatemple.com/ 이런 느낌이야. 가상공간이지." (chat, 2026-11-01: the reference for the feel; a walkable three.js space with a third-person avatar, click to walk, drag to look, a top HUD and a bottom action bar; the plant takes the feel, never the look or an asset)
+
 ## Decider's note
 _(author only — Claude never writes here)_
