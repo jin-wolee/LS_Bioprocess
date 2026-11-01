@@ -2,6 +2,10 @@
 docs/private/
 .guardrails.local.txt
 
+# local secrets (tokens, keys); never committed
+.env
+.env.*
+
 # local state written by hooks (and the batch marker the orchestrator writes)
 .claude/settings.local.json
 .claude/.dirty

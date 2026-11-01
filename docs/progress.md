@@ -2718,3 +2718,18 @@ A CI-like dry run: the files git would check out (806, none of the ignored ones)
 - Orchestrator mutations on the scratch worktree, restored and compared with `cmp`: the same-day rule of `moveFault` removed (2 tests fail); a skipped draw drawn as not skipped in the scene plan (1 fails).
 - Rulings on the executor's findings: (1) Results carries `add_feed`, `raise_alarm`, `analyzer_down` and `change_lot` only; the three lab settings stay Setup's own. The literal reading of the author's "리액터·분석기 단위 조작만 반영" is accepted. (2) `set_labelling` changes the strict truth hash through `label_bound`, since the labelling method is an L2 setting of the truth world (spec 2.2); the amended section 5.3 and the checks that leave out `label_bound` are accepted. (3) The plan of 427 KB at the default size is a message inside the browser, not a download; P3 measures the round trip with the transfer against the 600 ms budget, and slimmer cards are the remedy if it fails. (4) The `plant_run` message, the epochs and the time at N = 100 go to P3; `plant_halls` to P5; `plant_reference.json` to P6.
 - ADR-0021 stays Proposed until the author's acceptance file (`docs/adr/review_2026-11-01_adr0021.json`, dry run clean) is applied and committed by the author.
+
+## 2026-11-01 — SEC1: banned-token messages print no term (executor, uncommitted)
+
+The repository goes public and so do its Actions logs, so a hit of the banned-token check must not print the term it matched.
+- `scripts/docs_rules.py`: `banned_hits` returns the 1-based item numbers of the loaded list (comment and blank lines are not items); new `banned_lines` (line and items) and `banned_message`, the one wording: "banned token(s): list item 3, 7 (see .guardrails.local.txt or GUARDRAIL_TERMS; the terms are not printed)". `scan_file` reports `file:line:` plus that wording, once per matching line, so `--all`, `--ci`, `--hook` and `--staged` (and the pre-commit hook, which runs it) share it.
+- `scripts/check_docs.py`: the history scan prints the item numbers only. Pass or fail did not change in any mode. The hook scripts under `scripts/` only relay this output or print no term, so they are unchanged.
+- `tests/test_banned_messages.py` (new, made-up terms): file, line and item numbers appear and no term in any case, for `--all`, `--all --ci`, the secret, `--hook`, `--staged`, pre-commit, `--history` and pre-push. Red first (9 of 10 failed, printing the terms), then green.
+- `.gitignore`: `.env` and `.env.*` (local secrets).
+
+### Orchestrator review (2026-11-01)
+
+**Verdict**: PASS, no rework. The executor worked in its own worktree, made from 7392537; `scripts/docs_rules.py`, `scripts/check_docs.py`, `.gitignore` and `tests/test_check_docs.py` are unchanged between that commit and HEAD, so the files were copied over as they are.
+- With a made-up list of two items, the second a phrase present in the repository and its history, run in the worktree with no local list: `--history` and `--all --ci` failed as they should, named item 2 with file and line, and printed the phrase on no line (0 of the output lines).
+- Orchestrator mutation: the item numbers counted from 0 (9 of 91 tests fail); restored.
+- `uv run pytest -q` in the worktree: 486 passed. In the main tree `check_docs --all` with the real list passes; its pytest run fails 13 tests of `tests/test_check_docs.py` only because the P3 executor's unfinished `scripts/qa_plant_checks.py` (untracked, not in this commit) cites a ledger id that the fixture repository lacks; the P3 executor was told. The Node checks are untouched by this change and run with the next batch's gate.

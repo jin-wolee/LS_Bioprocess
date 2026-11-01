@@ -23,9 +23,28 @@ def load_terms(root: Path) -> list[str] | None:
     return [ln.strip().lower() for ln in lines if ln.strip() and not ln.strip().startswith("#")]
 
 
-def banned_hits(text: str, terms: list[str]) -> list[str]:
+def banned_hits(text: str, terms: list[str]) -> list[int]:
+    """1-based numbers of the list items found in the text. A hit reports these numbers, never the term."""
     low = text.lower()
-    return [t for t in terms if t in low]
+    return [n for n, t in enumerate(terms, 1) if t in low]
+
+
+def banned_lines(text: str, terms: list[str]) -> list[tuple[int, list[int]]]:
+    """(line number, item numbers) for each line of the text that holds a listed term."""
+    items = banned_hits(text, terms)
+    if not items:
+        return []
+    out = []
+    for n, line in enumerate(text.lower().split("\n"), 1):
+        here = [i for i in items if terms[i - 1] in line]
+        if here:
+            out.append((n, here))
+    return out
+
+
+def banned_message(items: list[int]) -> str:
+    """The one wording of a hit: item numbers of the loaded list, no term (the log may be public)."""
+    return f"banned token(s): list item {', '.join(map(str, items))} (see .guardrails.local.txt or GUARDRAIL_TERMS; the terms are not printed)"
 
 
 # ---------- ADR ----------
@@ -59,9 +78,8 @@ def check_adr(rel: str, text: str) -> tuple[list[str], list[str]]:
 def scan_file(rel: str, text: str, terms: list[str]) -> tuple[list[str], list[str]]:
     errors, warnings = [], []
     if Path(rel).name not in SKIP_SCAN:
-        hits = banned_hits(text, terms)
-        if hits:
-            errors.append(f"{rel}: banned token(s) {hits} (see .guardrails.local.txt)")
+        for line, items in banned_lines(text, terms):
+            errors.append(f"{rel}:{line}: {banned_message(items)}")
     if rel.startswith("docs/adr/") and rel.endswith(".md"):
         e, w = check_adr(rel, text)
         errors += e

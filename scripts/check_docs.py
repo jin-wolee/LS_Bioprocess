@@ -22,7 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from docs_rules import banned_hits, load_terms, scan_file
+from docs_rules import banned_hits, banned_message, load_terms, scan_file
 from ledger_rules import LEDGER_FILES, check_references, load_ledgers
 
 PRIVATE_PREFIXES = ("docs/private/",)
@@ -140,7 +140,7 @@ def mode_history(root: Path, terms: list[str]) -> int:
     paths = git("log", "--all", "--name-only", "--format=", root=root).splitlines()
     leaked = sorted({p for p in paths if p.startswith(PRIVATE_PREFIXES) or p in PRIVATE_FILES})
     if hits:
-        print(f"FAIL  history contains banned token(s): {hits}", file=sys.stderr)
+        print(f"FAIL  history contains {banned_message(hits)}", file=sys.stderr)
     if leaked:
         print(f"FAIL  history contains private paths: {leaked}", file=sys.stderr)
     return 1 if (hits or leaked) else 0
