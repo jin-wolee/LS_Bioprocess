@@ -31,12 +31,13 @@ Proposed: option 3 (the author's choice).
 - The truth stays separate (invariant 1): the plant shows the truth world as the simulation's own view, labelled as such; every record view shows only what that architecture stored; no action reveals a hidden field of a record.
 - The headless QA renders the scene in Chromium (software WebGL), checks frame time, the action round trip and that a recomputed run equals a run of the same scenario with the actions written in by hand.
 - A design note (`docs/design/plant_ui.md`) and a throwaway spike come first; the author's reference ("like SANSA") informs the look and feel, and nothing is copied from another product.
+- Settled with the author after the spike (chat, 2026-11-01; three.js 0.186.1 measured at 136 KB gzip for the plant chunk, 33 to 50 ms frames in software WebGL, a 300 ms action round trip): the lab still lands on Home and the reader enters the plant from there, so the first load keeps 300 KB; the plant chunk at most 200 KB gzip; frame time median at most 50 ms and 95th percentile at most 80 ms in software WebGL in headless Chromium; the action round trip median at most 600 ms and at most 1 s. The actions of the first build: add a feed, move a draw, take an analyzer down, switch a flag, change the capture path, and the three the engine already has (raise an alarm, change a reagent lot, change the labelling); placing a contamination is not offered. A flag switched during a run applies to the whole run. Results over many seeds carry the actions that name a unit or an analyzer, not those that name a sample. Version one draws everything in code (no asset file) as a bright, clean lab; where WebGL is missing a text alternative stands in. The public flip waits for the plant view.
 
 ## Consequences
 
 - Positive: the comparison of architectures becomes visible in a place a person can look at; the S3 work is reused as drill-downs; determinism and the truth boundary carry over.
 - Negative: a large new build before S4; a new dependency and its updates; WebGL tests are slower and coarser than DOM tests; a phone may need a lighter mode.
-- Open: the plant view's size budget (from the spike); the list of operator actions; a 2D fallback where WebGL is missing; whether the public flip waits for the plant view (the author's call).
+- Open: the look beyond version one (the author adjusts after seeing it); authored models and their licence, if ever wanted; a real GPU and other browsers, not measured yet.
 
 ## Evidence
 
@@ -51,6 +52,8 @@ Proposed: option 3 (the author's choice).
 > Chose "3D", "게임처럼 직접 운영" and "S4 전에 먼저 (Recommended)" (chat, 2026-10-31)
 
 > "https://sansatemple.com/ 이런 느낌이야. 가상공간이지." (chat, 2026-11-01: the reference for the feel; a walkable three.js space with a third-person avatar, click to walk, drag to look, a top HUD and a bottom action bar; the plant takes the feel, never the look or an asset)
+
+> Chose, after the spike (chat, 2026-11-01): "핵심 5개 (Recommended), 선택 3개" for the actions; "실행 전체에 적용 (Recommended)" for a flag switched during a run; "제안대로 (Recommended)" for the budgets; "Home에서 '공장 들어가기' (Recommended)" for the landing; "코드로 만든 밝은 실험실부터 (Recommended)" for the look; "텍스트 대체만 (Recommended)" for the fallback; "리액터·분석기 단위 조작만 반영" for Results; "공장 화면 만든 뒤 (Recommended)" for the public flip.
 
 ## Decider's note
 _(author only — Claude never writes here)_
