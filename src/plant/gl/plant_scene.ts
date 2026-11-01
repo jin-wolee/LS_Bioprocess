@@ -1,23 +1,24 @@
-import { BoxGeometry, CapsuleGeometry, Color, DirectionalLight, Fog, Group, HemisphereLight, Mesh, MeshBasicMaterial, MeshStandardMaterial, PerspectiveCamera, Plane, Raycaster, RingGeometry, Scene as ThreeScene, SphereGeometry, Vector2, Vector3, WebGLRenderer } from "three";
-import type { BufferGeometry, Material } from "three";
+import { PerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from "three";
 import { DEFAULT_VIEW, cameraAt, drag, followGoal, heading, keyDirection, lifted, tilt, turn, zoom } from "../controls.ts";
 import type { View } from "../controls.ts";
+import { focusOf } from "../focus.ts";
 import type { Point } from "../layout.ts";
 import { pickNearest, targetsAt } from "../pick.ts";
 import type { Hit } from "../pick.ts";
 import type { Scene, SceneOptions } from "../scene_types.ts";
 import { sceneAt } from "../scene_at.ts";
 import type { SceneState } from "../scene_at.ts";
-import { pickedOfKey } from "../view.ts";
 import type { Picked } from "../view.ts";
 import { SPEED, advance, pathOf, stepTo } from "../walk.ts";
-import { PALETTE, buildRoom } from "./floor.ts";
+import { RING, buildAvatar, buildRings } from "./avatar.ts";
+import { buildRoom } from "./floor.ts";
 import { listen } from "./input.ts";
 import { buildLabels } from "./labels.ts";
 import { buildMotion } from "./motion.ts";
 import { buildOverlay } from "./overlay.ts";
 import { buildShelves } from "./shelves.ts";
 import { buildThings } from "./shapes.ts";
+import { buildStage, disposeStage } from "./stage.ts";
 
 // The scene of the plant (docs/design/plant_ui.md sections 2, 3 and 9): the one module that makes a WebGL renderer. It builds the room and the things from the layout, puts a plain operator figure
 // at the entrance, and runs a frame loop that walks the figure (click, or the keys), moves the third-person camera (drag, wheel, pinch, keys) and draws. Everything it decides with is in the
@@ -25,63 +26,12 @@ import { buildThings } from "./shapes.ts";
 // draws is `sceneAt` at the instant the clock reads (P4).
 
 const HEAD = 1.3; // metres: the point the camera looks at, on the figure
-const SKY = new Color(PALETTE.sky);
 
 const walkingKeys = new Set(["w", "a", "s", "d", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
-/** The figure: a plain operator in a pale coat, with a head. No likeness of any product's character. */
-const buildAvatar = (disposables: (BufferGeometry | Material)[]): Group => {
-  const figure = new Group();
-  const coat = new MeshStandardMaterial({ color: 0x3d6fa5, roughness: 0.7 });
-  const skin = new MeshStandardMaterial({ color: 0xf0c8a6, roughness: 0.8 });
-  const body = new CapsuleGeometry(0.21, 0.72, 4, 12);
-  const head = new SphereGeometry(0.17, 16, 12);
-  disposables.push(coat, skin, body, head);
-  const torso = new Mesh(body, coat);
-  torso.position.y = 0.58;
-  torso.castShadow = true;
-  const face = new Mesh(head, skin);
-  face.position.y = 1.24;
-  face.castShadow = true;
-  // a pale clipboard held in front (the figure faces -z), so that the way it faces can be seen
-  const board = new BoxGeometry(0.3, 0.26, 0.04);
-  const paper = new MeshStandardMaterial({ color: 0xf7f9fb, roughness: 0.6 });
-  disposables.push(board, paper);
-  const clip = new Mesh(board, paper);
-  clip.position.set(0, 0.72, -0.25);
-  figure.add(torso, face, clip);
-  return figure;
-};
-
-/** The size of the ring on the floor about a picked object, in metres. */
-const RING = { reactor: 0.85, analyzer: 1.3, staff: 0.5, sample: 0.4 } as const;
-
 export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, lens: initialLens, onPick, onPickObject, onFollowEnd }: SceneOptions): Scene => {
-  const canvas = document.createElement("canvas");
-  canvas.className = "plant-canvas";
-  host.appendChild(canvas);
-  const renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
-  renderer.setPixelRatio(tier === "high" ? Math.min(window.devicePixelRatio || 1, 2) : 1);
-  renderer.shadowMap.enabled = tier === "high";
-
-  const gl = renderer.getContext();
-  const info = gl.getExtension("WEBGL_debug_renderer_info");
-  const name = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
-
-  const scene = new ThreeScene();
-  scene.background = SKY;
-  scene.fog = new Fog(PALETTE.sky, 60, 160);
-  const hemi = new HemisphereLight(0xffffff, 0xc9d4dc, 1.6);
-  scene.add(hemi);
-  const sun = new DirectionalLight(0xffffff, 1.6);
-  const span = Math.max(layout.width, layout.depth);
-  sun.position.set(layout.width * 0.75, span * 0.8, layout.depth * 1.15); // from the south, over the shoulder of a walker who enters there: the faces toward the camera are lit
-  sun.target.position.set(layout.width / 2, 0, layout.depth / 2);
-  sun.castShadow = tier === "high";
-  sun.shadow.mapSize.set(1024, 1024);
-  Object.assign(sun.shadow.camera, { left: -span * 0.65, right: span * 0.65, top: span * 0.65, bottom: -span * 0.65, near: 1, far: span * 3 });
-  sun.shadow.camera.updateProjectionMatrix();
-  scene.add(sun, sun.target);
+  const stage = buildStage(host, layout, tier);
+  const { canvas, renderer, scene, hemi, sun } = stage;
 
   const built = buildThings(layout);
   const { room, glass } = buildRoom(layout);
@@ -90,16 +40,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
   const disposables = [...built.disposables];
   const avatar = buildAvatar(disposables);
   scene.add(avatar);
-  const marker = new Mesh(new RingGeometry(0.24, 0.32, 28).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: PALETTE.accent }));
-  marker.visible = false;
-  marker.position.y = 0.03;
-  const halo = new Mesh(new RingGeometry(0.9, 1.0, 40).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: PALETTE.accent }));
-  halo.visible = false;
-  halo.position.y = 0.04;
-  // the ring on the floor about the object the panel shows: it follows the object while it moves
-  const ring = new Mesh(new RingGeometry(0.9, 1.0, 40).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: PALETTE.accent }));
-  ring.visible = false;
-  disposables.push(marker.geometry, marker.material, halo.geometry, halo.material, ring.geometry, ring.material);
+  const { marker, halo, ring } = buildRings(disposables);
   scene.add(marker, halo, ring);
 
   const camera = new PerspectiveCamera(50, 1, 0.1, 300);
@@ -303,35 +244,11 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
   host.dataset.plantObjects = JSON.stringify(objects);
   raf = requestAnimationFrame(frame);
 
-  const where = (key: string): { at: Point; radius: number; pitch?: number } | null => {
-    const [kind, id] = key.split(":", 2);
-    if (kind === "staff" || kind === "sample") {
-      // a thing that moves: where it stands at the clock reading last drawn
-      const found = pickedOfKey(plan, key);
-      const at = found === null ? null : pointOf(found);
-      return at ? { at, radius: kind === "staff" ? 0.9 : 0.7 } : null;
-    }
-    if (kind === "reactor") {
-      const v = layout.vessels[plan.units.findIndex((u) => u.id === id)];
-      return v ? { at: v, radius: 0.9 } : null;
-    }
-    if (kind === "analyzer") {
-      const a = layout.analyzers[plan.analyzers.findIndex((x) => x.id === id)];
-      return a ? { at: a, radius: 1.4 } : null;
-    }
-    if (kind === "hall") {
-      // close to the shelves and level with them: the cards are a few centimetres wide
-      const h = layout.halls.find((x) => x.architecture === id);
-      return h ? { at: { x: h.footprint.x + h.footprint.w / 2, z: h.footprint.z + h.footprint.d / 2 }, radius: 1.2, pitch: 0.2 } : null;
-    }
-    return null;
-  };
-
   return {
-    renderer: name,
+    renderer: stage.name,
     objects,
     focus(key: string) {
-      const target = where(key);
+      const target = focusOf(plan, layout, key, pointOf);
       if (!target) return;
       endFollow();
       lookAt = target.at;
@@ -368,18 +285,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
       observer.disconnect();
       labels.dispose();
       for (const d of disposables) d.dispose();
-      scene.traverse((o) => {
-        const mesh = o as Mesh;
-        if (mesh.geometry) mesh.geometry.dispose();
-        const material = mesh.material as Material | Material[] | undefined;
-        for (const m of Array.isArray(material) ? material : material ? [material] : []) {
-          (m as MeshStandardMaterial).map?.dispose();
-          m.dispose();
-        }
-      });
-      renderer.dispose();
-      renderer.forceContextLoss();
-      canvas.remove();
+      disposeStage(stage);
     },
   };
 };

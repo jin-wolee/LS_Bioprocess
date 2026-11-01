@@ -1,25 +1,25 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { template, text } from "../i18n/index.ts";
 import type { CheckState, ScenePlan } from "../protocol.ts";
-import { ErrorBlock } from "../ui/ErrorBlock.tsx";
-import { LangContext, Label, T } from "../ui/T.tsx";
+import { LangContext, T } from "../ui/T.tsx";
 import { BottomBar } from "./BottomBar.tsx";
 import { Hint, Hud, TruthControl } from "./Hud.tsx";
 import { CardList } from "./CardList.tsx";
 import { ObjectsList } from "./ObjectsList.tsx";
 import { Panels } from "./Panels.tsx";
 import { RecordPanel } from "./RecordPanel.tsx";
+import { Intro } from "./Intro.tsx";
+import type { SceneStatus } from "./Intro.tsx";
 import { TextAlternative } from "./TextAlternative.tsx";
 import { TimeBar } from "./TimeBar.tsx";
 import { TubeList } from "./TubeList.tsx";
-import { DAY, HOUR, SPEEDS } from "./clock.ts";
 import { objectTimes } from "./events.ts";
+import { clockKeys } from "./keys.ts";
 import { layoutOf } from "./layout.ts";
 import { loadScene, webgl2 } from "./loader.ts";
 import { hallsOfPlan } from "./plant_state.ts";
 import type { PlantState } from "./plant_state.ts";
 import { createPlayback } from "./playback.ts";
-import type { Playback } from "./playback.ts";
 import { DEFAULT_PLANT } from "./spec.ts";
 import type { Scene, Tier } from "./scene_types.ts";
 import { keyOf, objectsOf, pickedOfKey } from "./view.ts";
@@ -34,47 +34,10 @@ import "./plant.css";
 // P5b: the object the reader picked (a click in the scene, a button of a list) opens its panel and is what `,` and `.` step between the events of; `F` follows a picked sample; the switch of the truth
 // overlay is the HUD's, and what the Worker answers is drawn by the scene (the placeholders) and by the record panel (the truth column and the verdicts).
 
-type SceneState = { kind: "none" | "loading" | "ready" } | { kind: "failed"; message: string };
-
 /** The quality tier: `low` under 600 px (no shadows, a pixel ratio of one), `high` above (section 9). The offer to switch is P8. */
 const tierOf = (): Tier => (window.innerWidth < 600 ? "low" : "high");
 
 const reducedMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/** Whether the focus is in a control that takes typing (a text field, a select, a text area): the keys of the clock leave it alone. A range, a check box and a button do not take these keys. */
-const BUTTONLIKE = ["range", "checkbox", "radio", "button"];
-const takesKeys = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement && (target.isContentEditable || ["SELECT", "TEXTAREA"].includes(target.tagName) || (target instanceof HTMLInputElement && !BUTTONLIKE.includes(target.type)));
-/** Whether Space is the focused control's own key (it presses a button, a link, a summary, a check box). */
-const pressable = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement && (["BUTTON", "A", "SUMMARY"].includes(target.tagName) || (target instanceof HTMLInputElement && ["checkbox", "radio", "button"].includes(target.type)));
-
-/** What the keys of the route reach: the clock, the instants of the picked object (for the step) and the follow of a picked sample. */
-interface KeyTargets {
-  playback: Playback;
-  times: () => readonly number[] | undefined;
-  follow: () => boolean;
-  toggleFollow: () => void;
-}
-
-/** The keys of the clock (docs/design/plant_ui.md section 4.2): Space plays and pauses, 1 to 4 the speeds, comma and period the previous and next event (of the picked object, when there is one), the brackets an hour, the braces a day; `F` follows a picked sample. */
-const clockKeys = ({ playback, times, follow, toggleFollow }: KeyTargets) => (e: KeyboardEvent): void => {
-  if (e.ctrlKey || e.metaKey || e.altKey || takesKeys(e.target)) return;
-  const speed = SPEEDS[Number(e.key) - 1];
-  if (e.key === " ") {
-    if (pressable(e.target)) return; // a focused button is pressed by Space
-    playback.toggle();
-  } else if (speed !== undefined && /^[1-9]$/.test(e.key)) playback.setSpeed(speed);
-  else if (e.key === ",") playback.step(-1, times());
-  else if (e.key === ".") playback.step(1, times());
-  else if (e.key === "[") playback.jump(-HOUR);
-  else if (e.key === "]") playback.jump(HOUR);
-  else if (e.key === "{") playback.jump(-DAY);
-  else if (e.key === "}") playback.jump(DAY);
-  else if (e.key.toLowerCase() === "f" && follow()) toggleFollow();
-  else return;
-  e.preventDefault();
-};
 
 export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFieldsClose, onTruth }: {
   plant: PlantState;
@@ -107,7 +70,7 @@ export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFiel
   const times = useMemo(() => (plan && picked ? objectTimes(plan, picked) : undefined), [plan, picked?.kind, picked?.index]);
   const host = useRef<HTMLDivElement>(null);
   const mounted = useRef<Scene | null>(null);
-  const [scene, setScene] = useState<SceneState>({ kind: webgl ? "loading" : "none" });
+  const [scene, setScene] = useState<SceneStatus>({ kind: webgl ? "loading" : "none" });
   const [renderer, setRenderer] = useState<string | null>(null);
 
   // a pick opens the panel of an object and closes the record of a card (one panel at a time); it ends a follow
@@ -231,33 +194,7 @@ export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFiel
   const locked = plant.truth.on && (plant.truth.halls?.problem?.code === "locked" || plant.truth.sample?.problem?.code === "locked");
   const waiting = plan === null && plant.problem === null;
   const state = !webgl ? "text" : scene.kind;
-  const intro = (
-      <section class="plant-intro" aria-labelledby="plant-heading">
-        <T as="h1" k="plant.heading" id="plant-heading" />
-        <T as="p" k="plant.lead" />
-        {plant.problem && <ErrorBlock problem={{ id: null, code: plant.problem.code, message: plant.problem.message }} />}
-        <p id="plant-status" role="status" data-plant-status={state} class="plant-status">
-          <T k={plan ? "plant.status.plan.ready" : "plant.status.plan.waiting"} />{" "}
-          {webgl && scene.kind === "loading" && plan && <T k="plant.status.scene.loading" />}
-          {webgl && scene.kind === "ready" && <T k="plant.status.scene.ready" />}
-          {scene.kind === "failed" && (
-            <>
-              <T k="plant.status.scene.failed" />{" "}
-              <code>
-                <Label engine>{scene.message}</Label>
-              </code>
-            </>
-          )}{" "}
-          {renderer && <T k="plant.status.renderer" parts={{ renderer: <Label engine>{renderer}</Label> }} />}
-        </p>
-        {!webgl && (
-          <div class="notice" role="note" data-plant-fallback>
-            <T as="h2" k="plant.nowebgl.heading" />
-            <T as="p" k="plant.nowebgl.notice" />
-          </div>
-        )}
-      </section>
-  );
+  const intro = <Intro webgl={webgl} planned={plan !== null} problem={plant.problem} scene={scene} state={state} renderer={renderer} />;
 
   // the order of the page is the top bar, the scene, then the text about it and the objects list (section 9); without a scene the text comes first
   return (
