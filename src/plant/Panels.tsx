@@ -6,6 +6,8 @@ import type { Key } from "../i18n/index.ts";
 import type { ScenePlan } from "../protocol.ts";
 import { ErrorBlock } from "../ui/ErrorBlock.tsx";
 import { Label, LangContext, T } from "../ui/T.tsx";
+import type { Drill } from "./drill.ts";
+import { DrillLink, DrillLinks } from "./DrillLinks.tsx";
 import { panelOf } from "./panels.ts";
 import type { AnalyzerPanel, Listed, Panel, ReactorPanel, SamplePanel, StaffPanel } from "./panels.ts";
 import type { PlantRecordState } from "./plant_state.ts";
@@ -16,7 +18,7 @@ import type { Picked } from "./view.ts";
 
 // The panels of the picked object (docs/design/plant_ui.md section 3.2, "As built in P5b"): a reactor, a sample, an analyzer or a member of staff, at the clock instant. The content is `panelOf`, a pure
 // function of the plan, so the figures here are the ones the plan gives; every figure is a label and every time a clock reading. A panel is a region with its heading focused when it opens; Escape or
-// its button closes it and the focus goes back to whatever opened it (the record panel's rule). No link to another screen yet (P5c).
+// its button closes it and the focus goes back to whatever opened it (the record panel's rule). P5c: the links to the other screens at the foot of a panel (section 7).
 
 interface Handlers {
   onClose: () => void;
@@ -54,8 +56,10 @@ function Newest({ rows, onPick }: { rows: Listed[]; onPick: (p: Picked) => void 
   );
 }
 
-function Reactor({ p, onPick }: { p: ReactorPanel; onPick: (x: Picked) => void }) {
+function Reactor({ p, drill, onPick }: { p: ReactorPanel; drill: Drill; onPick: (x: Picked) => void }) {
+  const newest = p.newest[0];
   return (
+    <>
     <dl class="plant-facts">
       <Row name="plant.panel.bay"><Label>{p.bay}</Label></Row>
       <Row name="plant.panel.profile"><Label>{p.profile}</Label></Row>
@@ -67,11 +71,20 @@ function Reactor({ p, onPick }: { p: ReactorPanel; onPick: (x: Picked) => void }
       <T as="dt" k="plant.panel.newest" />
       <dd><Newest rows={p.newest} onPick={onPick} /></dd>
     </dl>
+    {newest ? (
+      <DrillLinks>
+        <DrillLink name="lineage" href={drill.lineage(newest.id)} k="plant.drill.lineage" parts={{ sample: <Label>{newest.id}</Label> }} />
+      </DrillLinks>
+    ) : (
+      <T as="p" k="plant.drill.lineage.none" data-note="drill" />
+    )}
+    </>
   );
 }
 
-function Staff({ p, onPick }: { p: StaffPanel; onPick: (x: Picked) => void }) {
+function Staff({ p, drill, onPick }: { p: StaffPanel; drill: Drill; onPick: (x: Picked) => void }) {
   return (
+    <>
     <dl class="plant-facts">
       <Row name="plant.panel.duty" field="duty"><T k={p.on_duty ? "plant.duty.on" : "plant.duty.off"} /></Row>
       <Row name="plant.panel.mode" field="mode"><T k={`plant.mode.${p.mode}`} /></Row>
@@ -82,10 +95,14 @@ function Staff({ p, onPick }: { p: StaffPanel; onPick: (x: Picked) => void }) {
         {p.qualification === null ? <T k="plant.qualification.unknown" /> : <T k={p.qualification ? "plant.qualification.stored" : "lineage.null"} />}
       </Row>
     </dl>
+    <DrillLinks>
+      <DrillLink name="notes" href={drill.notes()} k="plant.drill.notes" />
+    </DrillLinks>
+    </>
   );
 }
 
-function Analyzer({ plan, p, onPick }: { plan: ScenePlan; p: AnalyzerPanel; onPick: (x: Picked) => void }) {
+function Analyzer({ plan, p, drill, onPick }: { plan: ScenePlan; p: AnalyzerPanel; drill: Drill; onPick: (x: Picked) => void }) {
   const open = (id: string) => () => {
     const found = pickedOfKey(plan, `sample:${id}`);
     if (found) onPick(found);
@@ -98,6 +115,7 @@ function Analyzer({ plan, p, onPick }: { plan: ScenePlan; p: AnalyzerPanel; onPi
     </li>
   ));
   return (
+    <>
     <dl class="plant-facts">
       <Row name="plant.panel.profile"><Label>{p.profile}</Label></Row>
       <Row name="plant.panel.group"><Label>{p.group}</Label></Row>
@@ -123,10 +141,14 @@ function Analyzer({ plan, p, onPick }: { plan: ScenePlan; p: AnalyzerPanel; onPi
         )}
       </dd>
     </dl>
+    <DrillLinks>
+      <DrillLink name="results" href={drill.results(plan.layout.architectures, "utilisation")} k="plant.drill.utilisation" />
+    </DrillLinks>
+    </>
   );
 }
 
-function Sample({ p, fields, lens, following, onFollow, onOpenRecord }: { p: SamplePanel; fields: PlantRecordState | null; lens: string; following: boolean; onFollow: () => void; onOpenRecord: () => void }) {
+function Sample({ p, drill, fields, lens, following, onFollow, onOpenRecord }: { p: SamplePanel; drill: Drill; fields: PlantRecordState | null; lens: string; following: boolean; onFollow: () => void; onOpenRecord: () => void }) {
   const mine = fields !== null && fields.sample_id === p.id ? fields : null;
   const row = mine?.view?.nodes.find((n) => n.table === "sample");
   return (
@@ -187,14 +209,20 @@ function Sample({ p, fields, lens, following, onFollow, onOpenRecord }: { p: Sam
           <T k="plant.panel.open_record" />
         </button>
       </div>
+      {p.phase !== "planned" && p.phase !== "skipped" && (
+        <DrillLinks>
+          <DrillLink name="lineage" href={drill.lineage(p.id)} k="plant.drill.lineage" parts={{ sample: <Label>{p.id}</Label> }} />
+        </DrillLinks>
+      )}
     </>
   );
 }
 
 const HEADING = { reactor: "plant.panel.reactor", sample: "plant.panel.sample", analyzer: "plant.panel.analyzer", staff: "plant.panel.staff" } as const satisfies Record<Panel["kind"], Key>;
 
-export function Panels({ plan, playback, pick, lens, fields, following, onClose, onPick, onFollow, onOpenRecord, onFields, onFieldsClose }: Handlers & {
+export function Panels({ plan, playback, pick, lens, fields, following, drill, onClose, onPick, onFollow, onOpenRecord, onFields, onFieldsClose }: Handlers & {
   plan: ScenePlan;
+  drill: Drill;
   playback: Playback;
   pick: Picked;
   lens: string;
@@ -246,10 +274,10 @@ export function Panels({ plan, playback, pick, lens, fields, following, onClose,
           ×
         </button>
       </div>
-      {panel.kind === "reactor" && <Reactor p={panel} onPick={onPick} />}
-      {panel.kind === "staff" && <Staff p={panel} onPick={onPick} />}
-      {panel.kind === "analyzer" && <Analyzer plan={plan} p={panel} onPick={onPick} />}
-      {panel.kind === "sample" && <Sample p={panel} fields={fields} lens={lens} following={following} onFollow={onFollow} onOpenRecord={() => onOpenRecord(lens, panel.id)} />}
+      {panel.kind === "reactor" && <Reactor p={panel} drill={drill} onPick={onPick} />}
+      {panel.kind === "staff" && <Staff p={panel} drill={drill} onPick={onPick} />}
+      {panel.kind === "analyzer" && <Analyzer plan={plan} p={panel} drill={drill} onPick={onPick} />}
+      {panel.kind === "sample" && <Sample p={panel} drill={drill} fields={fields} lens={lens} following={following} onFollow={onFollow} onOpenRecord={() => onOpenRecord(lens, panel.id)} />}
     </section>
   );
 }

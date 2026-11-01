@@ -3,6 +3,7 @@ import { koBreakout } from "./ko_breakout.ts";
 import { koChallenge } from "./ko_challenge.ts";
 import { koLineage } from "./ko_lineage.ts";
 import { koNotes } from "./ko_notes.ts";
+import { koDrill } from "./ko_drill.ts";
 import { koPlant } from "./ko_plant.ts";
 import { koResults } from "./ko_results.ts";
 import { koSetup } from "./ko_setup.ts";
@@ -89,4 +90,4 @@ const koBase: Record<keyof typeof enBase, string> = {
   "grade.provisional": "잠정",
 };
 
-export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge, ...koBreakout, ...koPlant };
+export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge, ...koBreakout, ...koPlant, ...koDrill };

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Response, ScenePlan } from "../protocol.ts";
 import { initialPlant, reducePlant } from "./plant_state.ts";
 import type { PlantAction, PlantState } from "./plant_state.ts";
+import { DEFAULT_PLANT as SPEC } from "./spec.ts";
 
 // docs/design/plant_ui.md section 5.5 and section 6, rule 3: the page asks for a plan under an epoch and drops every answer, and every error, whose epoch is not the newest it asked for. The plan
 // it already has stays drawn until the newer one arrives.
@@ -14,21 +15,21 @@ const run = (actions: PlantAction[], from: PlantState = initialPlant): PlantStat
 
 describe("the plant state", () => {
   it("Given nothing asked Then there is no epoch, no plan and no problem", () => {
-    expect(initialPlant).toEqual({ epoch: 0, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null });
+    expect(initialPlant).toEqual({ epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null });
   });
 
   it("Given a request is made Then its epoch is the newest and the request is running", () => {
-    expect(run([{ type: "plant_started", id: 7, epoch: 1 }])).toEqual({ epoch: 1, running: 7, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null });
+    expect(run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }])).toEqual({ epoch: 1, spec: SPEC, view: null, running: 7, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null });
   });
 
   it("Given the answer of the newest epoch Then the plan, the hashes and the checks are kept and nothing is running", () => {
-    const s = run([{ type: "plant_started", id: 7, epoch: 1 }, ready(7, 1)]);
+    const s = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, ready(7, 1)]);
     expect(s.running).toBeNull();
     expect(s.ready).toEqual({ epoch: 1, plan: plan(1), resume_at: 0, hashes: { truth: "t1", cells: { a_manual: "c1" } }, checks: { prefix_equal: null, truth_equal: null } });
   });
 
   it("Given two requests and the answer of the older arriving after the newer was asked for Then the older answer is dropped and the newer one is drawn when it arrives", () => {
-    const asked = run([{ type: "plant_started", id: 7, epoch: 1 }, { type: "plant_started", id: 8, epoch: 2 }]);
+    const asked = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, { type: "plant_started", id: 8, epoch: 2, spec: SPEC }]);
     const stale = run([ready(7, 1)], asked);
     expect(stale).toEqual(asked); // nothing changed: the stale answer is not drawn
     expect(stale.ready).toBeNull();
@@ -38,29 +39,29 @@ describe("the plant state", () => {
   });
 
   it("Given a plan on screen and a newer request Then the plan stays until the newer answer replaces it", () => {
-    const first = run([{ type: "plant_started", id: 7, epoch: 1 }, ready(7, 1)]);
-    const asked = run([{ type: "plant_started", id: 8, epoch: 2 }], first);
+    const first = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, ready(7, 1)]);
+    const asked = run([{ type: "plant_started", id: 8, epoch: 2, spec: SPEC }], first);
     expect(asked.ready?.epoch).toBe(1);
     expect(asked.running).toBe(8);
     expect(run([ready(8, 2)], asked).ready?.epoch).toBe(2);
   });
 
   it("Given an error of the newest epoch Then it is the problem, with its reason and the index of the action; the next request clears it", () => {
-    const asked = run([{ type: "plant_started", id: 7, epoch: 1 }]);
+    const asked = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }]);
     const failed = run([{ type: "error", id: 7, epoch: 1, code: "refused", message: "no such unit", reason: "unknown_target", index: 2 }], asked);
     expect(failed.problem).toEqual({ code: "refused", message: "no such unit", reason: "unknown_target", index: 2 });
     expect(failed.running).toBeNull();
-    expect(run([{ type: "plant_started", id: 8, epoch: 2 }], failed).problem).toBeNull();
+    expect(run([{ type: "plant_started", id: 8, epoch: 2, spec: SPEC }], failed).problem).toBeNull();
   });
 
   it("Given the error of an older epoch (a run that was cancelled) Then it is dropped", () => {
-    const asked = run([{ type: "plant_started", id: 7, epoch: 1 }, { type: "plant_started", id: 8, epoch: 2 }]);
+    const asked = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, { type: "plant_started", id: 8, epoch: 2, spec: SPEC }]);
     const after = run([{ type: "error", id: 7, epoch: 1, code: "cancelled", message: "replaced" }], asked);
     expect(after).toEqual(asked);
   });
 
   it("Given a message that is not about the plant Then the state is unchanged", () => {
-    const s = run([{ type: "plant_started", id: 7, epoch: 1 }]);
+    const s = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }]);
     expect(reducePlant(s, { type: "progress", id: 3, done: 1, total: 2 })).toBe(s);
     expect(reducePlant(s, { type: "error", id: 3, code: "engine_error", message: "x" })).toBe(s);
   });
@@ -79,7 +80,7 @@ const halls = (id: number, epoch: number, architecture: string): Extract<Respons
 const sample = { architecture: "c_context", flags_on: [], labelling: "x", nodes: [], edges: [] };
 
 describe("the halls that come after plant_ready", () => {
-  const asked = run([{ type: "plant_started", id: 7, epoch: 1 }, withHalls(1, ["a", "b", "c"], ["a"])]);
+  const asked = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, withHalls(1, ["a", "b", "c"], ["a"])]);
 
   it("Given the first answer with one hall Then the plan holds that hall and no other hall has arrived", () => {
     expect(asked.ready?.plan.records.map((r) => r.architecture)).toEqual(["a"]);
@@ -95,26 +96,26 @@ describe("the halls that come after plant_ready", () => {
   });
 
   it("Given a hall of an older epoch arriving after a newer request was made Then it is dropped", () => {
-    const newer = run([{ type: "plant_started", id: 8, epoch: 2 }], asked);
+    const newer = run([{ type: "plant_started", id: 8, epoch: 2, spec: SPEC }], asked);
     expect(run([halls(7, 1, "b")], newer)).toEqual(newer);
   });
 
   it("Given a hall of an epoch whose plant_ready has not arrived Then it is dropped, and a hall that is already merged is not merged twice", () => {
-    const waiting = run([{ type: "plant_started", id: 7, epoch: 1 }]);
+    const waiting = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }]);
     expect(run([halls(7, 1, "b")], waiting)).toEqual(waiting);
     const once = run([halls(7, 1, "b")], asked);
     expect(run([halls(7, 1, "b")], once)).toEqual(once);
   });
 
   it("Given a newer answer Then its plan replaces the plan on screen and the halls of the older plan go with it", () => {
-    const s = run([halls(7, 1, "b"), { type: "plant_started", id: 8, epoch: 2 }, withHalls(2, ["a", "b", "c"], ["a"])], asked);
+    const s = run([halls(7, 1, "b"), { type: "plant_started", id: 8, epoch: 2, spec: SPEC }, withHalls(2, ["a", "b", "c"], ["a"])], asked);
     expect(s.ready?.epoch).toBe(2);
     expect(s.halls).toEqual([]);
   });
 });
 
 describe("the record panel", () => {
-  const shown = run([{ type: "plant_started", id: 7, epoch: 1 }, withHalls(1, ["a", "c_context"], ["a"])]);
+  const shown = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, withHalls(1, ["a", "c_context"], ["a"])]);
   const opened = run([{ type: "plant_record_started", id: 9, epoch: 1, architecture: "c_context", sample_id: "U07-D06-1" }], shown);
 
   it("Given no card picked Then there is no record", () => {
@@ -129,7 +130,7 @@ describe("the record panel", () => {
     expect(run([{ type: "plant_record_view", id: 9, epoch: 1, sample }], opened).record?.view).toEqual(sample);
     expect(run([{ type: "plant_record_view", id: 10, epoch: 1, sample }], opened)).toEqual(opened);
     expect(run([{ type: "plant_record_view", id: 9, epoch: 0, sample }], opened)).toEqual(opened);
-    const newer = run([{ type: "plant_started", id: 8, epoch: 2 }], opened);
+    const newer = run([{ type: "plant_started", id: 8, epoch: 2, spec: SPEC }], opened);
     expect(run([{ type: "plant_record_view", id: 9, epoch: 1, sample }], newer).record?.view).toBeNull();
   });
 
@@ -141,7 +142,7 @@ describe("the record panel", () => {
   });
 
   it("Given a stale error of a record request Then it is dropped", () => {
-    const newer = run([{ type: "plant_started", id: 8, epoch: 2 }], opened);
+    const newer = run([{ type: "plant_started", id: 8, epoch: 2, spec: SPEC }], opened);
     expect(run([{ type: "error", id: 9, epoch: 1, code: "cancelled", message: "stale" }], newer)).toEqual(newer);
   });
 
@@ -150,7 +151,7 @@ describe("the record panel", () => {
   });
 
   it("Given a newer answer Then the record panel is closed: its card may not be in the new run", () => {
-    const s = run([{ type: "plant_started", id: 8, epoch: 2 }, withHalls(2, ["a"], ["a"])], opened);
+    const s = run([{ type: "plant_started", id: 8, epoch: 2, spec: SPEC }, withHalls(2, ["a"], ["a"])], opened);
     expect(s.record).toBeNull();
   });
 });
@@ -166,7 +167,7 @@ const truthSample = {
 };
 
 describe("the truth overlay", () => {
-  const shown = run([{ type: "plant_started", id: 7, epoch: 1 }, withHalls(1, ["a", "c_context"], ["a"])]);
+  const shown = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, withHalls(1, ["a", "c_context"], ["a"])]);
   const on = run([{ type: "plant_truth_switched", on: true }], shown);
 
   it("Given the plan on screen and the switch not pressed Then nothing of the overlay is held", () => {
@@ -207,13 +208,13 @@ describe("the truth overlay", () => {
   });
 
   it("Given a stale error of an overlay request (an older epoch) Then it is dropped", () => {
-    const asked = run([{ type: "plant_truth_started", id: 20, epoch: 1, pick: { halls: true } }, { type: "plant_started", id: 8, epoch: 2 }], on);
+    const asked = run([{ type: "plant_truth_started", id: 20, epoch: 1, pick: { halls: true } }, { type: "plant_started", id: 8, epoch: 2, spec: SPEC }], on);
     expect(run([{ type: "error", id: 20, epoch: 1, code: "cancelled", message: "stale" }], asked)).toEqual(asked);
   });
 
   it("Given a newer plan Then the overlay is cleared and the switch stays as it was; turning it off drops what was asked", () => {
     const asked = run([{ type: "plant_truth_started", id: 20, epoch: 1, pick: { halls: true } }, { type: "plant_truth_view", id: 20, epoch: 1, view: truthHalls }], on);
-    const next = run([{ type: "plant_started", id: 8, epoch: 2 }, withHalls(2, ["a"], ["a"])], asked);
+    const next = run([{ type: "plant_started", id: 8, epoch: 2, spec: SPEC }, withHalls(2, ["a"], ["a"])], asked);
     expect(next.truth).toEqual({ on: true, halls: null, sample: null });
     // what was held is dropped; the request stays as an empty slot so that a late answer or error of it finds a place and is not taken for the plant's
     expect(run([{ type: "plant_truth_switched", on: false }], asked).truth).toEqual({ on: false, halls: { id: 20, epoch: 1, view: null, problem: null }, sample: null });
@@ -227,7 +228,7 @@ describe("the truth overlay", () => {
 });
 
 describe("the fields of the sample panel", () => {
-  const shown = run([{ type: "plant_started", id: 7, epoch: 1 }, withHalls(1, ["a", "c_context"], ["a"])]);
+  const shown = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, withHalls(1, ["a", "c_context"], ["a"])]);
   const opened = run([{ type: "plant_record_started", id: 30, epoch: 1, architecture: "c_context", sample_id: "U07-D06-1", role: "fields" }], shown);
 
   it("Given the sample panel asking for the rows of its sample Then they are kept in a slot of their own and the record panel is not touched", () => {
@@ -249,7 +250,7 @@ describe("the fields of the sample panel", () => {
     expect(refused.fields?.problem).toEqual({ code: "refused", message: "no card", reason: "unknown_target" });
     expect(refused.problem).toBeNull();
     expect(run([{ type: "plant_record_closed", role: "fields" }], opened).fields).toBeNull();
-    expect(run([{ type: "plant_started", id: 8, epoch: 2 }, withHalls(2, ["a"], ["a"])], opened).fields).toBeNull();
+    expect(run([{ type: "plant_started", id: 8, epoch: 2, spec: SPEC }, withHalls(2, ["a"], ["a"])], opened).fields).toBeNull();
   });
 
   it("Given the record panel closed without a role Then the sample panel's fields are left as they are", () => {

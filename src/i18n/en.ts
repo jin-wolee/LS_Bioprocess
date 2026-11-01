@@ -5,6 +5,7 @@ import { enBreakout } from "./en_breakout.ts";
 import { enChallenge } from "./en_challenge.ts";
 import { enLineage } from "./en_lineage.ts";
 import { enNotes } from "./en_notes.ts";
+import { enDrill } from "./en_drill.ts";
 import { enPlant } from "./en_plant.ts";
 import { enResults } from "./en_results.ts";
 import { enSetup } from "./en_setup.ts";
@@ -89,6 +90,6 @@ export const enBase = {
   "grade.provisional": "provisional",
 } as const;
 
-export const en = { ...enBase, ...enSetup, ...enResults, ...enNotes, ...enLineage, ...enChallenge, ...enBreakout, ...enPlant } as const;
+export const en = { ...enBase, ...enSetup, ...enResults, ...enNotes, ...enLineage, ...enChallenge, ...enBreakout, ...enPlant, ...enDrill } as const;
 
 export type Key = keyof typeof en;

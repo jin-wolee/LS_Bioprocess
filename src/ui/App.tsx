@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useReducer, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "preact/hooks";
 import { saveLang, savedLang, text } from "../i18n/index.ts";
 import type { Lang } from "../i18n/index.ts";
 import type { Request, Response } from "../protocol.ts";
@@ -13,11 +13,16 @@ import { defaultForm, fromQuery, specOf } from "./form.ts";
 import type { Form } from "./form.ts";
 import { Home } from "./Home.tsx";
 import { Lineage } from "./Lineage.tsx";
-import { defaultLineageForm, lineageRequest } from "./lineage_form.ts";
+import { defaultLineageForm, lineageRequest, plantLineageForm } from "./lineage_form.ts";
 import type { LineageForm } from "./lineage_form.ts";
 import { Notes } from "./Notes.tsx";
+import { PlantOrigin } from "./PlantOrigin.tsx";
+import { plantFromQuery } from "../plant/link.ts";
+import type { PlantLink } from "../plant/link.ts";
+import { needsRun } from "../plant/plant_state.ts";
 import { PlantRoute } from "../plant/PlantRoute.tsx";
 import { DEFAULT_PLANT } from "../plant/spec.ts";
+import { runKeyOf } from "./run_key.ts";
 import { Results } from "./Results.tsx";
 import { SCREENS, hashOf, parseHash } from "./route.ts";
 import type { Route, Screen } from "./route.ts";
@@ -25,6 +30,7 @@ import { Setup } from "./Setup.tsx";
 import { SiteLink } from "./SiteLink.tsx";
 import { HOME_ID, initial, reduce } from "./state.ts";
 import { LangContext, T } from "./T.tsx";
+import { useOrigin } from "./useOrigin.ts";
 
 type Theme = "auto" | "light" | "dark";
 
@@ -85,14 +91,28 @@ export function App({ worker }: { worker: Worker }) {
     if (ready) worker.postMessage(HOME_REQUEST);
   }, [ready !== null, worker]);
 
-  // entering the plant asks for its plan once; a plan that is there, one on its way, or a problem that was reported is not asked for again (no retry loop)
+  // what the page knows of the build, to read a link against
+  const known = useMemo(() => (ready ? { scenarios: ready.scenarios.map((x) => x.id), architectures: ready.presets.map((x) => x.id) } : null), [ready]);
+  // entering the plant asks for its run when the route wants a spec the page has not asked for: the link's, or else the plant it already has, or else the default one. Back, the navigation and the same
+  // link again want the spec of the newest request, so they ask for nothing (plant_ui.md section 7); a failed run is not asked for again under the same spec (no retry loop)
+  const plantLink: PlantLink | null = route.screen === "plant" && known && route.query !== "" ? plantFromQuery(route.query, known) : null;
   useEffect(() => {
-    if (route.screen !== "plant" || !ready || state.plant.ready || state.plant.running !== null || state.plant.problem) return;
+    if (route.screen !== "plant" || !ready) return;
+    const spec = plantLink ? plantLink.spec : (state.plant.spec ?? DEFAULT_PLANT);
+    if (!needsRun(state.plant, spec)) return;
     const id = take();
     const epoch = ++epochs.current;
-    dispatch({ type: "plant_started", id, epoch });
-    worker.postMessage({ type: "plant_run", id, epoch, spec: DEFAULT_PLANT } satisfies Request);
-  }, [route.screen, ready !== null, state.plant.ready === null, state.plant.running, state.plant.problem === null]);
+    dispatch({ type: "plant_started", id, epoch, spec });
+    worker.postMessage({ type: "plant_run", id, epoch, spec } satisfies Request);
+  }, [route.screen, route.query, ready !== null]);
+
+  // a screen opened from the plant: the plant it came from (useOrigin), and the first Lineage link asks for its sample
+  const origin = useOrigin(known, route, state.results, (link, sample) => {
+    if (!ready) return;
+    const f = plantLineageForm(ready, link.spec, sample);
+    setLineageForm(f);
+    showLineage(f);
+  });
 
   // a card of a record hall is opened: the Worker reads the rows of one sample from the run it keeps for the epoch of the plan on screen (plant_ui.md section 6); the sample panel asks the same for its
   // own sample, and the answer goes to a slot of its own (`role: "fields"`)
@@ -163,7 +183,7 @@ export function App({ worker }: { worker: Worker }) {
     const id = take();
     const request = lineageRequest(f, id);
     if (request?.type !== "lineage") return;
-    dispatch({ type: "lineage_started", id, asked: { scenario: f.scenario, seed: request.seed, architectures: request.spec.architectures } });
+    dispatch({ type: "lineage_started", id, asked: { scenario: request.spec.scenario, seed: request.seed, architectures: request.spec.architectures, key: runKeyOf(request.spec, request.seed) } });
     worker.postMessage(request);
   };
   const runBreakout = (f: BreakoutForm) => {
@@ -177,7 +197,7 @@ export function App({ worker }: { worker: Worker }) {
     const id = take();
     const request = ready ? challengeStart(f, ready, id) : null;
     if (request?.type !== "challenge_start") return;
-    dispatch({ type: "challenge_starting", id, meta: { variant: f.variant, scenario: f.scenario, seed: request.seed, shown: f.shown } });
+    dispatch({ type: "challenge_starting", id, meta: { variant: f.variant, scenario: f.scenario, seed: request.seed, shown: f.shown }, key: runKeyOf(request.spec, request.seed) });
     worker.postMessage(request);
   };
   const active = state.challenge.active;
@@ -229,7 +249,25 @@ export function App({ worker }: { worker: Worker }) {
       </header>
       <main id="main" data-ready={ready ? "true" : "false"} data-screen={route.screen} {...(ready && { "data-flags": ready.flags.join(",") })}>
         {route.screen === "home" && <Home state={state} />}
-        {route.screen === "plant" && (ready ? <PlantRoute plant={state.plant} check={state.check.state} onCard={openCard} onCardClose={closeCard} onFields={openFields} onFieldsClose={closeFields} onTruth={(on) => dispatch({ type: "plant_truth_switched", on })} /> : <T as="p" k="app.loading" />)}
+        {origin && ready && <PlantOrigin origin={origin} plant={state.plant} engine={ready.engine_version} screen={route.screen} />}
+        {route.screen === "plant" &&
+          (ready ? (
+            <PlantRoute
+              plant={state.plant}
+              check={state.check.state}
+              link={plantLink}
+              engine={ready.engine_version}
+              architectures={ready.presets.map((x) => x.id)}
+              onCard={openCard}
+              onCardClose={closeCard}
+              onFields={openFields}
+              onFieldsClose={closeFields}
+              onTruth={(on) => dispatch({ type: "plant_truth_switched", on })}
+              onLeave={(t, lens) => dispatch({ type: "plant_left", t, lens })}
+            />
+          ) : (
+            <T as="p" k="app.loading" />
+          ))}
         {route.screen === "setup" &&
           (ready && form ? (
             <Setup ready={ready} form={form} setForm={setForm} state={state} link={pageAddress()} linkEngine={linkEngine} onRun={run} onCancel={cancel} />

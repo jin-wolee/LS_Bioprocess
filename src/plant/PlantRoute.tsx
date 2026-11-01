@@ -10,16 +10,21 @@ import { Panels } from "./Panels.tsx";
 import { RecordPanel } from "./RecordPanel.tsx";
 import { Intro } from "./Intro.tsx";
 import type { SceneStatus } from "./Intro.tsx";
+import { LinkNotes } from "./LinkNotes.tsx";
 import { TextAlternative } from "./TextAlternative.tsx";
 import { TimeBar } from "./TimeBar.tsx";
 import { TubeList } from "./TubeList.tsx";
+import { drillOf } from "./drill.ts";
 import { objectTimes } from "./events.ts";
 import { clockKeys } from "./keys.ts";
+import { instantIn } from "./link.ts";
+import type { PlantLink } from "./link.ts";
 import { layoutOf } from "./layout.ts";
 import { loadScene, webgl2 } from "./loader.ts";
 import { hallsOfPlan } from "./plant_state.ts";
 import type { PlantState } from "./plant_state.ts";
 import { createPlayback } from "./playback.ts";
+import { useOpening } from "./useOpening.ts";
 import { DEFAULT_PLANT } from "./spec.ts";
 import type { Scene, Tier } from "./scene_types.ts";
 import { keyOf, objectsOf, pickedOfKey } from "./view.ts";
@@ -31,6 +36,9 @@ import "./plant.css";
 // host (`data-plant-*`, `data-run-hash`, `data-cells-hash`), so the end-to-end checks read the DOM and the page ships no test global. The run's clock (playback.ts) is made with the plan; the scene gives
 // it the wall seconds of its frames, the controls and the keys below change it, and the host's `data-plant-t`, `-speed` and `-playing` are written from it.
 //
+// P5c: the plant is the page store's. The route opens on the instant of the link (`t`, which wins) or the one the reader left at (`plant.view`), paused, with the lens they left on, and saves both when it
+// unmounts; the panels carry the links to the other screens (section 7).
+//
 // P5b: the object the reader picked (a click in the scene, a button of a list) opens its panel and is what `,` and `.` step between the events of; `F` follows a picked sample; the switch of the truth
 // overlay is the HUD's, and what the Worker answers is drawn by the scene (the placeholders) and by the record panel (the truth column and the verdicts).
 
@@ -39,9 +47,16 @@ const tierOf = (): Tier => (window.innerWidth < 600 ? "low" : "high");
 
 const reducedMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFieldsClose, onTruth }: {
+export function PlantRoute({ plant, check, link, engine, architectures, onCard, onCardClose, onFields, onFieldsClose, onTruth, onLeave }: {
   plant: PlantState;
   check: CheckState;
+  /** The link the route was opened with: its notes, its instant and the engine version it was made with; null when the address has no query. */
+  link: PlantLink | null;
+  /** The engine version of the build and the record architectures the Setup screen offers (for the links to other screens). */
+  engine: string;
+  architectures: readonly string[];
+  /** The reader leaves the plant: the clock instant and the lens are the store's to keep. */
+  onLeave: (t: number, lens: string) => void;
   onCard: (architecture: string, sample_id: string) => void;
   onCardClose: () => void;
   onFields: (architecture: string, sample_id: string) => void;
@@ -55,7 +70,8 @@ export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFiel
   // the plan the page reads: the first hall of the answer and the halls merged since, in the order of the layout. The scene and the clock are made from `plan`, which stays the same object when a hall arrives.
   const halls = useMemo(() => (plan ? hallsOfPlan(plan, plant.halls) : []), [plan, plant.halls]);
   const full = useMemo(() => (plan ? { ...plan, records: halls } : null), [plan, halls]);
-  const [chosen, setLens] = useState<string | null>(null);
+  const spec = plant.spec ?? DEFAULT_PLANT;
+  const [chosen, setLens] = useState<string | null>(plant.view?.lens ?? null);
   const lens = plan && chosen !== null && plan.layout.architectures.includes(chosen) ? chosen : (plan?.layout.architectures[0] ?? "");
   const lensRef = useRef(lens);
   lensRef.current = lens;
@@ -67,6 +83,8 @@ export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFiel
   const layout = useMemo(() => (plan ? layoutOf(plan.layout) : null), [plan]);
   const objects = useMemo(() => (plan ? objectsOf(plan) : []), [plan]);
   const playback = useMemo(() => (plan ? createPlayback(plan, false) : null), [plan]);
+  // the instant the clock opens at: the link's, else where the reader left; an instant outside the run is not used (the notes say so)
+  const wanted = useMemo(() => (plan ? instantIn(link?.t ?? plant.view?.t ?? null, plan.horizon_s) : { t: null, fault: null }), [plan, link?.t, plant.view?.t]);
   const times = useMemo(() => (plan && picked ? objectTimes(plan, picked) : undefined), [plan, picked?.kind, picked?.index]);
   const host = useRef<HTMLDivElement>(null);
   const mounted = useRef<Scene | null>(null);
@@ -138,10 +156,7 @@ export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFiel
     mounted.current?.setOverlay(absences ? { halls: absences.halls, captions: { label: text(lang, "plant.truth.label"), absence: template(lang, "plant.truth.absence") } } : null);
   }, [absences, lang, scene.kind]);
 
-  // the run plays once its scene is drawn, unless the reader prefers reduced motion (then it starts paused: section 9)
-  useEffect(() => {
-    if (scene.kind === "ready" && playback && !reducedMotion()) playback.play();
-  }, [scene.kind, playback]);
+  useOpening(playback, wanted.t, scene.kind === "ready", reducedMotion(), lens, onLeave);
 
   // the page state of section 10, written from the clock
   useEffect(() => {
@@ -194,7 +209,13 @@ export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFiel
   const locked = plant.truth.on && (plant.truth.halls?.problem?.code === "locked" || plant.truth.sample?.problem?.code === "locked");
   const waiting = plan === null && plant.problem === null;
   const state = !webgl ? "text" : scene.kind;
-  const intro = <Intro webgl={webgl} planned={plan !== null} problem={plant.problem} scene={scene} state={state} renderer={renderer} />;
+  const intro = (
+    <>
+      <Intro webgl={webgl} planned={plan !== null} problem={plant.problem} scene={scene} state={state} renderer={renderer} />
+      <LinkNotes notes={link?.notes ?? []} fallbackSeed={DEFAULT_PLANT.seed} outside={wanted.fault} horizon={plan?.horizon_s ?? null} engine={{ made: link?.engine ?? null, current: engine }} />
+    </>
+  );
+  const drill = drillOf({ spec, engine, architectures }, () => Math.floor(playback?.get().t ?? 0));
 
   // the order of the page is the top bar, the scene, then the text about it and the objects list (section 9); without a scene the text comes first
   return (
@@ -224,14 +245,15 @@ export function PlantRoute({ plant, check, onCard, onCardClose, onFields, onFiel
               <T k="plant.boot" />
             </p>
           )}
-          {full && playback && <Hud plan={full} playback={playback} scenario={DEFAULT_PLANT.run.scenario} check={check} lens={lens} onLens={chooseLens} />}
+          {full && playback && <Hud plan={full} playback={playback} scenario={spec.run.scenario} check={check} lens={lens} onLens={chooseLens} />}
           {full && playback && <TruthControl truth={{ on: plant.truth.on, locked }} onTruth={onTruth} />}
-          {plant.record && <RecordPanel record={plant.record} onClose={onCardClose} truth={plant.truth} />}
+          {plant.record && <RecordPanel record={plant.record} drill={drill} onClose={onCardClose} truth={plant.truth} />}
           {full && playback && picked && (
             <Panels
               plan={full}
               playback={playback}
               pick={picked}
+              drill={drill}
               lens={lens}
               fields={plant.fields}
               following={following !== null}

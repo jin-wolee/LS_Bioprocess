@@ -11,10 +11,13 @@ import { breakoutCase, investigateBreakoutSeed } from "../breakout.ts";
 import { parseBreakoutConfig } from "../breakout_config.ts";
 import { MYCOPLASMA_NOTE, buildBreakoutReport } from "../breakout_report.ts";
 import type { ReviewUsed } from "../open_loop.ts";
+import { checkBounds } from "./action_bounds.ts";
+import { applyActions, parseActions } from "./actions.ts";
+import type { PlantRefusal } from "./actions.ts";
 import { checkSeed } from "./challenges.ts";
 import type { Refusal } from "./challenges.ts";
 import { architecturesNamed } from "./seed_setup.ts";
-import type { LabData } from "./setup.ts";
+import type { LabData, ScenarioDoc as ScenarioDocument } from "./setup.ts";
 import { ablationBaseId, architectureIds } from "./spec.ts";
 
 // 2026-10-31 S3g (docs/design/lab_ui.md sections 3, 4 and 12): the `breakout` request. One SC12 case (one of the five bundled scenarios), one seed, the chosen architectures. The truth is run once
@@ -122,7 +125,7 @@ export interface BreakoutResult {
   per_architecture: BreakoutArchitectureView[];
 }
 
-export type BreakoutAnswer = { ok: true; result: BreakoutResult } | Refusal;
+export type BreakoutAnswer = { ok: true; result: BreakoutResult } | Refusal | PlantRefusal;
 
 const invalid = (message: string): Refusal => ({ ok: false, code: "invalid_spec", message });
 
@@ -200,8 +203,12 @@ const viewOf = (inv: Investigation, cell: BreakoutMetrics, rows: readonly Row[])
 /**
  * The `breakout` request as the Worker receives it. The case, the architectures and the seed are user input and are checked (a link carries them); a scenario that fails the engine's own validation
  * throws with the engine's message, and the Worker reports it as `engine_error`.
+ *
+ * P5c (docs/design/plant_ui.md section 6, rule 9): an optional list of the plant's operator actions, checked as `plant_run` checks them (the shape, then the bounds against the case's own scenario) and applied to
+ * the scenario document of the case and to the architectures named. With none, or an empty list, nothing below the check of the list runs and the answer is what it was. A capture path is refused:
+ * the break-out records are made without the raw layer, so the action would be accepted and change nothing.
  */
-export const answerBreakout = async (data: LabData, raw: { case: unknown; architectures: unknown; seed: unknown }): Promise<BreakoutAnswer> => {
+export const answerBreakout = async (data: LabData, raw: { case: unknown; architectures: unknown; seed: unknown; actions?: unknown }): Promise<BreakoutAnswer> => {
   const offer = data.breakout;
   if (offer === undefined) return invalid("this build does not offer the Break-out screen");
   const ids = Object.keys(offer.scenarios);
@@ -214,13 +221,26 @@ export const answerBreakout = async (data: LabData, raw: { case: unknown; archit
   }
   const seed = checkSeed(raw.seed);
   if (!seed.ok) return invalid(seed.message);
+  const listed = raw.actions === undefined ? null : parseActions(raw.actions);
+  if (listed && !listed.ok) return listed;
+  const actions = listed?.actions ?? [];
 
   const doc = offer.scenarios[raw.case] as ScenarioDoc;
   const lookup: ProfileLookup = (kind, id) =>
     kind === "breakout" ? (offer.profiles.find((p) => (p as { profile_id?: string }).profile_id === id) ?? ((): never => { throw new Error(`no bundled breakout profile ${id}`); })()) : data.lookup(kind, id);
-  const c = breakoutCase({ case_id: raw.case, scenario: doc.scenario_id, set: {} }, loadScenario(structuredClone(doc), lookup));
+  let source: unknown = doc;
+  let architectures = architecturesNamed(data, raw.architectures as string[]);
+  if (actions.length > 0) {
+    const capture = actions.findIndex((a) => a.kind === "set_capture_path");
+    if (capture >= 0) return { ok: false, code: "refused", reason: "unknown_target", index: capture, message: `actions[${capture}] (set_capture_path): the break-out records are made without the raw layer, so a capture path would change nothing` };
+    const refusal = checkBounds(loadScenario(structuredClone(doc), lookup), seed.seed, architectures.map((a) => a.id), actions);
+    if (refusal) return refusal;
+    const applied = applyActions({ scenario: structuredClone(doc) as unknown as ScenarioDocument, capture_path: undefined, architectures }, actions);
+    source = applied.scenario;
+    architectures = applied.architectures;
+  }
+  const c = breakoutCase({ case_id: raw.case, scenario: doc.scenario_id, set: {} }, loadScenario(structuredClone(source), lookup));
   const evaluation = evaluationSettings(data.evaluation);
-  const architectures = architecturesNamed(data, raw.architectures as string[]);
   const review: ReviewUsed = { timing: "next_shift_start", reject_also: [] };
 
   const staff = loadProfile(lookup("staff", doc.profiles.staff), "staff").params;

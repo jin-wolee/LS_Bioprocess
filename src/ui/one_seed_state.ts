@@ -14,6 +14,8 @@ export interface LineageAsked {
   scenario: string;
   seed: number;
   architectures: string[];
+  /** The key of the run (`runKeyOf`): a challenge started on the same run empties the view (plant_ui.md section 7, "As built in P5c"). */
+  key: string;
 }
 
 export interface LineageState {
@@ -69,7 +71,8 @@ export interface BreakoutState {
 export type OneSeedAction =
   | { type: "lineage_started"; id: number; asked: LineageAsked }
   | { type: "breakout_started"; id: number; asked: BreakoutAsked }
-  | { type: "challenge_starting"; id: number; meta: ChallengeMeta }
+  /** `key` is the key of the run the challenge is on (`runKeyOf` of its spec and seed): what the page holds of that run's truth is emptied. */
+  | { type: "challenge_starting"; id: number; meta: ChallengeMeta; key: string }
   | { type: "challenge_busy"; busy: Busy }
   | { type: "challenge_reset" };
 
@@ -96,6 +99,9 @@ export const reduceLineage = (state: LineageState, action: Response | OneSeedAct
       return { running: action.id, asked: action.asked, answer: null, problem: null };
     case "lineage":
       return action.id === state.running ? { ...state, running: null, answer: { view: action.view, sample_ids: action.sample_ids }, problem: null } : state;
+    case "challenge_starting":
+      // the run is a challenge now: the view on screen, and a request for it still in flight, are not kept (a new request is `locked`, as before)
+      return state.asked !== null && state.asked.key === action.key ? { ...state, running: null, answer: null, problem: null } : state;
     case "error":
       return action.id !== null && action.id === state.running ? { ...state, running: null, problem: { id: action.id, code: action.code, message: action.message } } : state;
     default:

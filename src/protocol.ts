@@ -26,12 +26,13 @@ export interface RunSpec {
 export type Request =
   | { type: "run"; id: number; spec: RunSpec }
   | { type: "cancel"; id: number }
-  | { type: "lineage"; id: number; spec: RunSpec; seed: number; pick: { rule: "sc3" } | { sample_id: string } }
+  // `actions` (P5c, plant_ui.md section 6, rule 9): the operator actions of the plant the view was opened from; absent or empty, the answer is as before
+  | { type: "lineage"; id: number; spec: RunSpec; seed: number; pick: { rule: "sc3" } | { sample_id: string }; actions?: PlantAction[] }
   | { type: "challenge_start"; id: number; variant: ChallengeVariant; spec: RunSpec; seed: number; shown: string }
   | { type: "challenge_open"; id: number; challenge: string; sample_id: string }
   | { type: "challenge_guess"; id: number; challenge: string; target: { sample_id: string } | { decision_id: string } }
   | { type: "challenge_giveup"; id: number; challenge: string }
-  | { type: "breakout"; id: number; case: string; architectures: string[]; seed: number }
+  | { type: "breakout"; id: number; case: string; architectures: string[]; seed: number; actions?: PlantAction[] }
   | { type: "plant_run"; id: number; epoch: number; spec: PlantSpec }
   | { type: "plant_record"; id: number; epoch: number; architecture: string; sample_id: string }
   // the picks the plant offers (plant_ui.md section 6, rule 8): a pick of a unit and of the break-out wait, and the Worker refuses them as `invalid_spec`

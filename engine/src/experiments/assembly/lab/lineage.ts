@@ -2,7 +2,9 @@ import type { MaterialisedError } from "../../../inject/types.ts";
 import { FLAG_NAMES } from "../../../record/architecture.ts";
 import type { RecordedDataset } from "../../../record/types.ts";
 import { requestOfTarget } from "../../../record/validate.ts";
+import type { ScenarioRun } from "../../../run.ts";
 import { runSeed } from "../run_seed.ts";
+import type { SeedInput } from "../run_seed.ts";
 import { drawnSampleIds, pickSample, sampleTruth } from "./pick.ts";
 import { askQuestions, recordContext } from "./questions.ts";
 import type { SampleTruth, Verdict } from "./questions.ts";
@@ -162,8 +164,16 @@ const refuse = (message: string): LineageResult => ({ ok: false, message });
  */
 export const runLineage = ({ data, spec, seed, pick }: LineageRequest): LineageResult => {
   if (spec.architectures.length === 0) return refuse("a lineage view needs at least one architecture");
-  const rule = "rule" in pick;
   const { run, input } = labSeed(data, spec, seed, architecturesNamed(data, spec.architectures));
+  return lineageOn(run, input, pick);
+};
+
+/**
+ * The view of a truth run that is already made (the plant's, with its operator actions applied: `truthOf` of plant.ts): the pick on the truth log, the records through `runSeed`, the questions and
+ * the realised errors. `runLineage` is this over the run of a spec with no action.
+ */
+export const lineageOn = (run: ScenarioRun, input: SeedInput, pick: LineageRequest["pick"]): LineageResult => {
+  const rule = "rule" in pick;
   let truth: SampleTruth | null;
   try {
     truth = rule ? pickSample(run) : sampleTruth(run, pick.sample_id);

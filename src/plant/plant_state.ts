@@ -1,4 +1,6 @@
-import type { ErrorCode, RefusalReason, Response, SampleRecord, ScenePlan, TruthOverlay } from "../protocol.ts";
+import type { ErrorCode, PlantSpec, RefusalReason, Response, SampleRecord, ScenePlan, TruthOverlay } from "../protocol.ts";
+import { runKeyOf } from "../ui/run_key.ts";
+import { sameSpec } from "./link.ts";
 
 // What the page knows of the plant (docs/design/plant_ui.md sections 5.5 and 6, rule 3), folded from the Worker's messages by the reducer of ui/state.ts. The page asks for a plan under an epoch
 // that grows with every request; an answer or an error whose epoch is not the newest asked for is dropped, so a slow older run can never replace a newer one. The plan on screen stays until the
@@ -9,6 +11,9 @@ import type { ErrorCode, RefusalReason, Response, SampleRecord, ScenePlan, Truth
 //
 // P5b adds the truth overlay (section 3.3): the switch, and the answers of the two requests the overlay makes (the placeholders of the halls, the truth of the sample the record panel shows), each
 // kept for its own request only. Nothing of it is held while the switch is off. The sample panel reads the rows of its sample in a slot of its own (`fields`), beside the record panel's.
+//
+// P5c keeps the plant when the reader leaves it (docs/design/plant_ui.md section 7, "As built in P5c"): `spec` is the spec of the newest request, so that the plant is asked for again only when the route wants
+// another one (`needsRun`); `view` is the clock instant and the lens at the moment the reader left, which Back returns to; and a challenge started on the run empties the overlay (`plant_run_locked`).
 
 export type PlantReady = Omit<Extract<Response, { type: "plant_ready" }>, "type" | "id">;
 
@@ -36,6 +41,8 @@ export interface PlantTruthSlot<V> {
   epoch: number;
   view: V | null;
   problem: PlantProblem | null;
+  /** A challenge was started on the run after this request was made: its answer, if it still comes, is not kept. */
+  closed?: true;
 }
 export type HallsTruth = Extract<TruthOverlay, { kind: "halls" }>;
 export type SampleTruth = Extract<TruthOverlay, { kind: "sample" }>;
@@ -48,9 +55,18 @@ export interface PlantTruthState {
   sample: (PlantTruthSlot<SampleTruth> & { sample_id: string }) | null;
 }
 
+/** Where the reader left the plant: the instant of the clock (whole seconds of the run) and the hall the lens reads. */
+export interface PlantView {
+  t: number;
+  lens: string | null;
+}
+
 export interface PlantState {
   /** The newest epoch asked for; 0 before the first request. */
   epoch: number;
+  /** The spec of the newest request; null before the first. */
+  spec: PlantSpec | null;
+  view: PlantView | null;
   /** The id of the request of that epoch while it is unanswered. */
   running: number | null;
   ready: PlantReady | null;
@@ -65,7 +81,9 @@ export interface PlantState {
 
 /** What the page itself says to the plant's state, besides the Worker's messages. */
 export type PlantPageAction =
-  | { type: "plant_started"; id: number; epoch: number }
+  | { type: "plant_started"; id: number; epoch: number; spec: PlantSpec }
+  | { type: "plant_left"; t: number; lens: string | null }
+  | { type: "plant_run_locked"; key: string }
   | { type: "plant_record_started"; id: number; epoch: number; architecture: string; sample_id: string; role?: "fields" }
   | { type: "plant_record_closed"; role?: "fields" }
   | { type: "plant_truth_switched"; on: boolean }
@@ -73,7 +91,7 @@ export type PlantPageAction =
 export type PlantAction = Response | PlantPageAction;
 
 export const NO_TRUTH: PlantTruthState = { on: false, halls: null, sample: null };
-export const initialPlant: PlantState = { epoch: 0, running: null, ready: null, halls: [], record: null, fields: null, truth: NO_TRUTH, problem: null };
+export const initialPlant: PlantState = { epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: NO_TRUTH, problem: null };
 
 const problemOf = (action: Extract<Response, { type: "error" }>): PlantProblem => ({ code: action.code, message: action.message, ...(action.reason && { reason: action.reason }), ...(action.index !== undefined && { index: action.index }) });
 
@@ -86,6 +104,15 @@ export const hallsOfPlan = (plan: ScenePlan, halls: ScenePlan["records"]): Scene
 /** The overlay with what was asked emptied: the requests stay as slots so that a late answer or error of one finds its place and is neither kept nor taken for the plant's. */
 const emptied = (t: PlantTruthState): PlantTruthState => ({ on: t.on, halls: t.halls && { ...t.halls, view: null, problem: null }, sample: t.sample && { ...t.sample, view: null, problem: null } });
 
+/** Whether the route wants a run the page has not asked for: nothing is asked again for the spec of the newest request, whether it is on its way, answered or failed (no retry loop). */
+export const needsRun = (plant: PlantState, want: PlantSpec): boolean => !sameSpec(plant.spec, want);
+
+/** The overlay after a challenge was started on its run: nothing is held of what the simulation knows, each slot says `locked` as a new request would, and a late answer is not kept. */
+const closed = (t: PlantTruthState): PlantTruthState => {
+  const locked: PlantProblem = { code: "locked", message: "a challenge was started on this run" };
+  return { on: t.on, halls: t.halls && { ...t.halls, view: null, problem: locked, closed: true }, sample: t.sample && { ...t.sample, view: null, problem: locked, closed: true } };
+};
+
 const truthError = (t: PlantTruthState, action: Extract<Response, { type: "error" }>): PlantTruthState | null => {
   if (t.halls?.id === action.id) return { ...t, halls: { ...t.halls, problem: problemOf(action) } };
   if (t.sample?.id === action.id) return { ...t, sample: { ...t.sample, problem: problemOf(action) } };
@@ -95,7 +122,11 @@ const truthError = (t: PlantTruthState, action: Extract<Response, { type: "error
 export const reducePlant = (state: PlantState, action: PlantAction): PlantState => {
   switch (action.type) {
     case "plant_started":
-      return { ...state, epoch: action.epoch, running: action.id, problem: null };
+      return { ...state, epoch: action.epoch, spec: action.spec, view: sameSpec(state.spec, action.spec) ? state.view : null, running: action.id, problem: null };
+    case "plant_left":
+      return { ...state, view: { t: action.t, lens: action.lens }, record: null, fields: null };
+    case "plant_run_locked":
+      return state.spec !== null && runKeyOf(state.spec.run, state.spec.seed) === action.key && (state.truth.halls !== null || state.truth.sample !== null) ? { ...state, truth: closed(state.truth) } : state;
     case "plant_ready": {
       if (action.epoch !== state.epoch) return state;
       const ready: PlantReady = { epoch: action.epoch, plan: action.plan, resume_at: action.resume_at, hashes: action.hashes, checks: action.checks };
@@ -131,8 +162,8 @@ export const reducePlant = (state: PlantState, action: PlantAction): PlantState 
     case "plant_truth_view": {
       const t = state.truth;
       if (!t.on || action.epoch !== state.epoch) return state;
-      if (action.view.kind === "halls" && t.halls?.id === action.id && t.halls.epoch === action.epoch) return { ...state, truth: { ...t, halls: { ...t.halls, view: action.view, problem: null } } };
-      if (action.view.kind === "sample" && t.sample?.id === action.id && t.sample.epoch === action.epoch) return { ...state, truth: { ...t, sample: { ...t.sample, view: action.view, problem: null } } };
+      if (action.view.kind === "halls" && t.halls?.id === action.id && t.halls.epoch === action.epoch && !t.halls.closed) return { ...state, truth: { ...t, halls: { ...t.halls, view: action.view, problem: null } } };
+      if (action.view.kind === "sample" && t.sample?.id === action.id && t.sample.epoch === action.epoch && !t.sample.closed) return { ...state, truth: { ...t, sample: { ...t.sample, view: action.view, problem: null } } };
       return state;
     }
     case "error": {

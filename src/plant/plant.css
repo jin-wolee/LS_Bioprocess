@@ -117,3 +117,9 @@ a.primary-link:hover { text-decoration: underline; }
 @media (max-width: 899px) {
   .plant-record-body[data-truth-layout="beside"] { grid-template-columns: minmax(0, 1fr); }
 }
+.plant-drill { margin-top: 10px; }
+.plant-drill h3 { margin: 0 0 2px; font-size: 0.95rem; }
+.plant-drill-link { display: inline-block; padding: 2px 0; }
+.plant-origin h2, .plant-link-notes h2 { margin: 0 0 4px; font-size: 1rem; }
+.plant-origin p, .plant-link-notes ul { margin: 4px 0; }
+.plant-link-notes ul { padding-left: 1.2em; }

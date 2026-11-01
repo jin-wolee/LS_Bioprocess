@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CheckDetail, ResultFooter, Response, ScenePlan } from "../protocol.ts";
+import { DEFAULT_PLANT } from "../plant/spec.ts";
 import { READY } from "./fixture.ts";
 import { displayedCheck, initial, reduce } from "./state.ts";
 import type { State } from "./state.ts";
@@ -26,7 +27,7 @@ describe("reduce", () => {
       lineage: { running: null, asked: null, answer: null, problem: null },
       challenge: { starting: null, active: null, busy: null, problem: null },
       breakout: { running: null, asked: null, result: null, problem: null },
-      plant: { epoch: 0, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null },
+      plant: { epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null },
     });
   });
 
@@ -115,20 +116,20 @@ describe("the plant in the page state (plant_ui.md section 6, rule 3)", () => {
   const answer = (id: number, epoch: number): Response => ({ type: "plant_ready", id, epoch, plan: { ...plan, seed: epoch }, resume_at: 0, hashes: { truth: "t", cells: {} }, checks: { prefix_equal: null, truth_equal: null } });
 
   it("Given a plant request and its answer Then the plan is in the state, and the run of the lab is untouched", () => {
-    const asked = reduce(running(), { type: "plant_started", id: 9, epoch: 1 });
+    const asked = reduce(running(), { type: "plant_started", id: 9, epoch: 1, spec: DEFAULT_PLANT });
     const next = reduce(asked, answer(9, 1));
     expect([next.plant.epoch, next.plant.ready?.plan.seed, next.running, next.results]).toEqual([1, 1, 5, null]);
   });
 
   it("Given an answer of an older epoch Then it is dropped, and an error of the newest epoch is the plant's problem and not the page's", () => {
-    const asked = reduce(reduce(initial, { type: "plant_started", id: 9, epoch: 1 }), { type: "plant_started", id: 10, epoch: 2 });
+    const asked = reduce(reduce(initial, { type: "plant_started", id: 9, epoch: 1, spec: DEFAULT_PLANT }), { type: "plant_started", id: 10, epoch: 2, spec: DEFAULT_PLANT });
     expect(reduce(asked, answer(9, 1))).toEqual(asked);
     const failed = reduce(asked, { type: "error", id: 10, epoch: 2, code: "refused", message: "no", reason: "past", index: 0 });
     expect([failed.plant.problem?.code, failed.problem]).toEqual(["refused", null]);
   });
 
   it("Given an error of a plant request of an older epoch Then it changes nothing; an error with no epoch is still the page's", () => {
-    const asked = reduce(reduce(initial, { type: "plant_started", id: 9, epoch: 1 }), { type: "plant_started", id: 10, epoch: 2 });
+    const asked = reduce(reduce(initial, { type: "plant_started", id: 9, epoch: 1, spec: DEFAULT_PLANT }), { type: "plant_started", id: 10, epoch: 2, spec: DEFAULT_PLANT });
     expect(reduce(asked, { type: "error", id: 9, epoch: 1, code: "cancelled", message: "m" })).toEqual(asked);
     expect(reduce(asked, { type: "error", id: 3, code: "engine_error", message: "m" }).problem?.code).toBe("engine_error");
   });

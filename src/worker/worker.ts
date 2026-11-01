@@ -1,3 +1,4 @@
+import type { PlantRefusal } from "../../engine/src/experiments/assembly/lab/actions.ts";
 import { answerBreakout } from "../../engine/src/experiments/assembly/lab/breakout.ts";
 import { checkError, makeDeps, runCheck } from "../../engine/src/experiments/assembly/lab/check.ts";
 import { createChallenges } from "../../engine/src/experiments/assembly/lab/challenges.ts";
@@ -37,6 +38,9 @@ import { LAB_DATA } from "./data.ts";
 // P5b adds `plant_truth` (docs/design/plant_ui.md section 6, rule 8): the truth overlay, asked for on the reader's switch only. It is read from the run the Worker kept (the truth log, the halls with
 // the errors the injector materialised on them) with no recompute: for a sample the lineage view's truth column and verdicts, for the halls the placeholders. A challenge open on the same run answers
 // `locked` at the moment of the request; no plant_ready, plant_halls or plant_record_view carries any of it.
+//
+// P5c adds `actions` to `lineage` and `breakout` (docs/design/plant_ui.md section 6, rule 9): the operator actions of the plant a drill-down was opened from, checked as `plant_run` checks them, so the
+// lineage view of a sample is made from the run the plant shows. A refusal of an action arrives as `error` with code `refused`, its `reason` and its `index`. `challenge_start` refuses a list of actions.
 //
 // createWorker holds the whole protocol and touches no global, so the unit tests drive it directly. The entry at the bottom wires it to postMessage when this file runs as a Worker.
 
@@ -124,17 +128,21 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     return mine;
   };
 
-  const refuse = (id: number, r: Refusal): void => fail(id, r.code, r.message);
+  /** A refusal of a one-seed request: `refused` (an action a rule refuses, P5c) carries its reason and the index of the action, as it does for `plant_run`; the others are a code and a message. */
+  const refuse = (id: number, r: Refusal | PlantRefusal): void =>
+    r.code === "refused" ? post({ type: "error", id, code: "refused", message: r.message, reason: r.reason, index: r.index }) : fail(id, r.code, r.message);
 
   /** The one-seed requests (lineage, challenge_*): answered at once, in the order they arrive; an engine exception arrives as `engine_error` with its message. */
   const oneSeed = (id: number, request: Record<string, unknown>): void => {
     try {
       switch (request.type) {
         case "lineage": {
-          const out = answerLineage(env.data, challenges, { spec: request.spec, seed: request.seed, pick: request.pick });
+          const out = answerLineage(env.data, challenges, { spec: request.spec, seed: request.seed, pick: request.pick, actions: request.actions });
           return out.ok ? post({ type: "lineage", id, view: out.view, sample_ids: out.sample_ids }) : refuse(id, out);
         }
         case "challenge_start": {
+          // a challenge holds a blind plant that no operator action reaches (plant_ui.md section 6, rule 9): a list of actions is refused and not ignored
+          if (request.actions !== undefined) return fail(id, "invalid_spec", "a challenge takes no actions: it holds a blind plant that no operator action reaches");
           const out = challenges.start({ variant: request.variant, spec: request.spec, seed: request.seed, shown: request.shown }, (done, total) => post({ type: "progress", id, done, total }));
           return out.ok ? post({ type: "challenge_ready", id, challenge: out.challenge, announced_type: out.announced_type, record: out.record, inputs: out.inputs }) : refuse(id, out);
         }
@@ -155,7 +163,7 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
   /** The `breakout` request: one case, one seed, the architectures; the answer is the report of the case over that seed. It is async (the truth log is hashed before and after the architectures). */
   const breakout = async (id: number, request: Record<string, unknown>): Promise<void> => {
     try {
-      const out = await answerBreakout(env.data, { case: request.case, architectures: request.architectures, seed: request.seed });
+      const out = await answerBreakout(env.data, { case: request.case, architectures: request.architectures, seed: request.seed, actions: request.actions });
       if (out.ok) post({ type: "breakout_result", id, result: out.result });
       else refuse(id, out);
     } catch (e) {

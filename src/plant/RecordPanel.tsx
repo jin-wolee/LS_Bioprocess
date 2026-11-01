@@ -4,6 +4,8 @@ import { ErrorBlock } from "../ui/ErrorBlock.tsx";
 import { LineageTruth, RealisedErrors } from "../ui/LineageView.tsx";
 import { RecordSvg } from "../ui/RecordSvg.tsx";
 import { Label, LangContext, T } from "../ui/T.tsx";
+import type { Drill } from "./drill.ts";
+import { DrillLink, DrillLinks } from "./DrillLinks.tsx";
 import type { PlantRecordState, PlantTruthState } from "./plant_state.ts";
 
 // The record panel (docs/design/plant_ui.md sections 3.3 and 6): the rows the lens architecture holds for the card that was picked, as the lineage screen draws one record (the boxes of the tables and
@@ -14,8 +16,10 @@ import type { PlantRecordState, PlantTruthState } from "./plant_state.ts";
 // P5b: with the truth overlay on, the panel shows beside the record what the simulation knows of the sample (section 3.3, "As built in P5b"): the truth column and the three answers of this record
 // with their verdicts and the errors the injector materialised on the sample in it, drawn by the lineage screen's own parts. Every part of it is marked `data-overlay` and carries the label. With the
 // overlay off the panel is as it was.
+//
+// P5c: at its foot, the links to Lineage on the sample and to Results for this architecture (docs/design/plant_ui.md section 7).
 
-export function RecordPanel({ record, onClose, truth }: { record: PlantRecordState; onClose: () => void; truth: PlantTruthState }) {
+export function RecordPanel({ record, drill, onClose, truth }: { record: PlantRecordState; drill: Drill; onClose: () => void; truth: PlantTruthState }) {
   const lang = useContext(LangContext);
   const root = useRef<HTMLElement>(null);
 
@@ -81,6 +85,10 @@ export function RecordPanel({ record, onClose, truth }: { record: PlantRecordSta
       )}
       {record.view && <RecordSvg column={{ ...record.view, ...(column && { answers: column.answers }) }} sample={record.sample_id} {...(overlay && column && { truth: overlay.truth })} />}
       </div>
+      <DrillLinks>
+        <DrillLink name="lineage" href={drill.lineage(record.sample_id)} k="plant.drill.lineage" parts={{ sample: <Label>{record.sample_id}</Label> }} />
+        <DrillLink name="results" href={drill.results([record.architecture])} k="plant.drill.results" />
+      </DrillLinks>
     </section>
   );
 }

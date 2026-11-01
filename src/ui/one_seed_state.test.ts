@@ -12,11 +12,11 @@ const reveal = { planted: { type: "label_error", affected: ["S1", "S2"], detail:
 const META = { variant: "sample" as const, scenario: "default", seed: 7, shown: "a_manual" };
 
 const apply = (state: State, ...actions: Parameters<typeof reduce>[1][]): State => actions.reduce(reduce, state);
-const started = apply(initial, { type: "challenge_starting", id: 5, meta: META });
+const started = apply(initial, { type: "challenge_starting", id: 5, meta: META, key: "k" });
 const playing = apply(started, { type: "challenge_ready", id: 5, challenge: "challenge-1", announced_type: "label_error", record, inputs: [] });
 
 describe("lineage", () => {
-  const asked = { scenario: "sc03_feed_in_gap", seed: 1, architectures: ["a_manual"] };
+  const asked = { scenario: "sc03_feed_in_gap", seed: 1, architectures: ["a_manual"], key: "k" };
 
   it("Given a request and its answer Then the view is kept with what was asked, and the request is over", () => {
     const s = apply(initial, { type: "lineage_started", id: 3, asked }, { type: "lineage", id: 3, view, sample_ids: ["S1"] });

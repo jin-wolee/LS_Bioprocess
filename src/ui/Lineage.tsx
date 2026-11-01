@@ -3,7 +3,7 @@ import { hasKey, text } from "../i18n/index.ts";
 import type { ResultFooter } from "../protocol.ts";
 import { ErrorBlock } from "./ErrorBlock.tsx";
 import { LineageColumns, LineageTruth } from "./LineageView.tsx";
-import { architecturesOf, lineageRequest, seedOf } from "./lineage_form.ts";
+import { architecturesOf, editLineage, lineageRequest, seedOf } from "./lineage_form.ts";
 import type { LineageForm } from "./lineage_form.ts";
 import { ResultBlock } from "./ResultBlock.tsx";
 import { displayedCheck } from "./state.ts";
@@ -17,7 +17,7 @@ import { Label, LangContext, T } from "./T.tsx";
 export function Lineage({ ready, state, form, setForm, onShow }: { ready: ReadyInfo; state: State; form: LineageForm; setForm: (f: LineageForm) => void; onShow: (f: LineageForm) => void }) {
   const lang = useContext(LangContext);
   const { lineage } = state;
-  const update = (patch: Partial<LineageForm>) => setForm({ ...form, ...patch });
+  const update = (patch: Partial<LineageForm>) => setForm(editLineage(form, patch));
   const presets = ready.presets.filter((p) => p.role === "preset");
   const ablations = ready.presets.filter((p) => p.role === "ablation");
   const seed = seedOf(form.seed);

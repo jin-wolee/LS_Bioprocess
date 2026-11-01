@@ -50,7 +50,7 @@ export function Utilisation({ report, view, ready }: { report: ExperimentReport;
   const pooled = groupRows(report.architectures[0]?.rows ?? []).utilisation;
   const profiles = view?.by_profile ?? [];
   return (
-    <section class="utilisation" data-utilisation aria-labelledby="util-heading">
+    <section id="utilisation" class="utilisation" data-utilisation aria-labelledby="util-heading">
       <T as="h2" k="util.heading" id="util-heading" />
       <T as="p" k="util.lead" />
       <T as="h3" k="util.pooled" />
