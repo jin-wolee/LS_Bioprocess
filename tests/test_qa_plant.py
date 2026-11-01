@@ -207,6 +207,78 @@ def test_each_script_of_the_plant_qa_is_a_small_file_of_one_concern():
         assert len(path.read_text(encoding="utf-8").splitlines()) <= 300, path.name
 
 
+# ---------- the record halls (P5a) ----------
+def card(shown_s, available_s=None):
+    return {"sample": 0, "shown_s": shown_s, "available_s": available_s, "slots": [], "findings": [], "version_s": []}
+
+
+def message(at, type_, epoch=1, **data):
+    return {"at": at, "data": {"type": type_, "id": 1, "epoch": epoch, **data}}
+
+
+def ready(at, records, cells, epoch=1):
+    return message(at, "plant_ready", epoch, plan={"horizon_s": 100, "records": records}, hashes={"truth": HASH, "cells": cells})
+
+
+def hall(name, cards):
+    return {"architecture": name, "flags_on": [], "cards": cards}
+
+
+def test_the_instants_of_the_halls_checks_are_day_0_noon_day_10_noon_and_the_horizon():
+    assert qp.HALL_INSTANTS == {"early": 43200, "mid": 907200, "end": 1814400}  # 12 h; 10 days and 12 h; 21 days
+    assert qp.CLOSEUP_INSTANT_S == 907200
+    assert qp.HALL_CARDS_END == {"a_manual": 391, "b_lims_lite": 394, "c_context": 394}
+
+
+def test_the_plan_the_page_received_is_the_first_hall_with_the_halls_that_followed_in_order():
+    msgs = [ready(1, [hall("a", [card(5)])], {"a": HASH}), message(2, "plant_halls", records=[hall("b", [])], cells={"b": HASH}), message(3, "plant_halls", records=[hall("c", [card(9)])], cells={"c": HASH})]
+    assert [r["architecture"] for r in qp.plan_from_messages(msgs, 1)["records"]] == ["a", "b", "c"]
+    assert qp.plan_from_messages(msgs, 2) is None
+    other = [*msgs, message(4, "plant_halls", epoch=2, records=[hall("z", [])], cells={})]
+    assert [r["architecture"] for r in qp.plan_from_messages(other, 1)["records"]] == ["a", "b", "c"]  # a hall of another epoch is not in the plan
+
+
+def test_cards_expected_counts_the_cards_shown_and_the_knowable_ones_from_their_instants():
+    plan = {"records": [hall("a", [card(10), card(20), card(30)]), hall("c", [card(10, 15), card(20, 50), card(30, None)])]}
+    assert qp.cards_expected(plan, 9) == {"a": {"shown": 0, "knowable": 0}, "c": {"shown": 0, "knowable": 0}}
+    assert qp.cards_expected(plan, 10) == {"a": {"shown": 1, "knowable": 0}, "c": {"shown": 1, "knowable": 0}}
+    assert qp.cards_expected(plan, 15) == {"a": {"shown": 1, "knowable": 0}, "c": {"shown": 1, "knowable": 1}}
+    assert qp.cards_expected(plan, 25) == {"a": {"shown": 2, "knowable": 0}, "c": {"shown": 2, "knowable": 1}}
+    assert qp.cards_expected(plan, 50) == {"a": {"shown": 3, "knowable": 0}, "c": {"shown": 3, "knowable": 2}}
+
+
+def test_cards_problems_compares_the_attribute_with_the_counts_computed_from_the_plan():
+    want = {"a": {"shown": 2, "knowable": 0}}
+    assert qp.cards_problems('{"a":{"shown":2,"knowable":0}}', want) == []
+    assert "says" in qp.cards_problems('{"a":{"shown":3,"knowable":0}}', want)[0]
+    assert qp.cards_problems(None, want) == ["data-plant-cards is not JSON: None"]
+    assert qp.cards_problems("{not json", want)[0].startswith("data-plant-cards is not JSON")
+
+
+def test_the_halls_arrive_one_after_the_other_in_the_order_of_the_spec():
+    good = [ready(10, [hall("a", [])], {"a": HASH}), message(40, "plant_halls", records=[hall("b", [])], cells={"b": HASH}), message(70, "plant_halls", records=[hall("c", [])], cells={"c": HASH})]
+    assert qp.halls_arrival_problems(good, ["a", "b", "c"]) == []
+    assert qp.halls_arrival_problems([], ["a"]) == ["no plant_ready arrived"]
+
+
+@pytest.mark.parametrize("fault,fragment", [
+    ("all in ready", "plant_ready holds the halls"),
+    ("order", "in the order of the spec"),
+    ("same instant", "did not arrive one after the other"),
+    ("missing digest", "the digests are for"),
+])
+def test_a_progressive_answer_that_breaks_a_rule_is_a_problem(fault, fragment):
+    a, b, c = hall("a", []), hall("b", []), hall("c", [])
+    msgs = {
+        "all in ready": [ready(10, [a, b, c], {"a": HASH, "b": HASH, "c": HASH})],
+        "order": [ready(10, [a], {"a": HASH}), message(40, "plant_halls", records=[c], cells={"c": HASH}), message(70, "plant_halls", records=[b], cells={"b": HASH})],
+        "same instant": [ready(10, [a], {"a": HASH}), message(10, "plant_halls", records=[b], cells={"b": HASH}), message(70, "plant_halls", records=[c], cells={"c": HASH})],
+        "missing digest": [ready(10, [a], {"a": HASH}), message(40, "plant_halls", records=[b], cells={}), message(70, "plant_halls", records=[c], cells={"c": HASH})],
+    }[fault]
+    got = qp.halls_arrival_problems(msgs, ["a", "b", "c"])
+    assert got and fragment in " ".join(got)
+
+
 # ---------- the launch arguments are those of the spike ----------
 def test_the_software_gl_arguments_are_the_spikes():
     assert qp.SOFTWARE_GL == ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]

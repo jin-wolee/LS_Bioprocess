@@ -1,7 +1,12 @@
 import type { Event } from "../../../generated/event.schema";
+import type { Metrics } from "../../../generated/metrics.schema";
 import { loadScenario } from "../../../scenario.ts";
+import type { ScenarioConfig } from "../../../scenario.ts";
+import type { ScenarioRun } from "../../../run.ts";
 import { observeEvents } from "../../../observe.ts";
+import type { ObservableEvent } from "../../../observe.ts";
 import { parseArchitecture } from "../../../record/architecture.ts";
+import type { Architecture } from "../../../record/architecture.ts";
 import type { RecordedDataset } from "../../../record/types.ts";
 import { ACTION_CLASS, applyActions, canonicalActions, parseActions } from "./actions.ts";
 import type { Action, PlantBase, PlantRefusal } from "./actions.ts";
@@ -11,7 +16,9 @@ import type { Challenges } from "./challenges.ts";
 import { layoutSpec, plannedIds, scenePlan } from "./plant_plan.ts";
 import type { ScenePlan } from "./plant_plan.ts";
 import { recordsOf } from "./plant_records.ts";
+import type { PlanRecord } from "./plant_records.ts";
 import { runSeed } from "../run_seed.ts";
+import type { SeedInput } from "../run_seed.ts";
 import { architecturesNamed, labSeedOf } from "./seed_setup.ts";
 import { scenarioConfig, scenarioDocument, useCapturePath } from "./setup.ts";
 import type { LabData } from "./setup.ts";
@@ -20,8 +27,9 @@ import type { RunSpec } from "./spec.ts";
 import { canonicalJson, canonicalJsonl, logHash, sha256Hex } from "../../../trace.ts";
 
 // The `plant_run` request (docs/design/plant_ui.md sections 5 and 6): the Worker checks the list of operator actions against the run, applies it to a copy of the scenario document and the record
-// halls, runs the truth and the recorders for one seed, and answers a scene plan with the hashes that prove what ran. The run is recomputed from its start each time; the only thing kept between
-// two answers is the truth log of the last one (`PlantKept`), which stays in the Worker and is used for the two checks of section 5.5.
+// halls, runs the truth and the recorders for one seed, and answers a scene plan with the hashes that prove what ran. The run is recomputed from its start each time; what is kept between two answers
+// (`PlantKept`) stays in the Worker: the truth log of the last one, for the two checks of section 5.5, and the record halls built so far, for `plant_record` (plant_record.ts). `runPlant` builds every
+// architecture in one call; the progressive answer the Worker gives (plant_stage.ts) is proven byte-equal to it.
 
 export interface PlantSpec {
   /** `run.architectures` is the set of record halls; `run.seeds` is ignored (a plant run is one seed). */
@@ -40,10 +48,20 @@ export interface PlantAnswer {
   checks: { prefix_equal: boolean | null; truth_equal: boolean | null };
 }
 
-/** What the Worker keeps for the next answer. Truth side: it is never sent. */
+/** A record hall the Worker has built: the recorded dataset, and the ids of the samples it holds a card of (the only samples the record panel may ask it about). */
+export interface KeptHall {
+  dataset: RecordedDataset;
+  cards: ReadonlySet<string>;
+}
+
+/**
+ * What the Worker keeps for the next answer and for `plant_record`. It never leaves the Worker: the page gets a plan, hashes and, on request, the rows of one card. `events` is the truth log;
+ * `halls` holds the halls built so far, by architecture id, which a progressive answer fills one at a time.
+ */
 export interface PlantKept {
   actions: Action[];
   events: readonly Event[];
+  halls: Map<string, KeptHall>;
 }
 
 export type PlantRunResult = { ok: true; answer: PlantAnswer; kept: PlantKept } | PlantRefusal;
@@ -75,7 +93,7 @@ const sameLog = (a: readonly Event[], b: readonly Event[], before: number, label
 };
 
 /** The checks of section 5.5 against the previous answer, and the instant the view resumes at. */
-const compare = (previous: PlantKept | undefined, actions: readonly Action[], events: readonly Event[]): Pick<PlantAnswer, "resume_at" | "checks"> => {
+export const compare = (previous: PlantKept | undefined, actions: readonly Action[], events: readonly Event[]): Pick<PlantAnswer, "resume_at" | "checks"> => {
   if (!previous) return { resume_at: 0, checks: { prefix_equal: null, truth_equal: null } };
   const before = new Set(previous.actions.map(actionKey));
   const now = new Set(actions.map(actionKey));
@@ -92,11 +110,23 @@ const compare = (previous: PlantKept | undefined, actions: readonly Action[], ev
   };
 };
 
+/** The truth stage of a checked spec: the scenario with the actions applied, the truth run, and the input the recorders are given. Nothing of the records is built yet. */
+export interface PlantTruth {
+  spec: PlantSpec;
+  config: ScenarioConfig;
+  run: ScenarioRun;
+  input: SeedInput;
+  events: ObservableEvent[];
+  architectures: Architecture[];
+  /** The ids of the planned samples, in string order: the cards of every hall point into this list. */
+  samples: string[];
+}
+
 /**
- * Run a checked spec. A refusal of the plant's own (section 5.6) comes back as a refusal; an error of the engine (a value it rejects) is thrown with the engine's message, and the Worker
- * posts it as `engine_error`. `previous` is what the last answer kept.
+ * The truth run of a checked spec. A refusal of the plant's own (section 5.6) comes back as a refusal; an error of the engine (a value it rejects) is thrown with the engine's message, and the
+ * Worker posts it as `engine_error`.
  */
-export const runPlant = async (data: LabData, spec: PlantSpec, previous?: PlantKept): Promise<PlantRunResult> => {
+export const truthOf = (data: LabData, spec: PlantSpec): { ok: true; truth: PlantTruth } | PlantRefusal => {
   const { run: runSpec, seed, actions } = spec;
   const extras = { ...(runSpec.bay_profiles && { bay_profiles: runSpec.bay_profiles }), ...(runSpec.analyzer_profiles && { analyzer_profiles: runSpec.analyzer_profiles }) };
   const seen = scenarioConfig(data, runSpec.scenario, runSpec.settings, seed, { ...extras, ...(runSpec.capture_path && { capture_path: runSpec.capture_path }) });
@@ -112,30 +142,61 @@ export const runPlant = async (data: LabData, spec: PlantSpec, previous?: PlantK
   if (applied.capture_path) useCapturePath(data, applied.scenario, applied.capture_path);
   const config = { ...loadScenario(applied.scenario, data.lookup), seed };
   const { run, input } = labSeedOf(data, runSpec, config, applied.architectures);
-  const out = runSeed(input);
-
   const events = observeEvents(run.events);
-  const datasets = applied.architectures.map((a) => out.datasets[a.id] as RecordedDataset);
-  const ids = applied.architectures.map((a) => a.id);
-  const plan = scenePlan({
-    seed, cfg: config, events, operators: run.operators.map((o) => o.operator_id), windows: run.l3Input.windows,
-    layout: layoutSpec(data, runSpec, config, ids), records: recordsOf(datasets, plannedIds(events)),
+  return { ok: true, truth: { spec, config, run, input, events, architectures: applied.architectures, samples: plannedIds(events) } };
+};
+
+/** The scene plan of a truth run with the halls built so far (the records of the architectures that are ready, in the order of the spec). */
+export const planOf = (data: LabData, t: PlantTruth, records: PlanRecord[]): ScenePlan =>
+  scenePlan({
+    seed: t.spec.seed, cfg: t.config, events: t.events, operators: t.run.operators.map((o) => o.operator_id), windows: t.run.l3Input.windows,
+    layout: layoutSpec(data, t.spec.run, t.config, t.architectures.map((a) => a.id)), records,
   });
-  const cells = Object.fromEntries(await Promise.all(out.cells.map(async (cell, i) => [ids[i] as string, await sha256Hex(canonicalJson(cell))] as const)));
+
+/** The digest of the metric cells of one hall (lab_ui.md section 7). */
+export const cellsDigest = (cell: Metrics): Promise<string> => sha256Hex(canonicalJson(cell));
+
+/** What the Worker keeps of a built hall: its dataset and the samples it holds a card of. */
+export const keptHall = (dataset: RecordedDataset, record: PlanRecord, samples: readonly string[]): KeptHall => ({ dataset, cards: new Set(record.cards.map((c) => samples[c.sample] as string)) });
+
+/** The kept state of an answer that has no halls yet; the answer adds them. */
+export const keptOf = (t: PlantTruth): PlantKept => ({ actions: canonicalActions(t.spec.actions).map((n) => n.action), events: t.run.events, halls: new Map() });
+
+/**
+ * Run a checked spec in one build: the truth run, then every architecture in one call of the recorders. This is the whole answer at once, and the reference that the progressive answer of
+ * `plant_stage.ts` is proven equal to (docs/design/plant_ui.md section 5.5). `previous` is what the last answer kept.
+ */
+export const runPlant = async (data: LabData, spec: PlantSpec, previous?: PlantKept): Promise<PlantRunResult> => {
+  const made = truthOf(data, spec);
+  if (!made.ok) return made;
+  const t = made.truth;
+  const out = runSeed(t.input);
+  const ids = t.architectures.map((a) => a.id);
+  const datasets = t.architectures.map((a) => out.datasets[a.id] as RecordedDataset);
+  const records = recordsOf(datasets, t.samples);
+  const cells = Object.fromEntries(await Promise.all(out.cells.map(async (cell, i) => [ids[i] as string, await cellsDigest(cell)] as const)));
+  const kept = keptOf(t);
+  for (const [i, id] of ids.entries()) kept.halls.set(id, keptHall(datasets[i] as RecordedDataset, records[i] as PlanRecord, t.samples));
   return {
     ok: true,
-    answer: { plan, ...compare(previous, actions, run.events), hashes: { truth: await logHash(run.events), cells } },
-    kept: { actions: canonicalActions(actions).map((n) => n.action), events: run.events },
+    answer: { plan: planOf(data, t, records), ...compare(previous, spec.actions, t.run.events), hashes: { truth: await logHash(t.run.events), cells } },
+    kept,
   };
 };
 
 /**
  * The `plant_run` request as the Worker receives it: the spec is user input and is checked; a run that is an unrevealed challenge is locked, so the plant cannot be used to read the truth of a
- * challenge in progress (lab_ui.md section 4, rule 2); then the actions are checked against the run and the run is made.
+ * challenge in progress (lab_ui.md section 4, rule 2).
  */
-export const answerPlantRun = async (data: LabData, challenges: Challenges, raw: { spec: unknown }, previous?: PlantKept): Promise<PlantRunResult> => {
+export const checkPlantRequest = (data: LabData, challenges: Challenges, raw: { spec: unknown }): { ok: true; spec: PlantSpec } | PlantRefusal => {
   const checked = checkPlantSpec(raw.spec, data);
   if (!checked.ok) return checked;
   if (challenges.locked(checked.spec.run, checked.spec.seed)) return { ok: false, code: "locked", message: "this run is a challenge that has not been revealed; the plant of it opens after the guess or the give-up" };
-  return runPlant(data, checked.spec, previous);
+  return checked;
+};
+
+/** `checkPlantRequest`, then the actions are checked against the run and the run is made in one build (`runPlant`). */
+export const answerPlantRun = async (data: LabData, challenges: Challenges, raw: { spec: unknown }, previous?: PlantKept): Promise<PlantRunResult> => {
+  const checked = checkPlantRequest(data, challenges, raw);
+  return checked.ok ? runPlant(data, checked.spec, previous) : checked;
 };

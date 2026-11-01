@@ -4,8 +4,9 @@ import { createChallenges } from "../../engine/src/experiments/assembly/lab/chal
 import type { Refusal } from "../../engine/src/experiments/assembly/lab/challenges.ts";
 import { homeRun } from "../../engine/src/experiments/assembly/lab/home.ts";
 import { answerLineage } from "../../engine/src/experiments/assembly/lab/lineage_request.ts";
-import { answerPlantRun } from "../../engine/src/experiments/assembly/lab/plant.ts";
 import type { PlantKept } from "../../engine/src/experiments/assembly/lab/plant.ts";
+import { answerPlantRecord } from "../../engine/src/experiments/assembly/lab/plant_record.ts";
+import { answerPlantStart } from "../../engine/src/experiments/assembly/lab/plant_stage.ts";
 import { readyOf } from "../../engine/src/experiments/assembly/lab/ready.ts";
 import { runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
@@ -26,6 +27,11 @@ import { LAB_DATA } from "./data.ts";
 // P3 adds `plant_run` (the plant of ADR-0021, docs/design/plant_ui.md sections 5 and 6): the checked spec and its actions are run from the start and answered as `plant_ready`, a scene plan with the
 // hashes that prove what ran. The Worker keeps the truth log of the last answer it posted (`PlantKept`) for the checks of the next. An epoch names each request: the Worker answers one plant run
 // at a time, a newer epoch cancels an older run that has not built its answer yet, and every message about a plant request echoes the epoch, so the page drops what is not the latest.
+//
+// P5a adds the progressive halls and `plant_record` (docs/design/plant_ui.md sections 5.5 and 6): the answer to `plant_run` is `plant_ready` with the plan and the record hall of the first architecture of
+// the spec, as soon as the truth run and that record are built; the other architectures follow as one `plant_halls` message each, in the order of the spec, a turn of the event loop apart, so a newer
+// epoch (which the Worker sees between two halls) cancels the halls still pending and nothing is posted for them. The halls that are built are kept with the truth log (`PlantKept`), and `plant_record`
+// reads the rows of one card from them for the epoch asked for, with no recompute; a request for another epoch is `cancelled` and one for a hall or a sample the run does not hold is refused.
 //
 // createWorker holds the whole protocol and touches no global, so the unit tests drive it directly. The entry at the bottom wires it to postMessage when this file runs as a Worker.
 
@@ -152,9 +158,10 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     }
   };
 
-  /** The plant: the newest epoch asked for, what the last answer posted kept, and the queue (plant runs are answered one at a time, in the order they arrive). */
+  /** The plant: the newest epoch asked for, what the last answer posted kept and the epoch it belongs to, and the queue (plant runs are answered one at a time, in the order they arrive). */
   let plantLatest = -1;
   let plantKept: PlantKept | undefined;
+  let keptEpoch = -1;
   let plantQueue: Promise<void> = Promise.resolve();
 
   const plantAnswer = async (id: number, epoch: number, raw: unknown): Promise<void> => {
@@ -164,14 +171,35 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       // one turn of the event loop first: a newer request that is already waiting is handled before this one builds anything
       await yieldToLoop();
       if (stale()) return cancelled();
-      const out = await answerPlantRun(env.data, challenges, { spec: raw }, plantKept);
+      const out = await answerPlantStart(env.data, challenges, { spec: raw }, plantKept);
       if (stale()) return cancelled();
       if (!out.ok) return post({ type: "error", id, epoch, code: out.code, message: out.message, ...(out.code === "refused" && { reason: out.reason, index: out.index }) });
       plantKept = out.kept;
+      keptEpoch = epoch;
       post({ type: "plant_ready", id, epoch, ...out.answer });
+      // the other halls, one at a time, a turn of the event loop between them; a newer epoch stops the ones still pending and nothing is posted for them (section 5.5)
+      for (const build of out.halls) {
+        await yieldToLoop();
+        if (stale()) return;
+        const hall = await build();
+        if (stale()) return;
+        post({ type: "plant_halls", id, epoch, ...hall });
+      }
     } catch (e) {
       post({ type: "error", id, epoch, code: "engine_error", message: e instanceof Error ? e.message : String(e) });
     }
+  };
+
+  /** `plant_record`: the rows one architecture holds for one card, read from the halls the Worker kept for that epoch. Answered at once; the epoch is echoed on every message about it. */
+  const plantRecord = (id: number, message: Record<string, unknown>): void => {
+    const { epoch, architecture, sample_id } = message;
+    if (typeof epoch !== "number" || !Number.isInteger(epoch) || epoch < 0) return fail(id, "invalid_spec", "a plant_record request needs a whole epoch, 0 or more");
+    if (typeof architecture !== "string" || typeof sample_id !== "string") return post({ type: "error", id, epoch, code: "invalid_spec", message: "a plant_record request needs an architecture and a sample_id, both strings" });
+    // the record is read from the run of the epoch asked for: when the Worker holds another run (a newer one was posted, or none was) the request is stale and the page drops the answer anyway
+    if (plantKept === undefined || epoch !== keptEpoch) return post({ type: "error", id, epoch, code: "cancelled", message: `the Worker holds no plant run of epoch ${epoch}` });
+    const out = answerPlantRecord(plantKept, architecture, sample_id);
+    if (!out.ok) return post({ type: "error", id, epoch, code: "refused", reason: "unknown_target", message: out.message });
+    post({ type: "plant_record_view", id, epoch, sample: out.sample });
   };
 
   const plantRun = (id: number, message: Record<string, unknown>): Promise<void> | void => {
@@ -201,6 +229,7 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     }
     if (type === "breakout") return requestId === null ? fail(null, "invalid_spec", "a breakout request needs a numeric id") : breakout(requestId, message as Record<string, unknown>);
     if (type === "plant_run") return requestId === null ? fail(null, "invalid_spec", "a plant_run request needs a numeric id") : plantRun(requestId, message as Record<string, unknown>);
+    if (type === "plant_record") return requestId === null ? fail(null, "invalid_spec", "a plant_record request needs a numeric id") : plantRecord(requestId, message as Record<string, unknown>);
     return fail(requestId, "invalid_spec", `unknown request type ${JSON.stringify(type)}`);
   };
 

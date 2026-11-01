@@ -42,7 +42,8 @@ describe("plant_run: the answer", () => {
     expect(m.plan.analyzers.map((a) => a.id)).toEqual(["AN-1", "AN-2"]);
     expect(m.plan.layout.architectures).toEqual(HALLS);
     expect(m.hashes.truth).toMatch(/^[0-9a-f]{64}$/);
-    expect(Object.keys(m.hashes.cells)).toEqual(HALLS);
+    expect(Object.keys(m.hashes.cells)).toEqual([HALLS[0]]); // P5a: the digest of the first hall; the halls of B and C follow as plant_halls (worker_halls.test.ts)
+    expect(m.plan.records.map((r) => r.architecture)).toEqual([HALLS[0]]);
   }, 60_000);
 
   it("Given the answer Then it is plain data: it survives structuredClone and holds no key of a hidden field", async () => {

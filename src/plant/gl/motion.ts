@@ -1,11 +1,13 @@
 import { Color, Fog, Group } from "three";
 import type { BufferGeometry, DirectionalLight, HemisphereLight, Material, MeshBasicMaterial, Scene as ThreeScene } from "three";
+import type { HallView } from "../halls_at.ts";
 import type { Layout } from "../layout.ts";
 import type { SceneState } from "../scene_at.ts";
 import type { ScenePlan } from "../../protocol.ts";
 import { PALETTE } from "./floor.ts";
 import type { Labels } from "./labels.ts";
 import { buildAnalyzerMotion } from "./motion_analyzers.ts";
+import { buildHallMotion } from "./motion_halls.ts";
 import { buildStaffMotion } from "./motion_staff.ts";
 import { buildTubeMotion } from "./motion_tubes.ts";
 import { buildVesselMotion } from "./motion_vessels.ts";
@@ -26,6 +28,8 @@ export interface Lights {
 export interface Motion {
   group: Group;
   update(state: SceneState): void;
+  /** The cards on the shelves (`hallsAt`), with the hall the lens reads; the other halls are dimmed. */
+  halls(views: readonly HallView[], lens: string): void;
 }
 
 // the light at its brightest inside the staffed window, and at its dimmest outside it (docs/design/plant_ui.md section 4.2)
@@ -41,9 +45,12 @@ export const buildMotion = (layout: Layout, plan: ScenePlan, built: Built, light
   const analyzers = buildAnalyzerMotion(layout, group, disposables);
   const tubes = buildTubeMotion(plan.samples.filter((s) => !s.skipped).length, group, disposables);
   const staff = buildStaffMotion(plan.staff.length, group, disposables);
+  // a hall holds at most one card for each planned sample
+  const cards = buildHallMotion(layout, plan.samples.length * layout.halls.length, group, disposables);
   const sky = new Color();
   return {
     group,
+    halls: cards.draw,
     update(state) {
       vessels(state);
       analyzers(state);
@@ -56,6 +63,7 @@ export const buildMotion = (layout: Layout, plan: ScenePlan, built: Built, light
       if (lights.scene.background instanceof Color) lights.scene.background.copy(sky);
       if (lights.scene.fog instanceof Fog) lights.scene.fog.color.copy(sky);
       lights.glass.color.copy(GLASS.dim).lerp(GLASS.lit, d);
+      cards.light(d);
     },
   };
 };

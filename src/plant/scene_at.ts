@@ -4,6 +4,7 @@ import type { Index, Leg, VisitRef } from "./scene_index.ts";
 import { LOOK, homeOf, lerp, lerpPoint, locate, portOf, rackOf, slotPoint } from "./scene_look.ts";
 import type { AnalyzerLamp, AnalyzerState, SceneState, StaffState, TubePhase, TubeState, VesselLamp, VesselState, WindowKind } from "./scene_look.ts";
 import type { Point } from "./layout.ts";
+import { onShift } from "./view.ts";
 
 // `sceneAt(plan, t)` (docs/design/plant_ui.md sections 4.2 and 4.3): the state at the instant `t` of every object the floor draws, as a pure function of the scene plan and of `t`. It reads no clock,
 // keeps no state between calls and imports no three.js, so seeking, pausing and playing backwards need no replay, a screenshot at a fixed `t` shows the same scene every time, and Vitest runs it
@@ -81,7 +82,7 @@ const analyzerAt = (plan: ScenePlan, ix: Index, analyzer: number, t: number, wai
 
 const staffAt = (plan: ScenePlan, ix: Index, operator: number, t: number): StaffState => {
   const home = homeOf(ix.layout, operator);
-  const duty = (plan.staff[operator] as ScenePlan["staff"][number]).on_duty.some(([from, to]) => from <= t && t < to);
+  const duty = onShift((plan.staff[operator] as ScenePlan["staff"][number]).on_duty, t);
   if (!duty) return { on_duty: false, x: home.x, z: home.z, heading: 0, mode: "idle", carrying: null };
   const legs = ix.legs[operator] as Leg[];
   const k = lastAtMost(legs, (leg) => leg.t0, t);

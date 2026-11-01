@@ -1,6 +1,6 @@
 import type { CheckDetail, CheckState, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
 import { initialPlant, reducePlant } from "../plant/plant_state.ts";
-import type { PlantState } from "../plant/plant_state.ts";
+import type { PlantPageAction, PlantState } from "../plant/plant_state.ts";
 import { initialBreakout, initialChallenge, initialLineage, reduceBreakout, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
 import type { BreakoutState, ChallengeState, LineageState, OneSeedAction, Problem } from "./one_seed_state.ts";
 
@@ -49,7 +49,7 @@ export interface State {
   plant: PlantState;
 }
 
-export type Action = Response | OneSeedAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number } | { type: "plant_started"; id: number; epoch: number };
+export type Action = Response | OneSeedAction | PlantPageAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number };
 
 export const initial: State = {
   ready: null,
@@ -89,6 +89,10 @@ export const reduce = (state: State, action: Action): State => {
       return withOneSeed(state);
     case "plant_started":
     case "plant_ready":
+    case "plant_halls":
+    case "plant_record_started":
+    case "plant_record_closed":
+    case "plant_record_view":
       return { ...state, plant: reducePlant(state.plant, action) };
     case "ready": {
       const { type, ...ready } = action;

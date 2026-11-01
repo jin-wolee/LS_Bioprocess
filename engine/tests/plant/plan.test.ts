@@ -137,7 +137,7 @@ describe("The record halls of the plan", () => {
 
   it("Given sample U03-D03-1 in A (no flag) Then the card appears at the run's start, knows no sampled_at and no availability, and joins the process by measured_at", () => {
     expect(card("a_manual", "U03-D03-1")).toEqual({
-      sample: plan.samples.findIndex((s) => s.id === "U03-D03-1"), shown_s: 306770, available_s: null, findings: [], versions: 1,
+      sample: plan.samples.findIndex((s) => s.id === "U03-D03-1"), shown_s: 306770, available_s: null, findings: [], version_s: [307040],
       slots: [{ name: "unit", stored: true }, { name: "sampled_at", stored: false }, { name: "context", stored: true, basis: "measured_at" }, { name: "value", stored: true }],
     });
   });
@@ -148,7 +148,7 @@ describe("The record halls of the plan", () => {
 
   it("Given the same sample in C Then sampled_at is stored, the result is available at 307040 s and the join is by sampled_at", () => {
     expect(card("c_context", "U03-D03-1")).toEqual({
-      sample: plan.samples.findIndex((s) => s.id === "U03-D03-1"), shown_s: 306770, available_s: 307040, findings: [], versions: 1,
+      sample: plan.samples.findIndex((s) => s.id === "U03-D03-1"), shown_s: 306770, available_s: 307040, findings: [], version_s: [307040],
       slots: [{ name: "unit", stored: true }, { name: "sampled_at", stored: true }, { name: "context", stored: true, basis: "sampled_at" }, { name: "value", stored: true }],
     });
   });
@@ -192,7 +192,8 @@ describe("The truth boundary of the plan (lab_ui.md section 4, rule 1 as amended
     window: ["analyzer", "kind", "from_s", "to_s"],
     calibration: ["analyzer", "t"],
     record: ["architecture", "flags_on", "cards"],
-    card: ["sample", "shown_s", "available_s", "slots", "findings", "versions"],
+    card: ["sample", "shown_s", "available_s", "slots", "findings", "version_s"],
+    finding: ["rule", "raised_s"],
     slot: ["name", "stored", "basis"],
   };
   const keys = (o: object): string[] => Object.keys(o);
@@ -213,7 +214,7 @@ describe("The truth boundary of the plan (lab_ui.md section 4, rule 1 as amended
     plan.marks.forEach((m) => within(m, "mark", "mark"));
     plan.windows.forEach((w) => within(w, "window", "window"));
     plan.calibrations.forEach((c) => within(c, "calibration", "calibration"));
-    plan.records.forEach((r) => { within(r, "record", "record"); r.cards.forEach((c) => { within(c, "card", "card"); c.slots.forEach((s) => within(s, "slot", "slot")); }); });
+    plan.records.forEach((r) => { within(r, "record", "record"); r.cards.forEach((c) => { within(c, "card", "card"); c.slots.forEach((s) => within(s, "slot", "slot")); c.findings.forEach((f) => within(f, "finding", "finding")); }); });
   });
 
   it("Given the plan as JSON Then no key of HIDDEN_FIELDS appears at any depth, no truth-only type appears as a value, and no field is called value, true_state or verdict", () => {

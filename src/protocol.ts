@@ -32,7 +32,8 @@ export type Request =
   | { type: "challenge_guess"; id: number; challenge: string; target: { sample_id: string } | { decision_id: string } }
   | { type: "challenge_giveup"; id: number; challenge: string }
   | { type: "breakout"; id: number; case: string; architectures: string[]; seed: number }
-  | { type: "plant_run"; id: number; epoch: number; spec: PlantSpec };
+  | { type: "plant_run"; id: number; epoch: number; spec: PlantSpec }
+  | { type: "plant_record"; id: number; epoch: number; architecture: string; sample_id: string };
 
 export type ChallengeVariant = "sample" | "decision";
 
@@ -75,13 +76,18 @@ export interface PlanSlot {
   basis?: "sampled_at" | "measured_at";
 }
 
+export interface PlanFinding {
+  rule: string;
+  raised_s: number;
+}
+
 export interface PlanCard {
   sample: number;
   shown_s: number;
   available_s: number | null;
   slots: PlanSlot[];
-  findings: string[];
-  versions: number;
+  findings: PlanFinding[];
+  version_s: number[];
 }
 
 /** What the page draws of one seed: integer seconds of the run, indices into the arrays of the same plan, no hidden field and no value of a result. */
@@ -373,6 +379,11 @@ export type Response =
   | { type: "sample_record"; id: number; sample: SampleRecord }
   | { type: "challenge_reveal"; id: number; reveal: Reveal }
   | { type: "breakout_result"; id: number; result: BreakoutResult }
+  /** The truth run and the record of the first architecture of the spec: `plan.records` holds that one hall and `hashes.cells` its digest. The others follow as `plant_halls`. */
   | { type: "plant_ready"; id: number; epoch: number; plan: ScenePlan; resume_at: number; hashes: { truth: string; cells: Record<string, string> }; checks: { prefix_equal: boolean | null; truth_equal: boolean | null } }
+  /** One hall that was not ready with `plant_ready`, in the order of the spec: its record for the plan and the digest of its metric cells. A newer epoch cancels the halls still pending. */
+  | { type: "plant_halls"; id: number; epoch: number; records: ScenePlan["records"]; cells: Record<string, string> }
+  /** The rows one architecture holds for one card, from the run the Worker keeps for the epoch: the record of the lineage view, with no truth and no verdict. */
+  | { type: "plant_record_view"; id: number; epoch: number; sample: SampleRecord }
   /** `epoch` is echoed on every error of a plant request (the page drops the error of an older epoch); `reason` and `index` come with `refused` only. */
   | { type: "error"; id: number | null; code: ErrorCode; message: string; epoch?: number; reason?: RefusalReason; index?: number };

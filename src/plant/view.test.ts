@@ -6,7 +6,7 @@ import { SMALL } from "../../engine/tests/support/scenarios.ts";
 import type { ScenePlan } from "../protocol.ts";
 import { layoutOf } from "./layout.ts";
 import { sceneAt } from "./scene_at.ts";
-import { clockOf, countsOf, hallRowsAt, objectsOf, onDuty, startInstant } from "./view.ts";
+import { clockOf, countsOf, hallRowsAt, objectsOf, onDuty, onShift, startInstant } from "./view.ts";
 
 // docs/design/plant_ui.md sections 3.2 and 9: what the HUD, the objects list and the text alternative say about a plan at an instant. Pure functions of the plan; the expected values are typed by hand
 // from a plan built by hand (a day is 86400 s; the first shift of a weekday is 08:00 to 13:00, 28800 to 46800 s, as in the default roster).
@@ -38,10 +38,12 @@ const plan: ScenePlan = {
   calibrations: [],
   records: [
     { architecture: "a_manual", flags_on: ["audit_trail"], cards: [
-      { sample: 0, shown_s: 30000, available_s: null, slots: [], findings: [], versions: 1 },
-      { sample: 1, shown_s: 40000, available_s: null, slots: [], findings: [], versions: 1 },
+      { sample: 0, shown_s: 30000, available_s: null, slots: [], findings: [], version_s: [30100] },
+      { sample: 1, shown_s: 40000, available_s: null, slots: [], findings: [], version_s: [40100] },
     ] },
-    { architecture: "b_lims_lite", flags_on: ["audit_trail", "available_at"], cards: [] },
+    { architecture: "b_lims_lite", flags_on: ["audit_trail", "available_at"], cards: [
+      { sample: 0, shown_s: 31000, available_s: 31770, slots: [], findings: [], version_s: [31770] },
+    ] },
   ],
 };
 
@@ -72,11 +74,25 @@ describe("the staff on duty", () => {
 });
 
 describe("the record halls at an instant", () => {
-  it("Given the cards of A shown at 30000 and 40000 Then A holds none before 30000, one at 35000, two from 40000; B has no card and two flags on", () => {
+  it("Given the cards of A shown at 30000 and 40000 Then A holds none before 30000, one at 35000, two from 40000; B holds its one card from 31000; A has one flag on and B two", () => {
     expect(hallRowsAt(plan, 29999).map((h) => h.cards)).toEqual([0, 0]);
-    expect(hallRowsAt(plan, 35000).map((h) => h.cards)).toEqual([1, 0]);
-    expect(hallRowsAt(plan, 40000).map((h) => h.cards)).toEqual([2, 0]);
+    expect(hallRowsAt(plan, 35000).map((h) => h.cards)).toEqual([1, 1]);
+    expect(hallRowsAt(plan, 40000).map((h) => h.cards)).toEqual([2, 1]);
     expect(hallRowsAt(plan, 0).map((h) => [h.architecture, h.flags])).toEqual([["a_manual", 1], ["b_lims_lite", 2]]);
+  });
+
+  it("Given B stores availability and its card is available at 31770 Then the card is knowable from that second; A stores none and never has a knowable card", () => {
+    expect(hallRowsAt(plan, 31769).map((h) => h.knowable)).toEqual([0, 0]);
+    expect(hallRowsAt(plan, 31770).map((h) => h.knowable)).toEqual([0, 1]);
+    expect(hallRowsAt(plan, 1e9).map((h) => h.knowable)).toEqual([0, 1]);
+  });
+});
+
+describe("the one predicate of a shift", () => {
+  it("Given the shifts [10, 20) and [30, 40) Then an instant is on a shift from its first second to the one before its end", () => {
+    const shifts: [number, number][] = [[10, 20], [30, 40]];
+    expect([9, 10, 19, 20, 29, 30, 39, 40].map((t) => onShift(shifts, t))).toEqual([false, true, true, false, false, true, true, false]);
+    expect(onShift([], 5)).toBe(false);
   });
 });
 
@@ -85,6 +101,11 @@ describe("the objects of interest", () => {
     const objects = objectsOf(plan);
     expect(objects.map((o) => o.key)).toEqual(["reactor:U01", "reactor:U02", "reactor:U03", "analyzer:AN-1", "analyzer:AN-2", "hall:a_manual", "hall:b_lims_lite"]);
     expect(countsOf(objects)).toEqual({ reactor: 3, analyzer: 2, hall: 2 });
+  });
+
+  it("Given a plan whose second hall has not arrived yet (the halls come after plant_ready) Then the list still has the hall of every architecture of the layout, so the floor and the list agree from the first answer", () => {
+    const first = { ...plan, records: plan.records.slice(0, 1) };
+    expect(objectsOf(first).filter((o) => o.kind === "hall").map((o) => [o.key, o.index])).toEqual([["hall:a_manual", 0], ["hall:b_lims_lite", 1]]);
   });
 });
 

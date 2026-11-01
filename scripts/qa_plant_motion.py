@@ -39,7 +39,7 @@ def check_plant_frames(browser, url, out: Path) -> Result:
         page.evaluate("window.__plantFrames.length = 0; window.__plantTubes.length = 0")
         page.click("[data-time=play]")
         # the polling is by time, not by frame: Playwright's default polling asks for animation frames itself, and its callbacks would be counted as frames of the scene
-        page.wait_for_function(f"window.__plantFrames.length >= {FRAMES + FRAMES_DROPPED + 1}", polling=500, timeout=240_000)
+        page.wait_for_function(f"window.__plantFrames.length >= {FRAMES + FRAMES_DROPPED + 40}", polling=500, timeout=240_000)  # a margin: frames that share a time stamp count once
         end = state(page)
         stats = frame_stats(frame_intervals(page.evaluate("window.__plantFrames")))
         seen = [int(start["tubes"] or 0), int(end["tubes"] or 0), *page.evaluate("window.__plantTubes")]

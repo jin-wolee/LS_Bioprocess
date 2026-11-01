@@ -10,6 +10,8 @@ import { STAFF_HEAD } from "./motion_staff.ts";
 export interface Labels {
   /** Moves each label to where its object is on the screen; hides one behind the camera or too far away. */
   update(camera: PerspectiveCamera, width: number, height: number): void;
+  /** The sign of each record hall: the architecture id and, once its record has arrived, the flags it has on (ids, language-neutral; a dash for none); the lens hall carries a mark (a disc drawn by the style sheet from `data-lens`, not a glyph), the others are dimmed. */
+  halls(records: readonly { architecture: string; flags_on: readonly string[] }[], lens: string): void;
   /** Where the figures of the staff are (in the order of the plan's `staff`; an operator who is off duty has x and z that are NaN): their id tags follow them. */
   follow(places: readonly { x: number; z: number }[]): void;
   dispose(): void;
@@ -40,12 +42,29 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
     if (first && last) add(first === last ? first.id : `${first.id} – ${last.id}`, "bay", b.footprint.x + b.footprint.w / 2, 2.4, b.footprint.z);
   }
   for (const a of layout.analyzers) add((plan.analyzers[a.index] as { id: string }).id, "analyzer", a.x, 2.7, a.z);
-  for (const h of layout.halls) add(h.architecture, "hall", h.footprint.x + h.footprint.w / 2, h.footprint.h + 0.35, h.footprint.z + 0.2);
+  // a hall sign has two parts: the id (always) and the flags on (when the record has arrived and the camera is near); the lens hall wears a mark in front of its id
+  const signs = layout.halls.map((h) => {
+    const item = add("", "hall", h.footprint.x + h.footprint.w / 2, h.footprint.h + 0.35, h.footprint.z + 0.2);
+    const id = document.createElement("span");
+    id.className = "plant-hall-id";
+    id.textContent = h.architecture;
+    const flags = document.createElement("span");
+    flags.className = "plant-hall-flags";
+    item.el.append(id, flags);
+    return { architecture: h.architecture, item, id, flags };
+  });
 
   const staff = plan.staff.map((s) => add(s.id, "staff", 0, STAFF_HEAD, 0, false));
 
   const v = new Vector3();
   return {
+    halls(records, lens) {
+      for (const sign of signs) {
+        const record = records.find((r) => r.architecture === sign.architecture);
+        sign.flags.textContent = record ? (record.flags_on.length === 0 ? "–" : record.flags_on.join(" · ")) : "";
+        sign.item.el.dataset.lens = sign.architecture === lens ? "1" : "0";
+      }
+    },
     follow(places) {
       for (const [i, item] of staff.entries()) {
         const p = places[i];
@@ -56,7 +75,10 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
     update(camera, width, height) {
       for (const { el, at, on } of items) {
         v.copy(at).project(camera);
-        const far = camera.position.distanceTo(at) > 45;
+        const distance = camera.position.distanceTo(at);
+        const far = distance > 45;
+        const near = distance < 16 ? "1" : "0";
+        if (el.dataset.near !== near) el.dataset.near = near;
         const hidden = !on || v.z > 1 || far || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1;
         el.style.visibility = hidden ? "hidden" : "visible";
         if (!hidden) el.style.transform = `translate(${((v.x * 0.5 + 0.5) * width).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * height).toFixed(1)}px) translate(-50%, -100%)`;

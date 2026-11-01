@@ -22,6 +22,23 @@ FRAMES_JS = """(() => {
   }).observe(document, { subtree: true, attributes: true, attributeFilter: ['data-plant-tubes'] });
 })();"""
 
+# Records every plant message the Worker sends (window.__plantMessages: its time and its data as plain JSON), by a wrapper of the Worker class that listens beside the page's own listener. The page
+# ships none of it.
+RECORD_PLANT_JS = """(() => {
+  window.__plantMessages = [];
+  const Original = window.Worker;
+  window.Worker = class extends Original {
+    constructor(...args) {
+      super(...args);
+      this.addEventListener('message', (e) => {
+        if (e.data && typeof e.data.type === 'string' && e.data.type.startsWith('plant_')) {
+          try { window.__plantMessages.push({at: performance.now(), data: JSON.parse(JSON.stringify(e.data))}); } catch (err) { /* not plain data: a finding of its own */ }
+        }
+      });
+    }
+  };
+})();"""
+
 # The luminance spread and the number of distinct colours (of 4096) in a PNG, computed in the page so that no image library is needed.
 PIXELS_JS = """async (b64) => {
   const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -58,7 +75,8 @@ DIFF_JS = """async ([a, b]) => {
 
 STATE_JS = """() => { const h = document.querySelector('#plant');
   return h ? {scene: h.dataset.plantScene, tier: h.dataset.plantTier, t: h.dataset.plantT, speed: h.dataset.plantSpeed, playing: h.dataset.plantPlaying, epoch: h.dataset.plantEpoch,
-              calls: h.dataset.plantCalls, tubes: h.dataset.plantTubes, objects: h.dataset.plantObjects, runHash: h.dataset.runHash, cellsHash: h.dataset.cellsHash} : null; }"""
+              calls: h.dataset.plantCalls, tubes: h.dataset.plantTubes, objects: h.dataset.plantObjects, runHash: h.dataset.runHash, cellsHash: h.dataset.cellsHash,
+              cards: h.dataset.plantCards, lens: h.dataset.plantLens} : null; }"""
 LIST_JS = """() => { const out = {}; for (const e of document.querySelectorAll('#plant-objects [data-object-kind]')) out[e.dataset.objectKind] = (out[e.dataset.objectKind] || 0) + 1; return out; }"""
 
 
@@ -73,10 +91,12 @@ def open_plant(browser, url, size=PLANT_VIEWPORTS["1280"], scheme="light", theme
         yield page, errors, requests
 
 
-def wait_scene(page, timeout=90_000) -> dict:
-    """Wait until the Worker has answered with the plan and the scene has drawn its first frames; return the attributes of the plant host."""
+def wait_scene(page, timeout=90_000, halls=3) -> dict:
+    """Wait until the Worker has answered with the plan (and, with `halls` record halls, until the last of them has arrived: the digests of every hall are on the host) and the scene has drawn its first
+    frames; return the attributes of the plant host."""
     page.wait_for_selector("#plant[data-plant-scene=ready]", timeout=timeout)
     page.wait_for_function("() => !!document.querySelector('#plant').dataset.plantCalls", timeout=timeout)
+    page.wait_for_function("(n) => { try { return Object.keys(JSON.parse(document.querySelector('#plant').dataset.cellsHash)).length >= n; } catch (e) { return false; } }", arg=halls, timeout=timeout)
     return page.evaluate(STATE_JS)
 
 
@@ -100,6 +120,22 @@ def seek(page, t: int) -> None:
 def settle(page, frames: int = 3) -> None:
     """Wait for a few animation frames of the page so that the scene has been drawn for the clock reading that was set."""
     page.evaluate("(n) => new Promise((resolve) => { let k = 0; const f = () => (++k >= n ? resolve(null) : requestAnimationFrame(f)); requestAnimationFrame(f); })", frames)
+
+
+def settle_camera(page, tries: int = 20) -> bytes:
+    """A screenshot of the page once the camera has stopped easing toward its target: two screenshots in a row that are the same bytes (the scene is paused, so nothing else moves)."""
+    last = page.screenshot()
+    for _ in range(tries):
+        page.wait_for_timeout(250)
+        now = page.screenshot()
+        if now == last:
+            return now
+        last = now
+    return last
+
+
+def plant_messages(page) -> list:
+    return page.evaluate("window.__plantMessages")
 
 
 def pixel_stats(page, png: bytes) -> dict:

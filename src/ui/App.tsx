@@ -94,6 +94,16 @@ export function App({ worker }: { worker: Worker }) {
     worker.postMessage({ type: "plant_run", id, epoch, spec: DEFAULT_PLANT } satisfies Request);
   }, [route.screen, ready !== null, state.plant.ready === null, state.plant.running, state.plant.problem === null]);
 
+  // a card of a record hall is opened: the Worker reads the rows of one sample from the run it keeps for the epoch of the plan on screen (plant_ui.md section 6)
+  const openCard = (architecture: string, sample_id: string): void => {
+    const epoch = state.plant.ready?.epoch;
+    if (epoch === undefined) return;
+    const id = take();
+    dispatch({ type: "plant_record_started", id, epoch, architecture, sample_id });
+    worker.postMessage({ type: "plant_record", id, epoch, architecture, sample_id } satisfies Request);
+  };
+  const closeCard = (): void => dispatch({ type: "plant_record_closed" });
+
   // the form starts from the defaults of the first scenario, or from the link the page was opened with; a link opened later (a hash change) fills it again
   useEffect(() => {
     if (!ready) return;
@@ -198,7 +208,7 @@ export function App({ worker }: { worker: Worker }) {
       </header>
       <main id="main" data-ready={ready ? "true" : "false"} data-screen={route.screen} {...(ready && { "data-flags": ready.flags.join(",") })}>
         {route.screen === "home" && <Home state={state} />}
-        {route.screen === "plant" && (ready ? <PlantRoute plant={state.plant} check={state.check.state} /> : <T as="p" k="app.loading" />)}
+        {route.screen === "plant" && (ready ? <PlantRoute plant={state.plant} check={state.check.state} onCard={openCard} onCardClose={closeCard} /> : <T as="p" k="app.loading" />)}
         {route.screen === "setup" &&
           (ready && form ? (
             <Setup ready={ready} form={form} setForm={setForm} state={state} link={pageAddress()} linkEngine={linkEngine} onRun={run} onCancel={cancel} />

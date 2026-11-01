@@ -18,6 +18,10 @@ export interface SceneOptions {
   playback: Playback;
   /** Reduced motion: the camera cuts and the avatar steps without a glide. */
   reducedMotion: boolean;
+  /** The hall the record panel reads (the lens): the other halls are dimmed. */
+  lens: string;
+  /** A click on a card of a hall that has been drawn: the architecture and the index into the plan's `samples`. A click that meets no card walks the avatar, as before. */
+  onPick(architecture: string, sample: number): void;
 }
 
 export interface Scene {
@@ -27,6 +31,10 @@ export interface Scene {
   objects: Record<ObjectKind, number>;
   /** Brings the camera to an object named by its key (`reactor:U01`, `analyzer:AN-1`, `hall:a_manual`). */
   focus(key: string): void;
+  /** The halls that have arrived (the plan on screen holds the first; the others come after it): the shelves are drawn again with them, and the camera, the clock and the walker are not touched. */
+  setHalls(records: ScenePlan["records"]): void;
+  /** Changes the hall the record panel reads. */
+  setLens(architecture: string): void;
   /** Frees the GL context, the listeners and the labels. */
   dispose(): void;
 }

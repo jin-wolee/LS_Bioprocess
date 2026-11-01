@@ -61,3 +61,32 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-tick { position: absolute; top: 8px; bottom: 8px; width: 1px; background: var(--muted); opacity: 0.6; }
 .plant-time-keys { flex: 1 0 100%; margin: 0; color: var(--muted); font-size: 0.8rem; }
 .plant-log-switch { display: block; margin: 4px 0; font-size: 0.9rem; }
+
+/* The record halls (P5a, plant_ui.md section 3.3). The lens chip: one button for each hall, the pressed one is filled and is the hall the record panel reads. A hall sign in the scene carries the
+   architecture id and, when the camera is near, the flags on; the lens hall wears a mark in front of its id and the other signs are dimmed. */
+.plant-hud-lens { top: 52px; right: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; max-width: min(26rem, calc(100% - 24px)); padding: 4px 8px; z-index: 1; }
+.plant-hud-place { z-index: 2; }
+.plant-lens-label { color: var(--muted); font-size: 0.8rem; }
+.plant-hud-lens button { min-height: 28px; padding: 0 8px; font-size: 0.85rem; background: var(--bg); }
+.plant-hud-lens button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-hud-lens button:disabled { opacity: 0.55; cursor: default; }
+.plant-label-hall[data-lens="0"] { opacity: 0.6; }
+.plant-label-hall[data-lens="1"] .plant-hall-id::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: var(--accent); vertical-align: baseline; }
+.plant-hall-flags { display: none; }
+.plant-label-hall[data-near="1"] .plant-hall-flags:not(:empty) { display: block; white-space: normal; max-width: 22em; margin-top: 2px; font-weight: 400; font-size: 10px; }
+.plant-label-hall[data-near="1"]:has(.plant-hall-flags:not(:empty)) { border-radius: 8px; padding: 2px 8px; }
+
+/* The record panel: the rows of one card as the lineage screen draws a record, over the right side of the scene (a sheet over the foot of it at the narrow viewport). */
+.plant-record { position: absolute; top: 96px; right: 12px; bottom: 12px; width: min(25rem, calc(100% - 24px)); overflow-y: auto; z-index: 3; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px 12px; }
+.plant-record:focus-visible { outline: 3px solid var(--accent); }
+.plant-record-head { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+.plant-record-head h2 { margin: 6px 0; font-size: 1.05rem; overflow-wrap: anywhere; }
+.plant-record-close { flex: 0 0 auto; min-width: 36px; font-size: 1.2rem; line-height: 1; }
+.plant-record-lead, .plant-record-status { color: var(--muted); font-size: 0.85rem; margin: 4px 0; }
+.plant-legend { color: var(--muted); font-size: 0.9rem; }
+.plant-cards { margin-top: 16px; }
+
+@media (max-width: 599px) {
+  .plant-record { top: auto; left: 12px; right: 12px; width: auto; bottom: 12px; max-height: 58%; }
+  .plant-hud-lens { top: 52px; }
+}

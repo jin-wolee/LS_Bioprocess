@@ -8,7 +8,7 @@ import { useSlowClock } from "./usePlayback.ts";
 import { clockOf, hallRowsAt, onDuty } from "./view.ts";
 
 // The text alternative of the scene (docs/design/plant_ui.md section 9): a description of the layout; "the plant as a table" at the clock instant (the reactors with their status, the analyzers with
-// their queue and lamp, the record halls with their cards), which follows the clock about once a second of wall time while it plays and at once when it is paused or sought; and a polite live region
+// their queue and lamp, the record halls with their cards shown and knowable), which follows the clock about once a second of wall time while it plays and at once when it is paused or sought; and a polite live region
 // with the log of events. It is built from the plan alone, so it is the whole plant when WebGL is missing (then the clock stays at the plan's start). Every number is a label.
 
 export function TextAlternative({ plan, playback }: { plan: ScenePlan; playback: Playback }) {
@@ -99,6 +99,7 @@ export function TextAlternative({ plan, playback }: { plan: ScenePlan; playback:
               <T as="th" k="plant.col.hall" />
               <T as="th" k="plant.col.flags" />
               <T as="th" k="plant.col.cards" />
+              <T as="th" k="plant.col.knowable" />
             </tr>
           </thead>
           <tbody>
@@ -112,6 +113,9 @@ export function TextAlternative({ plan, playback }: { plan: ScenePlan; playback:
                 </td>
                 <td>
                   <Label>{h.cards}</Label>
+                </td>
+                <td>
+                  <Label>{h.knowable}</Label>
                 </td>
               </tr>
             ))}

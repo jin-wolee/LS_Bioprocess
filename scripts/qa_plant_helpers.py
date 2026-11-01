@@ -197,3 +197,62 @@ def repro_problems(differing_pixels: int, total: int) -> list[str]:
     if differing_pixels == 0:
         return []
     return [f"two runs at the fixed instant differ in {differing_pixels} of {total} pixels"]
+
+
+# ---- the record halls (P5a) ---------------------------------------------------------------------------------------
+
+# The instants of the check `plant_halls`, in whole minutes of the run: day 0 at 12:00 (a few hours into the run, the first cards are on the shelves), day 10 at 12:00 (the middle of the 21 days), and
+# the horizon (every card is on its shelf).
+HALL_INSTANTS = {"early": 12 * 3600, "mid": 10 * DAY_S + 12 * 3600, "end": 21 * DAY_S}
+# The mid-run instant of the screenshots of a hall close-up: day 10 at 12:00 (907200 s), 288 cards on the shelves of A, 291 of B and of C.
+CLOSEUP_INSTANT_S = HALL_INSTANTS["mid"]
+# The cards of each hall in the whole default run (seed 1), as the Worker's plan holds them: B and C a card for each of the 394 planned samples, A none for three of them (its record holds no row).
+HALL_CARDS_END = {"a_manual": 391, "b_lims_lite": 394, "c_context": 394}
+
+
+def plan_from_messages(messages, epoch: int):
+    """The plan the page received for an epoch: the plan of `plant_ready` with the records of the `plant_halls` messages of that epoch added in the order they arrived. None without a plant_ready."""
+    ready = next((m["data"] for m in messages if m["data"]["type"] == "plant_ready" and m["data"]["epoch"] == epoch), None)
+    if ready is None:
+        return None
+    halls = [r for m in messages if m["data"]["type"] == "plant_halls" and m["data"]["epoch"] == epoch for r in m["data"]["records"]]
+    return {**ready["plan"], "records": [*ready["plan"]["records"], *halls]}
+
+
+def cards_expected(plan, t: int) -> dict:
+    """For each hall of a plan, the cards on its shelves at the instant `t` (a card from its shown_s) and how many of them are knowable (an availability that is stored and not later than `t`)."""
+    return {r["architecture"]: {"shown": sum(1 for c in r["cards"] if c["shown_s"] <= t),
+                                "knowable": sum(1 for c in r["cards"] if c["shown_s"] <= t and c["available_s"] is not None and c["available_s"] <= t)} for r in plan["records"]}
+
+
+def cards_problems(attr, expected) -> list[str]:
+    """`data-plant-cards`, a map by architecture of the shown and knowable counts that the scene wrote from `hallsAt`, against the counts computed here from the plan the page received."""
+    try:
+        got = json.loads(attr)
+    except (TypeError, ValueError):
+        return [f"data-plant-cards is not JSON: {str(attr)[:40]}"]
+    if got == expected:
+        return []
+    return [f"data-plant-cards says {got}, the plan the page received gives {expected}"]
+
+
+def halls_arrival_problems(messages, architectures) -> list[str]:
+    """The halls arrive progressively (section 5.5): `plant_ready` carries the hall of the first architecture only, then one `plant_halls` for each other architecture, in the order of the spec and later in
+    time than the one before; the plan the page assembles holds every hall and the digests are those of the halls."""
+    ready = next((m for m in messages if m["data"]["type"] == "plant_ready"), None)
+    if ready is None:
+        return ["no plant_ready arrived"]
+    epoch = ready["data"]["epoch"]
+    halls = [m for m in messages if m["data"]["type"] == "plant_halls" and m["data"]["epoch"] == epoch]
+    problems = []
+    if [r["architecture"] for r in ready["data"]["plan"]["records"]] != architectures[:1]:
+        problems.append(f"plant_ready holds the halls {[r['architecture'] for r in ready['data']['plan']['records']]}, expected only {architectures[:1]}")
+    if [r["architecture"] for m in halls for r in m["data"]["records"]] != architectures[1:]:
+        problems.append(f"the plant_halls messages hold {[r['architecture'] for m in halls for r in m['data']['records']]}, expected {architectures[1:]} in the order of the spec")
+    stamps = [ready["at"], *[m["at"] for m in halls]]
+    if stamps != sorted(stamps) or len(set(stamps)) != len(stamps):
+        problems.append(f"the messages did not arrive one after the other: {stamps}")
+    digests = {**ready["data"]["hashes"]["cells"], **{k: v for m in halls for k, v in m["data"]["cells"].items()}}
+    if sorted(digests) != sorted(architectures):
+        problems.append(f"the digests are for {sorted(digests)}, expected {sorted(architectures)}")
+    return problems

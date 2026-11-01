@@ -1,5 +1,6 @@
 import { BoxGeometry, Color, CylinderGeometry, Group, InstancedMesh, MeshStandardMaterial } from "three";
 import type { BufferGeometry, Material } from "three";
+import { SHELF } from "../hall_shelves.ts";
 import type { Layout } from "../layout.ts";
 import { laneLength, trayZ } from "../scene_at.ts";
 import type { ObjectKind } from "../view.ts";
@@ -8,7 +9,8 @@ import { placed } from "./place.ts";
 
 // The things on the floor (docs/design/plant_ui.md section 3.2), built from primitives and instanced: the bay plinths with their vessels and status lamps, the bench with the analyzers and the
 // intake lanes, and the record halls (one wall of shelves for each data architecture). Shape and text carry the meaning, colour only repeats it. The profile changes the look and never the
-// position. This file builds what does not move (P3); the lamps, the liquid, the tubes and the staff that follow the clock are drawn by motion.ts from `sceneAt`. The shelves are empty until the cards of P5.
+// position. This file builds what does not move (P3); the lamps, the liquid, the tubes and the staff that follow the clock are drawn by motion.ts from `sceneAt`, and the cards on the shelves
+// (P5a) by motion_halls.ts from `hallsAt`; the boards are the ones hall_shelves.ts lays the cards on.
 
 export const PLINTH = 0.2; // metres
 export const BENCH_TOP = 1.2;
@@ -100,18 +102,18 @@ export const buildThings = (layout: Layout): Built => {
     legs.setMatrixAt(i, placed(lane.x, (LANE_TOP - 0.06) / 2, trayZ(layout), length - 0.2, LANE_TOP - 0.06, 0.3));
   }
 
-  // the record halls: a back, two sides and four shelves each
+  // the record halls: a back, two sides and the boards of hall_shelves.ts each
   const frame = standard(0x8fa3b5, 0.7);
   const shelf = standard(0xcbd8e2, 0.8);
   const n = layout.halls.length;
   const backs = add(box, frame, n);
   const sides = add(box, frame, 2 * n);
-  const boards = add(box, shelf, 4 * n);
+  const boards = add(box, shelf, SHELF.rows * n);
   for (const [i, h] of layout.halls.entries()) {
     const f = h.footprint;
     backs.setMatrixAt(i, placed(f.x + f.w / 2, f.h / 2, f.z + 0.05, f.w, f.h, 0.1));
     for (const [k, x] of [f.x + 0.04, f.x + f.w - 0.04].entries()) sides.setMatrixAt(2 * i + k, placed(x, f.h / 2, f.z + f.d / 2, 0.08, f.h, f.d));
-    for (let k = 0; k < 4; k++) boards.setMatrixAt(4 * i + k, placed(f.x + f.w / 2, 0.3 + k * 0.62, f.z + f.d / 2, f.w - 0.1, 0.06, f.d - 0.05));
+    for (let k = 0; k < SHELF.rows; k++) boards.setMatrixAt(SHELF.rows * i + k, placed(f.x + f.w / 2, SHELF.board0 + k * SHELF.step, f.z + f.d / 2, f.w - 0.1, SHELF.thick, f.d - 0.05));
   }
 
   for (const mesh of group.children as InstancedMesh[]) {

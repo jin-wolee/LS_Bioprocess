@@ -96,7 +96,7 @@ def matrix_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme
                 problems.append(f"horizontal scroll: scrollWidth {m['sw']} > innerWidth {m['iw']}")
             if m["lang"] != lang:
                 problems.append(f"the page language is {m['lang']}, expected {lang}")
-            for selector in ("#plant", "[data-plant-hud=place]", "[data-plant-hud=check]", ".plant-hint", "[data-plant-time]", "[data-time=scrub]", "[data-plant-bar=shell]", "#plant-objects", "#plant-text", "#plant-live"):
+            for selector in ("#plant", "[data-plant-hud=place]", "[data-plant-hud=check]", ".plant-hint", "[data-plant-time]", "[data-time=scrub]", "[data-plant-bar=shell]", "[data-plant-hud=lens]", "#plant-objects", "#plant-cards", "#plant-text", "#plant-live"):
                 if page.query_selector(selector) is None:
                     problems.append(f"missing {selector}")
             problems += counts_problems(json.loads(page.get_attribute("#plant", "data-plant-objects") or "{}"), page.evaluate(LIST_JS))
@@ -141,6 +141,8 @@ def check_plant_fallback(pw, url, out: Path) -> Result:
             page.click("#enter-plant")
             page.wait_for_selector("#main[data-screen=plant]", timeout=10_000)
             page.wait_for_selector("#plant-text", timeout=60_000)
+            # the halls come after the first answer (plant_halls): the table of the halls is complete when the last of them has arrived
+            page.wait_for_function("(n) => document.querySelectorAll('[data-plant-table=halls] tbody tr').length >= n", arg=DEFAULT_OBJECTS["hall"], timeout=60_000)
             if page.query_selector("[data-plant-fallback]") is None:
                 problems.append("the notice of the fallback is missing")
             if page.query_selector("#plant") is not None:

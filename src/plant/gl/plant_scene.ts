@@ -10,6 +10,7 @@ import { PALETTE, buildRoom } from "./floor.ts";
 import { listen } from "./input.ts";
 import { buildLabels } from "./labels.ts";
 import { buildMotion } from "./motion.ts";
+import { buildShelves } from "./shelves.ts";
 import { buildThings } from "./shapes.ts";
 
 // The scene of the plant (docs/design/plant_ui.md sections 2, 3 and 9): the one module that makes a WebGL renderer. It builds the room and the things from the layout, puts a plain operator figure
@@ -46,7 +47,7 @@ const buildAvatar = (disposables: (BufferGeometry | Material)[]): Group => {
   return figure;
 };
 
-export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion }: SceneOptions): Scene => {
+export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, lens: initialLens, onPick }: SceneOptions): Scene => {
   const canvas = document.createElement("canvas");
   canvas.className = "plant-canvas";
   host.appendChild(canvas);
@@ -94,6 +95,8 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion }
   const motion = buildMotion(layout, plan, built, { scene, hemi, sun, glass }, labels, disposables);
   scene.add(motion.group);
   let drawn = Number.NaN; // the clock reading `motion` was last written for
+  // the record halls: the cards on the shelves, the lens and the card a click meets (shelves.ts)
+  const shelves = buildShelves(host, layout, plan, motion, labels, initialLens);
 
   // the state of the walker and the view
   let position: Point = { ...layout.entrance };
@@ -125,6 +128,9 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion }
       const h = canvas.clientHeight || 1;
       ndc.set((x / w) * 2 - 1, -(y / h) * 2 + 1);
       ray.setFromCamera(ndc, camera);
+      // a card first, then the floor
+      const card = shelves.pick(ray.ray);
+      if (card) return onPick(card.architecture, card.sample);
       if (!ray.ray.intersectPlane(floor, hit)) return;
       walkTo({ x: Math.min(layout.width, Math.max(0, hit.x)), z: Math.min(layout.depth, Math.max(0, hit.z)) });
     },
@@ -180,6 +186,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion }
       const tubes = String(state.tubes.length);
       if (host.dataset.plantTubes !== tubes) host.dataset.plantTubes = tubes;
     }
+    shelves.update(t);
 
     const direction = keyDirection(keys, view.yaw);
     let moving = false;
@@ -222,7 +229,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion }
   host.dataset.plantObjects = JSON.stringify(built.objects);
   raf = requestAnimationFrame(frame);
 
-  const where = (key: string): { at: Point; radius: number } | null => {
+  const where = (key: string): { at: Point; radius: number; pitch?: number } | null => {
     const [kind, id] = key.split(":", 2);
     if (kind === "reactor") {
       const v = layout.vessels[plan.units.findIndex((u) => u.id === id)];
@@ -233,8 +240,9 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion }
       return a ? { at: a, radius: 1.4 } : null;
     }
     if (kind === "hall") {
+      // close to the shelves and level with them: the cards are a few centimetres wide
       const h = layout.halls.find((x) => x.architecture === id);
-      return h ? { at: { x: h.footprint.x + h.footprint.w / 2, z: h.footprint.z + h.footprint.d / 2 }, radius: 3 } : null;
+      return h ? { at: { x: h.footprint.x + h.footprint.w / 2, z: h.footprint.z + h.footprint.d / 2 }, radius: 1.2, pitch: 0.2 } : null;
     }
     return null;
   };
@@ -246,11 +254,13 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion }
       const target = where(key);
       if (!target) return;
       lookAt = target.at;
-      view = { ...view, dist: Math.min(Math.max(target.radius * 5, 6), 18) };
+      view = { ...view, dist: Math.min(Math.max(target.radius * 5, 6), 18), ...(target.pitch !== undefined && { pitch: target.pitch }) };
       halo.position.set(target.at.x, 0.04, target.at.z);
       halo.scale.setScalar(target.radius);
       halo.visible = true;
     },
+    setHalls: shelves.setHalls,
+    setLens: shelves.setLens,
     dispose() {
       cancelAnimationFrame(raf);
       stopListening();

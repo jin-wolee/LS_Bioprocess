@@ -1,16 +1,19 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { text } from "../i18n/index.ts";
-import type { CheckState } from "../protocol.ts";
+import type { CheckState, ScenePlan } from "../protocol.ts";
 import { ErrorBlock } from "../ui/ErrorBlock.tsx";
 import { LangContext, Label, T } from "../ui/T.tsx";
 import { BottomBar } from "./BottomBar.tsx";
 import { Hint, Hud } from "./Hud.tsx";
+import { CardList } from "./CardList.tsx";
 import { ObjectsList } from "./ObjectsList.tsx";
+import { RecordPanel } from "./RecordPanel.tsx";
 import { TextAlternative } from "./TextAlternative.tsx";
 import { TimeBar } from "./TimeBar.tsx";
 import { DAY, HOUR, SPEEDS } from "./clock.ts";
 import { layoutOf } from "./layout.ts";
 import { loadScene, webgl2 } from "./loader.ts";
+import { hallsOfPlan } from "./plant_state.ts";
 import type { PlantState } from "./plant_state.ts";
 import { createPlayback } from "./playback.ts";
 import type { Playback } from "./playback.ts";
@@ -57,11 +60,20 @@ const clockKeys = (playback: Playback) => (e: KeyboardEvent): void => {
   e.preventDefault();
 };
 
-export function PlantRoute({ plant, check }: { plant: PlantState; check: CheckState }) {
+export function PlantRoute({ plant, check, onCard, onCardClose }: { plant: PlantState; check: CheckState; onCard: (architecture: string, sample_id: string) => void; onCardClose: () => void }) {
   const lang = useContext(LangContext);
   const webgl = webgl2();
   const answer = plant.ready;
   const plan = answer?.plan ?? null;
+  // the plan the page reads: the first hall of the answer and the halls merged since, in the order of the layout. The scene and the clock are made from `plan`, which stays the same object when a hall arrives.
+  const halls = useMemo(() => (plan ? hallsOfPlan(plan, plant.halls) : []), [plan, plant.halls]);
+  const full = useMemo(() => (plan ? { ...plan, records: halls } : null), [plan, halls]);
+  const [picked, setLens] = useState<string | null>(null);
+  const lens = plan && picked !== null && plan.layout.architectures.includes(picked) ? picked : (plan?.layout.architectures[0] ?? "");
+  const lensRef = useRef(lens);
+  lensRef.current = lens;
+  const cardRef = useRef(onCard);
+  cardRef.current = onCard;
   const layout = useMemo(() => (plan ? layoutOf(plan.layout) : null), [plan]);
   const objects = useMemo(() => (plan ? objectsOf(plan) : []), [plan]);
   const playback = useMemo(() => (plan ? createPlayback(plan, false) : null), [plan]);
@@ -79,7 +91,14 @@ export function PlantRoute({ plant, check }: { plant: PlantState; check: CheckSt
     loadScene()
       .then(({ mountScene }) => {
         if (!live) return;
-        made = mountScene({ host: target, layout, plan, tier: tierOf(), playback, reducedMotion: reducedMotion() });
+        made = mountScene({
+          host: target, layout, plan, tier: tierOf(), playback, reducedMotion: reducedMotion(), lens: lensRef.current,
+          // a click on a card opens its record, and the lens goes to the hall the card is in
+          onPick: (architecture, sample) => {
+            setLens(architecture);
+            cardRef.current(architecture, (plan.samples[sample] as ScenePlan["samples"][number]).id);
+          },
+        });
         mounted.current = made;
         setRenderer(made.renderer);
         setScene({ kind: "ready" });
@@ -93,6 +112,14 @@ export function PlantRoute({ plant, check }: { plant: PlantState; check: CheckSt
       mounted.current = null;
     };
   }, [plan, layout, webgl, playback]);
+
+  // the halls that arrive after the first answer, and the lens, go to the scene without making it again
+  useEffect(() => {
+    if (scene.kind === "ready") mounted.current?.setHalls(halls);
+  }, [halls, scene.kind]);
+  useEffect(() => {
+    if (scene.kind === "ready") mounted.current?.setLens(lens);
+  }, [lens, scene.kind]);
 
   // the run plays once its scene is drawn, unless the reader prefers reduced motion (then it starts paused: section 9)
   useEffect(() => {
@@ -126,6 +153,12 @@ export function PlantRoute({ plant, check }: { plant: PlantState; check: CheckSt
   const look = (key: string): void => {
     mounted.current?.focus(key);
     host.current?.scrollIntoView({ block: "nearest" });
+  };
+
+  // the lens picks the hall the record panel reads; a card that is open in another hall is closed (the panel never reads a hall other than the lens)
+  const chooseLens = (architecture: string): void => {
+    setLens(architecture);
+    if (plant.record && plant.record.architecture !== architecture) onCardClose();
   };
 
   const waiting = plan === null && plant.problem === null;
@@ -183,7 +216,8 @@ export function PlantRoute({ plant, check }: { plant: PlantState; check: CheckSt
               <T k="plant.boot" />
             </p>
           )}
-          {plan && playback && <Hud plan={plan} playback={playback} scenario={DEFAULT_PLANT.run.scenario} check={check} />}
+          {full && playback && <Hud plan={full} playback={playback} scenario={DEFAULT_PLANT.run.scenario} check={check} lens={lens} onLens={chooseLens} />}
+          {plant.record && <RecordPanel record={plant.record} onClose={onCardClose} />}
           <div class="plant-bottom">
             <Hint />
             {plan && playback && <TimeBar plan={plan} playback={playback} />}
@@ -193,10 +227,11 @@ export function PlantRoute({ plant, check }: { plant: PlantState; check: CheckSt
       )}
 
       {webgl && intro}
-      {plan && playback && (
+      {plan && full && playback && (
         <div class="plant-after">
           <ObjectsList objects={objects} onLook={scene.kind === "ready" ? look : null} />
-          <TextAlternative plan={plan} playback={playback} />
+          {webgl && <CardList plan={full} playback={playback} lens={lens} onOpen={onCard} />}
+          <TextAlternative plan={full} playback={playback} />
         </div>
       )}
     </>
