@@ -133,7 +133,7 @@ What runs inside the Worker, by request:
 
 Rules of the protocol, each with a test:
 
-1. The page imports no engine module (section 2). A request is a `RunSpec` or an id; there is no way to ask for a truth log, an event stream, the answer key or the raw quirk key.
+1. The page imports no engine module (section 2). A request is a `RunSpec` or an id; there is no way to ask for a truth log, an event stream, the answer key or the raw quirk key. One answer is the exception, added for the plant (ADR-0021; `docs/design/plant_ui.md` sections 4.1 and 6; orchestrator ruling of 2026-11-01): `plant_ready` carries a scene plan, the events of one seed projected onto drawn things at their true instants, with every hidden field of `engine/src/observe.ts` removed and every truth-only type dropped. It is a projection and never a log: no sensor tick, no value of a result, no true state, no verdict, no materialised error, and a record card holds only the slots its architecture stores. The plant labels it as the simulation's own view. A test walks the plan and fails on a hidden key, on a truth-only type, on a key outside an allow-list and on a card that holds a slot its architecture does not store.
 2. `lineage` is refused with `code: "locked"` for any run that is an unrevealed challenge, so the lineage screen cannot be used to read the truth of a challenge in progress.
 3. Before `challenge_guess` or `challenge_giveup` no message carries the planted sample, its detail, the affected decisions or any `reveal` field (section 9).
 4. Engine exceptions (a scenario that fails validation) arrive as `error` with the engine's English message, shown verbatim in a `lang="en"` block under a translated heading.

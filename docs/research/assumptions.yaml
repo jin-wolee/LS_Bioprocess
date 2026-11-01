@@ -1890,3 +1890,11 @@ assumptions:
     grade: A
     sources: [S065, S058]
     notes: "Delay from the last negative result to the release of a hold. A176 covers the delay from a positive result to a hold only, with the same two sources and the same direction (containment after a suspected contamination, S065; material moves on downstream before a positive is known, S058); no source gives a delay after a negative result. The bound is logical. A scenario input printed with every result. Until it is set S3 reuses the second delay of A176 and prints it as assumed."
+  - id: A228
+    name: operator_chosen_instant_min
+    default: "no default; a scenario input chosen by the reader at the moment of the action, printed with every result that uses it"
+    range: "a whole minute (A200) inside the run, from the scenario start to the horizon (A189); a moved draw only on the same day as its planned instant and inside the staffed window (A201, A202)"
+    unit: min
+    grade: A
+    sources: []
+    notes: "The instant at which an operator acts on the plant view (ADR-0021): the clock reading when the reader adds a scripted feed, raises an alarm, moves a draw, takes an analyzer down or changes a reagent lot, the instant a moved draw is moved to, the start of an analyzer window and the instant a lot change takes effect. The reader chooses it, so it has no default and no source; the range ends are logical bounds (the run has a start and a horizon; scheduled events sit at whole minutes, A200). It is a scenario input in the form of A176 and A177: the scenario file carries it as {value, unit, ref} and every result that rests on it prints it as assumed. The thing the instant perturbs keeps its own id: a feed A192, A193 and A208, an alarm A197, a moved draw A016 and A063, an analyzer window A096 and A205, a lot change A093. The instant is identical across architectures, so it changes what happened in the plant and not which architecture records it. Sweep points for tests are a test design choice, not data."
