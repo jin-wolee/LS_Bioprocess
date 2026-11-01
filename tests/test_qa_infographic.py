@@ -147,3 +147,26 @@ def test_good_fixture_has_no_clipping_offenders(browser):
     res = clipping(browser, FIXTURES)
     assert res.ok, res.detail
     assert res.data["checked"] >= 4  # two SVGs at each of the two widths
+
+
+# ---- the origin check: the page asks no other origin for anything (FONT1) ----------------------------------
+
+BASE = "http://127.0.0.1:8000/"
+
+
+def test_a_clean_cold_load_has_no_origin_problem():
+    requests = [BASE, BASE + "fonts/archivo-latin.woff2", BASE + "fonts/ibm-plex-mono-400-latin.woff2", "data:,"]
+    assert qa.origin_problems(requests, ["Archivo", "IBM Plex Mono"], BASE) == []
+
+
+def test_every_request_to_another_origin_is_named():
+    requests = [BASE, "https://fonts.googleapis.com/css2?family=Archivo", "https://fonts.gstatic.com/s/archivo/v25/x.woff2", "data:,"]
+    assert qa.origin_problems(requests, ["Archivo", "IBM Plex Mono"], BASE) == [
+        "asked another origin for https://fonts.googleapis.com/css2?family=Archivo",
+        "asked another origin for https://fonts.gstatic.com/s/archivo/v25/x.woff2",
+    ]
+
+
+def test_a_family_that_did_not_load_is_a_problem_even_when_no_origin_was_asked():
+    assert qa.origin_problems([BASE], ["Archivo"], BASE) == ["IBM Plex Mono did not load from the page's own files"]
+    assert qa.origin_problems([BASE], [], BASE) == ["Archivo did not load from the page's own files", "IBM Plex Mono did not load from the page's own files"]

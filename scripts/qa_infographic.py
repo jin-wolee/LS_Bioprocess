@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Headless QA for the infographic (`site/infographic/index.html`): eight checks, exit 1 if any fails.
+"""Headless QA for the infographic (`site/infographic/index.html`): nine checks, exit 1 if any fails.
 
     uv run python scripts/qa_infographic.py [--root site/infographic] [--out qa_out]
 
 Serves --root over http.server on a free localhost port, drives headless Chromium (Playwright sync API),
 writes results.json, summary.md and shots/*.png to --out. This file is the CLI, the server, the checks that sweep
-the theme matrix (1 matrix, 5 contrast) and the report; the other checks and the unit-tested pure helpers live in
-qa_checks.py. The element contract is in the S0b brief.
+the theme matrix (1 matrix, 5 contrast), the origin check (9: a cold load asks no other origin for anything, and the
+page's two font families load from its own files) and the report; the other checks and the unit-tested pure helpers
+live in qa_checks.py. The element contract is in the S0b brief.
 """
 from __future__ import annotations
 
@@ -23,8 +24,11 @@ from playwright.sync_api import sync_playwright
 from qa_checks import (THEMES, VIEWPORTS, WHITE, Result, apply_state, check_clipping, check_flags, check_keyboard, check_ko,
                        check_size, check_timeline, contrast_ratio, effective_background, first_line, fmt_ratio, open_page, over,
                        required_ratio)
+from qa_lab_browser import open_lab
+from qa_lab_helpers import cross_origin
 
 REPO = Path(__file__).resolve().parents[1]
+FAMILIES = ("Archivo", "IBM Plex Mono")  # the two families of the page (site/infographic/fonts/README.md)
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -145,6 +149,30 @@ def check_contrast(browser, url) -> Result:
     return Result("contrast", ok, " | ".join(parts), themes)
 
 
+# ---- the origin check ------------------------------------------------------------------------------------
+
+
+def origin_problems(requests: list[str], loaded: list[str], base: str) -> list[str]:
+    """What is wrong with a cold load: a request to another origin (data: and blob: never leave the page), and a family of the page that the browser did not load from the page's own files."""
+    return [f"asked another origin for {u}" for u in cross_origin(requests, base)] + [f"{f} did not load from the page's own files" for f in FAMILIES if f not in loaded]
+
+
+def cold_load(browser, url) -> tuple[list[str], list[str]]:
+    """(the URLs the page requested, the font families whose faces the browser loaded) after a cold load, fonts settled."""
+    with open_lab(browser, url) as (page, _, requests):
+        page.evaluate("document.fonts.ready.then(() => true)")
+        page.wait_for_timeout(300)
+        loaded = page.evaluate("[...new Set([...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replace(/[\"']/g, '')))]")
+        return list(requests), loaded
+
+
+def check_origin(browser, url) -> Result:
+    requests, loaded = cold_load(browser, url)
+    problems = origin_problems(requests, loaded, url)
+    detail = f"{len(requests)} requests, all to the page's origin; loaded from its own files: {', '.join(f for f in FAMILIES if f in loaded) or 'none'}"
+    return Result("origin", not problems, detail if not problems else "; ".join(problems[:3]), {"requests": requests, "loaded": loaded, "problems": problems})
+
+
 # ---- driver ---------------------------------------------------------------------------------------------
 
 def guarded(name: str, fn) -> Result:
@@ -184,7 +212,8 @@ def main(argv=None) -> int:
                        guarded("contrast", lambda: check_contrast(browser, url)),
                        guarded("size", lambda: check_size(page_file)),
                        guarded("ko", lambda: check_ko(browser, url)),
-                       guarded("clipping", lambda: check_clipping(browser, url))]
+                       guarded("clipping", lambda: check_clipping(browser, url)),
+                       guarded("origin", lambda: check_origin(browser, url))]
         finally:
             browser.close()
     print(report(results, args.out))

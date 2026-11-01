@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Headless QA for the assembled site folder (`dist/site`, written by scripts/assemble_site.py): seven checks, exit 1 if any fails.
+"""Headless QA for the assembled site folder (`dist/site`, written by scripts/assemble_site.py): eight checks, exit 1 if any fails.
 
     uv run python scripts/qa_site.py [--root dist/site] [--out qa_out/site]
 
 Copies --root under /sample-lineage-lab/ in a scratch folder and serves that over http.server: a project site on GitHub Pages lives under /<repository>/, and a root-absolute address would pass
 at the root of a server and fail there. Drives headless Chromium (Playwright sync API), closes it, and writes results.json and summary.md to --out.
 
-  folder         the files of the folder: the page, the lab, an empty .nojekyll, and nothing of site/infographic/ besides index.html
+  folder         the files of the folder: the page, the fonts it names with their two licences (fonts/), the lab, an empty .nojekyll, and nothing of site/infographic/ besides index.html and fonts/
+  infographic_origin   a cold load of the page asks no other origin for anything and nothing outside /sample-lineage-lab/, and Archivo and IBM Plex Mono load from the folder's own fonts/
   links          the infographic opens, its link opens the lab, the browser check of the lab reads `identical`, the lab's link opens the infographic again; both link texts in English and Korean;
                  no request of the lab leaves the path of the site or the origin
   language       nothing chosen: both pages open in English (ADR-0006); Korean chosen on the infographic is the language of the lab after the click, and a choice made in the lab (English, then
@@ -19,6 +20,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -28,7 +30,7 @@ from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright
 from qa_checks import Result
 from qa_checks import check_size as check_page_size
-from qa_infographic import guarded, serve
+from qa_infographic import cold_load, guarded, origin_problems, serve
 from qa_lab_browser import open_lab, wait_final
 from qa_lab_breakout import public_build_result
 from qa_lab_checks import check_size as check_lab_size
@@ -37,8 +39,8 @@ from qa_lab_helpers import cross_origin
 
 REPO = Path(__file__).resolve().parents[1]
 SUBPATH = "sample-lineage-lab"
-REQUIRED = (".nojekyll", "index.html", "lab/index.html", "lab/reference.json")
-TOP = {".nojekyll", "index.html", "lab"}  # what the folder may hold at its top: the page, the lab and the marker file
+REQUIRED = (".nojekyll", "index.html", "lab/index.html", "lab/reference.json", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt")  # the OFL asks for the licence texts beside the fonts
+TOP = {".nojekyll", "index.html", "lab", "fonts"}  # what the folder may hold at its top: the page, its fonts, the lab and the marker file
 LAB_TEXTS = {"en": "Open the lab", "ko": "랩 열기"}  # the link of the infographic (site/infographic/src)
 BACK_TEXTS = {"en": "Explainer page", "ko": "해설 페이지"}  # the link of the lab (src/i18n)
 
@@ -49,10 +51,20 @@ BACK_TEXTS = {"en": "Explainer page", "ko": "해설 페이지"}  # the link of t
 def folder_problems(files: list[str], nojekyll_bytes: int) -> list[str]:
     """What is wrong with the list of files of the folder (paths relative to it)."""
     problems = [f"missing {name}" for name in REQUIRED if name not in files]
-    problems += [f"{name}: not part of the site (only index.html, lab/ and .nojekyll belong at the top)" for name in files if name.split("/")[0] not in TOP]
+    problems += [f"{name}: not part of the site (only index.html, fonts/, lab/ and .nojekyll belong at the top)" for name in files if name.split("/")[0] not in TOP]
     if ".nojekyll" in files and nojekyll_bytes != 0:
         problems.append(f".nojekyll holds {nojekyll_bytes} bytes (it must be empty)")
     return problems
+
+
+def font_urls(page_html: str) -> list[str]:
+    """The addresses in the `src` of the page's @font-face rules, in order."""
+    return [u for body in re.findall(r"@font-face\s*\{(.*?)\}", page_html, re.S) for u in re.findall(r"url\(\s*[\"']?([^)\"']+)", body)]
+
+
+def font_problems(files: list[str], page_html: str) -> list[str]:
+    """The fonts the page names that the folder does not hold (addresses are relative to the page, which sits at the top of the folder)."""
+    return [f"the page names {u}, which the folder does not hold" for u in font_urls(page_html) if u not in files]
 
 
 def outside_base(urls: list[str], base: str) -> list[str]:
@@ -68,8 +80,18 @@ def check_folder(root: Path) -> Result:
     files = sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
     nojekyll = root / ".nojekyll"
     problems = folder_problems(files, nojekyll.stat().st_size if nojekyll.exists() else 0)
+    if "index.html" in files:
+        problems += font_problems(files, (root / "index.html").read_text(encoding="utf-8"))
     detail = f"{len(files)} files, {len([f for f in files if f.startswith('lab/')])} of them in lab/"
     return Result("folder", not problems, detail + (f" | {problems[0]}" if problems else ""), {"files": files, "problems": problems})
+
+
+def check_infographic_origin(browser, base: str) -> Result:
+    """A cold load of the page under /<repository>/: no other origin, no address outside the path of the site (a root-absolute font address), and both families loaded."""
+    requests, loaded = cold_load(browser, base)
+    problems = origin_problems(requests, loaded, base) + [f"asked for {u}, outside {base}" for u in outside_base(requests, base)]
+    detail = f"{len(requests)} requests, all under /{SUBPATH}/; loaded from the folder's fonts/: {', '.join(loaded) or 'none'}"
+    return Result("infographic_origin", not problems, detail if not problems else "; ".join(problems[:3]), {"requests": requests, "loaded": loaded, "problems": problems})
 
 
 def lang_of(page) -> str:
@@ -214,6 +236,7 @@ def main(argv=None) -> int:
             browser = pw.chromium.launch(headless=True)
             try:
                 results = [guarded("folder", lambda: check_folder(args.root)),
+                           guarded("infographic_origin", lambda: check_infographic_origin(browser, base)),
                            guarded("links", lambda: check_links(browser, base)),
                            guarded("language", lambda: check_language(browser, base)),
                            guarded("infographic_size", lambda: renamed(check_page_size(args.root / "index.html"), "infographic_size")),

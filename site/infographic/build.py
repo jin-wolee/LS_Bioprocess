@@ -6,11 +6,14 @@
   site/infographic/index.html         full standalone document (GitHub Pages)
   site/infographic/dist/artifact.html body-only fragment for the Artifact viewer (gitignored)
 
+The page names its fonts by relative address (fonts/, which scripts/assemble_site.py copies to the published site). The fragment cannot reach local files, so it carries the same files as data addresses.
+
 While assembling, the ledgers are read so that every `data-src` element gets its grade chip and any
 citation of a source below `main-reread` without `data-status="provisional"` fails the build.
 """
 from __future__ import annotations
 
+import base64
 import gzip
 import html
 import re
@@ -20,13 +23,36 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 SRC = HERE / "src"
-FONTS = ("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800"
-         "&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap")
+FONT_DIR = HERE / "fonts"  # the woff2 files and their licences (fonts/README.md); the page asks no other origin for anything
+# Google Fonts splits a family by script; the page keeps latin and latin-ext with the unicode-range of Google's own stylesheet, so the same characters come from the same files as before
+SUBSETS = {
+    "latin": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+    "latin-ext": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF",
+}
+# (family, font-weight, font-stretch or "", file name stem): Archivo is one variable file per subset (width and weight axes), IBM Plex Mono has one file per weight
+FACES = (("Archivo", "400 800", "62% 125%", "archivo"),
+         *(("IBM Plex Mono", str(w), "", f"ibm-plex-mono-{w}") for w in (400, 500, 600, 700)))
 DESCRIPTION = ("An explainer of how results lose their process context when N bioreactors send samples to two shared analyzers, "
                "with a link to the lab that runs the synthetic plant. Synthetic data; this page states no simulation result.")
 RANK = {g: i for i, g in enumerate("SPDA")}
 LABELS = {"S": ("sourced", "출처 확인"), "P": ("proxy", "대리지표"), "D": ("derived", "유도"), "A": ("assumed", "가정")}
 PROVISIONAL = ("provisional", "잠정")
+
+
+def font_faces(address) -> str:
+    """The @font-face rules of the two families. `address(file name)` is the url() of a file: a relative address in the page, the file itself as a data address in the fragment."""
+    rules = []
+    for family, weight, stretch, stem in FACES:
+        for subset, ranges in SUBSETS.items():
+            rules.append(
+                f"@font-face {{\n  font-family: \"{family}\";\n  font-style: normal;\n  font-weight: {weight};\n"
+                + (f"  font-stretch: {stretch};\n" if stretch else "")
+                + f"  font-display: swap;\n  src: url({address(f'{stem}-{subset}.woff2')}) format(\"woff2\");\n  unicode-range: {ranges};\n}}\n")
+    return "".join(rules)
+
+
+def data_address(name: str) -> str:
+    return "data:font/woff2;base64," + base64.b64encode((FONT_DIR / name).read_bytes()).decode("ascii")
 
 
 def unquote(v: str) -> str:
@@ -107,7 +133,8 @@ def check_i18n(body: str, i18n: str, errors: list[str]) -> None:
         errors.append(f"i18n.js: unused key {k}")
 
 
-def main() -> int:
+def render() -> tuple[str, str, list[str]]:
+    """(page, fragment, errors): the two outputs as text, built from src/ and the ledgers; nothing is written."""
     assumptions, sources = read_ledgers()
     body = (SRC / "body.html").read_text(encoding="utf-8")
     css = (SRC / "style.css").read_text(encoding="utf-8")
@@ -118,21 +145,26 @@ def main() -> int:
     body = body.replace("<!--SOURCES-->", source_list(sources))
     check_i18n(body, i18n, errors)
     if errors:
-        print("\n".join(f"ERROR {e}" for e in errors), file=sys.stderr)
-        return 1
+        return "", "", errors
     script = f"<script>\n{i18n}\n{app}</script>"
     page = (
         "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
         f"<title>Sample Lineage Lab</title>\n<meta name=\"description\" content=\"{html.escape(DESCRIPTION, quote=True)}\">\n"
-        "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n"
-        "<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n"
-        f"<link rel=\"stylesheet\" href=\"{FONTS}\">\n<style>\n{css}</style>\n</head>\n<body>\n{body}{script}\n</body>\n</html>\n"
+        f"<style>\n{font_faces(lambda name: f'fonts/{name}')}{css}</style>\n</head>\n<body>\n{body}{script}\n</body>\n</html>\n"
     )
     fragment = (
         "<title>Sample Lineage Lab</title>\n<meta name=\"claude:viewport-fit-sides\" content=\"cover\">\n"
-        f"<style>\n@import url('{FONTS}');\n{css}</style>\n{body}{script}\n"
+        f"<style>\n{font_faces(data_address)}{css}</style>\n{body}{script}\n"
     )
+    return page, fragment, []
+
+
+def main() -> int:
+    page, fragment, errors = render()
+    if errors:
+        print("\n".join(f"ERROR {e}" for e in errors), file=sys.stderr)
+        return 1
     (HERE / "dist").mkdir(exist_ok=True)
     (HERE / "index.html").write_text(page, encoding="utf-8")
     (HERE / "dist/artifact.html").write_text(fragment, encoding="utf-8")
