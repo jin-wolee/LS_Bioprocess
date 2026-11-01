@@ -131,7 +131,7 @@ What runs inside the Worker, by request:
 | `lineage` | One seed of the scenario through `runSeed` for A, B and C (and any ablation named), the pick rule on the truth log, the analyst's three questions against each dataset, the realised errors from the injector's plain output. |
 | `challenge_*` | Planting, the shown record, the guess and the reveal (section 9). The decision variant runs the closed loop of one seed (`runClosedLoopSeed`, SC8) twice, without and with the plant, and posts `progress` between the two. The planted error lives in Worker memory under the challenge id and leaves it only inside `challenge_reveal`. |
 | `breakout` | The SC12 script, the three recorders, the walk-back and the extension metrics (Step 5 engine, Step 6 screen). |
-| `plant_*` | The plant's requests and answers (`plant_run`, `plant_ready`, `plant_halls`, `plant_record`, `plant_record_view`, and later `plant_truth`) are listed with their rules in `docs/design/plant_ui.md` section 6, which adds to this section and changes only rule 1 below. |
+| `plant_*` | The plant's requests and answers (`plant_run`, `plant_ready`, `plant_halls`, `plant_record`, `plant_record_view`, `plant_truth`, `plant_truth_view`) are listed with their rules in `docs/design/plant_ui.md` section 6, which adds to this section and changes only rule 1 below. |
 
 Rules of the protocol, each with a test:
 
