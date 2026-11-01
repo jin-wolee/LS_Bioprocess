@@ -36,7 +36,7 @@ export interface ScenarioExtras {
   capture_path?: CapturePath;
 }
 
-interface ScenarioDoc {
+export interface ScenarioDoc {
   settings: Record<string, { value: number; unit: string; ref: string }>;
   profiles: Record<string, string>;
   [field: string]: unknown;
@@ -56,7 +56,20 @@ export const rawLayerDoc = (data: LabData): RawLayerDoc => data.rawLayer as RawL
  * The scenario with the `value` of named settings replaced (unit and ref stay), the profile lists set when given, the raw layer switched on when a capture path is named, and the
  * run seed set. A name the scenario lacks throws, as loading a bad scenario does; so do the engine's own checks of the lists (spec section 4.5.3), with the engine's message.
  */
-export const scenarioConfig = (data: LabData, id: string, settings: Readonly<Record<string, number>>, seed: number, extras: ScenarioExtras = {}): ScenarioConfig => {
+export const scenarioConfig = (data: LabData, id: string, settings: Readonly<Record<string, number>>, seed: number, extras: ScenarioExtras = {}): ScenarioConfig =>
+  ({ ...loadScenario(scenarioDocument(data, id, settings, extras), data.lookup), seed });
+
+/** A capture path named: the raw layer on, with the calendar anchor and the instruments' zone of the lab's own inputs (A161). */
+export const useCapturePath = (data: LabData, doc: ScenarioDoc, path: CapturePath): void => {
+  const raw = rawLayerDoc(data);
+  doc.raw_layer = true;
+  doc.calendar_anchor = raw.calendar_anchor;
+  doc.settings.device_zone_h = structuredClone(raw.device_zone_h);
+  doc.capture_path = path;
+};
+
+/** The scenario document of `scenarioConfig` before it is loaded: a copy of the bundled one with the settings and the extras applied. */
+export const scenarioDocument = (data: LabData, id: string, settings: Readonly<Record<string, number>>, extras: ScenarioExtras = {}): ScenarioDoc => {
   const doc = structuredClone(data.scenarios[id]) as ScenarioDoc;
   for (const [name, value] of Object.entries(settings)) {
     const setting = doc.settings[name];
@@ -65,14 +78,8 @@ export const scenarioConfig = (data: LabData, id: string, settings: Readonly<Rec
   }
   if (extras.bay_profiles) doc.bay_profiles = [...extras.bay_profiles];
   if (extras.analyzer_profiles) doc.analyzer_profiles = [...extras.analyzer_profiles];
-  if (extras.capture_path) {
-    const raw = rawLayerDoc(data);
-    doc.raw_layer = true;
-    doc.calendar_anchor = raw.calendar_anchor;
-    doc.settings.device_zone_h = structuredClone(raw.device_zone_h);
-    doc.capture_path = extras.capture_path;
-  }
-  return { ...loadScenario(doc, data.lookup), seed };
+  if (extras.capture_path) useCapturePath(data, doc, extras.capture_path);
+  return doc;
 };
 
 /** The analyzer profiles of a run in the order of the plan (spec section 4.5.4): the distinct listed profiles, or the scenario's own when no list is given. */

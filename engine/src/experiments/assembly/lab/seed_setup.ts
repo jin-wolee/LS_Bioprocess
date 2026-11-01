@@ -5,6 +5,7 @@ import { loadProfile } from "../../../profiles.ts";
 import type { Architecture } from "../../../record/architecture.ts";
 import { runScenario } from "../../../run.ts";
 import type { ScenarioRun } from "../../../run.ts";
+import type { ScenarioConfig } from "../../../scenario.ts";
 import type { Dialect } from "../../../raw/types.ts";
 import { rosterOf, seedInputFromRun } from "../from_run.ts";
 import { entryConfigFor, rawSetupFor } from "../raw_setup.ts";
@@ -37,15 +38,19 @@ export const comparedWith = (data: LabData, shown: string): Architecture[] => {
 };
 
 /** The truth run of the seed and the input of `runSeed` for the chosen architectures. A scenario that fails the engine's own validation throws with the engine's message. */
-export const labSeed = (data: LabData, spec: RunSpec, seed: number, architectures: readonly Architecture[]): LabSeed => {
-  const evaluation = evaluationSettings(data.evaluation);
-  const { staff: staffId } = scenarioDoc(data, spec.scenario).profiles;
-  const staff = loadProfile(data.lookup("staff", staffId as string), "staff").params;
-  const config = scenarioConfig(data, spec.scenario, spec.settings, seed, {
+export const labSeed = (data: LabData, spec: RunSpec, seed: number, architectures: readonly Architecture[]): LabSeed =>
+  labSeedOf(data, spec, scenarioConfig(data, spec.scenario, spec.settings, seed, {
     ...(spec.bay_profiles && { bay_profiles: spec.bay_profiles }),
     ...(spec.analyzer_profiles && { analyzer_profiles: spec.analyzer_profiles }),
     ...(spec.capture_path && { capture_path: spec.capture_path }),
-  });
+  }), architectures);
+
+/** `labSeed` for a scenario config the caller has built (the plant applies operator actions to the scenario document first); the seed is the config's own. */
+export const labSeedOf = (data: LabData, spec: RunSpec, config: ScenarioConfig, architectures: readonly Architecture[]): LabSeed => {
+  const evaluation = evaluationSettings(data.evaluation);
+  const { staff: staffId } = scenarioDoc(data, spec.scenario).profiles;
+  const staff = loadProfile(data.lookup("staff", staffId as string), "staff").params;
+  const seed = config.seed;
   const roster = rosterOf(config.sampling);
   const plan = analyzerPlan(data, spec.scenario, spec.analyzer_profiles);
   const dialects = data.dialects as Readonly<Record<string, Dialect>>;

@@ -110,12 +110,38 @@ export interface SamplingRun {
 }
 
 const isWeekend = (day: number): boolean => day % 7 >= 5;
+const endOf = (cfg: SamplingConfig, day: number): number => (isWeekend(day) ? cfg.endWeekend_s : cfg.endWeekday_s);
+
+/** The identity of a sample for its planned instant: the unit's place, the culture day and the index of the sample on the day (1 regular, 2 in the feed window). */
+export interface SamplePlace {
+  sample_id: string;
+  bay: number;
+  slot: number;
+  day: number;
+  n: 1 | 2;
+}
+
+/**
+ * The planned instant of a sample, before any delay: null when the sample does not exist that day (a second sample on a weekend, or when its draw says no). The second sample is uniform
+ * in the feed window; a first sample is on the bay window (staggered) or burst or uniform (A202, A203). Every draw is keyed by the sample id alone.
+ */
+export const plannedInstant = (cfg: SamplingConfig, rng: Rng, seed: number, s: SamplePlace): number | null => {
+  const draw = (purpose: string) => rng.stream([seed, s.sample_id, "-", 0, purpose]);
+  if (s.n === 2 && (isWeekend(s.day) || draw("exists").float() >= cfg.secondFraction)) return null;
+  let planned: number;
+  if (s.n === 2) planned = cfg.feedStart_s + draw("plan").float() * (cfg.feedEnd_s - cfg.feedStart_s);
+  else if (cfg.plan === "staggered") planned = cfg.stagger.start_s + (s.bay - 1) * cfg.stagger.offset_s + ((s.slot + 0.5) * cfg.stagger.window_s) / cfg.stagger.baySize;
+  else {
+    const planStream = draw("plan");
+    planned = planStream.float() < cfg.burstShare ? cfg.burstCenter_s + cfg.burstSd_s * planStream.gaussian() : cfg.start_s + planStream.float() * (endOf(cfg, s.day) - cfg.start_s);
+  }
+  return s.day * DAY + wholeSeconds(planned);
+};
 
 export const runSampling = (cfg: SamplingConfig, proc: ProcessRun, seed: number, rng: Rng): SamplingRun => {
   const events: Event[] = [];
   const samples: SampleRecord[] = [];
   const draw = (sample: string, purpose: string) => rng.stream([seed, sample, "-", 0, purpose]);
-  const endOf = (day: number): number => (isWeekend(day) ? cfg.endWeekend_s : cfg.endWeekday_s);
   const opId = (n: number): string => `OP-${String(n).padStart(2, "0")}`;
   const operators: Operator[] = Array.from({ length: 2 * cfg.opsPerShift }, (_, i) => ({ operator_id: opId(i + 1), qualified: cfg.qualified }));
 
@@ -123,21 +149,13 @@ export const runSampling = (cfg: SamplingConfig, proc: ProcessRun, seed: number,
     const { volumeUl, capUl } = cfg.bays?.[r.bay - 1] ?? cfg;
     const cands: { id: string; day: number; planned: number; drawn: number; arrived: number; operator: string }[] = [];
     for (let day = Math.floor(r.inoculated_s / DAY) + 1; day * DAY < r.harvested_s; day++) {
-      for (const n of [1, 2]) {
+      for (const n of [1, 2] as const) {
         const id = `${r.unit_id}-D${String(day).padStart(2, "0")}-${n}`;
-        if (n === 2 && (isWeekend(day) || draw(id, "exists").float() >= cfg.secondFraction)) continue;
-        // planned instant: the second sample is uniform in the feed window; a first sample is on the bay window (staggered) or burst or uniform (A202, A203)
-        let planned: number;
-        if (n === 2) planned = cfg.feedStart_s + draw(id, "plan").float() * (cfg.feedEnd_s - cfg.feedStart_s);
-        else if (cfg.plan === "staggered") planned = cfg.stagger.start_s + (r.bay - 1) * cfg.stagger.offset_s + ((r.slot + 0.5) * cfg.stagger.window_s) / cfg.stagger.baySize;
-        else {
-          const planStream = draw(id, "plan");
-          planned = planStream.float() < cfg.burstShare ? cfg.burstCenter_s + cfg.burstSd_s * planStream.gaussian() : cfg.start_s + planStream.float() * (endOf(day) - cfg.start_s);
-        }
-        const plannedS = day * DAY + wholeSeconds(planned);
+        const plannedS = plannedInstant(cfg, rng, seed, { sample_id: id, bay: r.bay, slot: r.slot, day, n });
+        if (plannedS === null) continue;
         // the draw: the planned instant plus a delay (half-normal with the sd of the staff profile, A063), kept inside the staffed window (A202)
         const delay = wholeSeconds(Math.abs(draw(id, "delay").gaussian()) * cfg.delaySd_s);
-        const drawn = Math.min(Math.max(plannedS + delay, day * DAY + cfg.start_s), day * DAY + endOf(day));
+        const drawn = Math.min(Math.max(plannedS + delay, day * DAY + cfg.start_s), day * DAY + endOf(cfg, day));
         if (drawn >= r.harvested_s) continue;
         const arrived = drawn + wholeSeconds(cfg.transportLo_s + draw(id, "transport").float() * (cfg.transportHi_s - cfg.transportLo_s));
         const weekend = isWeekend(day);
