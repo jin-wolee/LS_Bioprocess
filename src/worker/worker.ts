@@ -4,6 +4,8 @@ import { createChallenges } from "../../engine/src/experiments/assembly/lab/chal
 import type { Refusal } from "../../engine/src/experiments/assembly/lab/challenges.ts";
 import { homeRun } from "../../engine/src/experiments/assembly/lab/home.ts";
 import { answerLineage } from "../../engine/src/experiments/assembly/lab/lineage_request.ts";
+import { answerPlantRun } from "../../engine/src/experiments/assembly/lab/plant.ts";
+import type { PlantKept } from "../../engine/src/experiments/assembly/lab/plant.ts";
 import { readyOf } from "../../engine/src/experiments/assembly/lab/ready.ts";
 import { runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
@@ -21,6 +23,10 @@ import { LAB_DATA } from "./data.ts";
 // S3e adds `lineage` and the four `challenge_*` requests. The challenge lives in the Worker under its id (engine/src/experiments/assembly/lab/challenges.ts): the plant leaves it only inside
 // `challenge_reveal`, and `lineage` is refused with `locked` for a run that is an unrevealed challenge (rules 2 and 3 of section 4).
 //
+// P3 adds `plant_run` (the plant of ADR-0021, docs/design/plant_ui.md sections 5 and 6): the checked spec and its actions are run from the start and answered as `plant_ready`, a scene plan with the
+// hashes that prove what ran. The Worker keeps the truth log of the last answer it posted (`PlantKept`) for the checks of the next. An epoch names each request: the Worker answers one plant run
+// at a time, a newer epoch cancels an older run that has not built its answer yet, and every message about a plant request echoes the epoch, so the page drops what is not the latest.
+//
 // createWorker holds the whole protocol and touches no global, so the unit tests drive it directly. The entry at the bottom wires it to postMessage when this file runs as a Worker.
 
 export interface WorkerEnv {
@@ -30,6 +36,8 @@ export interface WorkerEnv {
   /** A monotonic clock in milliseconds, used for the timed runs of the check and nothing else. */
   now(): number;
 }
+
+const yieldToLoop = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
 const PENDING: CheckDetail = { runs_ms: [], truth: [], repeats_equal: false, cells_equal: false };
 
@@ -144,6 +152,37 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     }
   };
 
+  /** The plant: the newest epoch asked for, what the last answer posted kept, and the queue (plant runs are answered one at a time, in the order they arrive). */
+  let plantLatest = -1;
+  let plantKept: PlantKept | undefined;
+  let plantQueue: Promise<void> = Promise.resolve();
+
+  const plantAnswer = async (id: number, epoch: number, raw: unknown): Promise<void> => {
+    const stale = (): boolean => epoch !== plantLatest;
+    const cancelled = (): void => post({ type: "error", id, epoch, code: "cancelled", message: "the plant run was replaced by a newer one before its answer was drawn" });
+    try {
+      // one turn of the event loop first: a newer request that is already waiting is handled before this one builds anything
+      await yieldToLoop();
+      if (stale()) return cancelled();
+      const out = await answerPlantRun(env.data, challenges, { spec: raw }, plantKept);
+      if (stale()) return cancelled();
+      if (!out.ok) return post({ type: "error", id, epoch, code: out.code, message: out.message, ...(out.code === "refused" && { reason: out.reason, index: out.index }) });
+      plantKept = out.kept;
+      post({ type: "plant_ready", id, epoch, ...out.answer });
+    } catch (e) {
+      post({ type: "error", id, epoch, code: "engine_error", message: e instanceof Error ? e.message : String(e) });
+    }
+  };
+
+  const plantRun = (id: number, message: Record<string, unknown>): Promise<void> | void => {
+    const epoch = message.epoch;
+    if (typeof epoch !== "number" || !Number.isInteger(epoch) || epoch < 0) return fail(id, "invalid_spec", "a plant_run request needs a whole epoch, 0 or more");
+    if (epoch <= plantLatest) return post({ type: "error", id, epoch, code: "invalid_spec", message: `the epoch ${epoch} is not larger than the last epoch seen (${plantLatest})` });
+    plantLatest = epoch;
+    plantQueue = plantQueue.then(() => plantAnswer(id, epoch, message.spec));
+    return plantQueue;
+  };
+
   const onMessage = (message: unknown): Promise<void> | void => {
     if (typeof message !== "object" || message === null || Array.isArray(message)) return fail(null, "invalid_spec", "a request must be an object with a type");
     const { type, id, spec } = message as { type?: unknown; id?: unknown; spec?: unknown };
@@ -161,6 +200,7 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       return oneSeed(requestId, message as Record<string, unknown>);
     }
     if (type === "breakout") return requestId === null ? fail(null, "invalid_spec", "a breakout request needs a numeric id") : breakout(requestId, message as Record<string, unknown>);
+    if (type === "plant_run") return requestId === null ? fail(null, "invalid_spec", "a plant_run request needs a numeric id") : plantRun(requestId, message as Record<string, unknown>);
     return fail(requestId, "invalid_spec", `unknown request type ${JSON.stringify(type)}`);
   };
 

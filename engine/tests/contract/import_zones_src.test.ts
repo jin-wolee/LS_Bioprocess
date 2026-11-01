@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 import { ROOT } from "../support/paths.ts";
 
 // docs/design/lab_ui.md section 2, "Import boundary": the lab page (src/) never imports a truth module; only src/worker/worker.ts reaches the engine, and only through
-// engine/src/experiments/assembly/lab/. Each rule is shown on a planted import: the file path is virtual (lintText), so nothing is written. Beside import_zones.test.ts, which
+// engine/src/experiments/assembly/lab/. P3 adds src/plant/** to the page zone and one rule of its own (docs/design/plant_ui.md section 6, rule 6): `three` is imported only under src/plant/gl/. Each rule is shown on a planted import: the file path is virtual (lintText), so nothing is written. Beside import_zones.test.ts, which
 // does the same for engine/src.
 
 const TRUTH = ["process", "sampling", "analysis", "measure", "instrument", "stability", "sensors", "run"] as const;
-const PAGE_FILES = ["src/ui/planted.tsx", "src/main.tsx", "src/i18n/planted.ts", "src/protocol.ts"] as const;
+const PAGE_FILES = ["src/ui/planted.tsx", "src/main.tsx", "src/i18n/planted.ts", "src/protocol.ts", "src/plant/planted.tsx", "src/plant/gl/planted.ts"] as const;
 
 const messages = async (code: string, file: string): Promise<{ rule: string; text: string }[]> => {
   const eslint = new ESLint({ cwd: ROOT });
@@ -82,6 +82,43 @@ describe("the page (src/ui, src/main.tsx, src/i18n, src/protocol.ts) imports no 
   });
 });
 
+describe("three is imported only under src/plant/gl (plant_ui.md section 6, rule 6)", () => {
+  const OUTSIDE = [
+    "src/ui/planted.tsx", "src/main.tsx", "src/i18n/planted.ts", "src/protocol.ts",
+    "src/plant/planted.tsx", "src/plant/layout.ts", "src/plant/walk.ts", "src/plant/controls.ts",
+    "src/worker/worker.ts", "src/worker/data.ts",
+  ] as const;
+
+  it.each(OUTSIDE)("%s: importing three, or a path under it, is an error (types too)", async (file) => {
+    for (const spec of ["three", "three/addons/loaders/GLTFLoader.js", "three/webgpu"]) expect(await refused(spec, file), spec).toBe(1);
+    expect((await restricted('import type { Vector3 } from "three";\nexport type V = Vector3;\n', file)).length).toBe(1);
+  });
+
+  it("Given a file under src/plant/gl Then three is allowed", async () => {
+    expect(await refused("three", "src/plant/gl/planted.ts")).toBe(0);
+    expect(await refused("three/addons/controls/OrbitControls.js", "src/plant/gl/planted.ts")).toBe(0);
+    expect(await refused("three", "src/plant/gl/deeper/planted.ts")).toBe(0);
+  });
+
+  it("Given a file under src/plant/gl Then it is still the page: no engine module, no Worker module, no Node-only module", async () => {
+    const file = "src/plant/gl/planted.ts";
+    expect(await refused("../../../engine/src/trace.ts", file)).toBe(1);
+    expect(await refused("../../../engine/src/experiments/assembly/lab/plant.ts", file)).toBe(1);
+    expect(await refused("../../worker/worker.ts", file)).toBe(1);
+    expect((await restricted('import { join } from "node:path";\nexport const x = join;\n', file)).length).toBe(1);
+  });
+
+  it("Given a test file of the plant Then it is outside the zones", async () => {
+    expect(await refused("three", "src/plant/gl/scene.test.ts")).toBe(0);
+    expect(await refused("three", "src/plant/layout.test.ts")).toBe(0);
+  });
+
+  it("Given a plant module outside gl Then importing a module of gl is allowed (the page lazy-loads the scene), and a plant module may import the layout", async () => {
+    expect(await refused("./gl/scene.ts", "src/plant/planted.tsx")).toBe(0);
+    expect(await refused("./layout.ts", "src/plant/planted.tsx")).toBe(0);
+  });
+});
+
 describe("the Worker entry (src/worker/worker.ts) reaches the engine only through engine/src/experiments/assembly/lab/", () => {
   const file = "src/worker/worker.ts";
 
@@ -133,7 +170,7 @@ describe("the Worker's data module (src/worker/data.ts) bundles JSON and nothing
 });
 
 describe("determinism in src (invariant 2)", () => {
-  it.each(["src/ui/planted.tsx", "src/worker/worker.ts", "src/main.tsx"])("%s: Math.random is an error", async (file) => {
+  it.each(["src/ui/planted.tsx", "src/worker/worker.ts", "src/main.tsx", "src/plant/planted.tsx", "src/plant/gl/planted.ts"])("%s: Math.random is an error", async (file) => {
     const found = (await messages("export const x = Math.random();\n", file)).filter((m) => m.rule === "no-restricted-properties");
     expect(found.length).toBe(1);
     expect(found[0]?.text).toMatch(/Seeded PRNG/);

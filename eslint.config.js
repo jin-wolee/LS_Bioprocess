@@ -85,6 +85,9 @@ const WORKER_ONLY_LAB = {
   regex: "(^|/)engine(/(?!src/experiments/assembly/lab/)|$)",
   message: "src/worker/worker.ts imports engine/src/experiments/assembly/lab/ only: the truth modules, the answer key, the raw quirk key, the hidden event type and the tests stay behind it.",
 };
+// 2026-11-01 P3 (docs/design/plant_ui.md section 6, rule 6): `three` is imported only under src/plant/gl/, so layout.ts, the controls' state and everything else of the plant run in Vitest without WebGL
+// and the Worker never reaches it. The pattern takes `three` and every path under it, type imports included.
+const NO_THREE = { group: ["three", "three/*"], message: "three is imported only under src/plant/gl/ (plant_ui.md section 6, rule 6): the layout, the controls' state, the page and the Worker run without WebGL." };
 const WORKER_NO_SCENARIOS = { regex: "(^|/)scenarios(/|$)", message: "The scenario files reach the Worker through src/worker/data.ts." };
 const DATA_NO_ENGINE = { regex: "(^|/)engine(/|$)", message: "src/worker/data.ts bundles JSON only; the engine functions are imported by src/worker/worker.ts." };
 
@@ -153,20 +156,26 @@ export default tseslint.config(
     rules: { "no-restricted-imports": restrict(ANSWER_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS, BREAKOUT) },
   },
   {
-    // Lab page zones (S3b, lab_ui.md section 2), 1: the page.
+    // Lab page zones (S3b, lab_ui.md section 2), 1: the page, the plant (src/plant/**) included; `three` stays out of it.
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/worker/**", "src/**/*.test.ts"],
+    ignores: ["src/worker/**", "src/plant/gl/**", "src/**/*.test.ts"],
+    rules: { "no-restricted-imports": srcRestrict(PAGE_NO_ENGINE, PAGE_NO_WORKER, NO_THREE) },
+  },
+  {
+    // The plant's scene (P3, plant_ui.md section 6, rule 6): the only place that imports `three`. It is still the page, so the engine, the Worker and Node-only modules stay out.
+    files: ["src/plant/gl/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.ts"],
     rules: { "no-restricted-imports": srcRestrict(PAGE_NO_ENGINE, PAGE_NO_WORKER) },
   },
   {
     // Lab page zones, 2: the Worker entry.
     files: ["src/worker/worker.ts"],
-    rules: { "no-restricted-imports": srcRestrict(WORKER_ONLY_LAB, WORKER_NO_SCENARIOS) },
+    rules: { "no-restricted-imports": srcRestrict(WORKER_ONLY_LAB, WORKER_NO_SCENARIOS, NO_THREE) },
   },
   {
     // Lab page zones, 3: the bundled JSON of the Worker.
     files: ["src/worker/data.ts"],
-    rules: { "no-restricted-imports": srcRestrict(DATA_NO_ENGINE) },
+    rules: { "no-restricted-imports": srcRestrict(DATA_NO_ENGINE, NO_THREE) },
   },
   {
     // Invariant 2 in src: seeded PRNG only (check_all.sh greps engine/src and src for Math.random as well).

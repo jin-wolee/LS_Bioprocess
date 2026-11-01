@@ -1,7 +1,7 @@
 // Hash routes (docs/design/lab_ui.md section 2): the path picks the screen and the query carries the shareable state. A few lines, no router. Lineage and Challenge landed in S3e, Break-out in S3g
-// (a build that refuses the Break-out screen keeps the route and answers it with the refusal; its navigation link is left out).
+// (a build that refuses the Break-out screen keeps the route and answers it with the refusal; its navigation link is left out). P3 adds the plant, entered from Home (plant_ui.md section 7).
 
-export const SCREENS = ["home", "setup", "results", "lineage", "challenge", "breakout", "notes"] as const;
+export const SCREENS = ["home", "plant", "setup", "results", "lineage", "challenge", "breakout", "notes"] as const;
 export type Screen = (typeof SCREENS)[number];
 
 export interface Route {

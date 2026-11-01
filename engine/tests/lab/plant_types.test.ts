@@ -1,0 +1,26 @@
+import { describe, expect, expectTypeOf, it } from "vitest";
+import { ACTION_KINDS } from "../../src/experiments/assembly/lab/actions.ts";
+import type { Action, RefusalReason } from "../../src/experiments/assembly/lab/actions.ts";
+import type { PlantAnswer } from "../../src/experiments/assembly/lab/plant.ts";
+import type { ScenePlan as EnginePlan } from "../../src/experiments/assembly/lab/plant_plan.ts";
+import type { PlantAction, RefusalReason as PageReason, Response, ScenePlan } from "../../../src/protocol.ts";
+
+// P3 (docs/design/plant_ui.md section 6): the page imports no engine module, so src/protocol.ts declares the shapes of the plant's plain data. Nothing here runs at run time but the list of kinds;
+// the checks are types, which `npm run typecheck` verifies: a field added to the engine's scene plan or action without the same field in the protocol fails to compile.
+
+describe("the plant shapes of src/protocol.ts are the engine's", () => {
+  it("Given the scene plan, the actions and the refusal reasons Then each shape of the protocol equals the engine's", () => {
+    expectTypeOf<ScenePlan>().toEqualTypeOf<EnginePlan>();
+    expectTypeOf<PlantAction>().toEqualTypeOf<Action>();
+    expectTypeOf<PageReason>().toEqualTypeOf<RefusalReason>();
+  });
+
+  it("Given what the engine answers Then it is what the protocol's plant_ready carries", () => {
+    type Ready = Extract<Response, { type: "plant_ready" }>;
+    expectTypeOf<Pick<Ready, "plan" | "resume_at" | "hashes" | "checks">>().toEqualTypeOf<PlantAnswer>();
+  });
+
+  it("Given the kinds of the engine Then there are eight, as in section 5.2", () => {
+    expect([...ACTION_KINDS].sort()).toEqual(["add_feed", "analyzer_down", "change_lot", "move_draw", "raise_alarm", "set_capture_path", "set_flag", "set_labelling"]);
+  });
+});

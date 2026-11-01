@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CheckDetail, ResultFooter, Response } from "../protocol.ts";
+import type { CheckDetail, ResultFooter, Response, ScenePlan } from "../protocol.ts";
 import { READY } from "./fixture.ts";
 import { displayedCheck, initial, reduce } from "./state.ts";
 import type { State } from "./state.ts";
@@ -14,7 +14,7 @@ const REPORT = { schema_version: "1", architectures: [] } as unknown as NonNulla
 const running = (): State => reduce(initial, { type: "run_started", id: 5 });
 
 describe("reduce", () => {
-  it("Given the initial state Then nothing is ready, the check is pending, there is no result, no run, no problem, no lineage view, no challenge and no break-out result", () => {
+  it("Given the initial state Then nothing is ready, the check is pending, there is no result, no run, no problem, no lineage view, no challenge, no break-out result and no plant", () => {
     expect(initial).toEqual({
       ready: null,
       check: { state: "pending", detail: { runs_ms: [], truth: [], repeats_equal: false, cells_equal: false } },
@@ -26,6 +26,7 @@ describe("reduce", () => {
       lineage: { running: null, asked: null, answer: null, problem: null },
       challenge: { starting: null, active: null, busy: null, problem: null },
       breakout: { running: null, asked: null, result: null, problem: null },
+      plant: { epoch: 0, running: null, ready: null, problem: null },
     });
   });
 
@@ -106,5 +107,29 @@ describe("displayedCheck: a result shown while the check was pending is re-label
   it("Given a footer made under a settled state Then that state stays (the check runs once per load)", () => {
     expect(displayedCheck("failed", "identical")).toBe("failed");
     expect(displayedCheck("identical", "pending")).toBe("identical");
+  });
+});
+
+describe("the plant in the page state (plant_ui.md section 6, rule 3)", () => {
+  const plan: ScenePlan = { schema_version: "1", seed: 1, horizon_s: 0, layout: { bays: [], analyzers: [], architectures: [] }, units: [], analyzers: [], staff: [], samples: [], marks: [], windows: [], records: [] };
+  const answer = (id: number, epoch: number): Response => ({ type: "plant_ready", id, epoch, plan: { ...plan, seed: epoch }, resume_at: 0, hashes: { truth: "t", cells: {} }, checks: { prefix_equal: null, truth_equal: null } });
+
+  it("Given a plant request and its answer Then the plan is in the state, and the run of the lab is untouched", () => {
+    const asked = reduce(running(), { type: "plant_started", id: 9, epoch: 1 });
+    const next = reduce(asked, answer(9, 1));
+    expect([next.plant.epoch, next.plant.ready?.plan.seed, next.running, next.results]).toEqual([1, 1, 5, null]);
+  });
+
+  it("Given an answer of an older epoch Then it is dropped, and an error of the newest epoch is the plant's problem and not the page's", () => {
+    const asked = reduce(reduce(initial, { type: "plant_started", id: 9, epoch: 1 }), { type: "plant_started", id: 10, epoch: 2 });
+    expect(reduce(asked, answer(9, 1))).toEqual(asked);
+    const failed = reduce(asked, { type: "error", id: 10, epoch: 2, code: "refused", message: "no", reason: "past", index: 0 });
+    expect([failed.plant.problem?.code, failed.problem]).toEqual(["refused", null]);
+  });
+
+  it("Given an error of a plant request of an older epoch Then it changes nothing; an error with no epoch is still the page's", () => {
+    const asked = reduce(reduce(initial, { type: "plant_started", id: 9, epoch: 1 }), { type: "plant_started", id: 10, epoch: 2 });
+    expect(reduce(asked, { type: "error", id: 9, epoch: 1, code: "cancelled", message: "m" })).toEqual(asked);
+    expect(reduce(asked, { type: "error", id: 3, code: "engine_error", message: "m" }).problem?.code).toBe("engine_error");
   });
 });

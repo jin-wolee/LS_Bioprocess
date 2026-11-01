@@ -1,0 +1,49 @@
+/* The plant route (docs/design/plant_ui.md sections 2, 3 and 9). The scene fills the width of the page; the HUD cards, the hint and the bottom bar sit over it with solid backgrounds from the page
+   tokens, so that they read in both themes (the canvas itself is a bright lab in both and is not in the contrast sweep). Shape and text carry meaning, colour only repeats it. Every grid wraps,
+   so nothing scrolls sideways at the narrow viewport. */
+main[data-screen="plant"] { max-width: none; padding-left: 0; padding-right: 0; padding-top: 0; }
+.plant-intro, .plant-after { max-width: 60rem; margin: 0 auto; padding: 0 16px; }
+.plant-intro h1 { margin-top: 16px; }
+.plant-wrap + .plant-intro { margin-top: 8px; }
+.plant-status { color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
+
+.plant-wrap { position: relative; width: 100%; height: max(460px, calc(100svh - 72px)); background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); overflow: hidden; }
+.plant-gl { position: absolute; inset: 0; }
+.plant-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.plant-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.plant-label { position: absolute; left: 0; top: 0; visibility: hidden; will-change: transform; white-space: nowrap; font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 0 6px; border-radius: 999px; background: var(--surface); color: var(--fg); border: 1px solid var(--border); }
+.plant-boot { position: absolute; inset: 0; margin: 0; max-width: none; display: grid; place-items: center; background: var(--surface); color: var(--muted); }
+
+.plant-hud { position: absolute; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; font-size: 0.9rem; }
+.plant-hud-place { top: 12px; left: 12px; max-width: min(24rem, calc(100% - 140px)); }
+.plant-hud-check { top: 12px; right: 12px; padding: 4px 8px; }
+.plant-place { display: block; font-size: 1rem; }
+.plant-layer { display: block; color: var(--muted); font-size: 0.8rem; }
+.plant-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; margin: 6px 0 0; }
+.plant-facts dt { color: var(--muted); }
+.plant-facts dd { margin: 0; overflow-wrap: anywhere; }
+.plant-bottom { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.plant-bottom > * { pointer-events: auto; }
+.plant-hint { width: min(38rem, 100%); margin: 0; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px 12px; font-size: 0.85rem; }
+
+.plant-bar { width: min(44rem, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px 10px; }
+.plant-bar-actions { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.plant-bar-actions button { flex: 0 0 auto; white-space: nowrap; }
+.plant-bar-note { margin: 4px 0 0; color: var(--muted); font-size: 0.8rem; }
+
+.plant-object-group h3 { margin: 12px 0 4px; }
+.plant-object-list { list-style: none; padding: 0; margin: 4px 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.plant-object-list span[data-object-kind] { display: inline-block; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; background: var(--surface); }
+.plant-table-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; margin: 12px 0; }
+.plant-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+.plant-table caption { text-align: left; font-weight: 600; padding: 6px 8px; }
+.plant-table th, .plant-table td { text-align: left; padding: 3px 8px; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.plant-table thead th { background: var(--surface); }
+
+.home-plant { border: 1px solid var(--border); border-radius: 8px; padding: 4px 16px 12px; margin: 16px 0; background: var(--surface); }
+a.primary-link { display: inline-block; background: var(--accent); color: var(--bg); border: 1px solid var(--accent); border-radius: 6px; font-weight: 700; padding: 8px 24px; text-decoration: none; min-height: 36px; }
+a.primary-link:hover { text-decoration: underline; }
+
+@media (max-width: 599px) {
+  .plant-hud-place { max-width: calc(100% - 24px); }
+}

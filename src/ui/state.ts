@@ -1,4 +1,6 @@
 import type { CheckDetail, CheckState, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
+import { initialPlant, reducePlant } from "../plant/plant_state.ts";
+import type { PlantState } from "../plant/plant_state.ts";
 import { initialBreakout, initialChallenge, initialLineage, reduceBreakout, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
 import type { BreakoutState, ChallengeState, LineageState, OneSeedAction, Problem } from "./one_seed_state.ts";
 
@@ -43,9 +45,11 @@ export interface State {
   challenge: ChallengeState;
   /** S3g: the Break-out result of the last request. */
   breakout: BreakoutState;
+  /** P3: the plant: the newest epoch asked for and the plan of the newest answer (plant/plant_state.ts). */
+  plant: PlantState;
 }
 
-export type Action = Response | OneSeedAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number };
+export type Action = Response | OneSeedAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number } | { type: "plant_started"; id: number; epoch: number };
 
 export const initial: State = {
   ready: null,
@@ -58,6 +62,7 @@ export const initial: State = {
   lineage: initialLineage,
   challenge: initialChallenge,
   breakout: initialBreakout,
+  plant: initialPlant,
 };
 
 /** The run in flight is over when a message about it ends it. */
@@ -82,6 +87,9 @@ export const reduce = (state: State, action: Action): State => {
     case "sample_record":
     case "challenge_reveal":
       return withOneSeed(state);
+    case "plant_started":
+    case "plant_ready":
+      return { ...state, plant: reducePlant(state.plant, action) };
     case "ready": {
       const { type, ...ready } = action;
       return type === "ready" ? { ...state, ready } : state;
@@ -97,6 +105,7 @@ export const reduce = (state: State, action: Action): State => {
       return { ...state, ...(action.report ? { results: info } : { home: info }), ...over(state, action.id), problem: null };
     }
     case "error":
+      if (action.epoch !== undefined) return { ...state, plant: reducePlant(state.plant, action) }; // an error of a plant request: the plant's problem, or dropped when its epoch is not the newest
       if (forOneSeed(state, action.id)) return withOneSeed(state);
       return { ...state, problem: { id: action.id, code: action.code, message: action.message }, ...over(state, action.id) };
     case "worker_error":

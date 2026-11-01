@@ -16,6 +16,8 @@ import { Lineage } from "./Lineage.tsx";
 import { defaultLineageForm, lineageRequest } from "./lineage_form.ts";
 import type { LineageForm } from "./lineage_form.ts";
 import { Notes } from "./Notes.tsx";
+import { PlantRoute } from "../plant/PlantRoute.tsx";
+import { DEFAULT_PLANT } from "../plant/spec.ts";
 import { Results } from "./Results.tsx";
 import { SCREENS, hashOf, parseHash } from "./route.ts";
 import type { Route, Screen } from "./route.ts";
@@ -50,6 +52,8 @@ export function App({ worker }: { worker: Worker }) {
   const [linkEngine, setLinkEngine] = useState<string | null>(null);
   const ids = useRef(HOME_ID + 1);
   const take = (): number => ids.current++;
+  // the plant asks for its plan under an epoch that grows with every request; the page drops an answer whose epoch is not the newest (plant_ui.md section 6, rule 3)
+  const epochs = useRef(0);
   // the forms of the one-seed screens start from the defaults of the build and keep what the reader typed while they visit another screen
   const [lineageForm, setLineageForm] = useState<LineageForm | null>(null);
   const [challengeForm, setChallengeForm] = useState<ChallengeForm | null>(null);
@@ -80,6 +84,15 @@ export function App({ worker }: { worker: Worker }) {
   useEffect(() => {
     if (ready) worker.postMessage(HOME_REQUEST);
   }, [ready !== null, worker]);
+
+  // entering the plant asks for its plan once; a plan that is there, one on its way, or a problem that was reported is not asked for again (no retry loop)
+  useEffect(() => {
+    if (route.screen !== "plant" || !ready || state.plant.ready || state.plant.running !== null || state.plant.problem) return;
+    const id = take();
+    const epoch = ++epochs.current;
+    dispatch({ type: "plant_started", id, epoch });
+    worker.postMessage({ type: "plant_run", id, epoch, spec: DEFAULT_PLANT } satisfies Request);
+  }, [route.screen, ready !== null, state.plant.ready === null, state.plant.running, state.plant.problem === null]);
 
   // the form starts from the defaults of the first scenario, or from the link the page was opened with; a link opened later (a hash change) fills it again
   useEffect(() => {
@@ -185,6 +198,7 @@ export function App({ worker }: { worker: Worker }) {
       </header>
       <main id="main" data-ready={ready ? "true" : "false"} data-screen={route.screen} {...(ready && { "data-flags": ready.flags.join(",") })}>
         {route.screen === "home" && <Home state={state} />}
+        {route.screen === "plant" && (ready ? <PlantRoute plant={state.plant} check={state.check.state} /> : <T as="p" k="app.loading" />)}
         {route.screen === "setup" &&
           (ready && form ? (
             <Setup ready={ready} form={form} setForm={setForm} state={state} link={pageAddress()} linkEngine={linkEngine} onRun={run} onCancel={cancel} />
