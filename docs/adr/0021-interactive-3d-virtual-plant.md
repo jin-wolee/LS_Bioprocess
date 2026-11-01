@@ -1,5 +1,5 @@
 # ADR-0021: The lab centres on an interactive 3D virtual plant
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-31
 ## Context
 
@@ -56,4 +56,4 @@ Proposed: option 3 (the author's choice).
 > Chose, after the spike (chat, 2026-11-01): "핵심 5개 (Recommended), 선택 3개" for the actions; "실행 전체에 적용 (Recommended)" for a flag switched during a run; "제안대로 (Recommended)" for the budgets; "Home에서 '공장 들어가기' (Recommended)" for the landing; "코드로 만든 밝은 실험실부터 (Recommended)" for the look; "텍스트 대체만 (Recommended)" for the fallback; "리액터·분석기 단위 조작만 반영" for Results; "공장 화면 만든 뒤 (Recommended)" for the public flip.
 
 ## Decider's note
-_(author only — Claude never writes here)_
+Decided by the author in chat on 2026-11-01: "수락 (Recommended)", after the spike and the choices recorded in the author statement (budgets, actions, landing, look, fallback, Results, public flip).
