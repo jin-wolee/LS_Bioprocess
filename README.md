@@ -73,7 +73,7 @@ git config core.hooksPath scripts/git-hooks     # once per clone
 
 uv run pytest -q                                # scripts, hooks, docs check, site
 uv run --frozen python scripts/check_docs.py --all   # banned tokens, ADR format, ledgers, id references
-npm run check                                   # lint, typecheck, Vitest
+npm run check                                   # lint, typecheck, Vitest, then the I12 budget alone
 bash scripts/check_all.sh --manual              # the full gate; add --lab for the end-to-end checks of the lab
 
 uv run python site/infographic/build.py         # rebuild the explainer page
