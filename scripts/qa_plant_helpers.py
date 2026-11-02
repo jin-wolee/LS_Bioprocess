@@ -24,6 +24,11 @@ FRAMES = 300
 FRAMES_DROPPED = 5
 MEDIAN_LIMIT_MS = 50.0
 P95_LIMIT_MS = 80.0
+# What a time is measured from and to (docs/design/plant_ui.md section 8, "The conditions of a measurement"), written beside the numbers of a check with the conditions of the machine.
+FRAMES_MEASURED = ("frame interval: from one requestAnimationFrame callback of the page to the next, 300 intervals after the first five, the clock playing at x120 from the instant of the check "
+                   "with the truth overlay on and tubes on the floor")
+ROUND_TRIP_MEASURED = ("action round trip: from the click on Apply (or on an undo) to the first animation frame after the new scene's first draw, that is after data-plant-epoch has changed, "
+                       "the scene has been made again and data-plant-calls has been written")
 # What the default scenario's plant holds, typed from the scenario file: 24 reactors in two bays of 12 (and so two sampling boards, P6a), two analyzers, four operators, one hall for each of the three presets A, B and C, and (P6b) the flags board.
 DEFAULT_OBJECTS = {"reactor": 24, "analyzer": 2, "staff": 4, "hall": 3, "board": 2, "flags": 1}
 # The plan opens on day 0, 08:00 (28800 s), when the first shift starts and the first reactor is inoculated; the clock plays from there once the scene is drawn.

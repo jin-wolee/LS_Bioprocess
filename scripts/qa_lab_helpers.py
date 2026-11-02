@@ -17,6 +17,9 @@ from qa_checks import gzip_size
 
 SIZE_LIMIT = 300 * 1024  # first load, gzip bytes over the files of a cold load (lab_ui.md section 12)
 TIME_LIMIT_MS = 1000  # median of the five timed runs of seed 1 in the Worker, headless Chromium
+# what the time is measured from and to (docs/design/plant_ui.md section 8, "The conditions of a measurement"; docs/design/lab_ui.md section 12, the I12 marks)
+TIME_MEASURED = ("engine run: from the line before runScenario(cfg) in the Worker, the scenario loaded, to the line after it returns the whole truth log and the observable events; five runs of seed 1; "
+                 "the serialisation of the sensor ticks, the canonical JSONL and the hashing are not measured")
 # the words that belong to the state `identical` alone (lab_ui.md section 7)
 PASSED_ONLY_WORDS = ["reproducib", "byte for byte"]
 # (label, #theme-select value, emulated prefers-color-scheme)

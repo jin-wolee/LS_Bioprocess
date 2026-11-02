@@ -4,12 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createChallenges } from "../../src/experiments/assembly/lab/challenges.ts";
-import { answerPlantRun } from "../../src/experiments/assembly/lab/plant.ts";
+import { answerPlantRun, checkPlantSpec, runPlant } from "../../src/experiments/assembly/lab/plant.ts";
 import { ENGINE_VERSION } from "../../src/trace.ts";
 import { labData } from "../support/lab_data.ts";
 import { ENGINE_NODE_FLAGS } from "../support/node_flags.ts";
 import { ROOT, listFiles } from "../support/paths.ts";
 
+// P6c adds the sweep: the same file holds an entry for each spec of tests/fixtures/plant/sweep/specs.json (the truth hash and the digest of the cells of each hall, no action), and the test below
+// checks it against the list's names typed by hand, the BASE of the small plant, and what runPlant answers for every spec.
 // P6a (docs/design/plant_ui.md section 5.7, item 3): engine/tests/support/plant_reference_cli.ts runs the hand scenario of every fixture of tests/fixtures/plant/ under the engine's flags and writes
 // plant_reference.json, which the end-to-end check `plant_equal` compares with the hashes the page shows. This test runs the CLI, checks that the file holds every fixture, and checks its hashes
 // against what engine/tests/plant/proof.test.ts already proves: the truth hash of the base run (taken at the base commit be98442, typed here again) is what a lab setting leaves, a flag switched in
@@ -28,12 +30,19 @@ const BASE = {
 const NAMES = ["add_feed", "analyzer_down", "change_lot", "move_draw", "raise_alarm", "set_capture_path", "set_flag_b", "set_flag_c", "set_labelling", "three_together"];
 const SMALL = { reactor_count: 6, bay_size: 6, cohort_size: 6, horizon_days: 8, production_days: 6 };
 const HALLS = ["a_manual", "b_lims_lite", "c_context"];
+// P6c: the specs of tests/fixtures/plant/sweep/specs.json, typed by hand in the order of the file
+const SWEEP_NAMES = [
+  "default_seed1", "default_seed2", "default_seed3", "sc02_burst_seed1", "sc03_gap_seed1", "sc05_down_seed1", "small_seed1", "large_seed1", "mixed_seed1", "capture_seed1",
+];
+const SWEEP_SEEDS = [1, 2, 3, 1, 1, 1, 1, 1, 1, 1];
 
 interface Entry { name: string; actions: unknown[]; spec: { scenario: string; settings: Record<string, number>; seed: number; architectures: string[] }; truth: string; cells: Record<string, string> }
-interface Reference { schema_version: string; engine_version: string; node: { version: string; flags: string[] }; fixtures: Entry[] }
+interface SweepEntry { name: string; seed: number; truth: string; cells: Record<string, string> }
+interface Reference { schema_version: string; engine_version: string; node: { version: string; flags: string[] }; fixtures: Entry[]; sweep: SweepEntry[] }
 
 let reference: Reference;
 const entry = (name: string): Entry => reference.fixtures.find((e) => e.name === name) as Entry;
+const swept = (name: string): SweepEntry => reference.sweep.find((e) => e.name === name) as SweepEntry;
 
 beforeAll(() => {
   const out = join(scratch, "plant_reference.json");
@@ -87,6 +96,47 @@ describe("plant_reference_cli", () => {
       if (!out.ok) throw new Error(`${e.name}: ${out.message}`);
       expect(out.answer.hashes, e.name).toEqual({ truth: e.truth, cells: e.cells });
       if (["add_feed", "raise_alarm", "move_draw", "analyzer_down", "change_lot", "three_together"].includes(e.name)) expect(e.truth, e.name).not.toBe(BASE.truth);
+    }
+  }, 300_000);
+});
+
+describe("plant_reference_cli: the sweep of P6c (docs/design/plant_ui.md section 10)", () => {
+  it("Given the list of the sweep Then the file holds every spec of it, by name and in its order, with the seed and a digest of the cells for each of the three halls", () => {
+    expect(reference.sweep.map((e) => [e.name, e.seed])).toEqual(SWEEP_NAMES.map((n, i) => [n, SWEEP_SEEDS[i]]));
+    for (const e of reference.sweep) {
+      expect(e.truth, e.name).toMatch(/^[0-9a-f]{64}$/);
+      expect(Object.keys(e.cells), e.name).toEqual(HALLS);
+      expect(Object.values(e.cells).every((d) => /^[0-9a-f]{64}$/.test(d)), e.name).toBe(true);
+    }
+  });
+
+  it("Given the small plant Then its entry is the run of the hand fixtures with no action: the BASE typed above, the same truth hash and the same three digests", () => {
+    expect(swept("small_seed1")).toMatchObject(BASE);
+  });
+
+  it("Given three seeds of the default scenario Then the three truth hashes differ", () => {
+    expect(new Set(["default_seed1", "default_seed2", "default_seed3"].map((n) => swept(n).truth)).size).toBe(3);
+  });
+
+  it("Given the capture path as the only change to the default scenario Then the truth hash is spec 1's (a lab setting leaves the truth log) and the cells of some hall are not", () => {
+    expect(swept("capture_seed1").truth).toBe(swept("default_seed1").truth);
+    expect(HALLS.some((h) => swept("capture_seed1").cells[h] !== swept("default_seed1").cells[h])).toBe(true);
+  });
+
+  it("Given the SC2, SC3 and SC5 scenarios and the large and mixed plants Then each truth hash is neither the default scenario's nor another spec's of seed 1", () => {
+    const seed1 = ["default_seed1", "sc02_burst_seed1", "sc03_gap_seed1", "sc05_down_seed1", "small_seed1", "large_seed1", "mixed_seed1"].map((n) => swept(n).truth);
+    expect(new Set(seed1).size).toBe(seed1.length);
+  });
+
+  it("Given each spec of the list Then the plant's own answer for it (runPlant, no action) has the hashes of its entry", async () => {
+    const data = labData();
+    const list = JSON.parse(readFileSync(join(ROOT, "tests", "fixtures", "plant", "sweep", "specs.json"), "utf8")) as { specs: { name: string; seed: number; run: Record<string, unknown> }[] };
+    for (const s of list.specs) {
+      const checked = checkPlantSpec({ run: { schema_version: "1", ...s.run, seeds: [s.seed] }, seed: s.seed, actions: [] }, data);
+      if (!checked.ok) throw new Error(`${s.name}: ${checked.message}`);
+      const out = await runPlant(data, checked.spec);
+      if (!out.ok) throw new Error(`${s.name}: ${out.message}`);
+      expect(out.answer.hashes, s.name).toEqual({ truth: swept(s.name).truth, cells: swept(s.name).cells });
     }
   }, 300_000);
 });

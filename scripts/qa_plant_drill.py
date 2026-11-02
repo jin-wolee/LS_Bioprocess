@@ -207,12 +207,11 @@ def challenge_empties(page, problems: list[str]) -> None:
 
 
 @contextmanager
-def open_link(browser, url: str, href: str):
-    """A fresh context (a cold load) opened on a hash, with its console errors and the recorder of the Worker's messages."""
-    size = PLANT_VIEWPORTS["1280"]
+def open_link(browser, url: str, href: str, size=PLANT_VIEWPORTS["1280"], init_script: str = RECORD_PLANT_JS):
+    """A fresh context (a cold load) opened on a hash, with its console errors and, by default, the recorder of the Worker's messages (the sweep gives a script that holds the other instruments as well)."""
     ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, locale="en-US")
     try:
-        ctx.add_init_script(RECORD_PLANT_JS)
+        ctx.add_init_script(init_script)
         page = ctx.new_page()
         errors: list[str] = []
         page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)

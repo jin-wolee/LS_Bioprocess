@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Headless QA for the plant (`dist/lab`): the end-to-end checks of docs/design/plant_ui.md section 10, exit 1 if any fails.
 
-    uv run python scripts/qa_plant.py [--root dist/lab] [--out qa_out/plant] [--no-build]
+    uv run python scripts/qa_plant.py [--root dist/lab] [--out qa_out/plant] [--no-build] [--sweep]
 
 Runs `npm run build:lab` first unless --no-build, serves --root over http.server on a free localhost port, and drives headless Chromium through Python Playwright with software WebGL (ANGLE over
 SwiftShader, the launch arguments of the spike); the check `plant_fallback` launches a second Chromium with 3D off. Every browser is closed. Writes results.json, summary.md and the screenshots
@@ -12,6 +12,10 @@ qa_plant_helpers.py, the browser plumbing in qa_plant_browser.py, the checks of 
 Checks: plant_load, plant_frames, plant_clock, plant_shots, plant_halls, plant_record, plant_hall_shots, plant_truth, drilldown (P5c, in qa_plant_drill.py), plant_panels, plant_action (P6a, in qa_plant_action.py with the
 flows of qa_plant_act.py), plant_equal and plant_prefix (P6a, in qa_plant_equal.py), size, matrix, plant_fallback. `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
 engine/tests/support/plant_reference_cli.ts under the engine's Node flags into --out (the screenshots of the actions go to act/). The later batches add plant_a11y (plant_ui.md section 10).
+
+`plant_sweep` (P6c, in qa_plant_sweep.py) opens the plant under settings other than the default run's, each spec of tests/fixtures/plant/sweep/specs.json in a page of its own. The regular run holds the two
+specs marked `gate` (report in sweep_gate/); `--sweep` runs the whole list instead of the regular checks, by hand before a release and after a batch that changes the plan, the layout or the scene (report in
+sweep/, the screenshots of each spec's plant beside it).
 """
 from __future__ import annotations
 
@@ -33,6 +37,8 @@ from qa_plant_halls import check_plant_hall_shots, check_plant_halls, check_plan
 from qa_plant_helpers import SOFTWARE_GL
 from qa_plant_motion import check_plant_clock, check_plant_frames, check_plant_shots
 from qa_plant_panels import check_plant_panels
+from qa_plant_sweep import check_plant_sweep, sweep_report
+from qa_plant_sweep_helpers import load_specs
 from qa_plant_truth import check_plant_truth
 
 REPO = Path(__file__).resolve().parents[1]
@@ -68,6 +74,7 @@ def main(argv=None) -> int:
     ap.add_argument("--root", type=Path, default=REPO / "dist" / "lab", help="directory served; the build output")
     ap.add_argument("--out", type=Path, default=REPO / "qa_out" / "plant")
     ap.add_argument("--no-build", action="store_true", help="serve --root as it is")
+    ap.add_argument("--sweep", action="store_true", help="run the whole settings sweep (ten specs) instead of the regular checks; the report goes to <out>/sweep/")
     args = ap.parse_args(argv)
     if not args.no_build and build() != 0:
         print("npm run build:lab failed", file=sys.stderr)
@@ -80,6 +87,10 @@ def main(argv=None) -> int:
     with serve(args.root) as url, sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True, args=SOFTWARE_GL)
         try:
+            if args.sweep:
+                result = guarded("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs()))
+                print(sweep_report(result, args.out / "sweep"))
+                return 0 if result.ok else 1
             results = [guarded("plant_load", lambda: check_plant_load(browser, url, args.out)),
                        guarded("plant_frames", lambda: check_plant_frames(browser, url, args.out)),
                        guarded("plant_clock", lambda: check_plant_clock(browser, url, args.out)),
@@ -93,6 +104,7 @@ def main(argv=None) -> int:
                        guarded("plant_action", lambda: check_plant_action(browser, url, args.out)),
                        guarded("plant_equal", lambda: check_plant_equal(browser, url, args.out, reference) if why is None else Result("plant_equal", False, f"the reference could not be made: {why}")),
                        guarded("plant_prefix", lambda: check_plant_prefix(browser, url, args.out)),
+                       guarded("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs(gate=True), "sweep_gate")),
                        guarded("size", lambda: check_size(browser, url, args.root)),
                        guarded("matrix", lambda: check_matrix(browser, url, args.out)),
                        guarded("plant_fallback", lambda: check_plant_fallback(pw, url, args.out))]

@@ -1,0 +1,76 @@
+{
+  "schema_version": "1",
+  "note": "The list of the settings sweep of the plant (docs/design/plant_ui.md section 10). A spec is an input typed by hand: the run (scenario, settings, profile lists, capture path, halls), the seed, the instant at which the plant is looked at and measured (look_s, whole seconds of the run: a morning with tubes on the floor) and the add_feed it is asked for. frames: the frame interval is measured on this spec; gate: the regular plant QA runs this spec. phone: a screenshot at 390 by 844 as well. judged: the spec's times are judged against the budgets of section 8; false for the large plant (the author, 2026-11-02: its round trip and frames are measured and printed with their conditions, and the author decides whether the budgets hold for it). plant_reference_cli.ts and scripts/qa_plant_sweep.py read this file; nothing here is derived from an answer.",
+  "specs": [
+    {
+      "name": "default_seed1", "title": "The default scenario, seed 1",
+      "run": {"scenario": "default", "settings": {}, "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 1, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": true, "gate": false, "phone": false, "judged": true
+    },
+    {
+      "name": "default_seed2", "title": "The default scenario, seed 2",
+      "run": {"scenario": "default", "settings": {}, "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 2, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": false, "gate": true, "phone": false, "judged": true
+    },
+    {
+      "name": "default_seed3", "title": "The default scenario, seed 3",
+      "run": {"scenario": "default", "settings": {}, "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 3, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": false, "gate": false, "phone": false, "judged": true
+    },
+    {
+      "name": "sc02_burst_seed1", "title": "SC2 the shifted burst, seed 1",
+      "run": {"scenario": "sc02_shift_burst", "settings": {}, "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 1, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": false, "gate": false, "phone": false, "judged": true
+    },
+    {
+      "name": "sc03_gap_seed1", "title": "SC3 the feed in the gap, seed 1",
+      "run": {"scenario": "sc03_feed_in_gap", "settings": {}, "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 1, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": false, "gate": false, "phone": false, "judged": true
+    },
+    {
+      "name": "sc05_down_seed1", "title": "SC5 one analyzer down, seed 1",
+      "run": {"scenario": "sc05_one_analyzer_down", "settings": {}, "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 1, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": false, "gate": false, "phone": false, "judged": true
+    },
+    {
+      "name": "small_seed1", "title": "A small plant: 6 reactors in one bay for 8 days, seed 1",
+      "run": {"scenario": "default", "settings": {"reactor_count": 6, "bay_size": 6, "cohort_size": 6, "horizon_days": 8, "production_days": 6}, "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 1, "look_s": 290400,
+      "action": {"kind": "add_feed", "at": 291600, "unit_id": "U03"},
+      "frames": true, "gate": true, "phone": false, "judged": true
+    },
+    {
+      "name": "large_seed1", "title": "A large plant: 100 reactors in bays of 12, 6 analyzers, seed 1",
+      "run": {"scenario": "default", "settings": {"reactor_count": 100, "bay_size": 12, "cohort_size": 25, "analyzer_count": 6, "operators_per_shift": 8, "weekend_operators": 4}, "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 1, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": true, "gate": false, "phone": true, "judged": false
+    },
+    {
+      "name": "mixed_seed1", "title": "Mixed profiles: three bays of 6 with three vessel classes, the split analyzer and the HPLC, seed 1",
+      "run": {"scenario": "default", "settings": {"reactor_count": 18, "bay_size": 6, "cohort_size": 6}, "bay_profiles": ["bench_manual", "micro_mini_parallel", "pilot"], "analyzer_profiles": ["split_cellcounter_metabolite", "hplc"], "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 1, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": false, "gate": false, "phone": false, "judged": true
+    },
+    {
+      "name": "capture_seed1", "title": "The default scenario with the capture path adapter_ingest, seed 1",
+      "run": {"scenario": "default", "settings": {}, "capture_path": "adapter_ingest", "architectures": ["a_manual", "b_lims_lite", "c_context"]},
+      "seed": 1, "look_s": 722400,
+      "action": {"kind": "add_feed", "at": 723600, "unit_id": "U10"},
+      "frames": false, "gate": false, "phone": false, "judged": true
+    }
+  ]
+}

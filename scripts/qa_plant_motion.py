@@ -9,10 +9,11 @@ from pathlib import Path
 
 from qa_checks import Result, first_line
 from qa_lab_browser import open_lab
+from qa_lab_conditions import load_average, of_page, problems as conditions_problems, summary as conditions_summary
 from qa_lab_helpers import LANGS
 from qa_plant_browser import FRAMES_JS, blank_page, open_plant, pause, pixel_diff, pixel_stats, seek, settle, state, wait_scene
 from qa_plant_helpers import (
-    BUSY_START_S, DAY_S, DEFAULT_SPEED, DEFAULT_START_S, FIXED_INSTANT_S, FRAMES, FRAMES_DROPPED, MEDIAN_LIMIT_MS, P95_LIMIT_MS, PLANT_VIEWPORTS, SHOT_INSTANTS, SPEEDS,
+    BUSY_START_S, DAY_S, DEFAULT_SPEED, DEFAULT_START_S, FIXED_INSTANT_S, FRAMES, FRAMES_DROPPED, FRAMES_MEASURED, MEDIAN_LIMIT_MS, P95_LIMIT_MS, PLANT_VIEWPORTS, SHOT_INSTANTS, SPEEDS,
     clock_reading, frame_intervals, frame_stats, frames_problems, motion_problems, not_blank, repro_problems, shot_digest, shots_problems,
 )
 
@@ -26,26 +27,36 @@ def clock_t(page) -> int:
     return int(state(page)["t"])
 
 
+def play_frames(page, start_s: int, overlay_timeout: int = 30_000, timeout: int = 240_000):
+    """The frame run of `plant_frames`, for any plant that is on screen: the clock paused and set to `start_s`, the truth overlay on (the budget is for the scene with the cards drawn, the samples moving and
+    the overlay), then played at the speed it has until 300 frames after the first five have been drawn. Returns the host's attributes at the start and at the end, the statistics of the intervals and the
+    number of tubes seen on the floor. The sweep (qa_plant_sweep.py) measures its plants the same way."""
+    pause(page)
+    seek(page, start_s)
+    settle(page)
+    page.click("[data-truth-switch]")
+    page.wait_for_function("() => !!document.querySelector('#plant').dataset.plantAbsences", timeout=overlay_timeout)
+    start = state(page)
+    page.evaluate("window.__plantFrames.length = 0; window.__plantTubes.length = 0")
+    page.click("[data-time=play]")
+    # the polling is by time, not by frame: Playwright's default polling asks for animation frames itself, and its callbacks would be counted as frames of the scene
+    page.wait_for_function(f"window.__plantFrames.length >= {FRAMES + FRAMES_DROPPED + 40}", polling=500, timeout=timeout)  # a margin: frames that share a time stamp count once
+    end = state(page)
+    stats = frame_stats(frame_intervals(page.evaluate("window.__plantFrames")))
+    seen = [int(start["tubes"] or 0), int(end["tubes"] or 0), *page.evaluate("window.__plantTubes")]
+    return start, end, stats, seen
+
+
 def check_plant_frames(browser, url, out: Path) -> Result:
     """Given the clock playing at the default speed from day 8 at 08:30, through the morning's draws with samples on the floor and the truth overlay on, the frame interval over 300 frames at 1280 by 720 is within the
-    budget, the clock moved on while the frames were measured, and a tube was on the floor; a screenshot is saved and is not blank, and the object counts equal those of the scenario."""
+    budget, the clock moved on while the frames were measured, and a tube was on the floor; a screenshot is saved and is not blank, and the object counts equal those of the scenario. The conditions of the
+    measurement are recorded with it (docs/design/plant_ui.md section 8)."""
     problems: list[str] = []
+    load = load_average()
     with open_plant(browser, url, init_script=FRAMES_JS) as (page, errors, _):
         wait_scene(page)
-        pause(page)
-        seek(page, BUSY_START_S)
-        settle(page)
-        # P5b: the budget is for the scene with the cards drawn, the samples moving and the truth overlay on
-        page.click("[data-truth-switch]")
-        page.wait_for_function("() => !!document.querySelector('#plant').dataset.plantAbsences", timeout=30_000)
-        start = state(page)
-        page.evaluate("window.__plantFrames.length = 0; window.__plantTubes.length = 0")
-        page.click("[data-time=play]")
-        # the polling is by time, not by frame: Playwright's default polling asks for animation frames itself, and its callbacks would be counted as frames of the scene
-        page.wait_for_function(f"window.__plantFrames.length >= {FRAMES + FRAMES_DROPPED + 40}", polling=500, timeout=240_000)  # a margin: frames that share a time stamp count once
-        end = state(page)
-        stats = frame_stats(frame_intervals(page.evaluate("window.__plantFrames")))
-        seen = [int(start["tubes"] or 0), int(end["tubes"] or 0), *page.evaluate("window.__plantTubes")]
+        start, end, stats, seen = play_frames(page, BUSY_START_S)
+        conditions = of_page(browser, page, load, PLANT_VIEWPORTS["1280"], FRAMES_MEASURED)
         problems += frames_problems(stats)
         problems += motion_problems(int(start["t"]), int(end["t"]), end["playing"], max(seen), end["speed"])
         page.bring_to_front()
@@ -54,9 +65,11 @@ def check_plant_frames(browser, url, out: Path) -> Result:
         if not not_blank(shot):
             problems.append(f"the screenshot is blank: luminance spread {shot['std']:.1f}, {shot['colours']} colours")
         problems += [f"console: {e[:140]}" for e in errors]
+    problems += conditions_problems(conditions)
     detail = (f"{stats['n']} frames from day 8 08:30 playing at x{DEFAULT_SPEED} with the truth overlay on, median {stats['median']:.1f} ms (limit {MEDIAN_LIMIT_MS:.0f}), 95th percentile {stats['p95']:.1f} ms (limit {P95_LIMIT_MS:.0f}); "
-              f"{end['calls']} draw calls, up to {max(seen)} tubes on the floor, the clock moved {int(end['t']) - int(start['t'])} s; screenshot spread {shot['std']:.0f}, {shot['colours']} colours") if stats["n"] else "no frames"
-    return Result("plant_frames", not problems, detail + (f" | {problems[0]}" if problems else ""), {"stats": stats, "problems": problems, "calls": end["calls"], "tubes_max": max(seen)})
+              f"{end['calls']} draw calls, up to {max(seen)} tubes on the floor, the clock moved {int(end['t']) - int(start['t'])} s; screenshot spread {shot['std']:.0f}, {shot['colours']} colours; "
+              f"{conditions_summary(conditions)}") if stats["n"] else "no frames"
+    return Result("plant_frames", not problems, detail + (f" | {problems[0]}" if problems else ""), {"stats": stats, "problems": problems, "calls": end["calls"], "tubes_max": max(seen), "conditions": conditions})
 
 
 def english_controls(page, problems: list[str]) -> None:

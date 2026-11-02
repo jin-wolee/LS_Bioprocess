@@ -154,8 +154,9 @@ describe("applyActions: the mapping of section 5.2 against the hand fixtures", (
     expect(canonicalJson(applyActions(base(), []))).toBe(canonicalJson(base()));
   });
 
-  it("Given the fixtures Then there is one for every kind and the directory holds nothing else", () => {
-    expect(listFiles("tests", "fixtures", "plant").map((f) => f.replace(/\.json$/, "")).sort()).toEqual([...FIXTURES].sort());
+  it("Given the fixtures Then there is one for every kind and the directory holds nothing else but the folder of the settings sweep (P6c: its list is not an action fixture)", () => {
+    expect(listFiles("tests", "fixtures", "plant").filter((f) => f !== "sweep").map((f) => f.replace(/\.json$/, "")).sort()).toEqual([...FIXTURES].sort());
+    expect(listFiles("tests", "fixtures", "plant", "sweep")).toEqual(["specs.json"]);
     const kinds = new Set(FIXTURES.flatMap((n) => fixture(n).actions.map((a) => a.kind)));
     expect([...kinds].sort()).toEqual([...ACTION_KINDS].sort());
   });

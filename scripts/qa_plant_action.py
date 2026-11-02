@@ -12,6 +12,7 @@ from urllib.parse import parse_qs
 
 from qa_checks import Result, first_line
 from qa_lab_browser import NUMBERS_JS, set_lang
+from qa_lab_conditions import problems as conditions_problems, summary as conditions_summary
 from qa_lab_helpers import number_offenders
 from qa_plant_act import AT, INIT, enter, refusals, round_trip, the_eight, the_eight_actions
 from qa_plant_act_browser import act_state, bring_bar_into_view, fill_form, open_form, wait_epoch
@@ -109,6 +110,7 @@ def check_plant_action(browser, url, out: Path) -> Result:
     (out / "act").mkdir(parents=True, exist_ok=True)
     problems: list[str] = []
     samples: list[float] = []
+    conditions: dict = {}
     engine = ""
 
     def run(name: str, step) -> None:
@@ -118,7 +120,9 @@ def check_plant_action(browser, url, out: Path) -> Result:
             problems.append(f"{name}: {first_line(e)}")
 
     def timed() -> None:
-        samples.extend(round_trip(browser, url, problems))
+        taken, under = round_trip(browser, url, problems)
+        samples.extend(taken)
+        conditions.update(under)
 
     def pictures() -> None:
         nonlocal engine
@@ -130,8 +134,10 @@ def check_plant_action(browser, url, out: Path) -> Result:
     run("the screens", pictures)
     run("the flags board", lambda: flags_board(browser, url, out, problems))
     run("the links", lambda: link_refusals(browser, url, engine or "0.0.0", problems))
-    trip = f"round trip of five accepted actions {', '.join(f'{s:.0f}' for s in samples)} ms (median {statistics.median(samples):.0f}; limits 600 and 1000)" if samples else "the round trip was not measured"
+    problems += conditions_problems(conditions or None)
+    trip = (f"round trip of five accepted actions {', '.join(f'{s:.0f}' for s in samples)} ms (median {statistics.median(samples):.0f}; limits 600 and 1000; {conditions_summary(conditions)})"
+            if samples and conditions else "the round trip was not measured")
     detail = (f"each of the eight actions entered by the keyboard (the epoch up, the clock on resume_at, the list in words with the instant as an assumed input, the address, the undo back to the hashes before), the clock plays on after the "
               f"answer; refusals past, outside_window, limit, locked, unknown_target and closed_loop shown in both languages with the Worker's message, the action not kept; {trip}; the flags board: its matrix equals the "
               f"plan's halls, a switch from a cell (by the keyboard, and a second one on the hall the first derived) is accepted, and the click in the scene opens the form on the cell it meets")
-    return Result("plant_action", not problems, detail + (f" | {problems[0]}" if problems else ""), {"problems": problems, "round_trip_ms": samples, "json": json.dumps(samples)})
+    return Result("plant_action", not problems, detail + (f" | {problems[0]}" if problems else ""), {"problems": problems, "round_trip_ms": samples, "json": json.dumps(samples), "conditions": conditions})

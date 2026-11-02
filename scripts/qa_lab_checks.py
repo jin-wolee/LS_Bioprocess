@@ -8,9 +8,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from qa_checks import Result
+from qa_checks import VIEWPORTS, Result
 from qa_lab_browser import open_lab, wait_final
-from qa_lab_helpers import PASSED_ONLY_WORDS, SIZE_LIMIT, TIME_LIMIT_MS, alter_reference, cross_origin, found_words, request_gzip_total, served_path, size_verdict, time_verdict
+from qa_lab_conditions import load_average, of_page, problems as conditions_problems, summary as conditions_summary
+from qa_lab_helpers import (
+    PASSED_ONLY_WORDS, SIZE_LIMIT, TIME_LIMIT_MS, TIME_MEASURED, alter_reference, cross_origin, found_words, request_gzip_total, served_path, size_verdict, time_verdict,
+)
 
 
 def check_load(browser, url) -> Result:
@@ -31,11 +34,15 @@ def check_size(browser, url, root: Path) -> Result:
 
 
 def check_time(browser, url) -> Result:
+    """The engine run of the default scenario in the Worker, its median against the budget, written with the conditions of the machine (docs/design/plant_ui.md section 8)."""
+    load = load_average()
     with open_lab(browser, url) as (page, _, _):
         runs = wait_final(page)["detail"]["runs_ms"]
+        conditions = of_page(browser, page, load, VIEWPORTS["1440"], TIME_MEASURED)
     m, ok = time_verdict(runs)
     shown = "no runs" if m is None else f"median {m:.0f} ms of {len(runs)} runs ({', '.join(f'{r:.0f}' for r in runs)})"
-    return Result("time", ok, f"{shown}, limit {TIME_LIMIT_MS} ms", {"runs_ms": runs})
+    missing = conditions_problems(conditions)
+    return Result("time", ok and not missing, f"{shown}, limit {TIME_LIMIT_MS} ms; {conditions_summary(conditions)}" + (f" | {missing[0]}" if missing else ""), {"runs_ms": runs, "conditions": conditions})
 
 
 def check_check(browser, url, root: Path) -> Result:

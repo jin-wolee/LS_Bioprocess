@@ -10,10 +10,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from qa_lab_browser import go, set_lang, start_challenge
+from qa_lab_conditions import load_average, of_page
 from qa_plant_act_browser import ROUND_TRIP_JS, RUN_TIMEOUT, act_state, apply, bring_bar_into_view, fill_form, list_items, open_form, ready_of, refusal, runs_sent, undo, wait_epoch, wait_refusal
 from qa_plant_act_helpers import clock_text, fields_of, refusal_problems, round_trip_problems
 from qa_plant_browser import RECORD_PLANT_JS, open_plant, pause, plant_messages, seek, settle, wait_scene
-from qa_plant_helpers import PLANT_VIEWPORTS, plan_from_messages
+from qa_plant_helpers import PLANT_VIEWPORTS, ROUND_TRIP_MEASURED, plan_from_messages
 
 DAY = 86400
 AT = 8 * DAY + 9 * 3600  # day 8 09:00 of the default run, a Tuesday, inside the first shift
@@ -108,8 +109,9 @@ def the_eight_actions(browser, url, problems: list[str]) -> None:
         problems += [f"console: {e[:140]}" for e in errors]
 
 
-def round_trip(browser, url, problems: list[str]) -> list[float]:
-    """Five accepted actions one after another, timed in the page from the click to the first frame of the new plan."""
+def round_trip(browser, url, problems: list[str]) -> tuple[list[float], dict]:
+    """Five accepted actions one after another, timed in the page from the click to the first frame of the new plan, with the conditions of the machine they were timed under."""
+    load = load_average()
     five = [{"kind": "add_feed", "at": AT, "unit_id": "U10"}, {"kind": "add_feed", "at": AT, "unit_id": "U11"}, {"kind": "raise_alarm", "at": AT, "unit_id": "U12"},
             {"kind": "set_capture_path", "at": AT, "path": "adapter_ingest"}, {"kind": "analyzer_down", "at": AT, "analyzer": "AN-1", "from": AT + 5 * 3600, "length_min": 60}]
     with open_plant(browser, url, PLANT_VIEWPORTS["1280"], init_script=INIT) as (page, errors, _):
@@ -125,7 +127,7 @@ def round_trip(browser, url, problems: list[str]) -> list[float]:
         if len(samples) != 5:
             problems.append(f"the round trip was timed {len(samples)} times, expected 5")
         problems += [f"console: {e[:140]}" for e in errors]
-        return samples
+        return samples, of_page(browser, page, load, PLANT_VIEWPORTS["1280"], ROUND_TRIP_MEASURED)
 
 
 def say(page, reason: str, lang: str, problems: list[str], tag: str) -> None:
