@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from "three";
-import { DEFAULT_VIEW, cameraAt, drag, followGoal, heading, keyDirection, lifted, tilt, turn, zoom } from "../controls.ts";
+import { DEFAULT_VIEW, cameraAt, drag, followGoal, lifted, tilt, turn, zoom } from "../controls.ts";
 import type { View } from "../controls.ts";
 import { focusOf } from "../focus.ts";
 import type { Point } from "../layout.ts";
@@ -9,7 +9,6 @@ import type { Scene, SceneOptions } from "../scene_types.ts";
 import { sceneAt } from "../scene_at.ts";
 import type { SceneState } from "../scene_at.ts";
 import type { Picked } from "../view.ts";
-import { SPEED, advance, pathOf, stepTo } from "../walk.ts";
 import { RING, buildAvatar, buildRings } from "./avatar.ts";
 import { buildRoom } from "./floor.ts";
 import { listen } from "./input.ts";
@@ -20,6 +19,7 @@ import { buildOverlay } from "./overlay.ts";
 import { buildShelves } from "./shelves.ts";
 import { buildThings } from "./shapes.ts";
 import { buildStage, disposeStage } from "./stage.ts";
+import { buildWalker } from "./walker.ts";
 
 export { releaseStage } from "./stage.ts";
 
@@ -68,15 +68,11 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     onFollowEnd();
   };
 
-  // the state of the walker and the view
-  let position: Point = { ...layout.entrance };
-  let facing = 0;
-  let path: Point[] | null = null;
+  // the walker (walker.ts) and the state of the view
+  const walker = buildWalker(layout, marker);
   let view: View = DEFAULT_VIEW;
   let lookAt: Point | null = null; // an object the camera was brought to, until the walker moves again
-  let eye: Point = position; // what the camera follows, smoothed
-  const keys = new Set<string>();
-  let walked = 0;
+  let eye: Point = walker.position; // what the camera follows, smoothed
 
   const ray = new Raycaster();
   const floor = new Plane(new Vector3(0, 1, 0), 0);
@@ -97,10 +93,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
 
   const walkTo = (p: Point): void => {
     endFollow();
-    path = pathOf(layout, position, p);
-    const end = path[path.length - 1] as Point;
-    marker.position.set(end.x, 0.03, end.z);
-    marker.visible = path.length > 1;
+    walker.walkTo(p);
     halo.visible = false;
     lookAt = null;
   };
@@ -138,8 +131,8 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     },
     key(name: string, down: boolean): boolean {
       if (walkingKeys.has(name)) {
-        if (down) keys.add(name);
-        else keys.delete(name);
+        if (down) walker.keys.add(name);
+        else walker.keys.delete(name);
         return true;
       }
       if (!down) return false;
@@ -192,37 +185,22 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     shelves.update(t);
     overlay.update(t);
 
-    const direction = keyDirection(keys, view.yaw);
-    let moving = false;
-    if (direction.x !== 0 || direction.z !== 0) {
+    // held keys walk the figure and cancel a click's path, a follow and the halo
+    if (walker.step(dt, view.yaw) === "keys") {
       endFollow();
-      path = null;
-      marker.visible = false;
       lookAt = null;
       halo.visible = false;
-      position = stepTo(layout, position, direction.x * SPEED * dt, direction.z * SPEED * dt);
-      facing = heading(direction);
-      moving = true;
-    } else if (path) {
-      const before = position;
-      const step = advance(path, SPEED * dt);
-      position = step.position;
-      path = step.done ? null : step.rest;
-      if (step.done) marker.visible = false;
-      if (position.x !== before.x || position.z !== before.z) facing = heading({ x: position.x - before.x, z: position.z - before.z });
-      moving = !step.done;
     }
-    walked = moving ? walked + dt : 0;
 
-    const goal = lookAt ?? position;
+    const goal = lookAt ?? walker.position;
     const ease = reducedMotion ? 1 : 1 - Math.exp(-9 * dt);
     eye = { x: eye.x + (goal.x - eye.x) * ease, z: eye.z + (goal.z - eye.z) * ease };
     const cam = lifted(layout, cameraAt(view, eye, HEAD));
     camera.position.set(cam.position.x, cam.position.y, cam.position.z);
     camera.lookAt(cam.target.x, cam.target.y, cam.target.z);
 
-    avatar.position.set(position.x, reducedMotion ? 0 : Math.abs(Math.sin(walked * 9)) * 0.05, position.z);
-    avatar.rotation.y = -facing;
+    avatar.position.set(walker.position.x, reducedMotion ? 0 : Math.abs(Math.sin(walker.walked * 9)) * 0.05, walker.position.z);
+    avatar.rotation.y = -walker.facing;
     // the ring on the floor about the picked object, where it is now; and, while the camera follows a tube, where that tube is on the screen (-1 to 1 on both axes is inside the view)
     const at = picked === null ? null : pointOf(picked);
     ring.visible = at !== null;
