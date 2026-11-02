@@ -26,15 +26,14 @@ export interface LineageAsked {
   scenario: string;
   seed: number;
   architectures: string[];
-  /** The key of the run (`runKeyOf`): a challenge started on the same run empties the view (plant_ui.md section 7, "As built in P5c"). */
-  key: string;
 }
 
 export interface LineageState {
   /** The id of the request in flight. */
   running: number | null;
   asked: LineageAsked | null;
-  answer: { view: LineageView; sample_ids: string[] } | null;
+  /** `key`: the key of the run of the view, as the Worker answered it; a challenge that answers with the same key empties the view (lab_ui.md section 4, rule 2). */
+  answer: { view: LineageView; sample_ids: string[]; key: string } | null;
   problem: Problem | null;
 }
 
@@ -83,8 +82,7 @@ export interface BreakoutState {
 export type OneSeedAction =
   | { type: "lineage_started"; id: number; asked: LineageAsked }
   | { type: "breakout_started"; id: number; asked: BreakoutAsked }
-  /** `key` is the key of the run the challenge is on (`runKeyOf` of its spec and seed): what the page holds of that run's truth is emptied. */
-  | { type: "challenge_starting"; id: number; meta: ChallengeMeta; key: string }
+  | { type: "challenge_starting"; id: number; meta: ChallengeMeta }
   | { type: "challenge_busy"; busy: Busy }
   | { type: "challenge_reset" };
 
@@ -110,10 +108,10 @@ export const reduceLineage = (state: LineageState, action: Response | OneSeedAct
     case "lineage_started":
       return { running: action.id, asked: action.asked, answer: null, problem: null };
     case "lineage":
-      return action.id === state.running ? { ...state, running: null, answer: { view: action.view, sample_ids: action.sample_ids }, problem: null } : state;
-    case "challenge_starting":
-      // the run is a challenge now: the view on screen, and a request for it still in flight, are not kept (a new request is `locked`, as before)
-      return state.asked !== null && state.asked.key === action.key ? { ...state, running: null, answer: null, problem: null } : state;
+      return action.id === state.running ? { ...state, running: null, answer: { view: action.view, sample_ids: action.sample_ids, key: action.key }, problem: null } : state;
+    case "challenge_ready":
+      // the run is a challenge now: the view of a run with its key is not kept (a request for it is `locked`, and one sent before the challenge was answered before it)
+      return state.answer !== null && state.answer.key === action.key ? { ...state, answer: null, problem: null } : state;
     case "error":
       return action.id !== null && action.id === state.running ? { ...state, running: null, problem: problemOf(action) } : state;
     default:

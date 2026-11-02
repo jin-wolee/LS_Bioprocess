@@ -10,7 +10,8 @@ import type { StabilityEffect } from "./stability.ts";
 
 // What an analyzer run measures and how it ends (spec 2.3): the sample's true values at the draw, moved by the stability effect
 // of its hold, read with the analyzer's noise (A077 to A079) and instrument state, checked against the over-range limits at the
-// current dilution (A089, A090) and against a run-level QC failure (A088). The L3 core calls this once per run.
+// current dilution (A089, A090) and against a run-level QC failure (A088). A reading still above the range at the last dilution ends the visit
+// `over_range_unresolved` (spec 2.3; audit A1, F3): there is no higher dilution, and it is never promoted to qc_passed. The L3 core calls this once per run.
 
 export interface AnalyteCfg {
   id: string;
@@ -108,6 +109,7 @@ export const makeMeasure = (d: MeasureDeps): MeasureFn => {
       rung.set(rk, at + 1);
       return { results, outcome: "over_range", next_dilution_factor: stage.ladder[at + 1] as number };
     }
+    if (over && stage.ladder.length > 0) return { results, outcome: "over_range_unresolved" };
     const failed = d.rng.stream([d.seed, id, (stage.analytes[0] as AnalyteCfg).id, ctx.attempt, "qc_failed"]).float() < d.rerunP;
     return failed ? { results, outcome: "qc_failed" } : { results };
   };

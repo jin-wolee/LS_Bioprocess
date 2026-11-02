@@ -80,7 +80,9 @@ describe("The sample challenge", () => {
     expect((ready.record as { architecture: string }).architecture).toBe("c_context_minus_system_issued_id");
     expect(ready.inputs.length).toBeGreaterThan(0);
     for (const input of ready.inputs) expect(input.ref).toMatch(/^[AS]\d{3}$/);
-    expect(Object.keys(ready).sort()).toEqual(["announced_type", "challenge", "id", "inputs", "record", "type"]);
+    // `key` (audit A1, F7): the key of the truth of the challenge's run, a hash that names the run and says nothing of the plant (lab_ui.md section 4, rule 2)
+    expect(Object.keys(ready).sort()).toEqual(["announced_type", "challenge", "id", "inputs", "key", "record", "type"]);
+    expect(ready.key).toMatch(/^[0-9a-f]{16}$/);
     expect(posted.every((m) => ALLOWED_BEFORE_GUESS.includes(m.type))).toBe(true);
   }, 60_000);
 

@@ -179,8 +179,9 @@ describe("rule 4: engine exceptions arrive as error with the English message of 
   it("Given a setting value the scenario itself rejects Then the answer is engine_error, the message is the engine message, and the Worker keeps answering", async () => {
     const { posted, worker } = setup();
     await worker.start();
-    send(worker, { type: "run", id: 21, spec: { ...home, settings: { cohort_size: 0 } } });
-    expect(last(posted)).toEqual({ type: "error", id: 21, code: "engine_error", message: "the cohort size must be positive" });
+    // a cohort size of 0 was the example until audit A1 (F5), and the spec check refuses it now; the engine's own rule is shown with a second regular sample a day (A014)
+    send(worker, { type: "run", id: 21, spec: { ...home, settings: { samples_per_reactor_per_day: 2 } } });
+    expect(last(posted)).toEqual({ type: "error", id: 21, code: "engine_error", message: "S1b plans one regular sample per reactor and day (A014 = 1)" });
     send(worker, { type: "run", id: 22, spec: home });
     expect(last(posted)).toMatchObject({ type: "result", id: 22 });
   });

@@ -2,12 +2,14 @@ import type { CapturePath } from "../../../raw/types.ts";
 import { ABLATIONS, FLAG_NAMES, parseArchitecture } from "../../../record/architecture.ts";
 import type { Architecture } from "../../../record/architecture.ts";
 import { checkSeeds } from "../config.ts";
+import { checkSettings } from "./settings_bounds.ts";
 import { scenarioDoc } from "./setup.ts";
 import type { LabData } from "./setup.ts";
 
 // The RunSpec of the lab protocol (docs/design/lab_ui.md section 4). A shareable link is user input, so the Worker checks the spec before it runs anything: the scenario id, the names of
-// the settings against the scenario's own, the architecture ids, the profile ids of the two lists against the bundled profiles of the right kind, the capture path and the seeds (the
-// rules of the experiment config). The lengths of the two lists and every other check of spec section 4.5.3 are the engine's and arrive as engine errors.
+// the settings against the scenario's own, their values against physical possibility and the size of the run (settings_bounds.ts; audit A1, F5 and F6), the architecture ids, the
+// profile ids of the two lists against the bundled profiles of the right kind, the capture path and the seeds (the rules of the experiment config). The lengths of the two lists and
+// every other check of spec section 4.5.3 are the engine's and arrive as engine errors.
 
 export interface RunSpec {
   schema_version: "1";
@@ -84,6 +86,8 @@ export const checkRunSpec = (raw: unknown, data: LabData): SpecCheck => {
     if (!Object.hasOwn(known, name)) return refuse(`unknown setting "${name}" for scenario ${scenario}`);
     if (typeof value !== "number" || !Number.isFinite(value)) return refuse(`setting ${name} must be a finite number`);
   }
+  const impossible = checkSettings(given as Record<string, number>, scenarioDoc(data, scenario));
+  if (impossible !== null) return refuse(impossible);
 
   const lists: { bay_profiles?: string[]; analyzer_profiles?: string[] } = {};
   for (const [field, kind] of [["bay_profiles", "bioreactor"], ["analyzer_profiles", "analyzer"]] as const) {

@@ -93,6 +93,39 @@ export interface ProcessConfig {
 /** The working volume of a bioreactor profile, in litres (A002, A104, A110). */
 export const workingVolume = (bioreactor: Params): number => readAll(bioreactor, { volume: ["working_volume_l", "L"] }).volume;
 
+/** A step or a cadence of the grid (spec 2.1): a whole number of seconds that divides one minute, so that every whole minute is a step. */
+export const dividesMinute = (s: number): boolean => Number.isInteger(s) && s >= 1 && 60 % s === 0;
+
+/**
+ * The grid of the process (spec 2.1; audit A1, F6): the integration step and the sensor cadence divide one minute, because scheduled events sit on whole minutes (A200), so none falls
+ * between two steps. The message of the first of the two a scenario breaks, or null; `processConfig` throws it and the lab's check of a spec asks it first.
+ */
+export const gridFault = (s: Params): string | null => {
+  const v = readAll(s, { step: ["integration_step_s", "s"], cadence: ["sensor_cadence_s", "s"] });
+  const grid = "a whole number of seconds that divides one minute (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30 or 60 s), so that every scheduled event, on a whole minute, is a step";
+  if (!dividesMinute(v.step)) return `the integration step must be ${grid} (A200); it is ${v.step} s`;
+  if (!dividesMinute(v.cadence)) return `the sensor cadence must be ${grid} (A100, A200); it is ${v.cadence} s`;
+  return null;
+};
+
+/**
+ * The settings that place a scheduled event of the process (the inoculations of A188, the scheduled harvest of A004, the decision of A194, the shift of A195), resolved to whole seconds
+ * as the loader resolves them: the message of the first that is not a whole minute, or null. A scenario file may place one off a whole minute (the Time contract rounds it to a whole
+ * second, and the event is applied at the next step); the lab refuses it in a link (lab_ui.md section 4, "The settings of a spec"), so a run of the page has no event between two steps.
+ */
+export const scheduleFault = (s: Params): string | null => {
+  const v = readAll(s, {
+    inocStart: ["inoculation_start_min", "min"], inocStep: ["inoculation_step_min", "min"], cohortInterval: ["cohort_interval_d", "d"], production: ["production_days", "d"],
+    decision: ["feed_decision_min", "min"], shift: ["shift_day", "d"],
+  });
+  const placed: [string, number][] = [
+    ["the inoculation start (A188)", v.inocStart * 60], ["the inoculation step (A188)", v.inocStep * 60], ["the cohort interval (A188)", v.cohortInterval * DAY],
+    ["the production time (A004)", v.production * DAY], ["the decision time (A194)", v.decision * 60], ["the shift day (A195)", v.shift * DAY],
+  ];
+  const off = placed.find(([, x]) => wholeSeconds(x) % 60 !== 0);
+  return off ? `${off[0]} must place its event on a whole minute, so that it is an integration step (A200); it gives ${wholeSeconds(off[1])} s` : null;
+};
+
 export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedEvent[]): ProcessConfig => {
   const v = readAll(s, {
     reactors: ["reactor_count", "reactors"], baySize: ["bay_size", "reactors"], horizonDays: ["horizon_days", "d"], step: ["integration_step_s", "s"],
@@ -110,8 +143,8 @@ export const processConfig = (s: Params, bioreactor: Params, scripted: ScriptedE
     phSd: ["ph_noise_sd", "pH"], doSd: ["do_noise_sd_pct", "% air saturation"], tempSd: ["temperature_noise_sd_c", "C"], lagMin: ["temperature_lag_min", "min"],
   });
   const volume = workingVolume(bioreactor);
-  if (!Number.isInteger(v.step) || v.step <= 0) throw new Error("the integration step must be a whole number of seconds, at least 1 (A200)");
-  if (!Number.isInteger(v.cadence) || v.cadence <= 0) throw new Error("the sensor cadence must be a whole number of seconds, at least 1 (A100)");
+  const off = gridFault(s);
+  if (off !== null) throw new Error(off);
   if (v.cohortSize <= 0) throw new Error("the cohort size must be positive");
   if (!(v.feedGlc > v.floor)) throw new Error("the glucose of the feed must exceed the glucose floor (A193, A010)");
   if (!(v.xmax > 0)) throw new Error("the carrying capacity must be positive (A008)");

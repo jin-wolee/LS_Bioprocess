@@ -45,6 +45,7 @@ export const koLineage: Record<keyof typeof enLineage, string> = {
   "lineage.verdict.wrong.truth": "틀림, 진실: {truth}",
   "lineage.context.value": "{epoch} / {phase}",
   "lineage.null": "저장 안 됨",
+  "lineage.no_value": "값 없음: 범위 초과",
   "lineage.stub": "저장된 링크 없음",
   "lineage.errors.heading": "이 기록에서 이 시료에 주입기가 실제로 만든 오류",
   "lineage.errors.none": "없음",

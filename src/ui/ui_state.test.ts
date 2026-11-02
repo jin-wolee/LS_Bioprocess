@@ -113,7 +113,7 @@ describe("displayedCheck: a result shown while the check was pending is re-label
 
 describe("the plant in the page state (plant_ui.md section 6, rule 3)", () => {
   const plan: ScenePlan = { schema_version: "1", seed: 1, horizon_s: 0, layout: { bays: [], analyzers: [], architectures: [] }, units: [], analyzers: [], staff: [], samples: [], marks: [], windows: [], calibrations: [], records: [] };
-  const answer = (id: number, epoch: number): Response => ({ type: "plant_ready", id, epoch, plan: { ...plan, seed: epoch }, resume_at: 0, hashes: { truth: "t", cells: {} }, checks: { prefix_equal: null, truth_equal: null } });
+  const answer = (id: number, epoch: number): Response => ({ type: "plant_ready", id, epoch, plan: { ...plan, seed: epoch }, resume_at: 0, hashes: { truth: "t", cells: {} }, checks: { prefix_equal: null, truth_equal: null }, key: "k" });
 
   it("Given a plant request and its answer Then the plan is in the state, and the run of the lab is untouched", () => {
     const asked = reduce(running(), { type: "plant_started", id: 9, epoch: 1, spec: DEFAULT_PLANT });

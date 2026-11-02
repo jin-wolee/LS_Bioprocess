@@ -137,6 +137,7 @@ export const enPlant = {
   "plant.log.outcome.qc_passed": "quality control passed",
   "plant.log.outcome.qc_failed": "quality control failed",
   "plant.log.outcome.over_range": "over range",
+  "plant.log.outcome.over_range_unresolved": "over range at the last dilution, no value",
   "plant.log.outcome.none": "no outcome",
 
   "plant.kind.staff": "Staff",

@@ -9,7 +9,8 @@ import type { StreamKey } from "./rng.ts";
 // Modelling choices recorded in docs/progress.md: no backfill (strict head of line); a run is checked against the windows of its
 // analyzer over its whole occupancy [t, t + setup + service); a later visit or a rerun joins the queue by arrival time, then seq.
 
-export type Outcome = "qc_passed" | "qc_failed" | "over_range";
+/** `over_range_unresolved` ends a visit still above the range at the last dilution: no rerun, no number (spec 2.3; audit A1, F3). */
+export type Outcome = "qc_passed" | "qc_failed" | "over_range" | "over_range_unresolved";
 
 export interface L3Visit {
   group: string;
@@ -220,7 +221,7 @@ export const runL3 = (input: L3Input, opts: { onKey?: (key: StreamKey) => void; 
     }
     events.push({ type: "qc_result", t, ...ids, outcome }, { type: "visit_finished", t, ...ids });
     runs.push({ ...ids, setup_s: run.setup, start_s: run.start, end_s: t, outcome });
-    if (outcome !== "qc_passed") {
+    if (outcome === "qc_failed" || outcome === "over_range") {
       // The failed attempt stays in the log; the same physical sample re-enters as attempt + 1 with a new seq. Nothing is held.
       const again: Entry = { request: e.request, visit: e.visit, attempt: e.attempt + 1, arrival: t, seq: seq++ };
       events.push({ type: "rerun_requested", t, request_id: ids.request_id, attempt: e.attempt, visit: e.visit, reason: outcome });
@@ -230,6 +231,7 @@ export const runL3 = (input: L3Input, opts: { onKey?: (key: StreamKey) => void; 
       }
       q.push(t, PRIORITY.requestQueued, again.seq, { kind: "arrive", entry: again });
     } else if (e.visit < e.request.visits.length) {
+      // a passed run, or one over range at the last dilution (terminal, spec 2.3), sends the sample on to its next visit
       const arrival = t + ((e.request.visits[e.visit] as L3Visit).transfer_s ?? 0);
       q.push(arrival, PRIORITY.requestQueued, e.request.seq, { kind: "arrive", entry: { request: e.request, visit: e.visit + 1, attempt: 1, arrival, seq: e.request.seq } });
     }

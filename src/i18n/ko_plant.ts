@@ -138,6 +138,7 @@ export const koPlant: Record<keyof typeof enPlant, string> = {
   "plant.log.outcome.qc_passed": "품질 관리 통과",
   "plant.log.outcome.qc_failed": "품질 관리 실패",
   "plant.log.outcome.over_range": "범위 초과",
+  "plant.log.outcome.over_range_unresolved": "마지막 희석에서도 범위 초과, 값 없음",
   "plant.log.outcome.none": "결과 없음",
 
   "plant.kind.staff": "작업자",

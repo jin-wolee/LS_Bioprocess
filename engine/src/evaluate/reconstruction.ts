@@ -2,7 +2,7 @@ import type { Metrics } from "../generated/metrics.schema";
 import type { Lookup } from "./query.ts";
 import { ALL_REQUESTS, ratio } from "./ratio.ts";
 import { quantile } from "./stats.ts";
-import { lotAt } from "./truth.ts";
+import { everyItem, lotAt, visitOfRun } from "./truth.ts";
 import type { RequestFacts, Truth } from "./truth.ts";
 
 type Out = Metrics["metrics"];
@@ -15,19 +15,23 @@ const trueLot = (truth: Truth, f: RequestFacts, runId: string): string | null =>
 
 /**
  * Exact reconstruction rate (spec section 8): the share of requests whose analyst-query answer equals truth on reactor (unit), batch,
- * `sampled_at`, process context (feed epoch and phase, at the true draw time) and instrument state (the reagent lot of the run). A missing
- * part (no stored `sampled_at`, no instrument link, no result, no batch) is unanswerable and counts as wrong. Denominator: ALL analysis requests.
+ * `sampled_at`, process context (feed epoch and phase, at the true draw time) and instrument state, for every required item of every visit
+ * (audit A1, F1: "Request-level metrics"): each item has a result from a run of its own visit, linked to the reagent lot in force at that run in
+ * truth. A missing part (no stored `sampled_at`, no instrument link, no result or a missing item, no batch) is unanswerable and counts as wrong.
+ * Denominator: ALL analysis requests.
  */
 export const exactReconstruction = (truth: Truth, facts: ReadonlyMap<string, RequestFacts>, lookups: ReadonlyMap<string, Lookup>): Out["exact_reconstruction"] => {
   let exact = 0;
   for (const r of truth.requests) {
     const l = lookups.get(r.request_id) as Lookup;
     const f = facts.get(r.request_id) as RequestFacts;
-    if (l.kind !== "answer" || r.sampled_at === null || f.context === null || l.context === null || l.reagent_lot === null) continue;
-    if (
-      l.unit_id === r.unit_id && l.batch_id === r.batch_id && l.sampled_at === r.sampled_at &&
-      l.context.feed_epoch === f.context.feed_epoch && l.context.batch_phase === f.context.batch_phase && l.reagent_lot === trueLot(truth, f, l.row.run_id)
-    ) exact += 1;
+    if (l.kind !== "answer" || r.sampled_at === null || f.context === null || l.context === null) continue;
+    const sampleRight = l.unit_id === r.unit_id && l.batch_id === r.batch_id && l.sampled_at === r.sampled_at && l.context.feed_epoch === f.context.feed_epoch && l.context.batch_phase === f.context.batch_phase;
+    const itemRight = (analyte: string, visit: number): boolean => {
+      const it = l.items.get(analyte);
+      return it !== undefined && visitOfRun(it.row.run_id) === visit && it.reagent_lot !== null && it.reagent_lot === trueLot(truth, f, it.row.run_id);
+    };
+    if (sampleRight && everyItem(truth, f, itemRight)) exact += 1;
   }
   return ratio(exact, truth.requests.length, ALL_REQUESTS);
 };

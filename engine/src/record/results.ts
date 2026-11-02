@@ -16,6 +16,7 @@ import type { AuditEventRow, CaptureInput, IngestConflictRow, ResultRow, SourceE
 //                        configuration, the spreadsheet, stores none (S2b, data_model section 7). It does not hang on one flag.
 //   audit_trail          a rerun that replaces an earlier attempt is an audit event with the old and the new value, kept even when the earlier
 //                        row is overwritten.
+// A run whose QC outcome is `over_range_unresolved` (spec 2.3; audit A1, F3) gives rows with no value in every architecture: no flag owns the outcome of a run.
 // Hidden fields are not read: the event type has none (observe.ts).
 
 type Measured = Extract<ObservableEvent, { type: "result_measured" }>;
@@ -31,7 +32,7 @@ interface Key {
   attempts: number[];
   /** The result_id of the first row of the latest attempt: the row a new version supersedes. */
   latest: string;
-  value: number;
+  value: number | null;
 }
 
 export interface ResultTables {
@@ -47,6 +48,10 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags, 
   const keys = new Map<string, Key>();
   const seen = new Map<string, { value: number; t: number }>();
   let counter = 0;
+  // the runs that ended over range at the last dilution: their qc_result comes at the same instant as their results, so the stream is read for it first
+  const unresolved = new Set(events.flatMap((e) => (e.type === "qc_result" && e.outcome === "over_range_unresolved" ? [`${e.request_id}/${e.attempt}/${e.visit}`] : [])));
+
+  const valueOf = (e: Measured): number | null => (unresolved.has(`${e.request_id}/${e.attempt}/${e.visit}`) ? null : e.value);
 
   // ingested_at (S2b): stored where a system writes the rows; the stamp of the event unless the host receipt time was handed over
   // S2e1: with the raw layer on, a row also says how it became a record (data_model section 16.2), became knowable when the system received it (the file, or the typed entry:
@@ -58,7 +63,7 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags, 
     const worst = stage.some((f) => f.action === "quarantine") ? "quarantined" : stage.length > 0 ? "held" : null;
     const r: ResultRow = {
       result_id: id ?? `R${++counter}`, request_id: e.request_id, analyte: e.analyte, version, run_id: `${e.request_id}/${e.attempt}/${e.visit}`,
-      value: e.value, measured_at: e.t, available_at: flags.available_at ? (capture ? (receivedAt[key] ?? e.t) : e.t) : null, supersedes,
+      value: valueOf(e), measured_at: e.t, available_at: flags.available_at ? (capture ? (receivedAt[key] ?? e.t) : e.t) : null, supersedes,
       ingested_at: storesIngestedAt(flags) ? (receivedAt[key] ?? e.t) : null, reviewed_at: null,
       ...(capture && {
         capture_path: capture.path, entered_by: flags.audit_trail ? (prov?.entered_by ?? null) : null, raw_ref: prov?.raw_ref ?? null, unit_original: prov?.unit_original ?? null,
@@ -74,6 +79,7 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags, 
 
   for (const e of events) {
     if (e.type !== "result_measured") continue;
+    const value = valueOf(e);
     const source_event_id = `${e.analyzer}/${e.request_id}/${e.attempt}/${e.visit}/${e.analyte}`;
     if (flags.ingest_idempotency) {
       const idempotency_key = `${e.analyzer}|${source_event_id}|v${CONTENT_VERSION}`;
@@ -96,14 +102,14 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags, 
     if (!key) {
       const r = row(e, 1, null);
       out.result.push(r);
-      keys.set(k, { attempts: [e.attempt], latest: r.result_id, value: e.value });
+      keys.set(k, { attempts: [e.attempt], latest: r.result_id, value });
     } else if (key.attempts.includes(e.attempt)) {
       out.result.push(row(e, flags.append_only_versions ? key.attempts.indexOf(e.attempt) + 1 : 1, null)); // a replay: another row
     } else {
       const version = key.attempts.length + 1;
       key.attempts.push(e.attempt);
       if (flags.audit_trail) {
-        out.audit_event.push({ audit_id: `A${out.audit_event.length + 1}`, request_id: e.request_id, analyte: e.analyte, at: e.t, old_value: key.value, new_value: e.value, old_version: version - 1, new_version: version });
+        out.audit_event.push({ audit_id: `A${out.audit_event.length + 1}`, request_id: e.request_id, analyte: e.analyte, at: e.t, old_value: key.value, new_value: value, old_version: version - 1, new_version: version });
       }
       if (flags.append_only_versions) {
         const r = row(e, version, key.latest);
@@ -114,7 +120,7 @@ export const recordResults = (events: readonly ObservableEvent[], flags: Flags, 
           if (old.request_id === e.request_id && old.analyte === e.analyte) out.result[i] = row(e, 1, null, old.result_id);
         }
       }
-      key.value = e.value;
+      key.value = value;
     }
   }
   if (capture) {

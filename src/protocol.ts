@@ -204,6 +204,8 @@ export type ErrorCode = "invalid_spec" | "engine_error" | "cancelled" | "locked"
 export interface LineageField {
   name: string;
   value: string | number | null;
+  /** True on the value of a result that has none in the record: a run over range at the last dilution (simulation_spec section 2.3). Its null is a stored fact, not a column the record lacks. */
+  no_value?: true;
 }
 export interface LineageNode {
   id: string;
@@ -256,7 +258,7 @@ export interface RecordView {
   samples: { sample_id: string; unit_id: string; batch_id: string | null; sampled_at: number | null; planned_at: number | null; state: string | null }[];
   results: { request_id: string; analyte: string; version: number; value: number; measured_at: number; available_at: number | null; state: string | null }[];
   findings: { rule: string; target: string; severity: string; status: string }[];
-  audit_events: { audit_id: string; request_id: string; analyte: string; at: number; old_value: number; new_value: number; old_version: number; new_version: number }[];
+  audit_events: { audit_id: string; request_id: string; analyte: string; at: number; old_value: number | null; new_value: number | null; old_version: number; new_version: number }[];
   /** The structural error types the record carries on every sample: never scored `background`, named once on the screen. */
   ubiquitous: string[];
 }
@@ -393,13 +395,14 @@ export type Response =
   | { type: "check"; state: CheckState; detail: CheckDetail }
   | { type: "progress"; id: number; done: number; total: number }
   | { type: "result"; id: number; summary?: RunSummary; report?: ExperimentReport; utilisation?: UtilisationView; footer: ResultFooter }
-  | { type: "lineage"; id: number; view: LineageView; sample_ids: string[] }
-  | { type: "challenge_ready"; id: number; challenge: string; announced_type: string; record: RecordView | DecisionRecordView; inputs: RefValue[] }
+  // `key` (audit A1, F7; lab_ui.md section 4, rule 2): the key of the truth of the run, its actions stripped; the page empties what it holds of a run whose key a challenge answers with
+  | { type: "lineage"; id: number; view: LineageView; sample_ids: string[]; key: string }
+  | { type: "challenge_ready"; id: number; challenge: string; announced_type: string; record: RecordView | DecisionRecordView; inputs: RefValue[]; key: string }
   | { type: "sample_record"; id: number; sample: SampleRecord }
   | { type: "challenge_reveal"; id: number; reveal: Reveal }
   | { type: "breakout_result"; id: number; result: BreakoutResult }
   /** The truth run and the record of the first architecture of the spec: `plan.records` holds that one hall and `hashes.cells` its digest. The others follow as `plant_halls`. */
-  | { type: "plant_ready"; id: number; epoch: number; plan: ScenePlan; resume_at: number; hashes: { truth: string; cells: Record<string, string> }; checks: { prefix_equal: boolean | null; truth_equal: boolean | null } }
+  | { type: "plant_ready"; id: number; epoch: number; plan: ScenePlan; resume_at: number; hashes: { truth: string; cells: Record<string, string> }; checks: { prefix_equal: boolean | null; truth_equal: boolean | null }; key: string }
   /** One hall that was not ready with `plant_ready`, in the order of the spec: its record for the plan and the digest of its metric cells. A newer epoch cancels the halls still pending. */
   | { type: "plant_halls"; id: number; epoch: number; records: ScenePlan["records"]; cells: Record<string, string> }
   /** The rows one architecture holds for one card, from the run the Worker keeps for the epoch: the record of the lineage view, with no truth and no verdict. */

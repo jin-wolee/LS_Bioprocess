@@ -72,14 +72,21 @@ export interface RequestFacts {
   /** The process context at the true draw time, by the rule of data_model section 7: feeds of the batch at or before it, and the phase. */
   context: { feed_epoch: number; batch_phase: Phase } | null;
   reruns: number;
-  /** The value of attempt 1 by analyte, as the instrument reported it (the first version). */
-  original: Map<string, number>;
+  /** The value of attempt 1 by analyte, as the instrument reported it (the first version); null for a run over range at the last dilution, which has no value (spec 2.3). */
+  original: Map<string, number | null>;
+  /**
+   * The required items of the request (spec section 8, "Request-level metrics"): every analyte the truth log measured for it, with the visit that measures it and the number of
+   * attempts the engine numbered for that visit and item (attempts count per visit). A visit of the route with no item here never ran.
+   */
+  items: Map<string, { visit: number; attempts: number }>;
 }
 
 export const factsOf = (truth: Truth): Map<string, RequestFacts> => {
   const out = new Map<string, RequestFacts>(
-    truth.requests.map((request) => [request.request_id, { request, first_run: null, runs: new Map(), released_at: null, context: null, reruns: 0, original: new Map() }]),
+    truth.requests.map((request) => [request.request_id, { request, first_run: null, runs: new Map(), released_at: null, context: null, reruns: 0, original: new Map(), items: new Map() }]),
   );
+  // a run over range at the last dilution reports no value; its qc_result follows its results at the same instant, so the log is read for it first
+  const unresolved = new Set(truth.events.flatMap((e) => (e.type === "qc_result" && e.outcome === "over_range_unresolved" ? [`${e.request_id}/${e.attempt}/${e.visit}`] : [])));
   const passed = new Map<string, Map<number, number>>();
   const processEvents = truth.events.flatMap((e) => (e.type === "process_event" ? [e] : []));
   for (const e of truth.events) {
@@ -95,8 +102,11 @@ export const factsOf = (truth: Truth): Map<string, RequestFacts> => {
     } else if (e.type === "rerun_requested") {
       const f = out.get(e.request_id);
       if (f) f.reruns += 1;
-    } else if (e.type === "result_measured" && e.attempt === 1) {
-      out.get(e.request_id)?.original.set(e.analyte, e.value);
+    } else if (e.type === "result_measured") {
+      const f = out.get(e.request_id);
+      if (!f) continue;
+      if (e.attempt === 1) f.original.set(e.analyte, unresolved.has(`${e.request_id}/1/${e.visit}`) ? null : e.value);
+      f.items.set(e.analyte, { visit: e.visit, attempts: Math.max(f.items.get(e.analyte)?.attempts ?? 1, e.attempt) });
     }
   }
   for (const f of out.values()) {
@@ -112,6 +122,20 @@ export const factsOf = (truth: Truth): Map<string, RequestFacts> => {
     };
   }
   return out;
+};
+
+/** The visit of a run id (`request/attempt/visit`). */
+export const visitOfRun = (runId: string): number => Number(runId.split("/").at(-1));
+
+/**
+ * Whether a request has every required item of every visit of its route (spec section 8, "Request-level metrics"): each visit from 1 to the count of its route has at least one
+ * item in the truth log, and `ok` holds for every item, given its analyte and its visit.
+ */
+export const everyItem = (truth: Truth, f: RequestFacts, ok: (analyte: string, visit: number) => boolean): boolean => {
+  const items = [...f.items];
+  const need = truth.visits[f.request.request_id] ?? 1;
+  for (let v = 1; v <= need; v++) if (!items.some(([, it]) => it.visit === v)) return false;
+  return items.every(([analyte, it]) => ok(analyte, it.visit));
 };
 
 /** The reagent lot of an analyzer at an instant: the lot of its latest calibration at or before it; null before the first. */

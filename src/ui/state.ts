@@ -76,16 +76,16 @@ const forOneSeed = (state: State, id: number | null): boolean =>
 export const reduce = (state: State, action: Action): State => {
   const withOneSeed = (next: State): State => ({ ...next, lineage: reduceLineage(state.lineage, action as Response | OneSeedAction), challenge: reduceChallenge(state.challenge, action as Response | OneSeedAction), breakout: reduceBreakout(state.breakout, action as Response | OneSeedAction) });
   switch (action.type) {
-    case "challenge_starting":
-      // the lineage view and the truth overlay of the run the challenge is on go (lab_ui.md section 4, rule 2)
+    case "challenge_ready":
+      // the lineage view and the truth overlay of a run with the key the challenge answered with go (lab_ui.md section 4, rule 2)
       return { ...withOneSeed(state), plant: reducePlant(state.plant, { type: "plant_run_locked", key: action.key }) };
+    case "challenge_starting":
     case "lineage_started":
     case "breakout_started":
     case "breakout_result":
     case "challenge_busy":
     case "challenge_reset":
     case "lineage":
-    case "challenge_ready":
     case "sample_record":
     case "challenge_reveal":
       return withOneSeed(state);

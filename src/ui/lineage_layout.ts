@@ -24,7 +24,8 @@ export interface Box {
   w: number;
   h: number;
   /** `value` is null where the record stores nothing ("not stored"). */
-  lines: { name: string; value: string | null }[];
+  /** `no_value`: a result with no value in the record (simulation_spec section 2.3), drawn apart from a column the record does not store. */
+  lines: { name: string; value: string | null; no_value?: true }[];
   /** The keys that are null in the record: a stub line that ends in a gap, one per missing key. */
   stubs: string[];
   /** The relations that arrive at this box, with the join basis where there is one; empty for a box nothing points at. */
@@ -68,7 +69,7 @@ export const layoutRecord = ({ nodes, edges }: { nodes: readonly LineageNode[]; 
     const stubs = stubsOf(n.id);
     const incoming = incomingOf(n.id);
     const h = HEAD_H + PAD + n.fields.length * LINE_H + stubs.length * LINE_H + PAD;
-    const box: Box = { id: n.id, table: n.table, key: n.key, x: BOX_X, y, w: BOX_W, h, lines: n.fields.map((f) => ({ name: f.name, value: formatValue(f.value) })), stubs, incoming };
+    const box: Box = { id: n.id, table: n.table, key: n.key, x: BOX_X, y, w: BOX_W, h, lines: n.fields.map((f) => ({ name: f.name, value: formatValue(f.value), ...(f.no_value && { no_value: true as const }) })), stubs, incoming };
     y += h + GAP;
     return box;
   });

@@ -47,8 +47,9 @@ describe("homeRun: what the Home form refuses", () => {
     expect(homeRun(data, home({ seeds: [1, 2] }))).toMatchObject({ ok: false, message: expect.stringMatching(/exactly one seed/) });
   });
 
+  // A cohort size of 0 was the example until audit A1 (F5): the spec check refuses it now as a count below 1, so the engine's own rule is shown with a second regular sample a day (A014).
   it("Given a value the scenario itself rejects When the run is made Then the engine's exception reaches the caller with its English message (rule 4 of section 4)", () => {
-    expect(() => homeRun(data, home({ settings: { cohort_size: 0 } }))).toThrow(/the cohort size must be positive/);
+    expect(() => homeRun(data, home({ settings: { samples_per_reactor_per_day: 2 } }))).toThrow(/S1b plans one regular sample per reactor and day \(A014 = 1\)/);
   });
 });
 

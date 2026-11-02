@@ -20,6 +20,6 @@ export interface TraceResult {
     setup_s: number;
     start_s: number;
     end_s: number;
-    outcome: "qc_passed" | "qc_failed" | "over_range";
+    outcome: "qc_passed" | "qc_failed" | "over_range" | "over_range_unresolved";
   }[];
 }

@@ -19,7 +19,6 @@ import type { LineageForm } from "./lineage_form.ts";
 import { Notes } from "./Notes.tsx";
 import { PlantOrigin } from "./PlantOrigin.tsx";
 import { PlantRoute } from "../plant/PlantRoute.tsx";
-import { runKeyOf } from "./run_key.ts";
 import { Results } from "./Results.tsx";
 import { SCREENS, hashOf, parseHash } from "./route.ts";
 import type { Route, Screen } from "./route.ts";
@@ -138,7 +137,7 @@ export function App({ worker }: { worker: Worker }) {
     const id = take();
     const request = lineageRequest(f, id);
     if (request?.type !== "lineage") return;
-    dispatch({ type: "lineage_started", id, asked: { scenario: request.spec.scenario, seed: request.seed, architectures: request.spec.architectures, key: runKeyOf(request.spec, request.seed) } });
+    dispatch({ type: "lineage_started", id, asked: { scenario: request.spec.scenario, seed: request.seed, architectures: request.spec.architectures } });
     worker.postMessage(request);
   };
   const runBreakout = (f: BreakoutForm) => {
@@ -152,7 +151,7 @@ export function App({ worker }: { worker: Worker }) {
     const id = take();
     const request = ready ? challengeStart(f, ready, id) : null;
     if (request?.type !== "challenge_start") return;
-    dispatch({ type: "challenge_starting", id, meta: { variant: f.variant, scenario: f.scenario, seed: request.seed, shown: f.shown }, key: runKeyOf(request.spec, request.seed) });
+    dispatch({ type: "challenge_starting", id, meta: { variant: f.variant, scenario: f.scenario, seed: request.seed, shown: f.shown } });
     worker.postMessage(request);
   };
   const active = state.challenge.active;

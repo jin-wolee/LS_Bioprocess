@@ -29,6 +29,13 @@ describe("formatValue", () => {
   });
 });
 
+describe("layoutRecord: a result with no value (audit A1, F3; simulation_spec section 2.3)", () => {
+  it("Given a value field marked no_value and a plain null field Then the line of the first carries no_value and the second does not, so the page draws them with different words", () => {
+    const n: LineageNode = { id: "result:R2", table: "result", key: "R2", fields: [{ name: "value", value: null, no_value: true }, { name: "available_at", value: null }] };
+    expect(layoutRecord({ nodes: [n], edges: [] }).boxes[0]?.lines).toEqual([{ name: "value", value: null, no_value: true }, { name: "available_at", value: null }]);
+  });
+});
+
 describe("layoutRecord", () => {
   const laid = layoutRecord({ nodes: NODES, edges: EDGES });
 

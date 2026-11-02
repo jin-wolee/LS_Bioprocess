@@ -129,7 +129,7 @@ export interface RunRow {
    * The outcome of the run's `qc_result` event (data_model section 2, "QC outcome"); null while none has been seen. No flag owns it: every architecture that
    * records the run holds it (S2 review step, data_model section 7). VR-012 reads `qc_failed`.
    */
-  qc_outcome: "qc_passed" | "qc_failed" | "over_range" | null;
+  qc_outcome: "qc_passed" | "qc_failed" | "over_range" | "over_range_unresolved" | null;
 }
 
 export interface InstrumentStateRow {
@@ -149,7 +149,10 @@ export interface ResultRow extends RetroFlagColumn {
   /** Rank of the attempt among the attempts recorded for (request, analyte). Overwrite in place (append_only_versions off) keeps 1. */
   version: number;
   run_id: string;
-  /** Null for a row that carries no number: a confirming result has an `outcome` instead (K18, break-out batch 3). Every routine row has a value; `hasValue` narrows. */
+  /**
+   * Null for a row that carries no number: a confirming result has an `outcome` instead (K18, break-out batch 3), and a result of a run over range at the last dilution has none
+   * (`over_range_unresolved`, spec 2.3). `hasValue` narrows.
+   */
   value: number | null;
   measured_at: number;
   /** available_at only: the stamp of the observable result event (S2a models no ingestion or review delay). */
@@ -193,8 +196,9 @@ export interface AuditEventRow extends RetroFlagAudit {
   request_id: string;
   analyte: string;
   at: number;
-  old_value: number;
-  new_value: number;
+  /** Null where that version has no value (a run over range at the last dilution, spec 2.3). */
+  old_value: number | null;
+  new_value: number | null;
   old_version: number;
   new_version: number;
 }

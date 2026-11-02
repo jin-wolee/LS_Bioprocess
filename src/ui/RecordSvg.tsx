@@ -71,7 +71,7 @@ export function RecordSvg({ column, sample, truth }: { column: SampleRecord & Pa
             <g key={l.name} data-field={l.name} {...(l.value === null && { "data-null": "" })} transform={`translate(0 ${28 + i * 15})`}>
               <text class="lg-muted" x="8" y="0">{l.name}</text>
               {l.value === null ? (
-                <text class="lg-null" x="132" y="0" data-i18n="lineage.null">{text(lang, "lineage.null")}</text>
+                <text class="lg-null" x="132" y="0" data-i18n={l.no_value ? "lineage.no_value" : "lineage.null"}>{text(lang, l.no_value ? "lineage.no_value" : "lineage.null")}</text>
               ) : (
                 <text class="lg-value" x="132" y="0">{clip(l.value, 24)}</text>
               )}

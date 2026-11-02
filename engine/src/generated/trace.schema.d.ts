@@ -64,7 +64,7 @@ export interface Trace {
     request_id: string;
     attempt: number;
     visit: number;
-    outcome: "qc_passed" | "qc_failed" | "over_range";
+    outcome: "qc_passed" | "qc_failed" | "over_range" | "over_range_unresolved";
   }[];
   expected_result?: TraceResult;
   source?: "hand" | "ts-engine-golden";
@@ -84,6 +84,6 @@ export interface TraceResult {
     setup_s: number;
     start_s: number;
     end_s: number;
-    outcome: "qc_passed" | "qc_failed" | "over_range";
+    outcome: "qc_passed" | "qc_failed" | "over_range" | "over_range_unresolved";
   }[];
 }

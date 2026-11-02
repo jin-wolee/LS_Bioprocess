@@ -12,19 +12,19 @@ const reveal = { planted: { type: "label_error", affected: ["S1", "S2"], detail:
 const META = { variant: "sample" as const, scenario: "default", seed: 7, shown: "a_manual" };
 
 const apply = (state: State, ...actions: Parameters<typeof reduce>[1][]): State => actions.reduce(reduce, state);
-const started = apply(initial, { type: "challenge_starting", id: 5, meta: META, key: "k" });
-const playing = apply(started, { type: "challenge_ready", id: 5, challenge: "challenge-1", announced_type: "label_error", record, inputs: [] });
+const started = apply(initial, { type: "challenge_starting", id: 5, meta: META });
+const playing = apply(started, { type: "challenge_ready", id: 5, challenge: "challenge-1", announced_type: "label_error", record, inputs: [], key: "k" });
 
 describe("lineage", () => {
-  const asked = { scenario: "sc03_feed_in_gap", seed: 1, architectures: ["a_manual"], key: "k" };
+  const asked = { scenario: "sc03_feed_in_gap", seed: 1, architectures: ["a_manual"] };
 
   it("Given a request and its answer Then the view is kept with what was asked, and the request is over", () => {
-    const s = apply(initial, { type: "lineage_started", id: 3, asked }, { type: "lineage", id: 3, view, sample_ids: ["S1"] });
-    expect(s.lineage).toEqual({ running: null, asked, answer: { view, sample_ids: ["S1"] }, problem: null });
+    const s = apply(initial, { type: "lineage_started", id: 3, asked }, { type: "lineage", id: 3, view, sample_ids: ["S1"], key: "k" });
+    expect(s.lineage).toEqual({ running: null, asked, answer: { view, sample_ids: ["S1"], key: "k" }, problem: null });
   });
 
   it("Given an answer to another request Then it is ignored", () => {
-    const s = apply(initial, { type: "lineage_started", id: 3, asked }, { type: "lineage", id: 4, view, sample_ids: [] });
+    const s = apply(initial, { type: "lineage_started", id: 3, asked }, { type: "lineage", id: 4, view, sample_ids: [], key: "k" });
     expect(s.lineage.answer).toBeNull();
     expect(s.lineage.running).toBe(3);
   });
@@ -39,7 +39,7 @@ describe("lineage", () => {
   });
 
   it("Given a new request Then the earlier answer and problem are cleared (what is on screen belongs to the request that made it)", () => {
-    const s = apply(initial, { type: "lineage_started", id: 3, asked }, { type: "lineage", id: 3, view, sample_ids: [] }, { type: "lineage_started", id: 4, asked });
+    const s = apply(initial, { type: "lineage_started", id: 3, asked }, { type: "lineage", id: 3, view, sample_ids: [], key: "k" }, { type: "lineage_started", id: 4, asked });
     expect(s.lineage.answer).toBeNull();
     expect(s.lineage.running).toBe(4);
   });
@@ -54,7 +54,7 @@ describe("challenge", () => {
   });
 
   it("Given a message for another request Then it changes nothing", () => {
-    const s = apply(started, { type: "challenge_ready", id: 9, challenge: "challenge-2", announced_type: "x", record, inputs: [] });
+    const s = apply(started, { type: "challenge_ready", id: 9, challenge: "challenge-2", announced_type: "x", record, inputs: [], key: "k" });
     expect(s.challenge.active).toBeNull();
   });
 
@@ -122,7 +122,7 @@ describe("breakout (S3g)", () => {
   });
 
   it("Given a message for the other screens Then the break-out state does not move", () => {
-    const s = apply(initial, { type: "breakout_started", id: 3, asked }, { type: "lineage", id: 9, view, sample_ids: [] });
+    const s = apply(initial, { type: "breakout_started", id: 3, asked }, { type: "lineage", id: 9, view, sample_ids: [], key: "k" });
     expect(s.breakout.running).toBe(3);
   });
 });

@@ -9,7 +9,7 @@ import { DEFAULT_PLANT as SPEC } from "./spec.ts";
 
 const plan = (seed: number): ScenePlan => ({ schema_version: "1", seed, horizon_s: 0, layout: { bays: [], analyzers: [], architectures: [] }, units: [], analyzers: [], staff: [], samples: [], marks: [], windows: [], calibrations: [], records: [] });
 const ready = (id: number, epoch: number, seed = epoch): Extract<Response, { type: "plant_ready" }> => ({
-  type: "plant_ready", id, epoch, plan: plan(seed), resume_at: 0, hashes: { truth: `t${epoch}`, cells: { a_manual: `c${epoch}` } }, checks: { prefix_equal: null, truth_equal: null },
+  type: "plant_ready", id, epoch, plan: plan(seed), resume_at: 0, hashes: { truth: `t${epoch}`, cells: { a_manual: `c${epoch}` } }, checks: { prefix_equal: null, truth_equal: null }, key: "k",
 });
 const run = (actions: PlantAction[], from: PlantState = initialPlant): PlantState => actions.reduce(reducePlant, from);
 
@@ -25,7 +25,7 @@ describe("the plant state", () => {
   it("Given the answer of the newest epoch Then the plan, the hashes and the checks are kept and nothing is running", () => {
     const s = run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }, ready(7, 1)]);
     expect(s.running).toBeNull();
-    expect(s.ready).toEqual({ epoch: 1, plan: plan(1), resume_at: 0, hashes: { truth: "t1", cells: { a_manual: "c1" } }, checks: { prefix_equal: null, truth_equal: null } });
+    expect(s.ready).toEqual({ epoch: 1, plan: plan(1), resume_at: 0, hashes: { truth: "t1", cells: { a_manual: "c1" } }, checks: { prefix_equal: null, truth_equal: null }, key: "k" });
   });
 
   it("Given two requests and the answer of the older arriving after the newer was asked for Then the older answer is dropped and the newer one is drawn when it arrives", () => {

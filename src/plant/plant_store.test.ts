@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import type { Response, ScenePlan } from "../protocol.ts";
-import { runKeyOf } from "../ui/run_key.ts";
 import { initialPlant, needsRun, reducePlant } from "./plant_state.ts";
 import type { PlantAction, PlantState } from "./plant_state.ts";
 import { DEFAULT_PLANT as SPEC } from "./spec.ts";
@@ -9,8 +8,11 @@ import { DEFAULT_PLANT as SPEC } from "./spec.ts";
 // drill-down and Back need; a run is asked for only when the spec the route wants is not the spec of the newest request; a challenge started on the run empties the overlay.
 
 const plan = (): ScenePlan => ({ schema_version: "1", seed: 1, horizon_s: 0, layout: { bays: [], analyzers: [], architectures: ["a", "c_context"] }, units: [], analyzers: [], staff: [], samples: [], marks: [], windows: [], calibrations: [], records: [{ architecture: "a", flags_on: [], cards: [] }] });
-const ready = (id: number, epoch: number): Extract<Response, { type: "plant_ready" }> => ({ type: "plant_ready", id, epoch, plan: plan(), resume_at: 0, hashes: { truth: "t", cells: { a: "c" } }, checks: { prefix_equal: null, truth_equal: null } });
+const ready = (id: number, epoch: number): Extract<Response, { type: "plant_ready" }> => ({ type: "plant_ready", id, epoch, plan: plan(), resume_at: 0, hashes: { truth: "t", cells: { a: "c" } }, checks: { prefix_equal: null, truth_equal: null }, key: KEY });
 const run = (actions: PlantAction[], from: PlantState = initialPlant): PlantState => actions.reduce(reducePlant, from);
+/** The key of the plant's run as the Worker gives it with `plant_ready`, and the key of another run (test-only values; lab_ui.md section 4, rule 2). */
+const KEY = "00000000000000a1";
+const OTHER = "00000000000000b2";
 
 const FEED = { kind: "add_feed" as const, at: 291600, unit_id: "U03" };
 const spec = (extra: Partial<typeof SPEC> = {}): typeof SPEC => ({ ...SPEC, ...extra });
@@ -85,7 +87,7 @@ describe("the view the reader left", () => {
 });
 
 describe("a challenge started on the run", () => {
-  const key = runKeyOf(SPEC.run, SPEC.seed);
+  const key = KEY;
   const on = run([
     { type: "plant_truth_switched", on: true },
     { type: "plant_truth_started", id: 20, epoch: 1, pick: { halls: true } }, { type: "plant_truth_view", id: 20, epoch: 1, view: truthHalls },
@@ -108,8 +110,7 @@ describe("a challenge started on the run", () => {
   });
 
   it("Given a challenge on another run (another seed, other settings) Then the overlay is untouched", () => {
-    expect(run([{ type: "plant_run_locked", key: runKeyOf(SPEC.run, 2) }], on)).toEqual(on);
-    expect(run([{ type: "plant_run_locked", key: runKeyOf({ ...SPEC.run, settings: { reactor_count: 6 } }, SPEC.seed) }], on)).toEqual(on);
+    expect(run([{ type: "plant_run_locked", key: OTHER }], on)).toEqual(on);
   });
 
   it("Given no plant asked yet, or nothing asked of the overlay Then there is nothing to empty and the state is the same", () => {

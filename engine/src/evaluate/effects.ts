@@ -54,24 +54,23 @@ export const phantomEffect = (truth: Truth, ds: RecordedDataset, key: Architectu
 };
 
 /**
- * Rerun traceability rate (spec section 8): reruns whose original and link are recoverable, over ALL requests that had a rerun. Recoverable:
- * for every analyte, version 1 still holds the value the first attempt reported, and each later version supersedes the one before it. The
- * reason of a rerun is recorded by no architecture of S2 and is not scored.
+ * Rerun traceability rate (spec section 8): reruns whose original and link are recoverable, over ALL requests that had a rerun. Recoverable,
+ * per visit and per item as the engine numbers its attempts (audit A1, F2: attempts count per visit): for every item, version 1 still holds the
+ * value its first attempt reported (none for a run over range at the last dilution, spec 2.3), and versions 2 to the number of attempts of that
+ * item's visit each supersede the one before. The reason of a rerun is recorded by no architecture of S2 and is not scored.
  */
 export const rerunTraceability = (truth: Truth, facts: ReadonlyMap<string, RequestFacts>, ds: RecordedDataset, key: ArchitectureKey): Out["rerun_traceability"] => {
-  const attempts = new Map<string, number>();
-  for (const e of truth.events) if (e.type === "result_measured") attempts.set(e.request_id, Math.max(attempts.get(e.request_id) ?? 1, e.attempt));
   const reran = truth.requests.filter((r) => (facts.get(r.request_id)?.reruns ?? 0) > 0);
   let traced = 0;
   for (const r of reran) {
     const f = facts.get(r.request_id) as RequestFacts;
     const rows = ds.result.filter((x) => x.request_id === recordedId(key, r.request_id));
-    const ok = [...f.original].every(([analyte, original]) => {
+    const ok = [...f.items].every(([analyte, item]) => {
       const mine = rows.filter((x) => x.analyte === analyte);
       const v1 = mine.find((x) => x.version === 1);
-      if (!v1 || v1.value !== original) return false;
+      if (!v1 || v1.value !== f.original.get(analyte)) return false;
       let prev = v1;
-      for (let k = 2; k <= (attempts.get(r.request_id) ?? 1); k++) {
+      for (let k = 2; k <= item.attempts; k++) {
         const next = mine.find((x) => x.version === k);
         if (!next || next.supersedes !== prev.result_id) return false;
         prev = next;

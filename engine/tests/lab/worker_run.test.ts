@@ -129,4 +129,18 @@ describe("errors of the full run", () => {
     await worker.onMessage({ type: "run", id: 39, spec: full({ seeds: [20260101, 1] }) });
     expect(posted.slice(before)).toEqual([{ type: "error", id: 39, code: "invalid_spec", message: expect.stringMatching(/date-shaped/) }]);
   });
+
+  // Audit A1, F5 and F6 (lab_ui.md section 4, "The settings of a spec"): a setting no plant can have, a step off the grid and a run above the size cap reach the page as invalid_spec,
+  // with the Worker's message, before any seed runs.
+  it.each([
+    [{ reactor_count: 5.5 }, /reactor_count must be a count/],
+    [{ integration_step_s: 120, sensor_cadence_s: 120 }, /divides one minute.*A200/],
+    [{ reactor_count: 1e6 }, /above the cap/],
+  ])("Given the settings %j Then the run is refused at once with invalid_spec and its message, and no progress is posted", async (settings, message) => {
+    const { posted, worker } = setup();
+    await worker.start();
+    const before = posted.length;
+    await worker.onMessage({ type: "run", id: 40, spec: full({ settings: { ...SMALL, ...settings } }) });
+    expect(posted.slice(before)).toEqual([{ type: "error", id: 40, code: "invalid_spec", message: expect.stringMatching(message) }]);
+  });
 });

@@ -12,7 +12,8 @@ import { clockOf } from "./view.ts";
 // every two seconds, and a step to an event says that event. A switch turns the reading off (the last line stays). Before the first event it says what the text alternative says first: the plan
 // is ready. Every id is a label, every word is in the dictionary in both languages.
 
-const outcomeOf = (outcome: string | undefined): "qc_passed" | "qc_failed" | "over_range" | "none" => (outcome === "qc_passed" || outcome === "qc_failed" || outcome === "over_range" ? outcome : "none");
+const OUTCOMES = ["qc_passed", "qc_failed", "over_range", "over_range_unresolved"] as const;
+const outcomeOf = (outcome: string | undefined): (typeof OUTCOMES)[number] | "none" => OUTCOMES.find((o) => o === outcome) ?? "none";
 
 const lineOf = (item: LogItem): ComponentChildren => {
   const clock = clockOf(item.t);

@@ -27,7 +27,8 @@ export const instrumentConfig = (s: Params, horizon_s: number, lotChanges: Instr
     step: ["integration_step_s", "s"], interval: ["recalibration_interval_h", "h"], drift: ["drift_pct", "%"], lotStep: ["lot_step_pct", "%"], bias: ["bias_pct", "%"],
   });
   const c: InstrumentConfig = { step_s: v.step, interval_s: wholeSeconds(v.interval * 3600), driftPct: v.drift, lotStepPct: v.lotStep, biasPct: v.bias, horizon_s, lotChanges };
-  if (c.interval_s % c.step_s !== 0) throw new Error("the recalibration interval must be a whole number of integration steps (A091, A200)");
+  // at least one step (audit A1, F5): an interval that rounds to 0 s would record calibrations without end
+  if (c.interval_s < c.step_s || c.interval_s % c.step_s !== 0) throw new Error("the recalibration interval must be a whole number of integration steps, at least one (A091, A200)");
   return c;
 };
 

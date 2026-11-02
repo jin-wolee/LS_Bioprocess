@@ -154,13 +154,14 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       switch (request.type) {
         case "lineage": {
           const out = answerLineage(env.data, challenges, { spec: request.spec, seed: request.seed, pick: request.pick, actions: request.actions });
-          return out.ok ? post({ type: "lineage", id, view: out.view, sample_ids: out.sample_ids }) : refuse(id, out);
+          // the key of the run of the view, its actions stripped (rule 2 of lab_ui.md section 4): the page empties the view when a challenge starts on a run of the same key
+          return out.ok ? post({ type: "lineage", id, view: out.view, sample_ids: out.sample_ids, key: challenges.keyOf(request.spec as RunSpec, request.seed as number) }) : refuse(id, out);
         }
         case "challenge_start": {
           // a challenge holds a blind plant that no operator action reaches (plant_ui.md section 6, rule 9): a list of actions is refused and not ignored
           if (request.actions !== undefined) return fail(id, "invalid_spec", "a challenge takes no actions: it holds a blind plant that no operator action reaches");
           const out = challenges.start({ variant: request.variant, spec: request.spec, seed: request.seed, shown: request.shown }, (done, total) => post({ type: "progress", id, done, total }));
-          return out.ok ? post({ type: "challenge_ready", id, challenge: out.challenge, announced_type: out.announced_type, record: out.record, inputs: out.inputs }) : refuse(id, out);
+          return out.ok ? post({ type: "challenge_ready", id, challenge: out.challenge, announced_type: out.announced_type, record: out.record, inputs: out.inputs, key: out.key }) : refuse(id, out);
         }
         case "challenge_open": {
           const out = challenges.drillDown(request.challenge, request.sample_id);
@@ -205,7 +206,7 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       if (!out.ok) return post({ type: "error", id, epoch, code: out.code, message: out.message, ...(out.code === "refused" && { reason: out.reason, index: out.index }) });
       plantKept = out.kept;
       keptEpoch = epoch;
-      post({ type: "plant_ready", id, epoch, ...out.answer });
+      post({ type: "plant_ready", id, epoch, ...out.answer, key: challenges.keyOf(out.kept.run, out.kept.seed) });
       // the other halls, one at a time, a turn of the event loop between them; a newer epoch stops the ones still pending and nothing is posted for them (section 5.5)
       for (const build of out.halls) {
         await yieldToLoop();

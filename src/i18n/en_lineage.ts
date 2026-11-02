@@ -44,6 +44,7 @@ export const enLineage = {
   "lineage.verdict.wrong.truth": "wrong, truth: {truth}",
   "lineage.context.value": "{epoch} / {phase}",
   "lineage.null": "not stored",
+  "lineage.no_value": "no value: over range",
   "lineage.stub": "no link stored",
   "lineage.errors.heading": "Errors the injector realised on this sample in this record",
   "lineage.errors.none": "none",

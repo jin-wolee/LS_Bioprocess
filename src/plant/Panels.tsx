@@ -194,7 +194,7 @@ function Sample({ p, drill, fields, lens, following, onFollow, onOpenRecord }: {
           {row.fields.map((f) => (
             <Fragment key={f.name}>
               <dt><code>{f.name}</code></dt>
-              <dd>{f.value === null ? <T k="lineage.null" /> : <Label>{f.value}</Label>}</dd>
+              <dd>{f.value === null ? <T k={f.no_value ? "lineage.no_value" : "lineage.null"} /> : <Label>{f.value}</Label>}</dd>
             </Fragment>
           ))}
         </dl>

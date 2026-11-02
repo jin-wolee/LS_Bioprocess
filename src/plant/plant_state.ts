@@ -1,5 +1,4 @@
 import type { ErrorCode, PlantSpec, RefusalReason, Response, SampleRecord, ScenePlan, TruthOverlay } from "../protocol.ts";
-import { runKeyOf } from "../ui/run_key.ts";
 import { sameSpec } from "./link.ts";
 import type { Resume } from "./opening.ts";
 
@@ -104,6 +103,7 @@ export type PlantPageAction =
   | { type: "plant_acted"; id: number; epoch: number; spec: PlantSpec; play: boolean }
   | { type: "plant_refusal_closed" }
   | { type: "plant_left"; t: number; lens: string | null }
+  // `key`: the key a challenge answered with (`challenge_ready`); the plant's own is the one its `plant_ready` came with (lab_ui.md section 4, rule 2)
   | { type: "plant_run_locked"; key: string }
   | { type: "plant_record_started"; id: number; epoch: number; architecture: string; sample_id: string; role?: "fields" }
   | { type: "plant_record_closed"; role?: "fields" }
@@ -155,10 +155,10 @@ export const reducePlant = (state: PlantState, action: PlantAction): PlantState 
     case "plant_left":
       return { ...state, view: { t: action.t, lens: action.lens }, record: null, fields: null, act: { ...state.act, resume: null } };
     case "plant_run_locked":
-      return state.spec !== null && runKeyOf(state.spec.run, state.spec.seed) === action.key && (state.truth.halls !== null || state.truth.sample !== null) ? { ...state, truth: closed(state.truth) } : state;
+      return state.ready !== null && state.ready.key === action.key && (state.truth.halls !== null || state.truth.sample !== null) ? { ...state, truth: closed(state.truth) } : state;
     case "plant_ready": {
       if (action.epoch !== state.epoch) return state;
-      const ready: PlantReady = { epoch: action.epoch, plan: action.plan, resume_at: action.resume_at, hashes: action.hashes, checks: action.checks };
+      const ready: PlantReady = { epoch: action.epoch, plan: action.plan, resume_at: action.resume_at, hashes: action.hashes, checks: action.checks, key: action.key };
       const pending = state.act.pending;
       const acted = pending !== null && pending.epoch === action.epoch;
       // the answer to an action whose causality check is false is not drawn: the plan, the clock and the list stay as they were (section 5.5, step 3)

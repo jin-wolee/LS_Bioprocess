@@ -19,6 +19,8 @@ import type { RunSpec } from "./spec.ts";
 export interface LineageField {
   name: string;
   value: string | number | null;
+  /** True on the value of a result that has none in the record: a run over range at the last dilution (simulation_spec section 2.3). Its null is a stored fact, not a column the record lacks. */
+  no_value?: true;
 }
 export interface LineageNode {
   id: string;
@@ -83,8 +85,11 @@ export const sampleRecordOf = (ds: RecordedDataset, sample_id: string, o: Record
     states.set(r.instrument_state_id, node("instrument_state", r.instrument_state_id, [field("instrument_state_id", r.instrument_state_id), field("calibration_ref", s?.calibration_ref), field("reagent_lot", s?.reagent_lot), field("valid_from", s?.valid_from)]));
   }
   const results = ds.result.filter((r) => r.request_id === sample_id);
+  const unresolved = new Set(runs.flatMap((r) => (r.qc_outcome === "over_range_unresolved" ? [r.run_id] : [])));
+  const valueOf = (r: (typeof results)[number]): LineageField =>
+    r.value === null && unresolved.has(r.run_id) ? { name: "value", value: null, no_value: true } : field("value", o.hide_ph_values && r.analyte === "ph" ? null : r.value);
   const resultNodes = results.map((r) => node("result", r.result_id, [
-    field("result_id", r.result_id), field("analyte", r.analyte), field("version", r.version), field("value", o.hide_ph_values && r.analyte === "ph" ? null : r.value),
+    field("result_id", r.result_id), field("analyte", r.analyte), field("version", r.version), valueOf(r),
     field("measured_at", r.measured_at), field("available_at", r.available_at), field("state", r.state),
   ]));
   const ctx = recordContext(ds, sample_id);

@@ -9,7 +9,7 @@ import { DEFAULT_PLANT as SPEC } from "./spec.ts";
 
 const plan = (seed: number): ScenePlan => ({ schema_version: "1", seed, horizon_s: 0, layout: { bays: [], analyzers: [], architectures: ["a"] }, units: [], analyzers: [], staff: [], samples: [], marks: [], windows: [], calibrations: [], records: [] });
 const ready = (id: number, epoch: number, over: Partial<Extract<Response, { type: "plant_ready" }>> = {}): Extract<Response, { type: "plant_ready" }> => ({
-  type: "plant_ready", id, epoch, plan: plan(epoch), resume_at: 0, hashes: { truth: `t${epoch}`, cells: { a: `c${epoch}` } }, checks: { prefix_equal: null, truth_equal: null }, ...over,
+  type: "plant_ready", id, epoch, plan: plan(epoch), resume_at: 0, hashes: { truth: `t${epoch}`, cells: { a: `c${epoch}` } }, checks: { prefix_equal: null, truth_equal: null }, key: "k", ...over,
 });
 const run = (actions: PlantAction[], from: PlantState = initialPlant): PlantState => actions.reduce(reducePlant, from);
 

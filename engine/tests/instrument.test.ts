@@ -106,9 +106,21 @@ describe("Over-range and dilution (A089, A090)", () => {
     expect(of(r.events, "dilution_applied").filter((e) => e.request_id === [...by.keys()][0]).map((e) => e.dilution_factor)).toEqual([2, 4]);
   });
 
-  it("Given lactate 30 g/L, above even the last rung (24) Then no higher dilution exists and the third attempt is accepted", () => {
+  // Audit A1, finding F3 (2026-11-02): this test used to require the third attempt to pass. The author's decision: a reading still above the range after the last dilution of
+  // the ladder ends in the terminal state "over range, unresolved" (spec section 2.3), with no number and never promoted to qc_passed. By hand: 30 > 6 x 1, 30 > 6 x 2 = 12 and
+  // 30 > 6 x 4 = 24, and the ladder 1, 2, 4 has no fourth rung, so every request ends over_range, over_range, over_range_unresolved.
+  it("Given lactate 30 g/L, above even the last rung (24) Then no higher dilution exists and the third attempt ends over_range_unresolved, never qc_passed", () => {
     const { by } = constantLactate(30);
-    for (const [id, runs] of by) expect(runs.map((x) => x.outcome), id).toEqual(["over_range", "over_range", "qc_passed"]);
+    for (const [id, runs] of by) expect(runs.map((x) => x.outcome), id).toEqual(["over_range", "over_range", "over_range_unresolved"]);
+  });
+
+  // The same finding as the audit reproduced it: growth, death and the uptakes off, so the lactate stays 30 g/L whatever the culture day; the last run of every request is not
+  // qc_passed (by the decision it is over_range_unresolved, as above).
+  it("Given lactate 30 g/L with growth, death and uptake off When the samples are run Then the last run of every request is over_range_unresolved, never qc_passed", () => {
+    const r = runOf("default", { settings: { ...SMALL, mu_max_per_h: 0, early_death_per_h: 0, late_death_per_h: 0, glucose_uptake_pmol_per_cell_d: 0, glutamine_uptake_pmol_per_cell_d: 0, initial_lactate_g_per_l: 30, lactate_production_pmol_per_cell_d: 0, lactate_switch_on: 0, rerun_probability: 0 } });
+    const last = new Map(r.runs.map((x) => [x.request_id, x.outcome]));
+    expect(last.size).toBeGreaterThan(20);
+    for (const [id, outcome] of last) expect(outcome, id).toBe("over_range_unresolved");
   });
 
   it("Given every analyte in range Then no sample is diluted", () => {

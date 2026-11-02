@@ -10,7 +10,7 @@ export interface RecordView {
   results: { request_id: string; analyte: string; version: number; value: number; measured_at: number; available_at: number | null; state: string | null }[];
   findings: { rule: string; target: string; severity: string; status: string }[];
   /** Where `audit_trail` is on; empty otherwise (S3e clarification: section 9 names the audit events among the tables the reader can open, the interface listed none). */
-  audit_events: { audit_id: string; request_id: string; analyte: string; at: number; old_value: number; new_value: number; old_version: number; new_version: number }[];
+  audit_events: { audit_id: string; request_id: string; analyte: string; at: number; old_value: number | null; new_value: number | null; old_version: number; new_version: number }[];
   /** The structural error types the record carries on every one of its samples, in the order of `ERROR_TYPES`: they do not tell one sample from another, so a guess is never `background` for them (section 9). */
   ubiquitous: string[];
 }

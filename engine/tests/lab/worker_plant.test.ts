@@ -35,7 +35,8 @@ describe("plant_run: the answer", () => {
     await plant(51, 1);
     const m = ready(plantMessages(posted)[0]);
     expect(posted.filter((p) => p.type === "plant_ready")).toHaveLength(1);
-    expect(Object.keys(m).sort()).toEqual(["checks", "epoch", "hashes", "id", "plan", "resume_at", "type"]);
+    expect(Object.keys(m).sort()).toEqual(["checks", "epoch", "hashes", "id", "key", "plan", "resume_at", "type"]);
+    expect(m.key).toMatch(/^[0-9a-f]{16}$/); // audit A1, F7: the key of the truth of the run, its actions stripped (lab_ui.md section 4, rule 2)
     expect([m.id, m.epoch, m.resume_at, m.checks]).toEqual([51, 1, 0, { prefix_equal: null, truth_equal: null }]);
     expect(m.plan.units).toHaveLength(6);
     expect(m.plan.units[2]).toEqual({ id: "U03", bay: 1, slot: 2, profile: "bench_manual", batch: "B-U03", start_s: 30600, end_s: 549000 });

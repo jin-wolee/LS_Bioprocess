@@ -12,6 +12,10 @@ import { scenarioDoc } from "./setup.ts";
 import type { LabData } from "./setup.ts";
 import { checkRunSpec } from "./spec.ts";
 import type { RunSpec } from "./spec.ts";
+import { truthKey } from "./truth_key.ts";
+
+/** How many truth keys the Worker keeps: a bound of its memory, not a domain number. */
+const KEYS_KEPT = 16;
 
 // 2026-10-30 S3e (docs/design/lab_ui.md sections 4 and 9): what the Worker holds for the challenge. A challenge lives here under its id from `challenge_start` until the guess or the give-up; the
 // plant, the truth run and the injector's list never leave this module except inside the reveal. A run that is an unrevealed challenge is locked: the lineage view is refused for it (rule 2
@@ -26,13 +30,11 @@ export interface ChallengeStarted {
   record: RecordView | DecisionRecordView;
   /** The inputs the record was made under, each with its ledger id (section 6). */
   inputs: RefValue[];
+  /** The key of the challenge's run (truth_key.ts): the page empties what it holds of a run with the same key (rule 2 of section 4). */
+  key: string;
 }
 
 type State = SampleChallenge | DecisionChallenge;
-
-/** The identity of a run for the lock: everything that makes the truth of a run except the architectures. */
-export const runKey = (spec: RunSpec, seed: number): string =>
-  JSON.stringify([spec.scenario, Object.entries(spec.settings).sort(([a], [b]) => (a < b ? -1 : 1)), spec.bay_profiles ?? null, spec.analyzer_profiles ?? null, spec.capture_path ?? null, seed]);
 
 /** A seed of a one-seed request: a neutral integer under the rules of the experiment config (non-negative integer, not date-shaped). */
 export const checkSeed = (seed: unknown): { ok: true; seed: number } | { ok: false; message: string } => {
@@ -67,10 +69,23 @@ export const createChallenges = (data: LabData) => {
   const open = new Map<string, { state: State; key: string }>();
   let counter = 0;
   const invalid = (message: string): Refusal => ({ ok: false, code: "invalid_spec", message });
+  // the truth key of the specs asked last (truth_key.ts): a lineage view, a plant and its truth overlay ask the same run again and again, and a key costs one truth run
+  const keys = new Map<string, string>();
+  /** The truth key of a checked spec of the lab's scenarios and a seed, without any action. */
+  const keyOf = (spec: RunSpec, seed: number): string => {
+    const asked = JSON.stringify([spec.scenario, spec.settings, spec.bay_profiles ?? null, spec.analyzer_profiles ?? null, spec.capture_path ?? null, seed]);
+    const kept = keys.get(asked);
+    if (kept !== undefined) return kept;
+    const key = truthKey(data, spec, seed);
+    keys.set(asked, key);
+    if (keys.size > KEYS_KEPT) keys.delete(keys.keys().next().value as string);
+    return key;
+  };
 
-  /** Whether the run is an unrevealed challenge. */
+  /** Whether the run of a spec, its actions stripped, has the truth of an unrevealed challenge's run, however the spec writes it (rule 2). */
   const locked = (spec: RunSpec, seed: number): boolean => {
-    const key = runKey(spec, seed);
+    if (open.size === 0) return false;
+    const key = keyOf(spec, seed);
     return [...open.values()].some((c) => c.key === key);
   };
 
@@ -89,8 +104,10 @@ export const createChallenges = (data: LabData) => {
     const started = sample ? startSampleChallenge(data, spec, seed.seed, shown) : startDecisionChallenge(data, spec, seed.seed, shown, onProgress);
     if (!started.ok) return invalid(started.message);
     const challenge = `challenge-${(counter += 1)}`;
-    open.set(challenge, { state: started.challenge, key: runKey(spec, seed.seed) });
-    return { ok: true, challenge, announced_type: started.announced_type, record: started.record, inputs: sample ? inputsOf(data, spec) : decisionInputs(data, spec) };
+    // the decision variant runs a closed loop on SC8, a scenario no lineage view or plant can ask for, so its key matches no request
+    const key = sample ? keyOf(spec, seed.seed) : `closed-loop:${challenge}`;
+    open.set(challenge, { state: started.challenge, key });
+    return { ok: true, challenge, announced_type: started.announced_type, record: started.record, inputs: sample ? inputsOf(data, spec) : decisionInputs(data, spec), key };
   };
 
   const find = (challenge: unknown): State | Refusal => {
@@ -128,7 +145,7 @@ export const createChallenges = (data: LabData) => {
     return reveal;
   };
 
-  return { locked, start, drillDown, finish };
+  return { locked, keyOf, start, drillDown, finish };
 };
 
 export type Challenges = ReturnType<typeof createChallenges>;

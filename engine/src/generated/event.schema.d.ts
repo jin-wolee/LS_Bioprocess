@@ -96,7 +96,7 @@ export interface QcResult {
   attempt: Count;
   visit: Count;
   analyzer: Ident;
-  outcome: "qc_passed" | "qc_failed" | "over_range";
+  outcome: "qc_passed" | "qc_failed" | "over_range" | "over_range_unresolved";
 }
 export interface VisitFinished {
   type: "visit_finished";
