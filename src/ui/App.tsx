@@ -17,11 +17,7 @@ import { defaultLineageForm, lineageRequest, plantLineageForm } from "./lineage_
 import type { LineageForm } from "./lineage_form.ts";
 import { Notes } from "./Notes.tsx";
 import { PlantOrigin } from "./PlantOrigin.tsx";
-import { plantFromQuery } from "../plant/link.ts";
-import type { PlantLink } from "../plant/link.ts";
-import { needsRun } from "../plant/plant_state.ts";
 import { PlantRoute } from "../plant/PlantRoute.tsx";
-import { DEFAULT_PLANT } from "../plant/spec.ts";
 import { runKeyOf } from "./run_key.ts";
 import { Results } from "./Results.tsx";
 import { SCREENS, hashOf, parseHash } from "./route.ts";
@@ -31,6 +27,7 @@ import { SiteLink } from "./SiteLink.tsx";
 import { HOME_ID, initial, reduce } from "./state.ts";
 import { LangContext, T } from "./T.tsx";
 import { useOrigin } from "./useOrigin.ts";
+import { usePlant } from "./usePlant.ts";
 
 type Theme = "auto" | "light" | "dark";
 
@@ -58,8 +55,6 @@ export function App({ worker }: { worker: Worker }) {
   const [linkEngine, setLinkEngine] = useState<string | null>(null);
   const ids = useRef(HOME_ID + 1);
   const take = (): number => ids.current++;
-  // the plant asks for its plan under an epoch that grows with every request; the page drops an answer whose epoch is not the newest (plant_ui.md section 6, rule 3)
-  const epochs = useRef(0);
   // the forms of the one-seed screens start from the defaults of the build and keep what the reader typed while they visit another screen
   const [lineageForm, setLineageForm] = useState<LineageForm | null>(null);
   const [challengeForm, setChallengeForm] = useState<ChallengeForm | null>(null);
@@ -93,18 +88,8 @@ export function App({ worker }: { worker: Worker }) {
 
   // what the page knows of the build, to read a link against
   const known = useMemo(() => (ready ? { scenarios: ready.scenarios.map((x) => x.id), architectures: ready.presets.map((x) => x.id) } : null), [ready]);
-  // entering the plant asks for its run when the route wants a spec the page has not asked for: the link's, or else the plant it already has, or else the default one. Back, the navigation and the same
-  // link again want the spec of the newest request, so they ask for nothing (plant_ui.md section 7); a failed run is not asked for again under the same spec (no retry loop)
-  const plantLink: PlantLink | null = route.screen === "plant" && known && route.query !== "" ? plantFromQuery(route.query, known) : null;
-  useEffect(() => {
-    if (route.screen !== "plant" || !ready) return;
-    const spec = plantLink ? plantLink.spec : (state.plant.spec ?? DEFAULT_PLANT);
-    if (!needsRun(state.plant, spec)) return;
-    const id = take();
-    const epoch = ++epochs.current;
-    dispatch({ type: "plant_started", id, epoch, spec });
-    worker.postMessage({ type: "plant_run", id, epoch, spec } satisfies Request);
-  }, [route.screen, route.query, ready !== null]);
+  // the plant: the run the route wants, the rows of a card, the truth overlay (usePlant.ts)
+  const plant = usePlant({ worker, state, dispatch, route, known, take });
 
   // a screen opened from the plant: the plant it came from (useOrigin), and the first Lineage link asks for its sample
   const origin = useOrigin(known, route, state.results, (link, sample) => {
@@ -113,37 +98,6 @@ export function App({ worker }: { worker: Worker }) {
     setLineageForm(f);
     showLineage(f);
   });
-
-  // a card of a record hall is opened: the Worker reads the rows of one sample from the run it keeps for the epoch of the plan on screen (plant_ui.md section 6); the sample panel asks the same for its
-  // own sample, and the answer goes to a slot of its own (`role: "fields"`)
-  const askRecord = (architecture: string, sample_id: string, role?: "fields"): void => {
-    const epoch = state.plant.ready?.epoch;
-    if (epoch === undefined) return;
-    const id = take();
-    dispatch({ type: "plant_record_started", id, epoch, architecture, sample_id, ...(role && { role }) });
-    worker.postMessage({ type: "plant_record", id, epoch, architecture, sample_id } satisfies Request);
-  };
-  const openCard = (architecture: string, sample_id: string): void => askRecord(architecture, sample_id);
-  const closeCard = (): void => dispatch({ type: "plant_record_closed" });
-  const openFields = (architecture: string, sample_id: string): void => askRecord(architecture, sample_id, "fields");
-  const closeFields = (): void => dispatch({ type: "plant_record_closed", role: "fields" });
-
-  // the truth overlay (plant_ui.md section 3.3): nothing is asked of the Worker before the switch is on. Then, under the epoch of the plan on screen, the placeholders of the halls built so far (asked
-  // again when another hall arrives) and the truth of the sample the record panel shows
-  const plantEpoch = state.plant.ready?.epoch;
-  const hallsBuilt = state.plant.ready ? state.plant.ready.plan.records.length + state.plant.halls.length : 0;
-  const askTruth = (epoch: number, pick: { halls: true } | { sample_id: string }): void => {
-    const id = take();
-    dispatch({ type: "plant_truth_started", id, epoch, pick });
-    worker.postMessage({ type: "plant_truth", id, epoch, pick } satisfies Request);
-  };
-  useEffect(() => {
-    if (state.plant.truth.on && plantEpoch !== undefined) askTruth(plantEpoch, { halls: true });
-  }, [state.plant.truth.on, plantEpoch, hallsBuilt]);
-  const cardOpen = state.plant.record?.sample_id;
-  useEffect(() => {
-    if (state.plant.truth.on && plantEpoch !== undefined && cardOpen !== undefined) askTruth(plantEpoch, { sample_id: cardOpen });
-  }, [state.plant.truth.on, plantEpoch, cardOpen]);
 
   // the form starts from the defaults of the first scenario, or from the link the page was opened with; a link opened later (a hash change) fills it again
   useEffect(() => {
@@ -255,13 +209,13 @@ export function App({ worker }: { worker: Worker }) {
             <PlantRoute
               plant={state.plant}
               check={state.check.state}
-              link={plantLink}
+              link={plant.link}
               engine={ready.engine_version}
               architectures={ready.presets.map((x) => x.id)}
-              onCard={openCard}
-              onCardClose={closeCard}
-              onFields={openFields}
-              onFieldsClose={closeFields}
+              onCard={plant.openCard}
+              onCardClose={plant.closeCard}
+              onFields={plant.openFields}
+              onFieldsClose={plant.closeFields}
               onTruth={(on) => dispatch({ type: "plant_truth_switched", on })}
               onLeave={(t, lens) => dispatch({ type: "plant_left", t, lens })}
             />

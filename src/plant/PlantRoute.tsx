@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { template, text } from "../i18n/index.ts";
+import { text } from "../i18n/index.ts";
 import type { CheckState, ScenePlan } from "../protocol.ts";
 import { LangContext, T } from "../ui/T.tsx";
 import { BottomBar } from "./BottomBar.tsx";
@@ -9,7 +9,6 @@ import { ObjectsList } from "./ObjectsList.tsx";
 import { Panels } from "./Panels.tsx";
 import { RecordPanel } from "./RecordPanel.tsx";
 import { Intro } from "./Intro.tsx";
-import type { SceneStatus } from "./Intro.tsx";
 import { LinkNotes } from "./LinkNotes.tsx";
 import { TextAlternative } from "./TextAlternative.tsx";
 import { TimeBar } from "./TimeBar.tsx";
@@ -20,13 +19,13 @@ import { clockKeys } from "./keys.ts";
 import { instantIn } from "./link.ts";
 import type { PlantLink } from "./link.ts";
 import { layoutOf } from "./layout.ts";
-import { loadScene, webgl2 } from "./loader.ts";
+import { webgl2 } from "./loader.ts";
 import { hallsOfPlan } from "./plant_state.ts";
 import type { PlantState } from "./plant_state.ts";
 import { createPlayback } from "./playback.ts";
 import { useOpening } from "./useOpening.ts";
 import { DEFAULT_PLANT } from "./spec.ts";
-import type { Scene, Tier } from "./scene_types.ts";
+import { reducedMotion, tierOf, useScene } from "./useScene.ts";
 import { keyOf, objectsOf, pickedOfKey } from "./view.ts";
 import type { Picked } from "./view.ts";
 import "./plant.css";
@@ -41,11 +40,6 @@ import "./plant.css";
 //
 // P5b: the object the reader picked (a click in the scene, a button of a list) opens its panel and is what `,` and `.` step between the events of; `F` follows a picked sample; the switch of the truth
 // overlay is the HUD's, and what the Worker answers is drawn by the scene (the placeholders) and by the record panel (the truth column and the verdicts).
-
-/** The quality tier: `low` under 600 px (no shadows, a pixel ratio of one), `high` above (section 9). The offer to switch is P8. */
-const tierOf = (): Tier => (window.innerWidth < 600 ? "low" : "high");
-
-const reducedMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function PlantRoute({ plant, check, link, engine, architectures, onCard, onCardClose, onFields, onFieldsClose, onTruth, onLeave }: {
   plant: PlantState;
@@ -73,10 +67,6 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
   const spec = plant.spec ?? DEFAULT_PLANT;
   const [chosen, setLens] = useState<string | null>(plant.view?.lens ?? null);
   const lens = plan && chosen !== null && plan.layout.architectures.includes(chosen) ? chosen : (plan?.layout.architectures[0] ?? "");
-  const lensRef = useRef(lens);
-  lensRef.current = lens;
-  const cardRef = useRef(onCard);
-  cardRef.current = onCard;
   // the picked object and the sample the camera follows; a new plan has none
   const [picked, setPicked] = useState<Picked | null>(null);
   const [following, setFollowing] = useState<number | null>(null);
@@ -87,9 +77,6 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
   const wanted = useMemo(() => (plan ? instantIn(link?.t ?? plant.view?.t ?? null, plan.horizon_s) : { t: null, fault: null }), [plan, link?.t, plant.view?.t]);
   const times = useMemo(() => (plan && picked ? objectTimes(plan, picked) : undefined), [plan, picked?.kind, picked?.index]);
   const host = useRef<HTMLDivElement>(null);
-  const mounted = useRef<Scene | null>(null);
-  const [scene, setScene] = useState<SceneStatus>({ kind: webgl ? "loading" : "none" });
-  const [renderer, setRenderer] = useState<string | null>(null);
 
   // a pick opens the panel of an object and closes the record of a card (one panel at a time); it ends a follow
   const choose = (p: Picked | null): void => {
@@ -97,64 +84,22 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
     setPicked(p);
     setFollowing(null);
   };
-  const chooseRef = useRef(choose);
-  chooseRef.current = choose;
 
-  useEffect(() => {
-    const target = host.current;
-    if (!webgl || !plan || !layout || !target || !playback) return;
-    let live = true;
-    let made: Scene | null = null;
-    setScene({ kind: "loading" });
-    setPicked(null);
-    setFollowing(null);
-    loadScene()
-      .then(({ mountScene }) => {
-        if (!live) return;
-        made = mountScene({
-          host: target, layout, plan, tier: tierOf(), playback, reducedMotion: reducedMotion(), lens: lensRef.current,
-          // a click on a card opens its record, and the lens goes to the hall the card is in; a click on an object opens its panel
-          onPick: (architecture, sample) => {
-            setLens(architecture);
-            chooseRef.current(null);
-            cardRef.current(architecture, (plan.samples[sample] as ScenePlan["samples"][number]).id);
-          },
-          onPickObject: (p) => chooseRef.current(p),
-          onFollowEnd: () => setFollowing(null),
-        });
-        mounted.current = made;
-        setRenderer(made.renderer);
-        setScene({ kind: "ready" });
-      })
-      .catch((e: unknown) => {
-        if (live) setScene({ kind: "failed", message: e instanceof Error ? e.message : String(e) });
-      });
-    return () => {
-      live = false;
-      made?.dispose();
-      mounted.current = null;
-    };
-  }, [plan, layout, webgl, playback]);
-
-  // the halls that arrive after the first answer, and the lens, go to the scene without making it again
-  useEffect(() => {
-    if (scene.kind === "ready") mounted.current?.setHalls(halls);
-  }, [halls, scene.kind]);
-  useEffect(() => {
-    if (scene.kind === "ready") mounted.current?.setLens(lens);
-  }, [lens, scene.kind]);
-  // the picked object, the follow, and the truth overlay (what the Worker answered for the halls, with the two texts every element of it carries, in the language of the page)
-  useEffect(() => {
-    if (scene.kind === "ready") mounted.current?.setPick(picked);
-  }, [picked?.kind, picked?.index, scene.kind]);
-  useEffect(() => {
-    if (scene.kind === "ready") mounted.current?.setFollow(following);
-  }, [following, scene.kind]);
   const absences = plant.truth.on ? plant.truth.halls?.view : null;
-  useEffect(() => {
-    if (scene.kind !== "ready") return;
-    mounted.current?.setOverlay(absences ? { halls: absences.halls, captions: { label: text(lang, "plant.truth.label"), absence: template(lang, "plant.truth.absence") } } : null);
-  }, [absences, lang, scene.kind]);
+  const { scene, renderer, mounted } = useScene({
+    host, webgl, plan, layout, playback, halls, lens, picked, following, absences, lang,
+    handlers: {
+      // a click on a card opens its record, and the lens goes to the hall the card is in; a click on an object opens its panel
+      card: (architecture, sample) => {
+        setLens(architecture);
+        choose(null);
+        onCard(architecture, ((plan as ScenePlan).samples[sample] as ScenePlan["samples"][number]).id);
+      },
+      object: choose,
+      followEnd: () => setFollowing(null),
+      reset: () => choose(null),
+    },
+  });
 
   useOpening(playback, wanted.t, scene.kind === "ready", reducedMotion(), lens, onLeave);
 
