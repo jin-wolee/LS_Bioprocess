@@ -8,6 +8,8 @@ export const enResults = {
   "results.running": "A run is in progress.",
   "results.meets.warn": "The seed count is below the minimum of {min}: the report does not call this a comparison. Read each spread as that of a small sample of seeds.",
   "results.interval.label": "What the range is",
+  "results.actions.heading": "Operator actions applied to every seed",
+  "results.actions.lead": "This result applied these actions from the plant in every seed. Each instant is an assumed input, listed again with the other inputs below.",
   "results.inputs.heading": "Inputs of this result",
   "results.inputs.lead": "The inputs the metrics used and the settings that were changed from the scenario.",
   "results.inputs.bays": "Bioreactor profile of each bay",

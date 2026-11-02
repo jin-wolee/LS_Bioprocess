@@ -12,7 +12,7 @@ export const enDrill = {
   "plant.origin.run": "From the plant: scenario {scenario}, seed {seed}, {actions} operator actions, left at {clock}.",
   "plant.origin.run_open": "From the plant: scenario {scenario}, seed {seed}, {actions} operator actions.",
   "plant.origin.back": "Back to the plant",
-  "plant.origin.results": "Results over many seeds carries no plant action in this version: the actions of the plant are not applied to it.",
+  "plant.origin.results": "Results over many seeds carries the operator actions of the plant that name a reactor or an analyzer (a feed, an alarm, a window of an analyzer, a change of lot): {carried} of the {actions} of this plant. It applies them to every seed. It never carries a draw, which names the sample of one seed, and the lab settings are Setup's own controls.",
   "plant.origin.utilisation": "Press Run: the utilisation of the analyzers is at the end of Results.",
 
   "plant.link.heading": "The link was read with changes",

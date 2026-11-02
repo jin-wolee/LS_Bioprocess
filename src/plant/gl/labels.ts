@@ -16,6 +16,8 @@ export interface Labels {
   halls(records: readonly { architecture: string; flags_on: readonly string[] }[], lens: string): void;
   /** The rows on the sign of each board (P6a), in the order of the bays: the first few as `U03 12:50` and how many more there are. Written when the board changes, not every frame. */
   boards(boards: readonly { rows: readonly string[]; more: number }[]): void;
+  /** Labels that stay where they are put (the names and halls of the flags board, P6b): one element for each, known to the style sheet by its kind (`plant-label-<kind>`). */
+  fixed(items: readonly { text: string; kind: string; x: number; y: number; z: number }[]): void;
   /** Where the figures of the staff are (in the order of the plan's `staff`; an operator who is off duty has x and z that are NaN): their id tags follow them. */
   follow(places: readonly { x: number; z: number }[]): void;
   /** The labels of the truth overlay (P5b): one element over each place given, which the caller fills; null removes them. Returns the elements, in the order of the places. */
@@ -105,6 +107,9 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
         sign.flags.textContent = record ? (record.flags_on.length === 0 ? "–" : record.flags_on.join(" · ")) : "";
         sign.item.el.dataset.lens = sign.architecture === lens ? "1" : "0";
       }
+    },
+    fixed(list) {
+      for (const i of list) add(i.text, i.kind, i.x, i.y, i.z);
     },
     boards(boards) {
       for (const [i, rows] of boardSigns.entries()) {

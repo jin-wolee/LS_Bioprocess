@@ -1,4 +1,4 @@
-import type { BreakoutResult, ChallengeVariant, DecisionRecordView, ErrorCode, LineageView, RecordView, RefValue, Response, Reveal, SampleRecord } from "../protocol.ts";
+import type { BreakoutResult, ChallengeVariant, DecisionRecordView, ErrorCode, LineageView, RecordView, RefValue, RefusalReason, Response, Reveal, SampleRecord } from "../protocol.ts";
 
 // What the page knows of the one-seed screens (lab_ui.md sections 8 and 9): the lineage view of the last request, and the challenge in progress. They are folded from the Worker's messages by
 // the reducer of state.ts. S3g adds the Break-out result of the last request. A request is remembered with what it asked, because the answer carries no footer: the screen composes the result block from the request and the engine version.
@@ -8,7 +8,19 @@ export interface Problem {
   id: number | null;
   code: ErrorCode | "worker";
   message: string;
+  /** Only with `refused` (an action a rule refuses, P5c and P6b): the rule, and the place of the action in the list that was sent. */
+  reason?: RefusalReason;
+  index?: number;
 }
+
+/** The problem an `error` message of the Worker is: its code and message, and for a refused action its reason and place. */
+export const problemOf = (action: Extract<Response, { type: "error" }>): Problem => ({
+  id: action.id,
+  code: action.code,
+  message: action.message,
+  ...(action.reason && { reason: action.reason }),
+  ...(action.index !== undefined && { index: action.index }),
+});
 
 export interface LineageAsked {
   scenario: string;
@@ -87,7 +99,7 @@ export const reduceBreakout = (state: BreakoutState, action: Response | OneSeedA
     case "breakout_result":
       return action.id === state.running ? { ...state, running: null, result: action.result, problem: null } : state;
     case "error":
-      return action.id !== null && action.id === state.running ? { ...state, running: null, problem: { id: action.id, code: action.code, message: action.message } } : state;
+      return action.id !== null && action.id === state.running ? { ...state, running: null, problem: problemOf(action) } : state;
     default:
       return state;
   }
@@ -103,7 +115,7 @@ export const reduceLineage = (state: LineageState, action: Response | OneSeedAct
       // the run is a challenge now: the view on screen, and a request for it still in flight, are not kept (a new request is `locked`, as before)
       return state.asked !== null && state.asked.key === action.key ? { ...state, running: null, answer: null, problem: null } : state;
     case "error":
-      return action.id !== null && action.id === state.running ? { ...state, running: null, problem: { id: action.id, code: action.code, message: action.message } } : state;
+      return action.id !== null && action.id === state.running ? { ...state, running: null, problem: problemOf(action) } : state;
     default:
       return state;
   }
@@ -132,7 +144,7 @@ export const reduceChallenge = (state: ChallengeState, action: Response | OneSee
       return state.active && state.busy && state.busy.id === action.id ? { ...state, busy: null, active: { ...state.active, reveal: action.reveal } } : state;
     case "error": {
       const mine = (state.starting && action.id === state.starting.id) || (state.busy && action.id === state.busy.id);
-      return mine ? { ...state, starting: null, busy: null, problem: { id: action.id, code: action.code, message: action.message } } : state;
+      return mine ? { ...state, starting: null, busy: null, problem: problemOf(action) } : state;
     }
     default:
       return state;

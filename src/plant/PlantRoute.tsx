@@ -4,6 +4,7 @@ import type { CheckState, PlantSpec, ScenePlan } from "../protocol.ts";
 import { LangContext, T } from "../ui/T.tsx";
 import { ActionList } from "./ActionList.tsx";
 import { BottomBar } from "./BottomBar.tsx";
+import type { BarProps } from "./BottomBar.tsx";
 import { Hint, Hud, TruthControl } from "./Hud.tsx";
 import { CardList } from "./CardList.tsx";
 import { ObjectsList } from "./ObjectsList.tsx";
@@ -12,6 +13,7 @@ import { RecordPanel } from "./RecordPanel.tsx";
 import { Intro } from "./Intro.tsx";
 import { LinkNotes } from "./LinkNotes.tsx";
 import { TextAlternative } from "./TextAlternative.tsx";
+import { flagMatrix } from "./flags_board.ts";
 import { TimeBar } from "./TimeBar.tsx";
 import { TubeList } from "./TubeList.tsx";
 import { drillOf } from "./drill.ts";
@@ -90,7 +92,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
   );
   // an action request is in flight: the bar waits; the board the reader asked for from the objects list opens the form of the move of a draw on its bay
   const busy = plant.act.pending !== null;
-  const [ask, setAsk] = useState<{ bay: number; nonce: number } | null>(null);
+  const [ask, setAsk] = useState<BarProps["ask"]>(null);
   const times = useMemo(() => (plan && picked ? objectTimes(plan, picked) : undefined), [plan, picked?.kind, picked?.index]);
   const host = useRef<HTMLDivElement>(null);
 
@@ -103,7 +105,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
 
   const absences = plant.truth.on ? plant.truth.halls?.view : null;
   const { scene, renderer, mounted } = useScene({
-    host, webgl, plan, layout, playback, halls, lens, picked, following, absences, lang,
+    host, webgl, plan, layout, playback, halls, lens, picked, following, flags, absences, lang,
     handlers: {
       // a click on a card opens its record, and the lens goes to the hall the card is in; a click on an object opens its panel
       card: (architecture, sample) => {
@@ -113,6 +115,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
       },
       object: choose,
       followEnd: () => setFollowing(null),
+      cell: (hall, flag) => pickCell(hall, flag),
       reset: () => choose(null),
     },
   });
@@ -157,7 +160,14 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
     host.current?.scrollIntoView({ block: "nearest" });
     const found = plan ? pickedOfKey(plan, key) : null;
     if (found) choose(found);
-    if (key.startsWith("board:")) setAsk((now) => ({ bay: Number(key.slice(7)) - 1, nonce: (now?.nonce ?? 0) + 1 }));
+    if (key.startsWith("board:")) setAsk((now) => ({ form: "move_draw", bay: Number(key.slice(7)) - 1, nonce: (now?.nonce ?? 0) + 1 }));
+  };
+  // a cell of the flags board (a click in the scene, or its button in the objects list): the camera goes to the panel and the flag form opens on that hall's record and that flag
+  const pickCell = (hall: number, flag: string): void => {
+    const architecture = spec.run.architectures[hall];
+    if (architecture === undefined) return;
+    mounted.current?.focus("flags:board");
+    setAsk((now) => ({ form: "set_flag", architecture, flag, nonce: (now?.nonce ?? 0) + 1 }));
   };
   const pickAndLook = (p: Picked): void => {
     if (plan) look(keyOf(plan, p));
@@ -247,10 +257,10 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
       {webgl && intro}
       {plan && full && playback && (
         <div class="plant-after">
-          <ObjectsList objects={objects} onLook={scene.kind === "ready" ? look : null} />
+          <ObjectsList objects={objects} onLook={scene.kind === "ready" ? look : null} matrix={webgl ? flagMatrix(full, flags) : null} onCell={webgl && scene.kind === "ready" ? pickCell : null} />
           {webgl && <TubeList plan={full} playback={playback} onOpen={pickAndLook} />}
           {webgl && <CardList plan={full} playback={playback} lens={lens} onOpen={(architecture, sample_id) => { choose(null); onCard(architecture, sample_id); }} />}
-          <TextAlternative plan={full} playback={playback} />
+          <TextAlternative plan={full} playback={playback} flags={flags} />
         </div>
       )}
     </>

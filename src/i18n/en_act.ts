@@ -93,6 +93,15 @@ export const enAct = {
   "plant.kind.board": "Sampling boards",
   "plant.table.boards": "Sampling boards at this instant",
   "plant.col.board": "Board",
+
+  "plant.kind.flags": "Flags board",
+  "plant.table.flags": "Flags board: each flag in each record hall",
+  "plant.col.flag": "Flag",
+  "plant.flags.cells": "Flags board: press a cell to open the form that switches that flag in that hall",
+  "plant.flags.state.on": "on",
+  "plant.flags.state.off": "off",
+  "plant.flags.state.pending": "not yet",
+  "plant.flags.cell": "{flag} in {hall} is {state}. Set it {next}.",
   "plant.col.sample": "Sample",
   "plant.col.planned": "Planned",
 } as const;

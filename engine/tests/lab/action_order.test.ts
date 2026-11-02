@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { canonicalOrder, isLabSetting } from "../../../src/plant/action_list.ts";
-import { ACTION_CLASS, canonicalActions } from "../../src/experiments/assembly/lab/actions.ts";
+import { RESULTS_KINDS as PAGE_KINDS, canonicalOrder, isLabSetting, leftOutOf, resultsKept } from "../../../src/plant/action_list.ts";
+import { ACTION_CLASS, ACTION_KINDS, RESULTS_KINDS, canonicalActions, resultsActions } from "../../src/experiments/assembly/lab/actions.ts";
 import type { Action } from "../../src/experiments/assembly/lab/actions.ts";
 import { listFiles, readJson } from "../support/paths.ts";
 
@@ -47,5 +47,24 @@ describe("the page's canonical order is the Worker's", () => {
 
   it("Given each kind of action Then the page and the engine agree on whether it is a lab setting", () => {
     for (const a of every) expect(isLabSetting(a), a.kind).toBe(ACTION_CLASS[a.kind] === "lab");
+  });
+});
+
+describe("P6b: what Results carries is the engine's filter, and the page's reasons cover the rest", () => {
+  it("Given the actions of all the fixtures Then the page keeps what resultsActions keeps, in the same order, and the kinds are the same four", () => {
+    expect([...PAGE_KINDS]).toEqual([...RESULTS_KINDS]);
+    expect(resultsKept(every)).toEqual(resultsActions(every));
+    for (const f of fixtures) expect(resultsKept(f)).toEqual(resultsActions(f));
+  });
+
+  it("Given each of the eight kinds Then it is kept or left out with a reason, never both and never neither", () => {
+    const hand = every.filter((a, i) => every.findIndex((b) => b.kind === a.kind) === i);
+    expect(hand.map((a) => a.kind).sort()).toEqual([...ACTION_KINDS].sort());
+    for (const a of hand) {
+      const kept = resultsKept([a]).length;
+      const left = leftOutOf([a]).length;
+      expect(kept + left, a.kind).toBe(1);
+      expect(kept === 1, a.kind).toBe(resultsActions([a]).length === 1);
+    }
   });
 });

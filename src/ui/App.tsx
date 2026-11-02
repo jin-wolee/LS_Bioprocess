@@ -9,7 +9,8 @@ import type { BreakoutForm } from "./breakout_view.ts";
 import { Challenge } from "./Challenge.tsx";
 import { challengeStart, defaultChallengeForm } from "./challenge_form.ts";
 import type { ChallengeForm } from "./challenge_form.ts";
-import { defaultForm, fromQuery, specOf } from "./form.ts";
+import { leftOutOf } from "../plant/action_list.ts";
+import { defaultForm, fromQuery, runRequest } from "./form.ts";
 import type { Form } from "./form.ts";
 import { Home } from "./Home.tsx";
 import { Lineage } from "./Lineage.tsx";
@@ -122,11 +123,11 @@ export function App({ worker }: { worker: Worker }) {
   }, [theme]);
 
   const run = (f: Form) => {
-    const out = ready ? specOf(f, ready) : null;
-    if (!out?.ok) return;
     const id = take();
+    const request = ready ? runRequest(f, ready, id) : null;
+    if (!request) return;
     dispatch({ type: "run_started", id });
-    worker.postMessage({ type: "run", id, spec: out.spec } satisfies Request);
+    worker.postMessage(request satisfies Request);
     window.location.hash = hashOf("results");
   };
   const cancel = () => {
@@ -227,7 +228,7 @@ export function App({ worker }: { worker: Worker }) {
           ))}
         {route.screen === "setup" &&
           (ready && form ? (
-            <Setup ready={ready} form={form} setForm={setForm} state={state} link={pageAddress()} linkEngine={linkEngine} onRun={run} onCancel={cancel} />
+            <Setup ready={ready} form={form} setForm={setForm} state={state} link={pageAddress()} linkEngine={linkEngine} leftOut={origin ? leftOutOf(origin.link.spec.actions) : []} onRun={run} onCancel={cancel} />
           ) : (
             <T as="p" k="app.loading" />
           ))}

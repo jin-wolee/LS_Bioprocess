@@ -26,7 +26,7 @@ export interface Built {
   /** The glass of each reactor, by unit: the mesh and the instance, so that the jacket can be tinted. */
   jackets: { mesh: InstancedMesh; index: number }[];
   /** What was built, by kind: the number of instances of the main mesh of each. */
-  objects: Record<Exclude<ObjectKind, "staff">, number>;
+  objects: Record<Exclude<ObjectKind, "staff" | "flags">, number>;
   /** The geometries and materials to free on dispose. */
   disposables: (BufferGeometry | Material)[];
 }

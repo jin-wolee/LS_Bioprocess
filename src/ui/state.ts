@@ -1,7 +1,7 @@
 import type { CheckDetail, CheckState, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
 import { initialPlant, reducePlant } from "../plant/plant_state.ts";
 import type { PlantPageAction, PlantState } from "../plant/plant_state.ts";
-import { initialBreakout, initialChallenge, initialLineage, reduceBreakout, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
+import { initialBreakout, initialChallenge, initialLineage, problemOf, reduceBreakout, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
 import type { BreakoutState, ChallengeState, LineageState, OneSeedAction, Problem } from "./one_seed_state.ts";
 
 export type { Problem };
@@ -120,7 +120,7 @@ export const reduce = (state: State, action: Action): State => {
     case "error":
       if (action.epoch !== undefined) return { ...state, plant: reducePlant(state.plant, action) }; // an error of a plant request: the plant's problem, or dropped when its epoch is not the newest
       if (forOneSeed(state, action.id)) return withOneSeed(state);
-      return { ...state, problem: { id: action.id, code: action.code, message: action.message }, ...over(state, action.id) };
+      return { ...state, problem: problemOf(action), ...over(state, action.id) };
     case "worker_error":
       return { ...state, problem: { id: null, code: "worker", message: action.message }, running: null, progress: null };
   }

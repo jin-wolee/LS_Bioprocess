@@ -13,6 +13,7 @@ import { RING, buildAvatar, buildRings } from "./avatar.ts";
 import { buildRoom } from "./floor.ts";
 import { listen } from "./input.ts";
 import { buildBoards } from "./boards.ts";
+import { buildFlagsBoard } from "./flags.ts";
 import { buildLabels } from "./labels.ts";
 import { buildMotion } from "./motion.ts";
 import { buildOverlay } from "./overlay.ts";
@@ -32,7 +33,7 @@ const HEAD = 1.3; // metres: the point the camera looks at, on the figure
 
 const walkingKeys = new Set(["w", "a", "s", "d", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
-export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, lens: initialLens, onPick, onPickObject, onFollowEnd }: SceneOptions): Scene => {
+export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, lens: initialLens, flags, onPick, onPickObject, onPickCell, onFollowEnd }: SceneOptions): Scene => {
   const stage = buildStage(host, layout, tier);
   const { canvas, renderer, scene, hemi, sun } = stage;
 
@@ -49,6 +50,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
   const camera = new PerspectiveCamera(50, 1, 0.1, 300);
   const labels = buildLabels(host, layout, plan);
   const boards = buildBoards(plan, labels);
+  const flagsBoard = buildFlagsBoard(layout, plan, flags, scene, labels, disposables);
   const motion = buildMotion(layout, plan, built, { scene, hemi, sun, glass }, labels, disposables);
   scene.add(motion.group);
   let drawn = Number.NaN; // the clock reading `motion` was last written for
@@ -106,13 +108,18 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
       ray.setFromCamera(ndc, camera);
       // the nearest thing along the ray: a vessel, an analyzer, a figure on duty, a tube, or a card on a shelf (the arithmetic of P5a, compared by its distance along the ray); a click that meets none walks
       const card = shelves.pick(ray.ray);
-      const cards: Hit<Picked | { card: true }>[] = card ? [{ what: { card: true }, t: card.distance }] : [];
+      const cell = flagsBoard.pick(ray.ray);
+      const cards: Hit<Picked | { card: true } | { cell: true }>[] = [...(card ? [{ what: { card: true as const }, t: card.distance }] : []), ...(cell ? [{ what: { cell: true as const }, t: cell.distance }] : [])];
       const o = ray.ray.origin;
       const d = ray.ray.direction;
-      const nearest = pickNearest<Picked | { card: true }>({ origin: [o.x, o.y, o.z], dir: [d.x, d.y, d.z] }, targetsAt(plan, layout, state), cards);
+      const nearest = pickNearest<Picked | { card: true } | { cell: true }>({ origin: [o.x, o.y, o.z], dir: [d.x, d.y, d.z] }, targetsAt(plan, layout, state), cards);
       if (nearest && "card" in nearest.what && card) {
         endFollow();
         return onPick(card.architecture, card.sample);
+      }
+      if (nearest && "cell" in nearest.what && cell) {
+        endFollow();
+        return onPickCell(cell.hall, cell.flag);
       }
       if (nearest && "kind" in nearest.what) {
         endFollow();
@@ -223,7 +230,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     }
   };
   // what the scene built, by kind: the figures of the staff are one for each operator of the plan
-  const objects = { ...built.objects, staff: plan.staff.length };
+  const objects = { ...built.objects, staff: plan.staff.length, flags: 1 };
   host.dataset.plantObjects = JSON.stringify(objects);
   raf = requestAnimationFrame(frame);
 
@@ -257,7 +264,10 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
       halo.visible = false;
     },
     setOverlay: overlay.set,
-    setHalls: shelves.setHalls,
+    setHalls(records) {
+      shelves.setHalls(records);
+      flagsBoard.setHalls(records);
+    },
     setLens(architecture) {
       shelves.setLens(architecture);
       overlay.setLens(architecture);

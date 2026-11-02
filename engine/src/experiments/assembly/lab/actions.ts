@@ -3,6 +3,7 @@ import type { CapturePath } from "../../../raw/types.ts";
 import { FLAG_NAMES } from "../../../record/architecture.ts";
 import type { Architecture } from "../../../record/architecture.ts";
 import { canonicalJson } from "../../../trace.ts";
+import type { RefValue } from "./catalogue.ts";
 import type { ScenarioDoc } from "./setup.ts";
 
 // The operator actions of the plant (docs/design/plant_ui.md section 5): plain data that says what the reader did and when, in the units of the run. `parseActions` checks a list that came in a
@@ -134,9 +135,23 @@ export const canonicalActions = (actions: readonly Action[]): { name: string; ac
     .sort((a, b) => byKey(a.key, b.key))
     .map(({ action }, i) => ({ name: `act-${i + 1}`, action }));
 
-/** What Results over many seeds carries: the actions that name a unit or an analyzer, which mean the same in every seed. Never an action that names a sample, and not the lab settings (Setup's own). */
-export const resultsActions = (actions: readonly Action[]): Action[] =>
-  actions.filter((a) => a.kind === "add_feed" || a.kind === "raise_alarm" || a.kind === "analyzer_down" || a.kind === "change_lot");
+/** The kinds Results over many seeds carries: the actions that name a unit or an analyzer, which mean the same in every seed. Never an action that names a sample, and not the lab settings (Setup's own). */
+export const RESULTS_KINDS: readonly ActionKind[] = ["add_feed", "raise_alarm", "analyzer_down", "change_lot"];
+export const resultsActions = (actions: readonly Action[]): Action[] => actions.filter((a) => RESULTS_KINDS.includes(a.kind));
+
+/**
+ * The list of a `run` request (docs/design/lab_ui.md section 22): checked as `parseActions` checks a plant's list, then a kind Results does not carry is refused as `unknown_target` with the place of the
+ * first one as entered, so that the Worker says what it will not carry and drops none silently. The bounds against the run are `checkBounds`'s.
+ */
+export const parseResultsActions = (raw: unknown): { ok: true; actions: Action[] } | PlantRefusal => {
+  const parsed = parseActions(raw);
+  if (!parsed.ok) return parsed;
+  const at = parsed.actions.findIndex((a) => !RESULTS_KINDS.includes(a.kind));
+  const other = parsed.actions[at];
+  return other
+    ? refused("unknown_target", at, `actions[${at}]: ${other.kind} is not carried by Results over many seeds; Results carries ${RESULTS_KINDS.slice(0, -1).join(", ")} and ${RESULTS_KINDS.at(-1)}, the actions that name a unit or an analyzer and mean the same in every seed`)
+    : parsed;
+};
 
 /** The scenario document and the record halls an action list is applied to. */
 export interface PlantBase {
@@ -147,6 +162,22 @@ export interface PlantBase {
 }
 
 const minutes = (seconds: number, ref = INSTANT_REF): Param => ({ value: seconds / 60, unit: "min", ref });
+const windowLength = (length_min: number): Param => ({ value: length_min / 60, unit: "h", ref: WINDOW_REF });
+
+/**
+ * The inputs a run prints for its actions (docs/design/lab_ui.md section 22, item 6): each value that enters the scenario as the scenario receives it, with its ledger entry, so that it prints as an assumed
+ * input like the others: the instant of a feed or an alarm, the start and the length of a window, the instant a lot change takes effect. Named by the place of the action in the canonical order.
+ */
+export const actionInputs = (actions: readonly Action[]): RefValue[] =>
+  canonicalActions(actions).flatMap(({ name, action: a }) => {
+    const input = (field: string, p: Param): RefValue => ({ name: `${name} ${a.kind} ${targetOf(a)} ${field}`, value: p.value, unit: p.unit, ref: p.ref });
+    switch (a.kind) {
+      case "add_feed": case "raise_alarm": return [input("at", minutes(a.at))];
+      case "analyzer_down": return [input("from", minutes(a.from)), input("length", windowLength(a.length_min))];
+      case "change_lot": return [input("effective", minutes(a.effective))];
+      default: return [];
+    }
+  });
 
 const pushed = (doc: ScenarioDoc, field: "scripted_events" | "maintenance" | "lot_changes", entry: unknown): void => {
   doc[field] = [...((doc[field] as unknown[] | undefined) ?? []), entry];
@@ -169,7 +200,7 @@ export const applyActions = (base: PlantBase, actions: readonly Action[]): Plant
       case "add_feed": pushed(doc, "scripted_events", { type: "feed", unit_id: a.unit_id, at: minutes(a.at) }); break;
       case "raise_alarm": pushed(doc, "scripted_events", { type: "alarm", unit_id: a.unit_id, at: minutes(a.at) }); break;
       case "move_draw": pushed(doc, "scripted_events", { type: "move_draw", sample_id: a.sample_id, at: minutes(a.at), to: minutes(a.to) }); break;
-      case "analyzer_down": pushed(doc, "maintenance", { analyzer: a.analyzer, start: minutes(a.from), length: { value: a.length_min / 60, unit: "h", ref: WINDOW_REF } }); break;
+      case "analyzer_down": pushed(doc, "maintenance", { analyzer: a.analyzer, start: minutes(a.from), length: windowLength(a.length_min) }); break;
       case "change_lot": pushed(doc, "lot_changes", { analyzer: a.analyzer, at: minutes(a.effective) }); break;
       case "set_labelling": doc.label_method = a.method; break;
       case "set_capture_path": out.capture_path = a.path; break;

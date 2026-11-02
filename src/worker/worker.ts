@@ -1,4 +1,5 @@
-import type { PlantRefusal } from "../../engine/src/experiments/assembly/lab/actions.ts";
+import { canonicalActions } from "../../engine/src/experiments/assembly/lab/actions.ts";
+import type { Action, PlantRefusal } from "../../engine/src/experiments/assembly/lab/actions.ts";
 import { answerBreakout } from "../../engine/src/experiments/assembly/lab/breakout.ts";
 import { checkError, makeDeps, runCheck } from "../../engine/src/experiments/assembly/lab/check.ts";
 import { createChallenges } from "../../engine/src/experiments/assembly/lab/challenges.ts";
@@ -10,7 +11,7 @@ import { answerPlantRecord } from "../../engine/src/experiments/assembly/lab/pla
 import { answerPlantStart } from "../../engine/src/experiments/assembly/lab/plant_stage.ts";
 import { answerPlantTruth, checkTruthPick } from "../../engine/src/experiments/assembly/lab/plant_truth.ts";
 import { readyOf } from "../../engine/src/experiments/assembly/lab/ready.ts";
-import { runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
+import { checkRunActions, runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
 import { checkRunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
 import type { RunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
@@ -41,6 +42,9 @@ import { LAB_DATA } from "./data.ts";
 //
 // P5c adds `actions` to `lineage` and `breakout` (docs/design/plant_ui.md section 6, rule 9): the operator actions of the plant a drill-down was opened from, checked as `plant_run` checks them, so the
 // lineage view of a sample is made from the run the plant shows. A refusal of an action arrives as `error` with code `refused`, its `reason` and its `index`. `challenge_start` refuses a list of actions.
+//
+// P6b adds `actions` to `run` (docs/design/lab_ui.md section 22): the plant's actions that name a unit or an analyzer, applied to every seed. The list is checked before the run is queued (the shape, the kind, a kind
+// Results does not carry, the bounds), so a refusal arrives at once with its reason and index; the footer of the result repeats the list. With none, or an empty list, the run is what it was.
 //
 // createWorker holds the whole protocol and touches no global, so the unit tests drive it directly. The entry at the bottom wires it to postMessage when this file runs as a Worker.
 
@@ -82,13 +86,14 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     post({ type: "check", ...check });
   };
 
-  const footerOf = (spec: RunSpec, inputs: ResultFooter["inputs"]): ResultFooter => ({
+  const footerOf = (spec: RunSpec, inputs: ResultFooter["inputs"], actions: readonly Action[] = []): ResultFooter => ({
     kind: "simulation_result",
     scenario: spec.scenario,
     seeds: spec.seeds,
     engine_version: ready.engine_version,
     architectures: spec.architectures,
     inputs,
+    ...(actions.length > 0 && { actions: canonicalActions(actions).map((n) => n.action) }),
     ...(spec.bay_profiles && { bay_profiles: spec.bay_profiles }),
     ...(spec.analyzer_profiles && { analyzer_profiles: spec.analyzer_profiles }),
     ...(spec.capture_path && { capture_path: spec.capture_path }),
@@ -96,7 +101,7 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
   });
 
   /** One run, from the queue: the Home form (no architecture) or the full run, seed by seed. */
-  const answer = async (id: number, spec: RunSpec): Promise<void> => {
+  const answer = async (id: number, spec: RunSpec, actions: readonly Action[]): Promise<void> => {
     try {
       if (cancelled.has(id)) return fail(id, "cancelled", "the run was cancelled before it started");
       if (spec.architectures.length === 0) {
@@ -104,9 +109,9 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
         if (!out.ok) return fail(id, "invalid_spec", out.message);
         return post({ type: "result", id, summary: out.summary, footer: footerOf(spec, []) });
       }
-      const out = await runLab(env.data, spec, { onProgress: (done, total) => post({ type: "progress", id, done, total }), isCancelled: () => cancelled.has(id) });
+      const out = await runLab(env.data, spec, { onProgress: (done, total) => post({ type: "progress", id, done, total }), isCancelled: () => cancelled.has(id) }, actions);
       if (!out.ok) return fail(id, "cancelled", `the run was cancelled after ${out.done} of ${spec.seeds.length} seeds`);
-      post({ type: "result", id, report: out.report, utilisation: out.utilisation, footer: footerOf(spec, out.inputs) });
+      post({ type: "result", id, report: out.report, utilisation: out.utilisation, footer: footerOf(spec, out.inputs, actions) });
     } catch (e) {
       fail(id, "engine_error", e instanceof Error ? e.message : String(e));
     } finally {
@@ -116,14 +121,25 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     }
   };
 
-  const run = (id: number, raw: unknown): Promise<void> | void => {
+  const run = (id: number, raw: unknown, given: unknown): Promise<void> | void => {
     const checked = checkRunSpec(raw, env.data);
     if (!checked.ok) return fail(id, "invalid_spec", checked.message);
+    // the plant's actions (P6b): checked here, before the run is queued; absent is no list, and null or anything but a list is a malformed one
+    let actions: Action[] = [];
+    if (given !== undefined) {
+      try {
+        const listed = checkRunActions(env.data, checked.spec, given);
+        if (!listed.ok) return refuse(id, listed);
+        actions = listed.actions;
+      } catch (e) {
+        return fail(id, "engine_error", e instanceof Error ? e.message : String(e));
+      }
+    }
     open.add(id);
     // a run asked for when none is unfinished starts at once (so one asked for while the check is pending is answered with `pending`); a later one waits for the one before it
     const idle = unfinished === 0;
     unfinished += 1;
-    const mine = idle ? answer(id, checked.spec) : last.then(() => answer(id, checked.spec));
+    const mine = idle ? answer(id, checked.spec, actions) : last.then(() => answer(id, checked.spec, actions));
     last = mine;
     return mine;
   };
@@ -241,9 +257,9 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
 
   const onMessage = (message: unknown): Promise<void> | void => {
     if (typeof message !== "object" || message === null || Array.isArray(message)) return fail(null, "invalid_spec", "a request must be an object with a type");
-    const { type, id, spec } = message as { type?: unknown; id?: unknown; spec?: unknown };
+    const { type, id, spec, actions } = message as { type?: unknown; id?: unknown; spec?: unknown; actions?: unknown };
     const requestId = typeof id === "number" ? id : null;
-    if (type === "run" && requestId !== null) return run(requestId, spec);
+    if (type === "run" && requestId !== null) return run(requestId, spec, actions);
     if (type === "run") return fail(null, "invalid_spec", "a run request needs a numeric id");
     if (type === "cancel" && requestId !== null) {
       // a cancel for a run that is not queued or running has nothing to stop

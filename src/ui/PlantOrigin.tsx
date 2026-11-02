@@ -1,3 +1,4 @@
+import { resultsKept } from "../plant/action_list.ts";
 import { backLink } from "../plant/drill.ts";
 import { sameSpec } from "../plant/link.ts";
 import { OriginBar } from "../plant/OriginBar.tsx";
@@ -19,6 +20,7 @@ export function PlantOrigin({ origin, plant, engine, screen }: { origin: Origin;
       scenario={spec.run.scenario}
       seed={spec.seed}
       actions={spec.actions.length}
+      carried={resultsKept(spec.actions).length}
       t={t}
       backHref={backLink(spec, engine, t)}
       results={screen === "setup" || screen === "results"}

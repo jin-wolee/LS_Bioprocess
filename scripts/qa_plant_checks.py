@@ -157,8 +157,10 @@ def check_plant_fallback(pw, url, out: Path) -> Result:
             if page.query_selector("#plant") is not None:
                 problems.append("the plant host exists without WebGL")
             rows = page.evaluate("Object.fromEntries([...document.querySelectorAll('[data-plant-table]')].map(t => [t.dataset.plantTable, t.querySelectorAll('tbody tr').length]))")
-            # the sampling boards list the samples planned for the day of the clock, and nothing is planned on day 0 (the first draws are the day after an inoculation): the table is there with no row
-            if rows != {"reactors": DEFAULT_OBJECTS["reactor"], "analyzers": DEFAULT_OBJECTS["analyzer"], "halls": DEFAULT_OBJECTS["hall"], "boards": 0}:
+            # the sampling boards list the samples planned for the day of the clock, and nothing is planned on day 0 (the first draws are the day after an inoculation): the table is there with no row;
+            # the flags board (P6b) has a row for each flag of the build
+            flags = page.evaluate("document.getElementById('main').dataset.flags.split(',').length")
+            if rows != {"reactors": DEFAULT_OBJECTS["reactor"], "analyzers": DEFAULT_OBJECTS["analyzer"], "halls": DEFAULT_OBJECTS["hall"], "boards": 0, "flags": flags}:
                 problems.append(f"the text alternative holds the rows {rows}")
             listed = page.evaluate(LIST_JS)
             if listed != DEFAULT_OBJECTS:

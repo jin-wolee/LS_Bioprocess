@@ -28,6 +28,8 @@ export interface SceneHandlers {
   object(picked: Picked): void;
   /** The camera stopped following. */
   followEnd(): void;
+  /** A click on a cell of the flags board: the index into the halls of the layout and the flag (P6b). */
+  cell(hall: number, flag: string): void;
   /** A new scene is being made: whatever was picked or followed belongs to the old one. */
   reset(): void;
 }
@@ -42,13 +44,15 @@ export interface SceneInput {
   lens: string;
   picked: Picked | null;
   following: number | null;
+  /** The flags of `ready`: the rows of the flags board (P6b). */
+  flags: readonly string[];
   /** The placeholders of the halls while the truth overlay is on and has been answered. */
   absences: HallsTruth | null | undefined;
   lang: Lang;
   handlers: SceneHandlers;
 }
 
-export function useScene({ host, webgl, plan, layout, playback, halls, lens, picked, following, absences, lang, handlers }: SceneInput): { scene: SceneStatus; renderer: string | null; mounted: RefObject<Scene | null> } {
+export function useScene({ host, webgl, plan, layout, playback, halls, lens, picked, following, flags, absences, lang, handlers }: SceneInput): { scene: SceneStatus; renderer: string | null; mounted: RefObject<Scene | null> } {
   const mounted = useRef<Scene | null>(null);
   const [scene, setScene] = useState<SceneStatus>({ kind: webgl ? "loading" : "none" });
   const [renderer, setRenderer] = useState<string | null>(null);
@@ -56,6 +60,8 @@ export function useScene({ host, webgl, plan, layout, playback, halls, lens, pic
   lensRef.current = lens;
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
+  const flagsRef = useRef(flags);
+  flagsRef.current = flags;
 
   useEffect(() => {
     const target = host.current;
@@ -68,10 +74,11 @@ export function useScene({ host, webgl, plan, layout, playback, halls, lens, pic
       .then(({ mountScene }) => {
         if (!live) return;
         made = mountScene({
-          host: target, layout, plan, tier: tierOf(), playback, reducedMotion: reducedMotion(), lens: lensRef.current,
+          host: target, layout, plan, tier: tierOf(), playback, reducedMotion: reducedMotion(), lens: lensRef.current, flags: flagsRef.current,
           // a click on a card opens its record, and the lens goes to the hall the card is in; a click on an object opens its panel
           onPick: (architecture, sample) => handlersRef.current.card(architecture, sample),
           onPickObject: (p) => handlersRef.current.object(p),
+          onPickCell: (hall, flag) => handlersRef.current.cell(hall, flag),
           onFollowEnd: () => handlersRef.current.followEnd(),
         });
         mounted.current = made;

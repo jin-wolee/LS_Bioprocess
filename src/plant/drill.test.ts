@@ -25,9 +25,9 @@ describe("the links", () => {
     expect(lineageLink(ctx(), "U03-D03-1")).toBe(`#/lineage?from=plant&sample=U03-D03-1&plant=${DEFAULT_PLANT_VALUE}`);
   });
 
-  it("Given the card of a hall Then Setup is opened with the Setup link of the plant's run, over that hall, and the plant", () => {
+  it("Given the card of a hall Then Setup is opened with the Setup link of the plant's run, over that hall, with the plant's unit and analyzer actions (P6b), and the plant", () => {
     const setup = setupLink(ctx(small), ["c_context"]);
-    expect(setup.startsWith("#/setup?scenario=small&set.bay_size=6&set.reactor_count=6&bays=pilot&arch=c_context&capture=adapter_ingest&schema=1&engine=9.9.9&from=plant&plant=")).toBe(true);
+    expect(setup.startsWith("#/setup?scenario=small&set.bay_size=6&set.reactor_count=6&bays=pilot&arch=c_context&capture=adapter_ingest&actions=%5B%7B%22kind%22%3A%22add_feed%22,%22at%22%3A291600,%22unit_id%22%3A%22U03%22%7D%5D&schema=1&engine=9.9.9&from=plant&plant=")).toBe(true);
     expect(setup).not.toContain("focus=");
   });
 

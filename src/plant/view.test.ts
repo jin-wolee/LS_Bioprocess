@@ -97,10 +97,10 @@ describe("the one predicate of a shift", () => {
 });
 
 describe("the objects of interest", () => {
-  it("Given the plan Then the list is the three reactors, the two analyzers, the three operators, the two halls and the sampling board of the one bay, in that order, each with a key (P5b: the staff are in the list; P6a: a board for each bay)", () => {
+  it("Given the plan Then the list is the three reactors, the two analyzers, the three operators, the two halls, the sampling board of the one bay and the flags board, in that order, each with a key (P5b: the staff are in the list; P6a: a board for each bay; P6b: the flags board)", () => {
     const objects = objectsOf(plan);
-    expect(objects.map((o) => o.key)).toEqual(["reactor:U01", "reactor:U02", "reactor:U03", "analyzer:AN-1", "analyzer:AN-2", "staff:OP-01", "staff:OP-02", "staff:OP-03", "hall:a_manual", "hall:b_lims_lite", "board:B1"]);
-    expect(countsOf(objects)).toEqual({ reactor: 3, analyzer: 2, staff: 3, hall: 2, board: 1 });
+    expect(objects.map((o) => o.key)).toEqual(["reactor:U01", "reactor:U02", "reactor:U03", "analyzer:AN-1", "analyzer:AN-2", "staff:OP-01", "staff:OP-02", "staff:OP-03", "hall:a_manual", "hall:b_lims_lite", "board:B1", "flags:board"]);
+    expect(countsOf(objects)).toEqual({ reactor: 3, analyzer: 2, staff: 3, hall: 2, board: 1, flags: 1 });
   });
 
   it("Given a plan whose second hall has not arrived yet (the halls come after plant_ready) Then the list still has the hall of every architecture of the layout, so the floor and the list agree from the first answer", () => {
@@ -121,7 +121,7 @@ describe("the plan and the layout agree (the real plan of the small default scen
     for (const [i, u] of real.units.entries()) expect([l.vessels[i]?.bay, l.vessels[i]?.slot]).toEqual([u.bay - 1, u.slot]);
     expect(l.analyzers.map((a) => a.group)).toEqual(real.analyzers.map((a) => a.group));
     expect(l.halls.map((h) => h.architecture)).toEqual(real.records.map((r) => r.architecture));
-    expect(countsOf(objectsOf(real))).toEqual({ reactor: 6, analyzer: 2, staff: 4, hall: 3, board: 1 });
+    expect(countsOf(objectsOf(real))).toEqual({ reactor: 6, analyzer: 2, staff: 4, hall: 3, board: 1, flags: 1 });
     // at the start of the plan: nobody before 08:00 of day 0; two operators from it (A098), one reactor inoculated (U01 at 28800 s)
     expect(startInstant(real)).toBe(28800);
     expect(onDuty(real, startInstant(real))).toEqual(["OP-01", "OP-02"]);

@@ -1,5 +1,6 @@
 import { rangeOf } from "../ledger.ts";
-import type { CapturePath, RunSpec } from "../protocol.ts";
+import { resultsKept } from "../plant/action_list.ts";
+import type { CapturePath, PlantAction, Request, RunSpec } from "../protocol.ts";
 import type { ReadyInfo } from "./state.ts";
 
 // The Setup form (docs/design/lab_ui.md sections 3 and 4). What the reader typed or picked is kept as text where it is a number, so that a half-typed value is not lost; the form becomes a
@@ -21,6 +22,8 @@ export interface Form {
   capture: "" | CapturePath;
   /** Whole numbers separated by commas or spaces, as typed. */
   seeds: string;
+  /** The plant's unit and analyzer actions that a Setup opened from the plant carries (docs/design/lab_ui.md section 22), applied to every seed; empty when the screen was not opened from the plant. */
+  actions: PlantAction[];
 }
 
 /** The settings of the scenario that the three counts of the form are (the names its files use). */
@@ -66,6 +69,7 @@ export const defaultForm = (ready: ReadyInfo, scenarioId: string, previous?: For
     ablation: previous?.ablation ?? "",
     capture: previous?.capture ?? "",
     seeds: previous?.seeds ?? ready.seed_list.slice(0, ready.min_seeds).join(", "),
+    actions: previous?.actions ?? [],
   };
 };
 
@@ -115,12 +119,18 @@ export const specOf = (form: Form, ready: ReadyInfo): SpecOut => {
   };
 };
 
+/** The `run` request of a form: its spec and, when the plant's actions are carried, the actions beside it; with none the request has no `actions` (Setup opened without the plant is as before). */
+export const runRequest = (form: Form, ready: ReadyInfo, id: number): Extract<Request, { type: "run" }> | null => {
+  const out = specOf(form, ready);
+  return out.ok ? { type: "run", id, spec: out.spec, ...(form.actions.length > 0 && { actions: form.actions }) } : null;
+};
+
 // ---- the link: `#/setup?<query>` holds the setup and never a result (lab_ui.md section 4, rule 5) ----
 
 const encode = (value: string): string => encodeURIComponent(value).replaceAll("%2C", ",");
 const commas = (text: string): string => text.split(/[\s,]+/).filter((t) => t !== "").join(",");
 
-/** The query of a form: the scenario, the counts that differ from it, the lists that differ, the architectures, the capture path, the seeds, the schema and the engine version. */
+/** The query of a form: the scenario, the counts that differ from it, the lists that differ, the architectures, the capture path, the plant's actions, the seeds, the schema and the engine version. */
 export const toQuery = (form: Form, ready: ReadyInfo): string => {
   const d = profileDefaults(ready, form.scenario);
   const pairs: [string, string][] = [["scenario", form.scenario]];
@@ -131,8 +141,20 @@ export const toQuery = (form: Form, ready: ReadyInfo): string => {
   if (form.analyzers.some((a) => a !== d.analyzer)) pairs.push(["analyzers", form.analyzers.join(",")]);
   pairs.push(["arch", [...ready.presets.filter((p) => p.role === "preset" && form.archs.includes(p.id)).map((p) => p.id), ...(form.ablation ? [form.ablation] : [])].join(",")]);
   if (form.capture !== "") pairs.push(["capture", form.capture]);
+  if (form.actions.length > 0) pairs.push(["actions", JSON.stringify(form.actions)]);
   pairs.push(["seeds", commas(form.seeds)], ["schema", "1"], ["engine", ready.engine_version]);
   return pairs.map(([k, v]) => `${k}=${encode(v)}`).join("&");
+};
+
+/** The actions a link carries: the JSON of a list, of which the page keeps the kinds Results carries (its own copy of the filter) and the Worker checks the rest; anything else is none. */
+const actionsOf = (carried: string | null): PlantAction[] => {
+  try {
+    const parsed: unknown = carried === null ? [] : JSON.parse(carried);
+    const objects = Array.isArray(parsed) ? parsed.filter((x): x is PlantAction => typeof x === "object" && x !== null && !Array.isArray(x) && typeof (x as { kind?: unknown }).kind === "string") : [];
+    return resultsKept(objects);
+  } catch {
+    return [];
+  }
 };
 
 /** The form a link describes, and the engine version it was made with. A key, scenario, architecture or capture path the page does not know is ignored: a link is user input. */
@@ -161,6 +183,7 @@ export const fromQuery = (query: string, ready: ReadyInfo): { form: Form; engine
   if (capture) form = { ...form, capture };
   const seeds = q.get("seeds");
   if (seeds !== null) form = { ...form, seeds: seeds.split(/[\s,]+/).filter((t) => t !== "").join(", ") };
+  form = { ...form, actions: actionsOf(q.get("actions")) };
   return { form, engine: q.get("engine") };
 };
 

@@ -64,7 +64,7 @@ def check_plant_halls(browser, url, out: Path) -> Result:
 
 def open_by_keyboard(page, problems: list[str], words: dict, label: str) -> tuple[str, str] | None:
     """From the last object of the list, Tab reaches the first card of the lens hall's list and Enter opens its record, with the focus in the panel; returns (architecture, sample)."""
-    page.focus("#plant-objects ul[data-object-list=board] li:last-child button")  # the last group of the list since P6a is the sampling boards
+    page.evaluate("() => { const b = [...document.querySelectorAll('#plant-objects button')]; b[b.length - 1].focus(); }")  # the last button of the list: since P6b the cells of the flags board
     page.keyboard.press("Tab")
     focused = page.evaluate("() => { const e = document.activeElement; return e && e.dataset && e.dataset.cardSample ? [e.dataset.cardArchitecture, e.dataset.cardSample, e.innerText] : null; }")
     if focused is None:

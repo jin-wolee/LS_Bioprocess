@@ -2,17 +2,19 @@ import { Label, T } from "../ui/T.tsx";
 import { clockOf } from "./view.ts";
 
 // The bar at the head of a screen that was opened from the plant (docs/design/plant_ui.md section 7, "As built in P5c"): which run it came from, the link back to the plant at the instant the reader left, and,
-// on Setup and Results, that Results over many seeds carries no plant action in this version. Shown on Lineage, Setup, Results and Notes until the reader enters the plant or Home.
+// on Setup and Results, which plant actions Results over many seeds carries (P6b: the ones that name a unit or an analyzer) and how many of this plant's. Shown on Lineage, Setup, Results and Notes until the reader enters the plant or Home.
 
-export function OriginBar({ scenario, seed, actions, t, backHref, results, utilisation }: {
+export function OriginBar({ scenario, seed, actions, carried, t, backHref, results, utilisation }: {
   scenario: string;
   seed: number;
   /** How many operator actions the plant had. */
   actions: number;
+  /** How many of them Results carries: the ones that name a unit or an analyzer (P6b). */
+  carried: number;
   /** The instant the reader left the plant at, or null when it is not known. */
   t: number | null;
   backHref: string;
-  /** The screen is Setup or Results: say that Results carries no plant action. */
+  /** The screen is Setup or Results: say which plant actions Results carries. */
   results: boolean;
   /** The reader came for the utilisation block of Results. */
   utilisation: boolean;
@@ -32,7 +34,7 @@ export function OriginBar({ scenario, seed, actions, t, backHref, results, utili
           <T k="plant.origin.back" />
         </a>
       </p>
-      {results && <T as="p" k="plant.origin.results" data-note="origin-results" />}
+      {results && <T as="p" k="plant.origin.results" data-note="origin-results" parts={{ carried: <Label>{carried}</Label>, actions: <Label>{actions}</Label> }} />}
       {results && utilisation && <T as="p" k="plant.origin.utilisation" data-note="origin-utilisation" />}
     </aside>
   );

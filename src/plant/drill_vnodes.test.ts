@@ -22,7 +22,7 @@ const marked = (nodes: VNode[], attribute: string): string[] => nodes.filter((n)
 const keys = (nodes: VNode[]): string[] => nodes.filter((n) => typeof n.props.k === "string").map((n) => n.props.k as string);
 
 const bar = (extra: Partial<Parameters<typeof OriginBar>[0]> = {}) =>
-  walk(OriginBar({ scenario: "default", seed: 1, actions: 0, t: 305626, backHref: "#/plant?scenario=default&t=305626", results: false, utilisation: false, ...extra }));
+  walk(OriginBar({ scenario: "default", seed: 1, actions: 0, carried: 0, t: 305626, backHref: "#/plant?scenario=default&t=305626", results: false, utilisation: false, ...extra }));
 
 describe("the bar of a screen opened from the plant", () => {
   it("Given Lineage or Notes Then it names the run, links back to the plant, and says nothing about Results", () => {
@@ -32,8 +32,13 @@ describe("the bar of a screen opened from the plant", () => {
     expect(marked(nodes, "data-note")).toEqual([]);
   });
 
-  it("Given Setup or Results Then it says that Results carries no plant action in this version", () => {
-    expect(marked(bar({ results: true }), "data-note")).toEqual(["origin-results"]);
+  it("Given Setup or Results Then it says which plant actions Results carries (the kinds) and how many of this plant's actions that is, and no longer that it carries none", () => {
+    const nodes = bar({ results: true, actions: 3, carried: 2 });
+    expect(marked(nodes, "data-note")).toEqual(["origin-results"]);
+    const note = nodes.find((n) => n.props["data-note"] === "origin-results");
+    expect(note?.props.k).toBe("plant.origin.results");
+    const parts = note?.props.parts as Record<string, VNode>;
+    expect([parts.carried?.props.children, parts.actions?.props.children]).toEqual([2, 3]);
   });
 
   it("Given the reader came for the utilisation block Then Setup also says where it is", () => {

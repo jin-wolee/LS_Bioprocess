@@ -83,31 +83,32 @@ describe("what a form starts with", () => {
   ];
   plan.layout = { ...plan.layout, architectures: ["a_manual", "b_lims_lite", "c_context"] };
   const FLAGS = ["audit_trail", "available_at"];
+  const halls = ["a_manual", "b_lims_lite", "c_context"]; // the records of the spec: no flag has been switched, so the plan shows them by these ids
   const at = 291600; // day 3 09:00
 
   it("Given a picked reactor Then a feed or an alarm starts on it; with none picked it starts on the first reactor", () => {
-    expect(initialFields("add_feed", { plan, flags: FLAGS, picked: { kind: "reactor", index: 1 }, at })).toEqual({ unit: "U02" });
-    expect(initialFields("raise_alarm", { plan, flags: FLAGS, picked: { kind: "reactor", index: 1 }, at })).toEqual({ unit: "U02" });
-    expect(initialFields("add_feed", { plan, flags: FLAGS, picked: null, at })).toEqual({ unit: "U01" });
-    expect(initialFields("add_feed", { plan, flags: FLAGS, picked: { kind: "analyzer", index: 0 }, at })).toEqual({ unit: "U01" });
+    expect(initialFields("add_feed", { plan, flags: FLAGS, halls, picked: { kind: "reactor", index: 1 }, at })).toEqual({ unit: "U02" });
+    expect(initialFields("raise_alarm", { plan, flags: FLAGS, halls, picked: { kind: "reactor", index: 1 }, at })).toEqual({ unit: "U02" });
+    expect(initialFields("add_feed", { plan, flags: FLAGS, halls, picked: null, at })).toEqual({ unit: "U01" });
+    expect(initialFields("add_feed", { plan, flags: FLAGS, halls, picked: { kind: "analyzer", index: 0 }, at })).toEqual({ unit: "U01" });
   });
 
   it("Given a picked analyzer Then a window or a lot change starts on it and on the clock's day and time; no length is invented", () => {
-    expect(initialFields("analyzer_down", { plan, flags: FLAGS, picked: { kind: "analyzer", index: 1 }, at })).toEqual({ analyzer: "AN-2", day: "3", time: "09:00", length: "" });
-    expect(initialFields("change_lot", { plan, flags: FLAGS, picked: null, at })).toEqual({ analyzer: "AN-1", day: "3", time: "09:00" });
+    expect(initialFields("analyzer_down", { plan, flags: FLAGS, halls, picked: { kind: "analyzer", index: 1 }, at })).toEqual({ analyzer: "AN-2", day: "3", time: "09:00", length: "" });
+    expect(initialFields("change_lot", { plan, flags: FLAGS, halls, picked: null, at })).toEqual({ analyzer: "AN-1", day: "3", time: "09:00" });
   });
 
   it("Given a flag form Then it starts on the first hall and the first flag and switches the flag to the opposite of what the hall has", () => {
-    expect(initialFields("set_flag", { plan, flags: FLAGS, picked: null, at })).toEqual({ architecture: "a_manual", flag: "audit_trail", on: "false" });
-    expect(flagOnFor(plan, "a_manual", "audit_trail")).toBe("false"); // on in A: switching means off
-    expect(flagOnFor(plan, "a_manual", "available_at")).toBe("true"); // off in A: switching means on
-    expect(flagOnFor(plan, "b_lims_lite", "audit_trail")).toBe("true");
-    expect(flagOnFor(plan, "c_context", "audit_trail")).toBe("true"); // the record of C has not arrived: the form offers on
+    expect(initialFields("set_flag", { plan, flags: FLAGS, halls, picked: null, at })).toEqual({ architecture: "a_manual", flag: "audit_trail", on: "false" });
+    expect(flagOnFor(plan, halls, "a_manual", "audit_trail")).toBe("false"); // on in A: switching means off
+    expect(flagOnFor(plan, halls, "a_manual", "available_at")).toBe("true"); // off in A: switching means on
+    expect(flagOnFor(plan, halls, "b_lims_lite", "audit_trail")).toBe("true");
+    expect(flagOnFor(plan, halls, "c_context", "audit_trail")).toBe("true"); // the record of C has not arrived: the form offers on
   });
 
   it("Given the other forms Then the capture path and the labelling start on their first choice and a move starts empty", () => {
-    expect(initialFields("set_capture_path", { plan, flags: FLAGS, picked: null, at })).toEqual({ path: "manual_transcription" });
-    expect(initialFields("set_labelling", { plan, flags: FLAGS, picked: null, at })).toEqual({ method: "handwritten" });
-    expect(initialFields("move_draw", { plan, flags: FLAGS, picked: null, at })).toEqual({});
+    expect(initialFields("set_capture_path", { plan, flags: FLAGS, halls, picked: null, at })).toEqual({ path: "manual_transcription" });
+    expect(initialFields("set_labelling", { plan, flags: FLAGS, halls, picked: null, at })).toEqual({ method: "handwritten" });
+    expect(initialFields("move_draw", { plan, flags: FLAGS, halls, picked: null, at })).toEqual({});
   });
 });

@@ -83,6 +83,7 @@ export const enBase = {
   "error.cancelled": "The run was stopped between two seeds:",
   "error.locked": "The request was refused because this run is an open challenge:",
   "error.heading.cancelled": "The run was cancelled",
+  "error.heading.refused": "The run was not started",
 
   "grade.S": "sourced",
   "grade.P": "proxy",

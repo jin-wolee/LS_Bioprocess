@@ -24,7 +24,8 @@ export interface RunSpec {
 
 /** page -> Worker */
 export type Request =
-  | { type: "run"; id: number; spec: RunSpec }
+  // `actions` (P6b, lab_ui.md section 22): the plant's actions that name a unit or an analyzer, applied to every seed; absent or empty, the run is as before
+  | { type: "run"; id: number; spec: RunSpec; actions?: PlantAction[] }
   | { type: "cancel"; id: number }
   // `actions` (P5c, plant_ui.md section 6, rule 9): the operator actions of the plant the view was opened from; absent or empty, the answer is as before
   | { type: "lineage"; id: number; spec: RunSpec; seed: number; pick: { rule: "sc3" } | { sample_id: string }; actions?: PlantAction[] }
@@ -188,6 +189,8 @@ export interface ResultFooter {
   architectures: string[];
   /** The inputs the result used: the inputs of the metrics, the settings the reader changed, the zone of the raw layer when a capture path is named. */
   inputs: RefValue[];
+  /** The operator actions the run used, in the canonical order (P6b); absent when there were none. */
+  actions?: PlantAction[];
   bay_profiles?: string[];
   analyzer_profiles?: string[];
   capture_path?: CapturePath;

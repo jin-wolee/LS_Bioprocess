@@ -4,6 +4,7 @@ restore. No browser here, so pytest runs them (tests/test_qa_plant_drill.py); th
 from __future__ import annotations
 
 import json
+import re
 from urllib.parse import parse_qs, quote
 
 # The keys of the plant link of the default plant, in the order the page writes them (docs/design/plant_ui.md section 7).
@@ -90,3 +91,56 @@ def back_problems(before, after, runs_before: int, runs_after: int) -> list[str]
     if after["epoch"] != before["epoch"]:
         problems.append(f"Back changed the epoch of the plan on screen from {before['epoch']} to {after['epoch']}")
     return problems
+
+
+# ---- Results from the plant (P6b, docs/design/lab_ui.md section 22) -------------------------------------------------------------------------------------------------------------------------------
+
+
+def run_problems(sent, kinds: list[str] | None, seeds: list[int]) -> list[str]:
+    """The last `run` request the page sent (`window.__plantSent`, with the kinds of its actions and its seeds): for those seeds and, from the plant, carrying exactly these kinds of action in this order; from a
+    Setup opened without the plant (`kinds` None) carrying no `actions` field at all."""
+    asked = [m for m in sent if m["type"] == "run"]
+    if not asked:
+        return ["the page sent no run request"]
+    last = asked[-1]
+    problems = []
+    if last.get("seeds") != seeds:
+        problems.append(f"the last run request is for the seeds {last.get('seeds')}, expected {seeds}")
+    if kinds is None:
+        if last.get("kinds") is not None:
+            problems.append(f"the last run request carries the actions {last['kinds']}, expected none (the field is absent)")
+    elif last.get("kinds") != kinds:
+        problems.append(f"the last run request carries the actions {last.get('kinds')}, expected {kinds}")
+    return problems
+
+
+def results_inputs_problems(printed: list[dict], want: list[tuple[str, str | None]]) -> list[str]:
+    """The actions printed among the inputs of Results: each (name, ledger entry) is there, with that entry; an entry of None only has to be an id of a ledger (a letter and three digits)."""
+    problems = []
+    for name, ref in want:
+        found = next((p for p in printed if p["name"] == name), None)
+        if found is None:
+            problems.append(f"the inputs of Results do not list {name}" + (f" ({ref})" if ref else ""))
+        elif ref is not None and found["ref"] != ref:
+            problems.append(f"the input {name} carries {found['ref']}, expected {ref}")
+        elif ref is None and not re.fullmatch(r"[AS]\d{3}", found["ref"]):
+            problems.append(f"the input {name} carries {found['ref']!r}, which is no ledger id")
+    return problems
+
+
+def setup_lists_problems(kept: list[str], left: list[str], want_kept: list[str], want_left: list[str]) -> list[str]:
+    """What Setup opened from the plant holds: the kinds it carries and the kinds it left out, each in the order of the plant's list."""
+    problems = []
+    if kept != want_kept:
+        problems.append(f"Setup carries the actions {kept}, expected {want_kept}")
+    if left != want_left:
+        problems.append(f"Setup leaves out {left}, expected {want_left}")
+    return problems
+
+
+def late_sample(plan: dict, day: int, from_h: int, to_h: int) -> tuple[str, int] | None:
+    """A sample whose draw a reader can move on a day of the run: the first one planned from `from_h` to `to_h` o'clock that is not skipped, and the instant fifteen minutes after it (a whole minute); None without one."""
+    for s in plan["samples"]:
+        if not s["skipped"] and day * 86400 + from_h * 3600 <= s["planned_s"] < day * 86400 + to_h * 3600:
+            return s["id"], s["planned_s"] // 60 * 60 + 900
+    return None

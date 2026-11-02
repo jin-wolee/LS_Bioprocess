@@ -67,5 +67,13 @@ export const koSetup: Record<keyof typeof enSetup, string> = {
   "setup.link.heading": "이 설정의 링크",
   "setup.link.lead": "링크에는 설정만 들어 있고 결과는 들어 있지 않습니다. 링크를 열면 이 폼이 채워지며, 결과를 보려면 실행을 누르세요.",
   "setup.link.label": "링크",
+  "setup.actions.heading": "공장에서 가져온 조작, 모든 시드에 적용",
+  "setup.actions.lead": "공장에서 열 때 함께 온 운영자 조작입니다. 모두 리액터나 분석기를 가리키므로 어느 시드에서나 같은 뜻이며, 실행은 이 조작 전부를 모든 시드에 적용합니다. 각 시각은 가정 입력입니다. 기본 시나리오 그대로 실행하려면 모두 빼세요.",
+  "setup.actions.drop": "이 조작 모두 빼기",
+  "setup.actions.left_heading": "이 설정에서 뺀 조작",
+  "setup.actions.left_lead": "공장에는 이 조작도 있었습니다. 여러 시드에 걸친 결과는 이것을 싣지 않습니다.",
+  "setup.actions.why.draw": "시료 뽑기는 한 시드의 시료를 가리키므로 다른 시드에서는 뜻이 없습니다.",
+  "setup.actions.why.lab_setting": "실험실 설정은 이 화면의 아래 폼에서 직접 고르는 항목입니다.",
+
   "setup.link.engine": "이 링크는 엔진 버전 {made}(으)로 만들어졌고, 이 페이지는 엔진 버전 {current}을(를) 실행합니다. 실행은 현재 엔진으로 진행됩니다.",
 };

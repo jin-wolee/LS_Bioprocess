@@ -8,6 +8,7 @@ import { CAPTURE_PATHS, LABEL_METHODS, actionOf, flagOnFor, instantOf } from "./
 import type { ActionKind, Fields } from "./act_form.ts";
 import { boardsAt } from "./board.ts";
 import { isLabKind } from "./action_list.ts";
+import { hallOf } from "./flags_board.ts";
 import type { ActRefusal } from "./plant_state.ts";
 import { Refusal } from "./Refusal.tsx";
 import { clockOf } from "./view.ts";
@@ -23,11 +24,11 @@ const Field = ({ label, children }: { label: Key; children: ComponentChildren })
 );
 
 /** A select over ids: the value is the id. */
-const Choice = ({ name, value, options, onChange, words }: { name: string; value: string | undefined; options: readonly string[]; onChange: (v: string) => void; words?: (v: string) => ComponentChildren }) => (
+const Choice = ({ name, value, options, onChange, words, shown }: { name: string; value: string | undefined; options: readonly string[]; onChange: (v: string) => void; words?: (v: string) => ComponentChildren; shown?: (v: string) => string }) => (
   <select name={name} value={value ?? ""} onChange={(e) => onChange(e.currentTarget.value)}>
     {options.map((o) => (
       <option key={o} value={o} {...(!words && { "data-label": "" })}>
-        {words ? words(o) : o}
+        {words ? words(o) : (shown?.(o) ?? o)}
       </option>
     ))}
   </select>
@@ -37,6 +38,8 @@ export interface FormProps {
   kind: ActionKind;
   plan: ScenePlan;
   flags: readonly string[];
+  /** The records of the spec, which a `set_flag` names (the plan may show one by a derived id). */
+  halls: readonly string[];
   fields: Fields;
   /** The instant the action acts at: the clock reading rounded up to the whole minute. */
   at: number;
@@ -71,7 +74,7 @@ function Chosen({ label, f, set }: { label: "plant.act.field.from" | "plant.act.
 }
 
 export function ActionForm(p: FormProps) {
-  const { kind, plan, flags, fields: f, set } = p;
+  const { kind, plan, flags, halls, fields: f, set } = p;
   const unitIds = plan.units.map((u) => u.id);
   const analyzerIds = plan.analyzers.map((a) => a.id);
   const complete = actionOf(kind, f, p.at, plan) !== null;
@@ -134,12 +137,13 @@ export function ActionForm(p: FormProps) {
                   <Choice
                     name="architecture"
                     value={f.architecture}
-                    options={plan.layout.architectures}
-                    onChange={(architecture) => set({ architecture, on: flagOnFor(plan, architecture, f.flag ?? "") })}
+                    options={halls}
+                    shown={(id) => hallOf(plan, halls, id)}
+                    onChange={(architecture) => set({ architecture, on: flagOnFor(plan, halls, architecture, f.flag ?? "") })}
                   />
                 </Field>
                 <Field label="plant.act.field.flag">
-                  <Choice name="flag" value={f.flag} options={flags} onChange={(flag) => set({ flag, on: flagOnFor(plan, f.architecture ?? "", flag) })} />
+                  <Choice name="flag" value={f.flag} options={flags} onChange={(flag) => set({ flag, on: flagOnFor(plan, halls, f.architecture ?? "", flag) })} />
                 </Field>
                 <Field label="plant.act.field.on">
                   <Choice name="on" value={f.on} options={["true", "false"]} onChange={(on) => set({ on })} words={(v) => p.word(v === "true" ? "plant.act.state.on" : "plant.act.state.off")} />

@@ -31,9 +31,11 @@ RECORD_PLANT_JS = """(() => {
   window.Worker = class extends Original {
     postMessage(data, ...rest) {
       // what the page asks of the Worker (the type, the epoch and the pick of a request: no data of a run), so that a check can see that nothing is asked before the reader presses the switch
-      // P5c: and, for a drill-down, the seed and the number of the plant's actions a request carries (`actions` is null when the field is absent), and the spec of a plant_run
+      // P5c: and, for a drill-down, the seed and the number of the plant's actions a request carries (`actions` is null when the field is absent), and the spec of a plant_run; P6b: the kinds of the actions of
+      // a request, in order (null when the field is absent), and the seeds of a run
       if (data && typeof data.type === 'string') window.__plantSent.push({at: performance.now(), type: data.type, epoch: data.epoch, pick: data.pick, seed: data.seed,
-        actions: Array.isArray(data.actions) ? data.actions.length : null,
+        actions: Array.isArray(data.actions) ? data.actions.length : null, kinds: Array.isArray(data.actions) ? data.actions.map((a) => a.kind) : null,
+        seeds: data.spec && Array.isArray(data.spec.seeds) ? data.spec.seeds : null,
         spec: data.spec && data.spec.run ? {scenario: data.spec.run.scenario, seed: data.spec.seed, actions: (data.spec.actions || []).length} : null});
       return super.postMessage(data, ...rest);
     }

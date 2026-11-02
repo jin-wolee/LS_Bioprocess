@@ -1,10 +1,10 @@
 """The check `drilldown` of the headless QA of the plant (docs/design/plant_ui.md section 10, P5c): the drill-downs from the plant to the S3 screens and Back. Given the plant paused at an instant with the lens
 on C, each row of section 7 that P5c builds opens its screen with the plant it came from and shows the same sample or architecture: the reactor, the sample and the card to Lineage (`data-sample` equals the
 sample, and the `lineage` request the page sent carries the plant's seed and its actions), the card and the analyzer to Setup filled with the plant's run (and, from the analyzer, Results scrolled to the
-utilisation block once a run has been made), the staff to Notes at the flag table; every bar says it came from the plant, Setup and Results say that Results carries no plant action; Back to the plant lands
+utilisation block once a run has been made), the staff to Notes at the flag table; every bar says it came from the plant, Setup and Results say which plant actions Results carries (P6b, below); Back to the plant lands
 on the same instant and lens, paused, on the same plan, and the Worker was sent no second `plant_run`. A plant link opened in a fresh page runs that spec and lands on its instant; with an action in it the
 Lineage opened from there carries the action; a link that is wrong in four ways falls back and says which. A challenge started on the run empties the lineage view and the overlay the page held. No console
-error. Screenshots of each screen reached, in English and in Korean, go to `drill/`. A check takes a browser and the URL of the served build and returns a Result; it never exits or prints.
+error. Screenshots of each screen reached, in English and in Korean, go to `drill/`. P6b: Results from the plant, with actions (qa_plant_drill_results.py). A check takes a browser and the URL of the served build and returns a Result; it never exits or prints.
 """
 from __future__ import annotations
 
@@ -79,7 +79,7 @@ def setup_over(page, architectures: list[str], problems: list[str], tag: str) ->
     if page.input_value("#scenario") != "default":
         problems.append(f"{tag}: Setup shows the scenario {page.input_value('#scenario')}, expected default")
     if page.query_selector("[data-note=origin-results]") is None:
-        problems.append(f"{tag}: Setup does not say that Results carries no plant action")
+        problems.append(f"{tag}: Setup does not say which plant actions Results carries")
 
 
 def shot(page, out: Path, name: str, top: bool = True) -> None:
@@ -169,7 +169,7 @@ def rows(page, out: Path, problems: list[str]) -> str:
     if top is None or not -2 <= top < 400:
         problems.append(f"analyzer: the utilisation block is {top} px from the top of the window after the run, expected it scrolled to")
     if page.query_selector("[data-note=origin-results]") is None:
-        problems.append("analyzer: Results does not say that it carries no plant action")
+        problems.append("analyzer: Results does not say which plant actions it carries")
     shot(page, out, "results", top=False)
     back(page, here, problems, "analyzer")
 
@@ -263,10 +263,12 @@ def check_drilldown(browser, url, out: Path) -> Result:
     problems: list[str] = []
     (out / "drill").mkdir(parents=True, exist_ok=True)
     back_href = ""
+    plan = None
     try:
         with open_plant(browser, url, PLANT_VIEWPORTS["1280"], init_script=RECORD_PLANT_JS) as (page, errors, _):
             wait_scene(page)
             pause(page)
+            plan = plan_from_messages(plant_messages(page), 1)
             back_href = rows(page, out, problems)
             challenge_empties(page, problems)
             problems += [f"console: {e[:140]}" for e in errors]
@@ -277,7 +279,16 @@ def check_drilldown(browser, url, out: Path) -> Result:
             fresh_links(browser, url, back_href, problems)
     except Exception as e:
         problems.append(f"links: {first_line(e)}")
+    try:
+        if back_href and plan:
+            # imported here: the module of Results from the plant takes the helpers of the flows above from this one
+            from qa_plant_drill_results import results_actions
+
+            results_actions(browser, url, out, parse_qs(back_href.partition("?")[2])["engine"][0], plan, problems)
+    except Exception as e:
+        problems.append(f"results from the plant: {first_line(e)}")
     detail = ("the reactor, sample and card open Lineage on the same sample with the plant's actions, the card and the analyzer open Setup over the plant's run (Results scrolled to the utilisation block), the staff open Notes at "
               "the flag table; Back lands on the same instant and lens with no new plant_run; the plant link opens in a fresh page on its instant, falls back and says which when it is wrong; a challenge empties the lineage view "
-              "and the overlay")
+              "and the overlay; Setup opened from a card and from the analyzer holds the plant's unit and analyzer actions and none of its draw or lab settings and says which it left out, Run sends them and Results lists "
+              "them among its inputs, a refusal is shown with the sentence of its reason, and a Setup opened without the plant sends no actions")
     return Result("drilldown", not problems, detail + (f" | {problems[0]}" if problems else ""), {"problems": problems})

@@ -93,6 +93,15 @@ export const koAct: Record<keyof typeof enAct, string> = {
   "plant.kind.board": "채취 계획판",
   "plant.table.boards": "이 시점의 채취 계획판",
   "plant.col.board": "계획판",
+
+  "plant.kind.flags": "플래그 판",
+  "plant.table.flags": "플래그 판: 각 기록 보관실의 플래그",
+  "plant.col.flag": "플래그",
+  "plant.flags.cells": "플래그 판: 칸을 누르면 그 보관실의 그 플래그를 전환하는 폼이 열립니다",
+  "plant.flags.state.on": "켬",
+  "plant.flags.state.off": "끔",
+  "plant.flags.state.pending": "아직 없음",
+  "plant.flags.cell": "{hall}의 {flag}는 {state} 상태입니다. {next}(으)로 바꿉니다.",
   "plant.col.sample": "시료",
   "plant.col.planned": "계획",
 };

@@ -83,6 +83,7 @@ const koBase: Record<keyof typeof enBase, string> = {
   "error.cancelled": "실행이 시드 사이에서 중단되었습니다:",
   "error.locked": "이 실행이 열린 챌린지라서 요청이 거절되었습니다:",
   "error.heading.cancelled": "실행이 취소되었습니다",
+  "error.heading.refused": "실행이 시작되지 않았습니다",
 
   "grade.S": "출처 확인",
   "grade.P": "대리지표",

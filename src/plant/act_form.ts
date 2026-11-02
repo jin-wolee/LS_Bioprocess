@@ -1,5 +1,6 @@
 import type { PlantAction, ScenePlan } from "../protocol.ts";
 import { DAY } from "./clock.ts";
+import { hallOf } from "./flags_board.ts";
 import { clockOf } from "./view.ts";
 import type { Picked } from "./view.ts";
 
@@ -89,12 +90,15 @@ export const actionOf = (kind: ActionKind, f: Fields, at: number, plan: ScenePla
   }
 };
 
-/** The switch a flag form offers: the opposite of what the hall has, as the plan has it ("true" when the hall's record has not arrived or has the flag off). */
-export const flagOnFor = (plan: ScenePlan, architecture: string, flag: string): "true" | "false" =>
-  plan.records.find((r) => r.architecture === architecture)?.flags_on.includes(flag) ? "false" : "true";
+/**
+ * The switch a flag form offers: the opposite of what the hall has, as the plan has it ("true" when the hall's record has not arrived or has the flag off). `architecture` is the record the run began with and
+ * `halls` are those of the spec (`spec.run.architectures`), because the hall the plan shows for it may carry a derived id (`hallOf`).
+ */
+export const flagOnFor = (plan: ScenePlan, halls: readonly string[], architecture: string, flag: string): "true" | "false" =>
+  plan.records.find((r) => r.architecture === hallOf(plan, halls, architecture))?.flags_on.includes(flag) ? "false" : "true";
 
-/** What a form opens with: the picked object where there is one (a reactor for a feed or an alarm, an analyzer for a window or a lot change), the clock's day and time for an instant, and no length of window. */
-export const initialFields = (kind: ActionKind, { plan, flags, picked, at }: { plan: ScenePlan; flags: readonly string[]; picked: Picked | null; at: number }): Fields => {
+/** What a form opens with (`halls` are the records of the spec, which a `set_flag` names): the picked object where there is one (a reactor for a feed or an alarm, an analyzer for a window or a lot change), the clock's day and time for an instant, and no length of window. */
+export const initialFields = (kind: ActionKind, { plan, flags, halls, picked, at }: { plan: ScenePlan; flags: readonly string[]; halls: readonly string[]; picked: Picked | null; at: number }): Fields => {
   const unit = (picked?.kind === "reactor" ? plan.units[picked.index]?.id : undefined) ?? plan.units[0]?.id ?? "";
   const analyzer = (picked?.kind === "analyzer" ? plan.analyzers[picked.index]?.id : undefined) ?? plan.analyzers[0]?.id ?? "";
   const { day, time } = clockOf(at);
@@ -104,9 +108,9 @@ export const initialFields = (kind: ActionKind, { plan, flags, picked, at }: { p
     case "analyzer_down": return { analyzer, day: String(day), time, length: "" };
     case "change_lot": return { analyzer, day: String(day), time };
     case "set_flag": {
-      const architecture = plan.layout.architectures[0] ?? "";
+      const architecture = halls[0] ?? "";
       const flag = flags[0] ?? "";
-      return { architecture, flag, on: flagOnFor(plan, architecture, flag) };
+      return { architecture, flag, on: flagOnFor(plan, halls, architecture, flag) };
     }
     case "set_capture_path": return { path: CAPTURE_PATHS[0] };
     case "set_labelling": return { method: LABEL_METHODS[0] };

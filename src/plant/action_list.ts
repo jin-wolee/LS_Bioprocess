@@ -43,6 +43,22 @@ export const canonicalOrder = (actions: readonly PlantAction[]): PlantAction[] =
     .sort((a, b) => byKey(a.key, b.key))
     .map(({ action }) => action);
 
+/**
+ * The kinds Results over many seeds carries (docs/design/lab_ui.md section 22): the plant's actions that name a unit or an analyzer, which mean the same in every seed. A copy of `RESULTS_KINDS` of the engine
+ * (the page imports no engine module); engine/tests/lab/action_order.test.ts holds the two the same.
+ */
+export const RESULTS_KINDS: readonly PlantAction["kind"][] = ["add_feed", "raise_alarm", "analyzer_down", "change_lot"];
+
+/** What Results carries of a list, in the order of the list. */
+export const resultsKept = (list: readonly PlantAction[]): PlantAction[] => list.filter((a) => RESULTS_KINDS.includes(a.kind));
+
+/** Why an action is not carried: a draw names the sample of one seed; a lab setting is a control of Setup's own. */
+export type LeftOutWhy = "draw" | "lab_setting";
+
+/** The actions of a list that Results does not carry, each with its reason, in the order of the list. */
+export const leftOutOf = (list: readonly PlantAction[]): { action: PlantAction; why: LeftOutWhy }[] =>
+  list.filter((a) => !RESULTS_KINDS.includes(a.kind)).map((action) => ({ action, why: action.kind === "move_draw" ? "draw" : "lab_setting" }));
+
 /** The list with an action added at the end (the order of entry; the list given is not changed). */
 export const plus = (list: readonly PlantAction[], action: PlantAction): PlantAction[] => [...list, action];
 

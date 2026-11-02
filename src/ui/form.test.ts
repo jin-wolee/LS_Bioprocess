@@ -46,6 +46,7 @@ describe("defaultForm: the scenario's own sizes and profiles, A, B and C, the fi
       ablation: "",
       capture: "",
       seeds: READY.seed_list.slice(0, 20).join(", "),
+      actions: [],
     });
   });
 

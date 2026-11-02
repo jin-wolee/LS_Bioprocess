@@ -242,3 +242,8 @@ select { max-width: 100%; }
 .bo-cell[data-cell="not_reachable"], .bo-cell[data-cell="undefined"] { border-bottom: 2px dashed var(--muted); }
 .bo-list, .bo-counts, .bo-reach { padding-left: 20px; margin: 6px 0; }
 .bo-walk, .bo-events, .bo-metrics { margin: 12px 0; }
+
+/* The operator actions of the plant on Setup and Results (P6b, lab_ui.md section 22): a numbered list of sentences, and the ones left out. */
+.run-actions { margin: 8px 0; padding-left: 1.6rem; }
+.run-actions li { margin: 4px 0; }
+.results-actions { margin: 8px 0; }

@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+import { ActionWords } from "../plant/ActionList.tsx";
 import type { CheckState, ResultFooter, RunSummary } from "../protocol.ts";
 import { Ref } from "./Ref.tsx";
 import { Label, T } from "./T.tsx";
@@ -71,6 +72,19 @@ export function FooterInputs({ footer }: { footer: ResultFooter }) {
   );
   return (
     <section class="inputs-printed" aria-labelledby="inputs-printed-heading">
+      {footer.actions && footer.actions.length > 0 && (
+        <div class="results-actions" data-results-actions>
+          <T as="h3" k="results.actions.heading" />
+          <T as="p" k="results.actions.lead" />
+          <ol class="run-actions">
+            {footer.actions.map((a, i) => (
+              <li key={`${i}${JSON.stringify(a)}`} data-results-action={a.kind}>
+                <ActionWords action={a} />
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
       <T as="h3" k="results.inputs.heading" id="inputs-printed-heading" />
       <T as="p" k="results.inputs.lead" />
       <ul class="inputs">

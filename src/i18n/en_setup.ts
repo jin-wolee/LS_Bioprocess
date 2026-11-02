@@ -66,5 +66,13 @@ export const enSetup = {
   "setup.link.heading": "Link to this setup",
   "setup.link.lead": "The link holds the setup and never a result. Opening it fills this form; press Run to see the result.",
   "setup.link.label": "Link",
+  "setup.actions.heading": "From the plant, applied to every seed",
+  "setup.actions.lead": "These operator actions came with the link from the plant. Each one names a reactor or an analyzer, so it means the same in every seed, and the run applies all of them to every seed. Each instant is an assumed input. Drop them to run the plain scenario.",
+  "setup.actions.drop": "Drop all of these actions",
+  "setup.actions.left_heading": "Left out of this setup",
+  "setup.actions.left_lead": "The plant had these actions as well. Results over many seeds does not carry them.",
+  "setup.actions.why.draw": "A draw names the sample of one seed, so it means nothing in the other seeds.",
+  "setup.actions.why.lab_setting": "A lab setting is a choice of this page's own, made in the form below.",
+
   "setup.link.engine": "This link was made with engine version {made}; this page runs engine version {current}. The run goes ahead with the current engine.",
 } as const;

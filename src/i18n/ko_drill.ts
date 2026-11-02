@@ -13,7 +13,7 @@ export const koDrill: Record<keyof typeof enDrill, string> = {
   "plant.origin.run": "공장에서 가져온 실행: 시나리오 {scenario}, 시드 {seed}, 운영자 조작 {actions}개, {clock}에 떠남.",
   "plant.origin.run_open": "공장에서 가져온 실행: 시나리오 {scenario}, 시드 {seed}, 운영자 조작 {actions}개.",
   "plant.origin.back": "공장으로 돌아가기",
-  "plant.origin.results": "여러 시드에 걸친 결과는 이 버전에서 공장의 조작을 싣지 않습니다. 공장의 조작은 여기에 적용되지 않습니다.",
+  "plant.origin.results": "여러 시드에 걸친 결과는 공장의 운영자 조작 가운데 리액터나 분석기를 가리키는 것(피드 추가, 경보, 분석기 중지 구간, 시약 로트 교체)을 싣습니다. 이 공장의 조작 {actions}개 중 {carried}개입니다. 이 조작은 모든 시드에 적용됩니다. 시료 뽑기는 한 시드의 시료를 가리키므로 싣지 않고, 실험실 설정은 설정 화면의 자체 항목입니다.",
   "plant.origin.utilisation": "실행을 누르세요. 분석기 가동률은 결과 화면의 맨 끝에 있습니다.",
 
   "plant.link.heading": "링크를 고쳐서 읽었습니다",

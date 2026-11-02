@@ -24,6 +24,10 @@ export interface SceneOptions {
   onPick(architecture: string, sample: number): void;
   /** A click that reached a reactor, an analyzer, a member of staff on duty or a tube (the nearest thing along the ray), P5b. */
   onPickObject(picked: Picked): void;
+  /** The flags of `ready`, the rows of the flags board (P6b). */
+  flags: readonly string[];
+  /** A click that reached a cell of the flags board: the index into the halls of the layout and the flag (P6b). */
+  onPickCell(hall: number, flag: string): void;
   /** The camera stopped following a tube because the reader moved it, walked or picked something else. */
   onFollowEnd(): void;
 }
@@ -45,7 +49,7 @@ export interface Scene {
   renderer: string;
   /** What the scene built, by kind: the end-to-end check compares it with the objects list. */
   objects: Record<ObjectKind, number>;
-  /** Brings the camera to an object named by its key (`reactor:U01`, `analyzer:AN-1`, `staff:OP-01`, `sample:U10-D08-1`, `hall:a_manual`). */
+  /** Brings the camera to an object named by its key (`reactor:U01`, `analyzer:AN-1`, `staff:OP-01`, `sample:U10-D08-1`, `hall:a_manual`, `board:B1`, `flags:board`). */
   focus(key: string): void;
   /** The object the panel shows, or none: the scene rings it, and `F` follows it when it is a sample instead of tilting the camera. */
   setPick(picked: Picked | null): void;

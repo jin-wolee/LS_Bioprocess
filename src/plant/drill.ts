@@ -1,5 +1,6 @@
 import type { PlantSpec } from "../protocol.ts";
 import { hashOf } from "../ui/route.ts";
+import { resultsKept } from "./action_list.ts";
 import { plantFromQuery, plantQuery } from "./link.ts";
 import type { Known, PlantLink } from "./link.ts";
 
@@ -31,6 +32,9 @@ export const setupLink = (c: DrillContext, halls: readonly string[], focus?: str
   const offered = halls.filter((h) => c.architectures.includes(h));
   if (offered.length > 0) pairs.push(["arch", offered.join(",")]);
   if (run.capture_path) pairs.push(["capture", run.capture_path]);
+  // the plant's actions that name a unit or an analyzer go with it (P6b); a draw and the lab settings stay in the plant
+  const carried = resultsKept(c.spec.actions);
+  if (carried.length > 0) pairs.push(["actions", JSON.stringify(carried)]);
   pairs.push(["schema", "1"], ["engine", c.engine]);
   const query = pairs.map(([k, v]) => `${k}=${encode(v)}`).join("&");
   return hashOf("setup", `${query}&from=plant&plant=${plantValue(c)}${focus ? `&focus=${encode(focus)}` : ""}`);

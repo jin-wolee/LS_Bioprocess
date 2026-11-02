@@ -1,4 +1,5 @@
-import type { ScenarioInfo } from "../protocol.ts";
+import type { LeftOutWhy } from "../plant/action_list.ts";
+import type { PlantAction, ScenarioInfo } from "../protocol.ts";
 import { ErrorBlock } from "./ErrorBlock.tsx";
 import { FlagMatrix } from "./Flags.tsx";
 import { defaultForm, parseSeeds, rangeWarning, specOf, toQuery, whole, withCounts } from "./form.ts";
@@ -7,6 +8,7 @@ import { Ref } from "./Ref.tsx";
 import { RunStatus } from "./RunStatus.tsx";
 import { ScenarioInputs } from "./ScenarioInputs.tsx";
 import { Architectures, Capture } from "./SetupChoices.tsx";
+import { SetupActions } from "./SetupActions.tsx";
 import { ProfileList } from "./SetupLists.tsx";
 import { HOME_ID } from "./state.ts";
 import type { ReadyInfo, State } from "./state.ts";
@@ -85,7 +87,7 @@ function Seeds({ ready, form, update }: { ready: ReadyInfo; form: Form; update: 
   );
 }
 
-export function Setup({ ready, form, setForm, state, link, linkEngine, onRun, onCancel }: {
+export function Setup({ ready, form, setForm, state, link, linkEngine, leftOut, onRun, onCancel }: {
   ready: ReadyInfo;
   form: Form;
   setForm: (form: Form) => void;
@@ -94,6 +96,8 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, onRun, on
   link: string;
   /** The engine version a link was made with, when the page was opened from a link. */
   linkEngine: string | null;
+  /** The plant's actions that this screen left out, with the reason, when it was opened from the plant (P6b). */
+  leftOut: readonly { action: PlantAction; why: LeftOutWhy }[];
   onRun: (form: Form) => void;
   onCancel: () => void;
 }) {
@@ -112,6 +116,8 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, onRun, on
           <T as="p" k="setup.link.engine" class="notice" data-note="link-engine" parts={{ made: <Label>{linkEngine}</Label>, current: <Label>{ready.engine_version}</Label> }} />
         )}
       </section>
+
+      <SetupActions actions={form.actions} leftOut={leftOut} onDrop={() => update({ actions: [] })} />
 
       <section id="scenario-section" aria-labelledby="scenario-heading">
         <div class="field">

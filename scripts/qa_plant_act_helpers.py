@@ -136,3 +136,40 @@ def refusal_problems(block: dict, reason: str, lang: str) -> list[str]:
     if not block["message"]:
         problems.append("the refusal shows no message of the Worker")
     return problems
+
+
+# ---- the flags board (P6b, docs/design/plant_ui.md section 3.2) -----------------------------------------------------------------------------------------------------------------------------------
+
+
+def expected_matrix(plan: dict, flags: list[str]) -> dict[str, str]:
+    """The state of every cell of the flags board, from the plan alone: for each hall of the layout (a derived hall by its derived id) and each flag, `on` or `off` as that hall's own record has it, and
+    `pending` while the record of the hall has not arrived. Keyed `<hall>:<flag>`, as the cell buttons of the objects list are."""
+    states = {}
+    for hall in plan["layout"]["architectures"]:
+        record = next((r for r in plan["records"] if r["architecture"] == hall), None)
+        for flag in flags:
+            states[f"{hall}:{flag}"] = "pending" if record is None else ("on" if flag in record["flags_on"] else "off")
+    return states
+
+
+def matrix_problems(cells: dict[str, str], plan: dict, flags: list[str]) -> list[str]:
+    """The cells the page shows (`data-flag-cell` and `data-flag-state`) against the matrix of the plan it received: no cell missing, none extra, every state the same."""
+    want = expected_matrix(plan, flags)
+    problems = [f"the board has no cell {k}" for k in sorted(set(want) - set(cells))]
+    problems += [f"the board has a cell {k} that the plan's halls do not have" for k in sorted(set(cells) - set(want))]
+    problems += [f"the cell {k} reads {cells[k]}, the plan's hall has it {want[k]}" for k in sorted(set(want) & set(cells)) if cells[k] != want[k]]
+    return problems
+
+
+def flag_form_problems(fields: dict, cells: dict[str, str], shown: str, base: str) -> list[str]:
+    """The flag form a cell opened: it names the record the run began with (`base`, not the derived id the hall is shown by), the flag of the cell, and the opposite of the state the cell reads."""
+    key = f"{shown}:{fields['flag']}"
+    if key not in cells:
+        return [f"the board has no cell {key} for the form to be opened from"]
+    problems = []
+    if fields["architecture"] != base:
+        problems.append(f"the form names the hall {fields['architecture']}, expected the record the run began with: {base}")
+    opposite = "false" if cells[key] == "on" else "true"
+    if fields["on"] != opposite:
+        problems.append(f"the form switches {fields['flag']} in {shown} to {fields['on']}, the cell is {cells[key]} so the opposite is {opposite}")
+    return problems

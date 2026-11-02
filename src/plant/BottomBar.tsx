@@ -5,7 +5,7 @@ import type { PlantSpec, ScenePlan } from "../protocol.ts";
 import { LangContext, T } from "../ui/T.tsx";
 import { ActionForm } from "./ActionForm.tsx";
 import { ActionIcon } from "./ActionIcon.tsx";
-import { CORE, OPTIONAL, actionOf, atOf, initialFields } from "./act_form.ts";
+import { CORE, OPTIONAL, actionOf, atOf, flagOnFor, initialFields } from "./act_form.ts";
 import type { ActionKind, Fields } from "./act_form.ts";
 import { plus } from "./action_list.ts";
 import type { ActRefusal } from "./plant_state.ts";
@@ -31,8 +31,9 @@ export interface BarProps {
   /** An action request is in flight. */
   busy: boolean;
   refusal: ActRefusal | null;
-  /** The board the reader asked for from the objects list (the bay, and a number that changes with each ask): the move form opens on it. */
-  ask: { bay: number; nonce: number } | null;
+  /** What the reader asked for from the objects list or the scene, and a number that changes with each ask: the move form on a board (its bay), or the flag form on a cell of the flags board (the record the
+   *  run began with and the flag; the form opens with the opposite state). */
+  ask: ({ nonce: number } & ({ form: "move_draw"; bay: number } | { form: "set_flag"; architecture: string; flag: string })) | null;
   onAct: (spec: PlantSpec, play: boolean) => void;
   onRefusalClose: () => void;
 }
@@ -59,7 +60,7 @@ export function BottomBar(p: BarProps) {
     setMore(false);
     setBay(null);
     sent.current = false;
-    setFields(initialFields(kind, { plan: p.plan, flags: p.flags, picked: p.picked, at: atOf(p.playback.get().t) }));
+    setFields(initialFields(kind, { plan: p.plan, flags: p.flags, halls: p.spec.run.architectures, picked: p.picked, at: atOf(p.playback.get().t) }));
     setOpen(kind);
   };
   const close = (): void => {
@@ -82,9 +83,15 @@ export function BottomBar(p: BarProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open === null]);
 
-  // the reader asked for a board from the objects list: the move form opens on that bay
+  // the reader asked for a board from the objects list (the move form opens on that bay) or for a cell of the flags board (the flag form opens on that hall and flag, switching the flag to the opposite)
   useEffect(() => {
     if (p.ask === null) return;
+    if (p.ask.form === "set_flag") {
+      const { architecture, flag } = p.ask;
+      choose("set_flag", null, true);
+      setFields((f) => ({ ...f, architecture, flag, on: flagOnFor(p.plan, p.spec.run.architectures, architecture, flag) }));
+      return;
+    }
     choose("move_draw", null, true);
     setBay(p.ask.bay);
   }, [p.ask?.nonce]);
@@ -158,7 +165,7 @@ function OpenForm({ kind, bar, fields, bay, set, onSubmit, onClose }: {
   return (
     <div ref={host} class="plant-act">
       <ActionForm
-        kind={kind} plan={bar.plan} flags={bar.flags} fields={fields} at={at} now={now} bay={bay} busy={bar.busy} refusal={bar.refusal}
+        kind={kind} plan={bar.plan} flags={bar.flags} halls={bar.spec.run.architectures} fields={fields} at={at} now={now} bay={bay} busy={bar.busy} refusal={bar.refusal}
         set={set} onSubmit={() => onSubmit(atOf(bar.playback.get().t))} onClose={onClose} word={(key) => text(lang, key as Key)}
       />
     </div>

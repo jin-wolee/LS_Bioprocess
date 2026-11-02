@@ -9,6 +9,8 @@ export const koResults: Record<keyof typeof enResults, string> = {
   "results.running": "실행이 진행 중입니다.",
   "results.meets.warn": "시드 수가 최소값 {min}에 못 미칩니다. 보고서는 이것을 비교라고 부르지 않습니다. 각 분포 범위를 적은 수의 시드 표본의 범위로 읽으세요.",
   "results.interval.label": "범위의 뜻",
+  "results.actions.heading": "모든 시드에 적용한 운영자 조작",
+  "results.actions.lead": "이 결과는 공장에서 가져온 아래 조작을 모든 시드에 적용했습니다. 각 시각은 가정 입력이며, 아래 다른 입력과 함께 다시 나열됩니다.",
   "results.inputs.heading": "이 결과의 입력",
   "results.inputs.lead": "지표가 사용한 입력과 시나리오에서 바꾼 설정입니다.",
   "results.inputs.bays": "각 베이의 바이오리액터 프로파일",

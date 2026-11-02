@@ -2,6 +2,8 @@ import { useMemo } from "preact/hooks";
 import { Label, T } from "../ui/T.tsx";
 import type { ScenePlan } from "../protocol.ts";
 import { BoardTable } from "./BoardList.tsx";
+import { FlagsTable } from "./FlagList.tsx";
+import { flagMatrix } from "./flags_board.ts";
 import { LiveLog } from "./LiveLog.tsx";
 import type { Playback } from "./playback.ts";
 import { sceneAt } from "./scene_at.ts";
@@ -12,7 +14,7 @@ import { clockOf, hallRowsAt, onDuty } from "./view.ts";
 // their queue and lamp, the record halls with their cards shown and knowable), which follows the clock about once a second of wall time while it plays and at once when it is paused or sought; and a polite live region
 // with the log of events. It is built from the plan alone, so it is the whole plant when WebGL is missing (then the clock stays at the plan's start). Every number is a label.
 
-export function TextAlternative({ plan, playback }: { plan: ScenePlan; playback: Playback }) {
+export function TextAlternative({ plan, playback, flags }: { plan: ScenePlan; playback: Playback; flags: readonly string[] }) {
   const shown = useSlowClock(playback, 1);
   const at = Math.floor(shown.t);
   const state = useMemo(() => sceneAt(plan, at), [plan, at]);
@@ -125,6 +127,8 @@ export function TextAlternative({ plan, playback }: { plan: ScenePlan; playback:
       </div>
 
       <BoardTable plan={plan} at={at} />
+
+      <FlagsTable matrix={flagMatrix(plan, flags)} />
     </section>
   );
 }
