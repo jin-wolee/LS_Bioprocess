@@ -13,12 +13,15 @@ import { SPEED, advance, pathOf, stepTo } from "../walk.ts";
 import { RING, buildAvatar, buildRings } from "./avatar.ts";
 import { buildRoom } from "./floor.ts";
 import { listen } from "./input.ts";
+import { buildBoards } from "./boards.ts";
 import { buildLabels } from "./labels.ts";
 import { buildMotion } from "./motion.ts";
 import { buildOverlay } from "./overlay.ts";
 import { buildShelves } from "./shelves.ts";
 import { buildThings } from "./shapes.ts";
 import { buildStage, disposeStage } from "./stage.ts";
+
+export { releaseStage } from "./stage.ts";
 
 // The scene of the plant (docs/design/plant_ui.md sections 2, 3 and 9): the one module that makes a WebGL renderer. It builds the room and the things from the layout, puts a plain operator figure
 // at the entrance, and runs a frame loop that walks the figure (click, or the keys), moves the third-person camera (drag, wheel, pinch, keys) and draws. Everything it decides with is in the
@@ -45,6 +48,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
 
   const camera = new PerspectiveCamera(50, 1, 0.1, 300);
   const labels = buildLabels(host, layout, plan);
+  const boards = buildBoards(plan, labels);
   const motion = buildMotion(layout, plan, built, { scene, hemi, sun, glass }, labels, disposables);
   scene.add(motion.group);
   let drawn = Number.NaN; // the clock reading `motion` was last written for
@@ -178,6 +182,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
       drawn = t;
       state = sceneAt(plan, t);
       motion.update(state);
+      boards.update(t);
       const tubes = String(state.tubes.length);
       if (host.dataset.plantTubes !== tubes) host.dataset.plantTubes = tubes;
       // the camera follows the tube it was told to: every reading of the clock while the run plays, and, under reduced motion, only when the paused clock is moved (a cut, section 9); while the tube is not on the floor the camera stays where it was
@@ -284,7 +289,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
       stopListening();
       observer.disconnect();
       labels.dispose();
-      for (const d of disposables) d.dispose();
+      for (const d of disposables) if (!("isMaterial" in d)) d.dispose(); // the materials stay: disposing the last one of a program deletes the program (stage.ts)
       disposeStage(stage);
     },
   };

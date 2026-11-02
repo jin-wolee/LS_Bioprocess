@@ -1,4 +1,5 @@
 import type { ScenePlan } from "../protocol.ts";
+import { boardPoint } from "./dims.ts";
 import type { Layout, Point } from "./layout.ts";
 import { pickedOfKey } from "./view.ts";
 import type { Picked } from "./view.ts";
@@ -29,6 +30,11 @@ export const focusOf = (plan: ScenePlan, layout: Layout, key: string, where: (p:
   if (kind === "analyzer") {
     const a = layout.analyzers[plan.analyzers.findIndex((x) => x.id === id)];
     return a ? { at: a, radius: 1.4 } : null;
+  }
+  if (kind === "board") {
+    // the board of a bay stands at the west end of its north edge (dims.ts); `id` is `B1`, `B2` ...
+    const bay = layout.bays[Number(id?.slice(1)) - 1];
+    return bay ? { at: boardPoint(bay.footprint), radius: 1.2 } : null;
   }
   if (kind === "hall") {
     // close to the shelves and level with them: the cards are a few centimetres wide

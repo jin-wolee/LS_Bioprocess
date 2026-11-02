@@ -1,5 +1,7 @@
 import { Vector3 } from "three";
 import type { PerspectiveCamera } from "three";
+import { BOARD, PLINTH, boardPoint } from "../dims.ts";
+import { boardId } from "../board.ts";
 import type { Layout } from "../layout.ts";
 import type { ScenePlan } from "../../protocol.ts";
 import { STAFF_HEAD } from "./motion_staff.ts";
@@ -12,6 +14,8 @@ export interface Labels {
   update(camera: PerspectiveCamera, width: number, height: number): void;
   /** The sign of each record hall: the architecture id and, once its record has arrived, the flags it has on (ids, language-neutral; a dash for none); the lens hall carries a mark (a disc drawn by the style sheet from `data-lens`, not a glyph), the others are dimmed. */
   halls(records: readonly { architecture: string; flags_on: readonly string[] }[], lens: string): void;
+  /** The rows on the sign of each board (P6a), in the order of the bays: the first few as `U03 12:50` and how many more there are. Written when the board changes, not every frame. */
+  boards(boards: readonly { rows: readonly string[]; more: number }[]): void;
   /** Where the figures of the staff are (in the order of the plan's `staff`; an operator who is off duty has x and z that are NaN): their id tags follow them. */
   follow(places: readonly { x: number; z: number }[]): void;
   /** The labels of the truth overlay (P5b): one element over each place given, which the caller fills; null removes them. Returns the elements, in the order of the places. */
@@ -56,6 +60,19 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
     return { architecture: h.architecture, item, id, flags };
   });
 
+  // the sign of a sampling board has two parts: its id (always) and its first rows (when the camera is near)
+  const boardSigns = layout.bays.map((b, i) => {
+    const at = boardPoint(b.footprint);
+    const item = add("", "board", at.x, PLINTH + BOARD.bottom + BOARD.h + 0.12, at.z);
+    const id = document.createElement("span");
+    id.className = "plant-board-id";
+    id.textContent = boardId(i);
+    const rows = document.createElement("span");
+    rows.className = "plant-board-lines";
+    item.el.append(id, rows);
+    return rows;
+  });
+
   const staff = plan.staff.map((s) => add(s.id, "staff", 0, STAFF_HEAD, 0, false));
   // the labels of the truth overlay: made when the overlay is switched on, removed when it is switched off
   let absences: { el: HTMLElement; at: Vector3; on: boolean }[] = [];
@@ -87,6 +104,13 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
         const record = records.find((r) => r.architecture === sign.architecture);
         sign.flags.textContent = record ? (record.flags_on.length === 0 ? "–" : record.flags_on.join(" · ")) : "";
         sign.item.el.dataset.lens = sign.architecture === lens ? "1" : "0";
+      }
+    },
+    boards(boards) {
+      for (const [i, rows] of boardSigns.entries()) {
+        const b = boards[i];
+        const lines = b ? [...b.rows, ...(b.more > 0 ? [`+${b.more}`] : [])] : [];
+        rows.replaceChildren(...lines.map((line) => Object.assign(document.createElement("span"), { textContent: line })));
       }
     },
     follow(places) {

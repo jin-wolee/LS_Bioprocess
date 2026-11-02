@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "preact/hooks";
-import type { Request } from "../protocol.ts";
+import type { PlantSpec, Request } from "../protocol.ts";
 import type { Known, PlantLink } from "../plant/link.ts";
 import { plantFromQuery } from "../plant/link.ts";
 import { needsRun } from "../plant/plant_state.ts";
@@ -17,6 +17,9 @@ export interface PlantWiring {
   closeCard(): void;
   openFields(architecture: string, sample_id: string): void;
   closeFields(): void;
+  /** An operator action: the spec with the reader's list including it, and whether the clock was playing when they acted (plant_ui.md section 5.5). */
+  act(spec: PlantSpec, play: boolean): void;
+  closeRefusal(): void;
 }
 
 export function usePlant(
@@ -65,8 +68,18 @@ export function usePlant(
     if (state.plant.truth.on && plantEpoch !== undefined && cardOpen !== undefined) askTruth(plantEpoch, { sample_id: cardOpen });
   }, [state.plant.truth.on, plantEpoch, cardOpen]);
 
+  // an operator action is a request of its own, under a new epoch, with the whole list (section 5.5)
+  const act = (spec: PlantSpec, play: boolean): void => {
+    const id = take();
+    const epoch = ++epochs.current;
+    dispatch({ type: "plant_acted", id, epoch, spec, play });
+    worker.postMessage({ type: "plant_run", id, epoch, spec } satisfies Request);
+  };
+
   return {
     link,
+    act,
+    closeRefusal: () => dispatch({ type: "plant_refusal_closed" }),
     openCard: (architecture, sample_id) => askRecord(architecture, sample_id),
     closeCard: () => dispatch({ type: "plant_record_closed" }),
     openFields: (architecture, sample_id) => askRecord(architecture, sample_id, "fields"),

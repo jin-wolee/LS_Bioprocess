@@ -27,7 +27,7 @@ describe("reduce", () => {
       lineage: { running: null, asked: null, answer: null, problem: null },
       challenge: { starting: null, active: null, busy: null, problem: null },
       breakout: { running: null, asked: null, result: null, problem: null },
-      plant: { epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null },
+      plant: { epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, act: { pending: null, refusal: null, resume: null }, problem: null },
     });
   });
 

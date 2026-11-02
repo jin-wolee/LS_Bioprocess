@@ -212,10 +212,13 @@ export function App({ worker }: { worker: Worker }) {
               link={plant.link}
               engine={ready.engine_version}
               architectures={ready.presets.map((x) => x.id)}
+              flags={ready.flags}
               onCard={plant.openCard}
               onCardClose={plant.closeCard}
               onFields={plant.openFields}
               onFieldsClose={plant.closeFields}
+              onAct={plant.act}
+              onRefusalClose={plant.closeRefusal}
               onTruth={(on) => dispatch({ type: "plant_truth_switched", on })}
               onLeave={(t, lens) => dispatch({ type: "plant_left", t, lens })}
             />

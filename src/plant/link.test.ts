@@ -137,3 +137,24 @@ describe("sameSpec: whether a run has to be asked for again", () => {
     ["another hall", { ...rich, run: { ...rich.run, architectures: ["a_manual"] } }],
   ])("Given %s Then it is not the same spec", (_n, other) => expect(sameSpec(rich, other as PlantSpec)).toBe(false));
 });
+
+describe("P6a: the actions the address holds (plant_ui.md section 5.5, 'As built in P6a')", () => {
+  // the three actions of the fixture three_together, typed by hand: a draw moved to 10:30, AN-1 down from 13:00 for two hours, a feed on U03, all entered at day 3 09:00
+  const move = { kind: "move_draw" as const, at: 291600, sample_id: "U03-D03-1", to: 297000 };
+  const down = { kind: "analyzer_down" as const, at: 291600, analyzer: "AN-1", from: 306000, length_min: 120 };
+  const feed = { kind: "add_feed" as const, at: 291600, unit_id: "U03" };
+  const orders = [[move, down, feed], [move, feed, down], [down, move, feed], [down, feed, move], [feed, move, down], [feed, down, move]];
+
+  it.each(orders.map((o, i) => [i, o] as const))("Given the three actions entered in order %i Then the link returns the list as it was entered, the same plant as the other orders", (_i, entered) => {
+    const spec: PlantSpec = { ...DEFAULT_PLANT, actions: [...entered] };
+    const back = plantFromQuery(plantQuery(spec, { engine: "9.9.9" }), KNOWN);
+    expect(back.notes).toEqual([]);
+    expect(back.spec.actions).toEqual(entered);
+    expect(sameSpec(back.spec, { ...DEFAULT_PLANT, actions: [move, down, feed] })).toBe(true);
+  });
+
+  it("Given a list of three Then its link carries the JSON of the list in the order of entry, percent-encoded", () => {
+    const query = plantQuery({ ...DEFAULT_PLANT, actions: [feed, down, move] }, { engine: "9.9.9" });
+    expect(query).toBe(`scenario=default&arch=a_manual,b_lims_lite,c_context&seed=1&actions=${encodeURIComponent('[{"kind":"add_feed","at":291600,"unit_id":"U03"},{"kind":"analyzer_down","at":291600,"analyzer":"AN-1","from":306000,"length_min":120},{"kind":"move_draw","at":291600,"sample_id":"U03-D03-1","to":297000}]')}&schema=1&engine=9.9.9`);
+  });
+});

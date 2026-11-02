@@ -11,7 +11,7 @@ export const enPlant = {
   "home.plant.nowebgl": "This browser does not offer WebGL version two, so the three-dimensional plant is not available here. The same plant is described as text, and every other screen of the lab works without it.",
 
   "plant.heading": "The plant",
-  "plant.lead": "One seed of the default scenario as a place to walk through. The run plays from the opening of its first shift, and the staff, the tubes and the analyzers move as the log says; pause it, seek it or step between events with the controls under the floor. The cards on the shelves of the record halls show what each data architecture stored, and any card can be opened to read its record. The operator actions come in a later step.",
+  "plant.lead": "One seed of the default scenario as a place to walk through. The run plays from the opening of its first shift, and the staff, the tubes and the analyzers move as the log says; pause it, seek it or step between events with the controls under the floor. The cards on the shelves of the record halls show what each data architecture stored, and any card can be opened to read its record. The bar under the floor takes your actions: the Worker checks each one and recomputes the run from its start.",
   "plant.boot": "Loading the plant scene and the first plan.",
   "plant.status.heading": "Status",
   "plant.status.plan.waiting": "Waiting for the plan from the Worker.",
@@ -55,7 +55,6 @@ export const enPlant = {
   "plant.time.scrub": "Time in the run",
 
   "plant.bar.label": "Operator actions",
-  "plant.bar.soon": "The operator actions come in a later step; this bar is a shell for now.",
   "plant.bar.add_feed": "Add a feed",
   "plant.bar.move_draw": "Move a draw",
   "plant.bar.analyzer_down": "Take an analyzer down",

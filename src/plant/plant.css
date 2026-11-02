@@ -27,8 +27,7 @@ main[data-screen="plant"] { max-width: none; padding-left: 0; padding-right: 0; 
 .plant-hint { width: min(38rem, 100%); margin: 0; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px 12px; font-size: 0.85rem; }
 
 .plant-bar { width: min(44rem, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px 10px; }
-.plant-bar-actions { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
-.plant-bar-actions button { flex: 0 0 auto; white-space: nowrap; }
+/* the buttons of the bar are plant_act.css's (P6a) */
 .plant-bar-note { margin: 4px 0 0; color: var(--muted); font-size: 0.8rem; }
 
 .plant-object-group h3 { margin: 12px 0 4px; }

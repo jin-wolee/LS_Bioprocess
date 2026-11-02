@@ -1,4 +1,5 @@
 import type { PlantProblem } from "./plant_state.ts";
+import { refusalKey } from "./refusal.ts";
 import { ErrorBlock } from "../ui/ErrorBlock.tsx";
 import { Label, T } from "../ui/T.tsx";
 
@@ -22,6 +23,7 @@ export function Intro({ webgl, planned, problem, scene, state, renderer }: {
       <T as="h1" k="plant.heading" id="plant-heading" />
       <T as="p" k="plant.lead" />
       {problem && <ErrorBlock problem={{ id: null, code: problem.code, message: problem.message }} />}
+      {problem?.code === "refused" && <T as="p" k={refusalKey(problem)} data-note="refusal" />}
       <p id="plant-status" role="status" data-plant-status={state} class="plant-status">
         <T k={planned ? "plant.status.plan.ready" : "plant.status.plan.waiting"} />{" "}
         {webgl && scene.kind === "loading" && planned && <T k="plant.status.scene.loading" />}

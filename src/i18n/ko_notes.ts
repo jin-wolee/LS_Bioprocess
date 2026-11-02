@@ -70,7 +70,7 @@ export const koNotes: Record<keyof typeof enNotes, string> = {
   "flag.audit_trail.off": "변경 이력 없음",
   "flag.audit_trail.effect": "귀속 불가 기록",
   "flag.material_lot_links.label": "원료 로트 연결",
-  "flag.material_lot_links.on": "접종이나 배지, 공급액 추가가 로트 id를 키로 저장하므로 기록이 로트와 그것을 사용한 배치를 연결함",
+  "flag.material_lot_links.on": "접종이나 배지, 피드 추가가 로트 id를 키로 저장하므로 기록이 로트와 그것을 사용한 배치를 연결함",
   "flag.material_lot_links.off": "연결 없음, 기껏해야 질의로 결합할 수 없는 자유 서식의 로트 이름",
   "flag.material_lot_links.effect": "오염 후 같은 로트를 공유한 다른 배치에 도달할 수 없음. 오염 이벤트를 고르지 않으면 이 플래그를 끈 C는 C와 같음",
   "flag.equipment_links.label": "장비 연결",

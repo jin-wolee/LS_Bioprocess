@@ -9,7 +9,9 @@ SwiftShader, the launch arguments of the spike); the check `plant_fallback` laun
 This file is the CLI, the build and the report; the checks are in qa_plant_checks.py (load, size, matrix, fallback) and qa_plant_motion.py (frames, clock, shots), the constants and the pure helpers in
 qa_plant_helpers.py, the browser plumbing in qa_plant_browser.py, the checks of the record halls (halls, record, hall shots) in qa_plant_halls.py, and the checks of the truth overlay and of the panels in qa_plant_truth.py and qa_plant_panels.py (their pure helpers in qa_plant_truth_helpers.py). `bash scripts/check_all.sh --plant` appends this run; the Stop hook does not run it.
 
-Checks: plant_load, plant_frames, plant_clock, plant_shots, plant_halls, plant_record, plant_hall_shots, plant_truth, drilldown (P5c, in qa_plant_drill.py), plant_panels, size, matrix, plant_fallback. The later batches add plant_action, plant_equal, plant_prefix and plant_a11y (plant_ui.md section 10).
+Checks: plant_load, plant_frames, plant_clock, plant_shots, plant_halls, plant_record, plant_hall_shots, plant_truth, drilldown (P5c, in qa_plant_drill.py), plant_panels, plant_action (P6a, in qa_plant_action.py with the
+flows of qa_plant_act.py), plant_equal and plant_prefix (P6a, in qa_plant_equal.py), size, matrix, plant_fallback. `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
+engine/tests/support/plant_reference_cli.ts under the engine's Node flags into --out (the screenshots of the actions go to act/). The later batches add plant_a11y (plant_ui.md section 10).
 """
 from __future__ import annotations
 
@@ -23,8 +25,10 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 from qa_checks import Result
 from qa_infographic import guarded, serve
+from qa_plant_action import check_plant_action
 from qa_plant_checks import check_matrix, check_plant_fallback, check_plant_load, check_size
 from qa_plant_drill import check_drilldown
+from qa_plant_equal import check_plant_equal, check_plant_prefix
 from qa_plant_halls import check_plant_hall_shots, check_plant_halls, check_plant_record
 from qa_plant_helpers import SOFTWARE_GL
 from qa_plant_motion import check_plant_clock, check_plant_frames, check_plant_shots
@@ -51,6 +55,14 @@ def build() -> int:
     return subprocess.run(["npm", "run", "build:lab"], cwd=REPO, env={**os.environ, "VITE_LAB_LOCAL": "1"}).returncode
 
 
+def make_reference(out: Path) -> tuple[Path, str | None]:
+    """The reference of the check `plant_equal`: the hand fixtures run in Node under the engine's flags (ADR-0016), written into --out. Returns its path and the reason it could not be made, if any."""
+    path = out / "plant_reference.json"
+    path.unlink(missing_ok=True)
+    done = subprocess.run(["node", "--no-maglev-escape-analysis", "engine/tests/support/plant_reference_cli.ts", str(path)], cwd=REPO, capture_output=True, text=True)
+    return path, None if done.returncode == 0 else (done.stderr.strip().splitlines() or ["the reference CLI failed"])[-1]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", type=Path, default=REPO / "dist" / "lab", help="directory served; the build output")
@@ -64,6 +76,7 @@ def main(argv=None) -> int:
         print(f"missing {args.root / 'index.html'} (run npm run build:lab)", file=sys.stderr)
         return 1
     (args.out / "shots").mkdir(parents=True, exist_ok=True)
+    reference, why = make_reference(args.out)
     with serve(args.root) as url, sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True, args=SOFTWARE_GL)
         try:
@@ -77,6 +90,9 @@ def main(argv=None) -> int:
                        guarded("plant_truth", lambda: check_plant_truth(browser, url, args.out)),
                        guarded("plant_panels", lambda: check_plant_panels(browser, url, args.out)),
                        guarded("drilldown", lambda: check_drilldown(browser, url, args.out)),
+                       guarded("plant_action", lambda: check_plant_action(browser, url, args.out)),
+                       guarded("plant_equal", lambda: check_plant_equal(browser, url, args.out, reference) if why is None else Result("plant_equal", False, f"the reference could not be made: {why}")),
+                       guarded("plant_prefix", lambda: check_plant_prefix(browser, url, args.out)),
                        guarded("size", lambda: check_size(browser, url, args.root)),
                        guarded("matrix", lambda: check_matrix(browser, url, args.out)),
                        guarded("plant_fallback", lambda: check_plant_fallback(pw, url, args.out))]

@@ -97,9 +97,15 @@ export const checkPlantSpec = (raw: unknown, data: LabData): { ok: true; spec: P
 
 const actionKey = (a: Action): string => canonicalJson(a);
 
+/**
+ * The queue's own ordinal: `seq` of a `request_queued` event is the tie-break number of the analyzer's event queue, which starts above the numbers of the requests and which the start and the end of every
+ * window take two of before the run, so one more window moves the number of every request that is queued again, earlier in the run too. It is not something that happened: no time, type or id changes.
+ */
+const unnumbered = (e: Event): Event => (e.type === "request_queued" ? { ...e, seq: 0 } : e);
+
 /** Compare two logs on the events before `before` (infinity: all of them); `labels` leaves out the `label_bound` events, which the labelling method itself writes (plant_ui.md section 5.3). */
 const sameLog = (a: readonly Event[], b: readonly Event[], before: number, labels: boolean): boolean => {
-  const part = (log: readonly Event[]): Event[] => log.filter((e) => e.t < before && (labels || e.type !== "label_bound"));
+  const part = (log: readonly Event[]): Event[] => log.filter((e) => e.t < before && (labels || e.type !== "label_bound")).map(unnumbered);
   return canonicalJsonl(part(a)) === canonicalJsonl(part(b));
 };
 

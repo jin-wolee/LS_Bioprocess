@@ -1,0 +1,57 @@
+/* The operator actions of the plant (docs/design/plant_ui.md sections 2, 3.2 and 5, "As built in P6a"). The bar keeps the look of the other cards over the scene (solid surface, page tokens, so that it reads
+   in both themes); the form opens above it; the list of the reader's actions is a HUD card at the left under the place card; the rows of a sampling board are labels in the scene. Shape and text carry the
+   meaning (an icon that repeats the label, a mark "whole run", a text for the recompute), colour only repeats it. Every flex row wraps, so nothing scrolls sideways at the narrow viewport. */
+.plant-bar-wrap { position: relative; width: min(72rem, 100%); align-items: center; display: flex; flex-direction: column-reverse; gap: 8px; }
+.plant-bar-wrap:has(.plant-act) { z-index: 4; }
+.plant-bar-wrap .plant-bar { width: 100%; box-sizing: border-box; }
+.plant-bar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.plant-bar-actions button { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 10px; background: var(--bg); }
+.plant-bar-actions button[aria-expanded="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-bar-more { margin-top: 6px; }
+.plant-bar[data-busy="true"] .plant-bar-actions button { opacity: 0.6; }
+.plant-act-icon { flex: 0 0 auto; }
+
+.plant-act { width: min(44rem, 100%); box-sizing: border-box; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px 10px; }
+.plant-act-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.plant-act-body { max-height: min(36vh, 15rem); overflow-y: auto; }
+.plant-bottom:has(.plant-act) .plant-hint, .plant-bottom:has(.plant-act) .plant-time-keys { display: none; }
+.plant-act-form legend { font-weight: 700; padding: 0; }
+.plant-act-about, .plant-act-note { margin: 2px 0 6px; color: var(--muted); font-size: 0.85rem; }
+.plant-act-grid { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: flex-end; }
+.plant-act-field { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
+.plant-act-field input[type="number"] { width: 6rem; }
+.plant-act-key { color: var(--muted); font-size: 0.85rem; }
+.plant-act-refs { margin: 6px 0 0; font-size: 0.85rem; color: var(--muted); }
+.plant-act-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.plant-act-buttons button[type="submit"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-act-buttons button:disabled { opacity: 0.55; }
+.plant-board-rows { flex: 1 0 100%; max-height: 7rem; overflow-y: auto; }
+.plant-board-rows h4 { margin: 4px 0 2px; font-size: 0.85rem; }
+.plant-board-rows button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-refusal { margin: 8px 0 0; }
+.plant-refusal p { margin: 4px 0; }
+
+.plant-hud-actions { left: 12px; top: 336px; width: min(16.5rem, calc(100% - 24px)); box-sizing: border-box; max-height: 30%; overflow-y: auto; z-index: 1; }
+.plant-hud-actions h2 { margin: 0 0 2px; font-size: 0.95rem; }
+.plant-act-list { margin: 2px 0 0; padding-left: 1.4em; }
+.plant-act-list li { margin: 2px 0; font-size: 0.85rem; }
+.plant-act-list button { min-height: 24px; padding: 0 8px; font-size: 0.8rem; background: var(--bg); }
+.plant-act-empty { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
+.plant-recomputing { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.plant-recomputing:empty { display: none; }
+.plant-ring { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--muted); border-top-color: var(--accent); border-radius: 50%; vertical-align: -2px; }
+@media (prefers-reduced-motion: no-preference) { .plant-ring { animation: plant-spin 0.9s linear infinite; } }
+@media (prefers-reduced-motion: reduce) { .plant-ring { display: none; } }
+@keyframes plant-spin { to { transform: rotate(360deg); } }
+
+/* The sign of a sampling board in the scene: its id, and, when the camera is near, the first rows of the day's plan. */
+.plant-label-board { border-radius: 8px; padding: 1px 8px; }
+.plant-board-lines { display: none; }
+.plant-label-board[data-near="1"] .plant-board-lines:not(:empty) { display: flex; flex-direction: column; margin-top: 2px; font-weight: 400; font-size: 10px; text-align: left; }
+
+@media (max-width: 599px) {
+  .plant-hud-actions { top: 168px; max-height: 20%; }
+  .plant-bar-actions { flex-wrap: nowrap; overflow-x: auto; }
+  .plant-bar-actions button { flex: 0 0 auto; white-space: nowrap; }
+  .plant-act-body { max-height: 34vh; }
+}

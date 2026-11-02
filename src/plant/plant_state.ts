@@ -1,6 +1,7 @@
 import type { ErrorCode, PlantSpec, RefusalReason, Response, SampleRecord, ScenePlan, TruthOverlay } from "../protocol.ts";
 import { runKeyOf } from "../ui/run_key.ts";
 import { sameSpec } from "./link.ts";
+import type { Resume } from "./opening.ts";
 
 // What the page knows of the plant (docs/design/plant_ui.md sections 5.5 and 6, rule 3), folded from the Worker's messages by the reducer of ui/state.ts. The page asks for a plan under an epoch
 // that grows with every request; an answer or an error whose epoch is not the newest asked for is dropped, so a slow older run can never replace a newer one. The plan on screen stays until the
@@ -11,6 +12,11 @@ import { sameSpec } from "./link.ts";
 //
 // P5b adds the truth overlay (section 3.3): the switch, and the answers of the two requests the overlay makes (the placeholders of the halls, the truth of the sample the record panel shows), each
 // kept for its own request only. Nothing of it is held while the switch is off. The sample panel reads the rows of its sample in a slot of its own (`fields`), beside the record panel's.
+//
+// P6a (docs/design/plant_ui.md section 5.5, "As built in P6a"): an operator action is a request of its own (`plant_acted`): the spec of the newest request has the reader's list with the new action in it,
+// and the spec before it is kept while the request is in flight (`act.pending`). The answer of that epoch replaces the plan and says where the clock resumes (`act.resume`); a refusal, or an answer
+// whose causality check is false, puts the spec back and leaves the plan on screen as it was (`act.refusal`, which the form says in words). At most one such request is alive at a time: the bar is
+// disabled while it is.
 //
 // P5c keeps the plant when the reader leaves it (docs/design/plant_ui.md section 7, "As built in P5c"): `spec` is the spec of the newest request, so that the plant is asked for again only when the route wants
 // another one (`needsRun`); `view` is the clock instant and the lens at the moment the reader left, which Back returns to; and a challenge started on the run empties the overlay (`plant_run_locked`).
@@ -55,6 +61,17 @@ export interface PlantTruthState {
   sample: (PlantTruthSlot<SampleTruth> & { sample_id: string }) | null;
 }
 
+/** What the form says of the last action that did not stand: the Worker's refusal, or a causality check that came back false (a defect to report, never a state to tolerate). */
+export type ActRefusal = { kind: "error"; problem: PlantProblem } | { kind: "causality"; check: "prefix_equal" | "truth_equal" };
+
+export interface PlantActState {
+  /** The action request in flight: its epoch, the spec before it, and whether the clock was playing when the reader acted. */
+  pending: { epoch: number; prior: PlantSpec | null; play: boolean } | null;
+  refusal: ActRefusal | null;
+  /** Where the clock resumes after the accepted answer of an action. */
+  resume: Resume | null;
+}
+
 /** Where the reader left the plant: the instant of the clock (whole seconds of the run) and the hall the lens reads. */
 export interface PlantView {
   t: number;
@@ -76,12 +93,16 @@ export interface PlantState {
   /** The rows the sample panel shows of its sample, from the lens hall. */
   fields: PlantRecordState | null;
   truth: PlantTruthState;
+  /** P6a: the operator actions. */
+  act: PlantActState;
   problem: PlantProblem | null;
 }
 
 /** What the page itself says to the plant's state, besides the Worker's messages. */
 export type PlantPageAction =
   | { type: "plant_started"; id: number; epoch: number; spec: PlantSpec }
+  | { type: "plant_acted"; id: number; epoch: number; spec: PlantSpec; play: boolean }
+  | { type: "plant_refusal_closed" }
   | { type: "plant_left"; t: number; lens: string | null }
   | { type: "plant_run_locked"; key: string }
   | { type: "plant_record_started"; id: number; epoch: number; architecture: string; sample_id: string; role?: "fields" }
@@ -91,7 +112,8 @@ export type PlantPageAction =
 export type PlantAction = Response | PlantPageAction;
 
 export const NO_TRUTH: PlantTruthState = { on: false, halls: null, sample: null };
-export const initialPlant: PlantState = { epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: NO_TRUTH, problem: null };
+export const NO_ACT: PlantActState = { pending: null, refusal: null, resume: null };
+export const initialPlant: PlantState = { epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: NO_TRUTH, act: NO_ACT, problem: null };
 
 const problemOf = (action: Extract<Response, { type: "error" }>): PlantProblem => ({ code: action.code, message: action.message, ...(action.reason && { reason: action.reason }), ...(action.index !== undefined && { index: action.index }) });
 
@@ -122,16 +144,32 @@ const truthError = (t: PlantTruthState, action: Extract<Response, { type: "error
 export const reducePlant = (state: PlantState, action: PlantAction): PlantState => {
   switch (action.type) {
     case "plant_started":
-      return { ...state, epoch: action.epoch, spec: action.spec, view: sameSpec(state.spec, action.spec) ? state.view : null, running: action.id, problem: null };
+      return { ...state, epoch: action.epoch, spec: action.spec, view: sameSpec(state.spec, action.spec) ? state.view : null, running: action.id, act: NO_ACT, problem: null };
+    case "plant_acted":
+      return {
+        ...state, epoch: action.epoch, spec: action.spec, view: sameSpec(state.spec, action.spec) ? state.view : null, running: action.id, problem: null,
+        act: { pending: { epoch: action.epoch, prior: state.spec, play: action.play }, refusal: null, resume: null },
+      };
+    case "plant_refusal_closed":
+      return { ...state, act: { ...state.act, refusal: null } };
     case "plant_left":
-      return { ...state, view: { t: action.t, lens: action.lens }, record: null, fields: null };
+      return { ...state, view: { t: action.t, lens: action.lens }, record: null, fields: null, act: { ...state.act, resume: null } };
     case "plant_run_locked":
       return state.spec !== null && runKeyOf(state.spec.run, state.spec.seed) === action.key && (state.truth.halls !== null || state.truth.sample !== null) ? { ...state, truth: closed(state.truth) } : state;
     case "plant_ready": {
       if (action.epoch !== state.epoch) return state;
       const ready: PlantReady = { epoch: action.epoch, plan: action.plan, resume_at: action.resume_at, hashes: action.hashes, checks: action.checks };
+      const pending = state.act.pending;
+      const acted = pending !== null && pending.epoch === action.epoch;
+      // the answer to an action whose causality check is false is not drawn: the plan, the clock and the list stay as they were (section 5.5, step 3)
+      if (acted && (action.checks.prefix_equal === false || action.checks.truth_equal === false)) {
+        return { ...state, spec: pending.prior, running: null, act: { pending: null, refusal: { kind: "causality", check: action.checks.prefix_equal === false ? "prefix_equal" : "truth_equal" }, resume: null } };
+      }
       // a new plan: the overlay of the old one goes with it (the switch stays as the reader left it)
-      return { ...state, running: null, ready, halls: [], record: null, fields: null, truth: { on: state.truth.on, halls: null, sample: null }, problem: null };
+      return {
+        ...state, running: null, ready, halls: [], record: null, fields: null, truth: { on: state.truth.on, halls: null, sample: null },
+        act: acted ? { pending: null, refusal: null, resume: { epoch: action.epoch, t: action.resume_at, play: pending.play } } : state.act, problem: null,
+      };
     }
     case "plant_halls": {
       // a hall belongs to the plan of its own epoch: it is dropped when that is not the newest asked for, or not the one on screen, or when the hall is already there
@@ -168,6 +206,10 @@ export const reducePlant = (state: PlantState, action: PlantAction): PlantState 
     }
     case "error": {
       if (action.epoch === undefined || action.epoch !== state.epoch) return state;
+      // the refusal of the action just sent: the list goes back to what it was and the form says why (the plan on screen is untouched)
+      if (state.act.pending !== null && state.act.pending.epoch === action.epoch && action.id === state.running) {
+        return { ...state, spec: state.act.pending.prior, running: null, problem: null, act: { pending: null, refusal: { kind: "error", problem: problemOf(action) }, resume: null } };
+      }
       // an error about the open card is the record panel's problem, about the sample panel's rows that panel's, about an overlay request the overlay's; any other error of this epoch is the plant's
       if (state.record !== null && action.id === state.record.id) return { ...state, record: { ...state.record, problem: problemOf(action) } };
       if (state.fields !== null && action.id === state.fields.id) return { ...state, fields: { ...state.fields, problem: problemOf(action) } };

@@ -88,6 +88,12 @@ export function useScene({ host, webgl, plan, layout, playback, halls, lens, pic
     };
   }, [plan, layout, webgl, playback]);
 
+  // the renderer is kept from one scene to the next while the reader is on the plant (an action makes a new plan, and a new renderer would compile its programs again); leaving frees it and its context
+  useEffect(() => {
+    if (!webgl) return;
+    return () => void loadScene().then((chunk) => chunk.releaseStage());
+  }, [webgl]);
+
   // the halls that arrive after the first answer, and the lens, go to the scene without making it again
   useEffect(() => {
     if (scene.kind === "ready") mounted.current?.setHalls(halls);

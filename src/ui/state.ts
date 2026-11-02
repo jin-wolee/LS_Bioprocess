@@ -90,6 +90,8 @@ export const reduce = (state: State, action: Action): State => {
     case "challenge_reveal":
       return withOneSeed(state);
     case "plant_started":
+    case "plant_acted":
+    case "plant_refusal_closed":
     case "plant_left":
     case "plant_run_locked":
     case "plant_ready":

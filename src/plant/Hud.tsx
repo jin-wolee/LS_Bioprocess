@@ -9,7 +9,7 @@ import { clockOf, onDuty } from "./view.ts";
 
 // The HUD of the plant (docs/design/plant_ui.md sections 2 and 9): the place card at the top left (the name of the place, the layer it shows, the scenario, the clock reading, whether the run plays and
 // at what speed, the staff on duty and the floor lights at that instant, the record halls; folded under its name on a narrow viewport) and the browser-check chip of the lab at the top right, and,
-// apart, the line of hints; the bottom bar of the operator actions is a disabled shell that says it comes in a later step. The place card follows the clock by the minute. Every number is a label;
+// apart, the line of hints; the bottom bar of the operator actions is BottomBar.tsx and the reader's list of them is ActionList.tsx (P6a). The place card follows the clock by the minute. Every number is a label;
 // every word is in the dictionary. P5a adds the lens chip (section 3.3): one button for each record hall, which picks the hall the record panel reads; the other halls are dimmed in the scene.
 // A hall whose record has not arrived yet (the halls come after the first answer) is a disabled button that says so.
 

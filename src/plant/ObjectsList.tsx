@@ -3,9 +3,9 @@ import type { PlantObject } from "./view.ts";
 
 // The objects list (docs/design/plant_ui.md section 9): a DOM list of every object of interest, so that the plant can be operated without aiming at a 3D object. Each entry is a button that brings
 // the camera to the object and, for a reactor, an analyzer or an operator, opens its panel (P5b); without a scene (no WebGL, or the scene still loading) the same list is shown as plain text, so it is
-// always the full list of what the floor holds.
+// always the full list of what the floor holds. A sampling board (P6a) brings the camera to the board and opens the form that moves a draw, on its bay.
 
-const KINDS = ["reactor", "analyzer", "staff", "hall"] as const;
+const KINDS = ["reactor", "analyzer", "staff", "hall", "board"] as const;
 
 export function ObjectsList({ objects, onLook }: { objects: readonly PlantObject[]; onLook: ((key: string) => void) | null }) {
   return (

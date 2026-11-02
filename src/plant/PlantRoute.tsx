@@ -1,7 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { text } from "../i18n/index.ts";
-import type { CheckState, ScenePlan } from "../protocol.ts";
+import type { CheckState, PlantSpec, ScenePlan } from "../protocol.ts";
 import { LangContext, T } from "../ui/T.tsx";
+import { ActionList } from "./ActionList.tsx";
 import { BottomBar } from "./BottomBar.tsx";
 import { Hint, Hud, TruthControl } from "./Hud.tsx";
 import { CardList } from "./CardList.tsx";
@@ -16,13 +17,14 @@ import { TubeList } from "./TubeList.tsx";
 import { drillOf } from "./drill.ts";
 import { objectTimes } from "./events.ts";
 import { clockKeys } from "./keys.ts";
-import { instantIn } from "./link.ts";
 import type { PlantLink } from "./link.ts";
 import { layoutOf } from "./layout.ts";
 import { webgl2 } from "./loader.ts";
 import { hallsOfPlan } from "./plant_state.ts";
 import type { PlantState } from "./plant_state.ts";
+import { openingOf } from "./opening.ts";
 import { createPlayback } from "./playback.ts";
+import { useAddress } from "./useAddress.ts";
 import { useOpening } from "./useOpening.ts";
 import { DEFAULT_PLANT } from "./spec.ts";
 import { reducedMotion, tierOf, useScene } from "./useScene.ts";
@@ -35,13 +37,16 @@ import "./plant.css";
 // host (`data-plant-*`, `data-run-hash`, `data-cells-hash`), so the end-to-end checks read the DOM and the page ships no test global. The run's clock (playback.ts) is made with the plan; the scene gives
 // it the wall seconds of its frames, the controls and the keys below change it, and the host's `data-plant-t`, `-speed` and `-playing` are written from it.
 //
+// P6a: the bar under the floor takes the operator actions; the list of them is in the HUD, the clock resumes at `resume_at` when the plan of an action arrives, and the address holds the plant link of the
+// spec once a run has settled.
+//
 // P5c: the plant is the page store's. The route opens on the instant of the link (`t`, which wins) or the one the reader left at (`plant.view`), paused, with the lens they left on, and saves both when it
 // unmounts; the panels carry the links to the other screens (section 7).
 //
 // P5b: the object the reader picked (a click in the scene, a button of a list) opens its panel and is what `,` and `.` step between the events of; `F` follows a picked sample; the switch of the truth
 // overlay is the HUD's, and what the Worker answers is drawn by the scene (the placeholders) and by the record panel (the truth column and the verdicts).
 
-export function PlantRoute({ plant, check, link, engine, architectures, onCard, onCardClose, onFields, onFieldsClose, onTruth, onLeave }: {
+export function PlantRoute({ plant, check, link, engine, architectures, flags, onCard, onCardClose, onFields, onFieldsClose, onTruth, onLeave, onAct, onRefusalClose }: {
   plant: PlantState;
   check: CheckState;
   /** The link the route was opened with: its notes, its instant and the engine version it was made with; null when the address has no query. */
@@ -49,6 +54,8 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
   /** The engine version of the build and the record architectures the Setup screen offers (for the links to other screens). */
   engine: string;
   architectures: readonly string[];
+  /** The flags of `ready`, for the flag form of the bar. */
+  flags: readonly string[];
   /** The reader leaves the plant: the clock instant and the lens are the store's to keep. */
   onLeave: (t: number, lens: string) => void;
   onCard: (architecture: string, sample_id: string) => void;
@@ -56,6 +63,9 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
   onFields: (architecture: string, sample_id: string) => void;
   onFieldsClose: () => void;
   onTruth: (on: boolean) => void;
+  /** An operator action: the spec with the list including it, and whether the clock was playing when the reader acted. */
+  onAct: (spec: PlantSpec, play: boolean) => void;
+  onRefusalClose: () => void;
 }) {
   const lang = useContext(LangContext);
   const webgl = webgl2();
@@ -73,8 +83,14 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
   const layout = useMemo(() => (plan ? layoutOf(plan.layout) : null), [plan]);
   const objects = useMemo(() => (plan ? objectsOf(plan) : []), [plan]);
   const playback = useMemo(() => (plan ? createPlayback(plan, false) : null), [plan]);
-  // the instant the clock opens at: the link's, else where the reader left; an instant outside the run is not used (the notes say so)
-  const wanted = useMemo(() => (plan ? instantIn(link?.t ?? plant.view?.t ?? null, plan.horizon_s) : { t: null, fault: null }), [plan, link?.t, plant.view?.t]);
+  // the instant the clock opens at: after an action, its resume_at; else the link's, else where the reader left; an instant outside the run is not used (the notes say so)
+  const wanted = useMemo(
+    () => (plan ? openingOf({ resume: plant.act.resume, epoch: answer?.epoch ?? null, linkT: link?.t ?? null, viewT: plant.view?.t ?? null, horizon: plan.horizon_s }) : { t: null, fault: null, play: null }),
+    [plan, link?.t, plant.view?.t, plant.act.resume],
+  );
+  // an action request is in flight: the bar waits; the board the reader asked for from the objects list opens the form of the move of a draw on its bay
+  const busy = plant.act.pending !== null;
+  const [ask, setAsk] = useState<{ bay: number; nonce: number } | null>(null);
   const times = useMemo(() => (plan && picked ? objectTimes(plan, picked) : undefined), [plan, picked?.kind, picked?.index]);
   const host = useRef<HTMLDivElement>(null);
 
@@ -101,7 +117,8 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
     },
   });
 
-  useOpening(playback, wanted.t, scene.kind === "ready", reducedMotion(), lens, onLeave);
+  useOpening(playback, wanted.t, wanted.play, scene.kind === "ready", reducedMotion(), lens, onLeave);
+  useAddress(plant.spec, plant.running === null && plan !== null, engine);
 
   // the page state of section 10, written from the clock
   useEffect(() => {
@@ -140,6 +157,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
     host.current?.scrollIntoView({ block: "nearest" });
     const found = plan ? pickedOfKey(plan, key) : null;
     if (found) choose(found);
+    if (key.startsWith("board:")) setAsk((now) => ({ bay: Number(key.slice(7)) - 1, nonce: (now?.nonce ?? 0) + 1 }));
   };
   const pickAndLook = (p: Picked): void => {
     if (plan) look(keyOf(plan, p));
@@ -179,6 +197,8 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
             data-plant-scene={scene.kind}
             data-plant-tier={tierOf()}
             data-plant-epoch={answer ? answer.epoch : undefined}
+            data-plant-actions={spec.actions.length}
+            data-plant-recomputing={busy ? "true" : undefined}
             data-plant-truth={!plant.truth.on ? "off" : locked ? "locked" : "on"}
             data-plant-pick={plan && picked ? keyOf(plan, picked) : undefined}
             data-plant-follow={plan && following !== null ? (plan.samples[following] as ScenePlan["samples"][number]).id : undefined}
@@ -192,6 +212,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
           )}
           {full && playback && <Hud plan={full} playback={playback} scenario={spec.run.scenario} check={check} lens={lens} onLens={chooseLens} />}
           {full && playback && <TruthControl truth={{ on: plant.truth.on, locked }} onTruth={onTruth} />}
+          {full && playback && <ActionList spec={spec} playback={playback} busy={busy} onAct={onAct} />}
           {plant.record && <RecordPanel record={plant.record} drill={drill} onClose={onCardClose} truth={plant.truth} />}
           {full && playback && picked && (
             <Panels
@@ -216,7 +237,9 @@ export function PlantRoute({ plant, check, link, engine, architectures, onCard, 
           <div class="plant-bottom">
             <Hint />
             {plan && playback && <TimeBar plan={plan} playback={playback} {...(times && { times })} />}
-            <BottomBar />
+            {full && playback && (
+              <BottomBar plan={full} playback={playback} spec={spec} flags={flags} picked={picked} busy={busy} refusal={plant.act.refusal} ask={ask} onAct={onAct} onRefusalClose={onRefusalClose} />
+            )}
           </div>
         </div>
       )}

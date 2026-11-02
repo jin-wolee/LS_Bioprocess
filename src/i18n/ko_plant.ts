@@ -12,7 +12,7 @@ export const koPlant: Record<keyof typeof enPlant, string> = {
   "home.plant.nowebgl": "이 브라우저는 WebGL 버전 둘을 지원하지 않아 입체 공장을 볼 수 없습니다. 같은 공장을 글로 설명해 드리며, 랩의 다른 모든 화면은 입체 화면 없이도 동작합니다.",
 
   "plant.heading": "공장",
-  "plant.lead": "기본 시나리오의 시드 하나를 걸어 다닐 수 있는 공간으로 보여 줍니다. 실행은 첫 근무조가 시작되는 시점부터 재생되며, 직원과 튜브와 분석기가 기록대로 움직입니다. 바닥 아래의 조절 막대로 멈추고, 옮기고, 사건 사이를 넘어 다닐 수 있습니다. 기록 보관실 선반의 카드는 각 데이터 아키텍처가 저장한 내용을 보여 주며, 카드를 열면 그 기록을 읽을 수 있습니다. 운영자 조작은 이후 단계에서 들어옵니다.",
+  "plant.lead": "기본 시나리오의 시드 하나를 걸어 다닐 수 있는 공간으로 보여 줍니다. 실행은 첫 근무조가 시작되는 시점부터 재생되며, 직원과 튜브와 분석기가 기록대로 움직입니다. 바닥 아래의 조절 막대로 멈추고, 옮기고, 사건 사이를 넘어 다닐 수 있습니다. 기록 보관실 선반의 카드는 각 데이터 아키텍처가 저장한 내용을 보여 주며, 카드를 열면 그 기록을 읽을 수 있습니다. 바닥 아래의 막대로 조작을 내리면 Worker가 하나씩 검사하고 실행을 처음부터 다시 계산합니다.",
   "plant.boot": "공장 장면과 첫 계획을 불러오는 중입니다.",
   "plant.status.heading": "상태",
   "plant.status.plan.waiting": "Worker의 계획을 기다리는 중입니다.",
@@ -56,8 +56,7 @@ export const koPlant: Record<keyof typeof enPlant, string> = {
   "plant.time.scrub": "실행 중의 시점",
 
   "plant.bar.label": "운영자 조작",
-  "plant.bar.soon": "운영자 조작은 이후 단계에서 들어옵니다. 지금 이 막대는 틀만 있습니다.",
-  "plant.bar.add_feed": "공급 추가",
+  "plant.bar.add_feed": "피드 추가",
   "plant.bar.move_draw": "채취 옮기기",
   "plant.bar.analyzer_down": "분석기 멈추기",
   "plant.bar.set_flag": "플래그 바꾸기",
@@ -117,7 +116,7 @@ export const koPlant: Record<keyof typeof enPlant, string> = {
   "plant.log.heading": "사건 기록",
   "plant.log.read": "실행이 재생되는 동안 가장 최근 사건을 읽어 주기",
   "plant.log.inoculation": "{clock}: 바이오리액터 {unit} 접종.",
-  "plant.log.feed": "{clock}: 바이오리액터 {unit} 공급.",
+  "plant.log.feed": "{clock}: 바이오리액터 {unit} 피드.",
   "plant.log.shift": "{clock}: 바이오리액터 {unit} 온도 변경.",
   "plant.log.alarm": "{clock}: 바이오리액터 {unit} 경보.",
   "plant.log.harvest": "{clock}: 바이오리액터 {unit} 수확.",

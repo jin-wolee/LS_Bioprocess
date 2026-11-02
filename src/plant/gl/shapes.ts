@@ -1,6 +1,6 @@
 import { BoxGeometry, Color, CylinderGeometry, Group, InstancedMesh, MeshStandardMaterial } from "three";
 import type { BufferGeometry, Material } from "three";
-import { BENCH_TOP, PLINTH, analyzerShape, vesselShape } from "../dims.ts";
+import { BENCH_TOP, BOARD, PLINTH, analyzerShape, boardPoint, vesselShape } from "../dims.ts";
 import { SHELF } from "../hall_shelves.ts";
 import type { Layout } from "../layout.ts";
 import { laneLength, trayZ } from "../scene_at.ts";
@@ -48,6 +48,15 @@ export const buildThings = (layout: Layout): Built => {
   // the bays: one plinth each
   const plinths = add(box, standard(PALETTE.plinth, 0.9), layout.bays.length, false);
   for (const [i, b] of layout.bays.entries()) plinths.setMatrixAt(i, placed(b.footprint.x + b.footprint.w / 2, PLINTH / 2, b.footprint.z + b.footprint.d / 2, b.footprint.w, PLINTH, b.footprint.d));
+
+  // the sampling board of each bay (P6a): a plate on two posts; its rows are DOM labels (labels.ts), written from `boardsAt`
+  const plates = add(box, standard(0xf6f1e4, 0.9), layout.bays.length, false);
+  const posts = add(box, standard(PALETTE.steel, 0.5, 0.2), 2 * layout.bays.length, false);
+  for (const [i, b] of layout.bays.entries()) {
+    const at = boardPoint(b.footprint);
+    plates.setMatrixAt(i, placed(at.x, PLINTH + BOARD.bottom + BOARD.h / 2, at.z, BOARD.w, BOARD.h, BOARD.thick));
+    for (const [k, dx] of [-BOARD.w / 2 + 0.1, BOARD.w / 2 - 0.1].entries()) posts.setMatrixAt(2 * i + k, placed(at.x + dx, PLINTH + BOARD.bottom / 2, at.z, BOARD.post, BOARD.bottom, BOARD.post));
+  }
 
   // the vessels: one instanced mesh for each profile in use; the lamp, the liquid and the tint of the jacket are motion.ts's
   const profiles = [...new Set(layout.bays.map((b) => b.profile))];
@@ -106,5 +115,5 @@ export const buildThings = (layout: Layout): Built => {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }
-  return { group, jackets, objects: { reactor: vessels, analyzer: bodies.count, hall: backs.count }, disposables };
+  return { group, jackets, objects: { reactor: vessels, analyzer: bodies.count, hall: backs.count, board: plates.count }, disposables };
 };

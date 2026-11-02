@@ -96,13 +96,13 @@ def matrix_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme
                 problems.append(f"horizontal scroll: scrollWidth {m['sw']} > innerWidth {m['iw']}")
             if m["lang"] != lang:
                 problems.append(f"the page language is {m['lang']}, expected {lang}")
-            for selector in ("#plant", "[data-plant-hud=place]", "[data-plant-hud=check]", ".plant-hint", "[data-plant-time]", "[data-time=scrub]", "[data-plant-bar=shell]", "[data-plant-hud=lens]", "#plant-objects", "#plant-cards", "#plant-text", "#plant-live"):
+            for selector in ("#plant", "[data-plant-hud=place]", "[data-plant-hud=check]", ".plant-hint", "[data-plant-time]", "[data-time=scrub]", "[data-plant-bar=actions]", "[data-plant-hud=lens]", "#plant-objects", "#plant-cards", "#plant-text", "#plant-live"):
                 if page.query_selector(selector) is None:
                     problems.append(f"missing {selector}")
             problems += counts_problems(json.loads(page.get_attribute("#plant", "data-plant-objects") or "{}"), page.evaluate(LIST_JS))
-            bar = page.evaluate("[...document.querySelectorAll('[data-plant-bar=shell] button')].map(b => b.disabled)")
-            if not bar or not all(bar):
-                problems.append("the bottom bar is not a disabled shell")
+            bar = page.evaluate("[...document.querySelectorAll('[data-plant-bar=actions] [data-action]')].map(b => b.dataset.action + (b.disabled ? ':disabled' : ''))")
+            if bar != ["add_feed", "move_draw", "analyzer_down", "set_flag", "set_capture_path", "more"]:
+                problems.append(f"the bottom bar holds {bar}, expected the five core actions and the overflow, all enabled")
             nodes = page.evaluate(NUMBERS_JS)
             problems += [f"a number outside a data-ref, data-result or data-label: '{o['text']}' in {o['where']}" for o in number_offenders(nodes)]
             page.bring_to_front()
@@ -157,7 +157,8 @@ def check_plant_fallback(pw, url, out: Path) -> Result:
             if page.query_selector("#plant") is not None:
                 problems.append("the plant host exists without WebGL")
             rows = page.evaluate("Object.fromEntries([...document.querySelectorAll('[data-plant-table]')].map(t => [t.dataset.plantTable, t.querySelectorAll('tbody tr').length]))")
-            if rows != {"reactors": DEFAULT_OBJECTS["reactor"], "analyzers": DEFAULT_OBJECTS["analyzer"], "halls": DEFAULT_OBJECTS["hall"]}:
+            # the sampling boards list the samples planned for the day of the clock, and nothing is planned on day 0 (the first draws are the day after an inoculation): the table is there with no row
+            if rows != {"reactors": DEFAULT_OBJECTS["reactor"], "analyzers": DEFAULT_OBJECTS["analyzer"], "halls": DEFAULT_OBJECTS["hall"], "boards": 0}:
                 problems.append(f"the text alternative holds the rows {rows}")
             listed = page.evaluate(LIST_JS)
             if listed != DEFAULT_OBJECTS:

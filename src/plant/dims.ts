@@ -20,5 +20,11 @@ export const ANALYZERS: Record<string, [number, number, number]> = {
 export const vesselShape = (profile: string): { radius: number; height: number } => VESSELS[profile] ?? (VESSELS.bench_manual as { radius: number; height: number });
 export const analyzerShape = (profile: string): [number, number, number] => ANALYZERS[profile] ?? (ANALYZERS.allinone_atline as [number, number, number]);
 
+/** The sampling board of a bay (P6a, plant_ui.md section 3.2): a plate on two posts at the west end of the north edge of the plinth. View constants, the look is the author's to adjust. */
+export const BOARD = { w: 1.6, h: 0.9, thick: 0.06, bottom: 1.5, post: 0.06, inset: 1.1, back: 0.12 } as const;
+
+/** Where the board of a bay stands on the floor: `inset` from the west end of the bay's footprint and `back` inside its north edge. */
+export const boardPoint = (footprint: { x: number; z: number }): { x: number; z: number } => ({ x: footprint.x + BOARD.inset, z: footprint.z + BOARD.back });
+
 /** A tube in the hand is held this far in front of the operator, toward the vessel (north), not inside the figure. */
 export const HELD = 0.32;

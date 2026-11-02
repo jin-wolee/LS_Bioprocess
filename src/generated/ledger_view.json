@@ -214,6 +214,23 @@
       "sources": [],
       "provisional": false
     },
+    "A036": {
+      "grade": "S",
+      "range": [
+        "shared-folder CSV drop",
+        "vendor OPC server (licensed)",
+        "SiLA 2 or OPC UA LADS (future)"
+      ],
+      "unit": "category",
+      "sources": [
+        "S003",
+        "S004",
+        "S038",
+        "S039",
+        "S040"
+      ],
+      "provisional": true
+    },
     "A039": {
       "grade": "S",
       "range": "fixed",
@@ -358,6 +375,18 @@
       "unit": "% CV",
       "sources": [
         "S025"
+      ],
+      "provisional": true
+    },
+    "A061": {
+      "grade": "P",
+      "range": [
+        -83.25,
+        -46.5
+      ],
+      "unit": "% median relative change",
+      "sources": [
+        "S024"
       ],
       "provisional": true
     },
@@ -1238,6 +1267,13 @@
       "sources": [],
       "provisional": false
     },
+    "A202": {
+      "grade": "A",
+      "range": "burst share 0 to 1 (A016 sets 0.65); the rest uniform",
+      "unit": "schedule; fraction",
+      "sources": [],
+      "provisional": false
+    },
     "A203": {
       "grade": "A",
       "range": "width 15 to 240 min; offset 0 to 240 min",
@@ -1411,6 +1447,13 @@
       "unit": "mL",
       "sources": [],
       "provisional": false
+    },
+    "A228": {
+      "grade": "A",
+      "range": "a whole minute (A200) inside the run, from the scenario start to the horizon (A189); a moved draw only on the same day as its planned instant and inside the staffed window (A201, A202)",
+      "unit": "min",
+      "sources": [],
+      "provisional": false
     }
   },
   "sources": {
@@ -1488,6 +1531,12 @@
     },
     "S038": {
       "verification": "agent-read"
+    },
+    "S039": {
+      "verification": "snippet"
+    },
+    "S040": {
+      "verification": "snippet"
     },
     "S045": {
       "verification": "snippet"

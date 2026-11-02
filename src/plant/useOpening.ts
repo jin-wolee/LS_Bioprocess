@@ -5,10 +5,11 @@ import type { Playback } from "./playback.ts";
 // scene is drawn, unless the reader prefers reduced motion (then it starts paused: section 9); and leaving the plant saves the instant and the lens in the page store.
 
 /**
- * `start` is the instant the clock opens at, or null for the opening of the first shift; `drawn` is whether the scene has been drawn; `reduced` whether the reader prefers reduced motion. `onLeave`
- * is told the whole second of the clock and the lens when the route unmounts.
+ * `start` is the instant the clock opens at, or null for the opening of the first shift; `play` is set only when the plan is the answer to an operator action (P6a): the clock then plays on if it was
+ * playing when the reader acted, and stays paused if it was not, whatever the reader's preference for motion was at the start. `drawn` is whether the scene has been drawn; `reduced` whether the reader
+ * prefers reduced motion. `onLeave` is told the whole second of the clock and the lens when the route unmounts.
  */
-export function useOpening(playback: Playback | null, start: number | null, drawn: boolean, reduced: boolean, lens: string, onLeave: (t: number, lens: string) => void): void {
+export function useOpening(playback: Playback | null, start: number | null, play: boolean | null, drawn: boolean, reduced: boolean, lens: string, onLeave: (t: number, lens: string) => void): void {
   const held = useRef(false);
   const latest = useRef({ playback, lens, onLeave });
   latest.current = { playback, lens, onLeave };
@@ -22,7 +23,12 @@ export function useOpening(playback: Playback | null, start: number | null, draw
   }, [playback]);
 
   useEffect(() => {
-    if (drawn && playback && !reduced && !held.current) playback.play();
+    if (!drawn || !playback) return;
+    if (play !== null) {
+      if (play) playback.play();
+      return;
+    }
+    if (!reduced && !held.current) playback.play();
   }, [drawn, playback]);
 
   useEffect(() => () => {

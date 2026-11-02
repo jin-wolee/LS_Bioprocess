@@ -15,11 +15,11 @@ const run = (actions: PlantAction[], from: PlantState = initialPlant): PlantStat
 
 describe("the plant state", () => {
   it("Given nothing asked Then there is no epoch, no plan and no problem", () => {
-    expect(initialPlant).toEqual({ epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null });
+    expect(initialPlant).toEqual({ epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, act: { pending: null, refusal: null, resume: null }, problem: null });
   });
 
   it("Given a request is made Then its epoch is the newest and the request is running", () => {
-    expect(run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }])).toEqual({ epoch: 1, spec: SPEC, view: null, running: 7, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, problem: null });
+    expect(run([{ type: "plant_started", id: 7, epoch: 1, spec: SPEC }])).toEqual({ epoch: 1, spec: SPEC, view: null, running: 7, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, act: { pending: null, refusal: null, resume: null }, problem: null });
   });
 
   it("Given the answer of the newest epoch Then the plan, the hashes and the checks are kept and nothing is running", () => {

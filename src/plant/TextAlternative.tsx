@@ -1,6 +1,7 @@
 import { useMemo } from "preact/hooks";
 import { Label, T } from "../ui/T.tsx";
 import type { ScenePlan } from "../protocol.ts";
+import { BoardTable } from "./BoardList.tsx";
 import { LiveLog } from "./LiveLog.tsx";
 import type { Playback } from "./playback.ts";
 import { sceneAt } from "./scene_at.ts";
@@ -122,6 +123,8 @@ export function TextAlternative({ plan, playback }: { plan: ScenePlan; playback:
           </tbody>
         </table>
       </div>
+
+      <BoardTable plan={plan} at={at} />
     </section>
   );
 }
