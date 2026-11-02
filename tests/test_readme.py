@@ -12,7 +12,9 @@ import subprocess
 from helpers import REPO
 
 README = (REPO / "README.md").read_text(encoding="utf-8")
-SITE = "https://jin-wolee.github.io/Lineage-Simulator-Bioprocessing/"
+SITE = "https://jin-wolee.github.io/LS_Bioprocess/"
+REPOSITORY = "LS_Bioprocess"
+OLD_REPOSITORY = "Lineage-Simulator-" + "Bioprocessing"  # the earlier name of the repository; in two parts so that this file is not a hit itself
 FLAGS = [
     "system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions",
     "write_time_keys", "ingest_idempotency", "audit_trail", "material_lot_links", "equipment_links",
@@ -76,6 +78,39 @@ def test_its_flag_list_is_the_one_of_the_specification():
     spec = (REPO / "docs" / "design" / "simulation_spec.md").read_text(encoding="utf-8")
     table = spec.split("## 5. Data architecture = feature flags", 1)[1].split("Planned time is separate", 1)[0]
     assert re.findall(r"^\| `(\w+)` \|", table, re.M) == FLAGS
+
+
+def test_it_names_neither_the_earlier_repository_nor_a_pages_address_of_another_repository():
+    # A2 (2026-11-02): the repository is jin-wolee/LS_Bioprocess; the two addresses are the ones of the README and nothing else
+    assert OLD_REPOSITORY not in README
+    assert sorted(set(re.findall(r"https://jin-wolee\.github\.io/[^/\s)]+/(?:lab/)?", README))) == [SITE, SITE + "lab/"]
+
+
+def test_it_does_not_claim_the_wrong_tube_or_who_changed_a_result():
+    # audit F8 and F13, the author's decisions of 2026-11-02: a correct barcode on the wrong tube is not modelled, and the audit trail keeps what changed and when, not who changed it or why
+    compared = section(README, "What is compared")
+    assert "stuck on the wrong tube is not modelled" in compared
+    assert "Some errors remain even here" not in compared
+    row = re.search(r"^\| `audit_trail` \| (.+) \|$", compared, re.M)
+    assert row and "who changed what" not in row.group(1)
+    assert "not who changed a result or why" in row.group(1) and "the old and the new value" in row.group(1)
+
+
+def test_it_reads_the_comparison_as_a_constructive_example_and_the_spread_as_variation_of_the_inputs():
+    reading = section(README, "How to read the comparison")
+    flat = " ".join(reading.split())
+    assert "zero by construction" in flat and "constructive example" in flat
+    assert "not a measure of the quality, the efficiency or the return of real spreadsheets or laboratory systems" in flat
+    assert "not the uncertainty of the model" in flat and "do not change with the seed" in flat
+    assert "(A103) is a threshold of the design, not a proof of statistical sufficiency" in flat
+
+
+def test_it_says_what_the_hold_time_rule_is_and_what_the_break_out_figures_are():
+    flat = " ".join(section(README, "How to read the comparison").split())
+    assert "a proxy taken from blood-gas handling and applied, as an assumption, to every analyte" in flat
+    assert "not the accuracy of a real laboratory" in flat
+    assert "a hold is a state of the record and stops no culture" in flat.lower()
+    assert "judged by coverage, not by a sensitivity" in flat
 
 
 def test_it_keeps_the_break_out_screen_back_and_says_why():
@@ -175,7 +210,7 @@ def test_every_pages_address_in_the_repository_uses_the_new_repository_name():
         if p == "docs/progress.md" or not f.is_file() or f.suffix in {".png", ".jpg", ".woff", ".woff2", ".lock"} or p == "package-lock.json":
             continue
         for m in re.finditer(r"https://jin-wolee\.github\.io/([^/\s\"')]+)", f.read_text(encoding="utf-8", errors="ignore")):
-            if m.group(1) != "Lineage-Simulator-Bioprocessing":
+            if m.group(1) != REPOSITORY:
                 bad.append((p, m.group(0)))
     assert bad == []
 

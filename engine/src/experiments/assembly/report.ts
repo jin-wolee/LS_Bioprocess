@@ -1,5 +1,6 @@
 import { INTERVAL_TEXT, aggregate, denominatorsOf } from "../../evaluate/aggregate.ts";
-import type { AggregateRow } from "../../evaluate/aggregate.ts";
+import type { AggregateRow, Cell } from "../../evaluate/aggregate.ts";
+import { HOLD_RULE } from "../../evaluate/hold_limit.ts";
 import { NOT_APPLICABLE } from "../../evaluate/ratio.ts";
 import { quantile } from "../../evaluate/stats.ts";
 import type { ExperimentReport, Row } from "../../generated/experiment_report.schema";
@@ -82,6 +83,29 @@ const rowOf = (a: AggregateRow, cells: readonly Metrics[], dens: ReturnType<type
   };
 };
 
+/** The three rows of the hold-time rule's share of the result (spec section 8), in report order. */
+const HOLD_LIMIT_ROWS = ["hold_limit.rejected", "hold_limit.exact_reconstruction_limit_lifted", "hold_limit.availability_limit_lifted"];
+
+/**
+ * The hold-time rule's share of the result for one architecture (spec section 8, "The hold-time rule and its share of the result"): the figure of each seed, aggregated like the cells' numbers.
+ * The figure lives beside the cells, so no cell and no hash of a cell carries it. A record that stores no hold time has no figure: its three rows read "not evaluable" with the reason of the
+ * validation, and carry no number. A result that did not ask for the figure has no rows.
+ */
+const holdLimitRows = (id: string, result: OpenLoopResult, cells: readonly Metrics[], reason: string | undefined): Row[] => {
+  if (result.outcomes.every((o) => o.hold_limit === undefined)) return [];
+  const figures: Cell[] = result.outcomes.flatMap((o) => {
+    const f = o.hold_limit?.[id];
+    return f ? [{ scenario_id: result.scenario_id, architecture: id, seed: o.seed, metrics: { hold_limit: f } }] : [];
+  });
+  if (figures.length === 0) {
+    return HOLD_LIMIT_ROWS.map((metric): Row => ({
+      metric, status: "not_evaluable", n_seeds: result.outcomes.length, n_defined: 0, median: null, lo: null, hi: null, denominator: null, den: null, reason: reason ?? "the hold-time rule cannot run on this record",
+    }));
+  }
+  const dens = denominatorsOf(figures);
+  return aggregate(figures, 0).rows.map((a) => rowOf(a, cells, dens));
+};
+
 /** The scenario names no group contrast, so no cell has a phantom effect: one row per architecture says so (not applicable, never 0). */
 const phantomRow = (cells: readonly Metrics[]): Row[] =>
   cells.every((c) => c.metrics.phantom_effect === null)
@@ -112,7 +136,7 @@ export const buildReport = (result: OpenLoopResult, head: ReportHead): Experimen
       id, role: id.startsWith(prefix) ? "ablation" : "preset", ablated_flag: id.startsWith(prefix) ? id.slice(prefix.length) : null, n_seeds: cells.length,
       not_modelled: [...new Set(cells.flatMap((c) => c.metrics.detection.not_modelled))],
       not_evaluable: [...not_evaluable].map(([rule, reason]) => ({ rule, reason })),
-      rows: [...table.rows.filter((r) => !SETTING_ECHOES.has(r.metric)).map((r) => rowOf(r, cells, dens)), ...phantomRow(cells)],
+      rows: [...table.rows.filter((r) => !SETTING_ECHOES.has(r.metric)).map((r) => rowOf(r, cells, dens)), ...phantomRow(cells), ...holdLimitRows(id, result, cells, not_evaluable.get(HOLD_RULE))],
     };
   });
   return {

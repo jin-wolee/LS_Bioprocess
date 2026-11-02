@@ -71,5 +71,5 @@ export const seedInputFromRun = (run: ScenarioRun, s: RunSettings): SeedInput =>
   // the tolerances of VR-003 and VR-004 have no ledger entry (scenarios/evaluation/default.json): those two rules are reported as not evaluable
   rules: { hold_limit_s: s.evaluation.hold_limit_s },
   review: s.review,
-  config: { sla_s: s.evaluation.sla_s, staffed_window_s: s.evaluation.staffed_window_s, days: s.days, ...(s.contrast && { contrast: s.contrast }) },
+  config: { sla_s: s.evaluation.sla_s, roster: s.review.roster, days: s.days, ...(s.contrast && { contrast: s.contrast }) },
 });

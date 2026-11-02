@@ -4,6 +4,7 @@
 export const enBreakout = {
   "breakout.heading": "Contamination break-out",
   "breakout.lead": "A scripted contamination event reaches one reactor. The plant shows a signal, a confirming sample is drawn, holds are placed and an investigation walks back from the signal. Choose a case, a seed and the records to compare: each record is investigated with what it stores and measured against what the event really touched. The figures are simulation results under the inputs shown, not a prediction of a real plant.",
+  "breakout.reading": "A hold is a state of the record and stops no culture, so a containment figure is the effect of tracking and holding on the record, not of a control of the culture or of how a contamination spreads. A confirming test is judged by coverage, not by a sensitivity.",
   "breakout.local.notice": "Not for publication. This local build shows the Break-out screen although the figures on it rest on sources that have not all been re-read. The public build refuses the screen until they are.",
   "breakout.refused.heading": "The Break-out screen is not offered in this build",
   "breakout.refused.text": "The inputs of the contamination event, the delays and the lot topology rest on sources that have not all been re-read, and nothing from the extensions goes on a public page until they are. A local build shows the screen, marked as not for publication.",

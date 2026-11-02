@@ -4,6 +4,7 @@ import { FlagLegend, FlagName } from "./Flags.tsx";
 import { ErrorTypeName, Figure, MetricName } from "./Figure.tsx";
 import { FooterInputs, ResultBlock } from "./ResultBlock.tsx";
 import { Ref } from "./Ref.tsx";
+import { holdParts } from "./hold_parts.tsx";
 import { RunStatus } from "./RunStatus.tsx";
 import { Utilisation } from "./Utilisation.tsx";
 import { axisMax, groupRows, showsLabelErrorNote } from "./results_view.ts";
@@ -63,6 +64,14 @@ export function Architecture({ block, blocks, ready }: { block: Block; blocks: B
       {figures(rows.timing)}
       <T as="h3" k="results.group.record" />
       {figures(rows.record)}
+      {rows.hold_limit.length > 0 && (
+        <section class="hold-limit" data-hold-limit aria-labelledby={`hold-${block.id}`}>
+          <T as="h3" k="results.group.hold_limit" id={`hold-${block.id}`} />
+          <T as="p" k="results.hold_limit.lead" parts={holdParts(ready.evaluation)} />
+          {rows.hold_limit.every((row) => row.status === "not_evaluable") && <T as="p" k="results.hold_limit.cannot" class="notice" data-note="hold-limit-cannot" />}
+          {figures(rows.hold_limit)}
+        </section>
+      )}
       <T as="h3" k="results.group.detection" />
       <T as="p" k="results.detection.lead" />
       {showsLabelErrorNote(flags) && (

@@ -3,11 +3,11 @@
 
     uv run python scripts/qa_site.py [--root dist/site] [--out qa_out/site]
 
-Copies --root under /sample-lineage-lab/ in a scratch folder and serves that over http.server: a project site on GitHub Pages lives under /<repository>/, and a root-absolute address would pass
+Copies --root under /LS_Bioprocess/ in a scratch folder and serves that over http.server: a project site on GitHub Pages lives under /<repository>/, and a root-absolute address would pass
 at the root of a server and fail there. Drives headless Chromium (Playwright sync API), closes it, and writes results.json and summary.md to --out.
 
   folder         the files of the folder: the page, the fonts it names with their two licences (fonts/), the lab, an empty .nojekyll, and nothing of site/infographic/ besides index.html and fonts/
-  infographic_origin   a cold load of the page asks no other origin for anything and nothing outside /sample-lineage-lab/, and Archivo and IBM Plex Mono load from the folder's own fonts/
+  infographic_origin   a cold load of the page asks no other origin for anything and nothing outside /LS_Bioprocess/, and Archivo and IBM Plex Mono load from the folder's own fonts/
   links          the infographic opens, its link opens the lab, the browser check of the lab reads `identical`, the lab's link opens the infographic again; both link texts in English and Korean;
                  no request of the lab leaves the path of the site or the origin
   language       nothing chosen: both pages open in English (ADR-0006); Korean chosen on the infographic is the language of the lab after the click, and a choice made in the lab (English, then
@@ -38,7 +38,7 @@ from qa_lab_checks import check_time
 from qa_lab_helpers import cross_origin
 
 REPO = Path(__file__).resolve().parents[1]
-SUBPATH = "sample-lineage-lab"
+SUBPATH = "LS_Bioprocess"
 REQUIRED = (".nojekyll", "index.html", "lab/index.html", "lab/reference.json", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt")  # the OFL asks for the licence texts beside the fonts
 TOP = {".nojekyll", "index.html", "lab", "fonts"}  # what the folder may hold at its top: the page, its fonts, the lab and the marker file
 LAB_TEXTS = {"en": "Open the lab", "ko": "랩 열기"}  # the link of the infographic (site/infographic/src)

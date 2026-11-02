@@ -1,5 +1,6 @@
 import type { Contrast } from "../../evaluate/effects.ts";
 import type { EvaluationSettings } from "../../evaluate/config.ts";
+import type { HoldLimit } from "../../evaluate/hold_limit.ts";
 import type { Metrics } from "../../generated/metrics.schema";
 import type { Params } from "../../profiles.ts";
 import type { Architecture } from "../../record/architecture.ts";
@@ -45,6 +46,8 @@ export interface SeedOutcome {
   key_text: string;
   /** One per architecture, in the order of `architectures`. */
   cells: Metrics[];
+  /** The hold-time rule's share of the result by architecture (spec section 8), when the run asked for it; kept beside the cells, which do not carry it. */
+  hold_limit?: Record<string, HoldLimit | null>;
 }
 
 export interface OpenLoopResult {
@@ -61,18 +64,19 @@ export const runOpenLoop = async (input: OpenLoopInput): Promise<OpenLoopResult>
   for (const seed of input.seeds) {
     const run = runScenario({ ...input.scenario, seed });
     const truth_log_hash = await logHash(run.events);
-    const out = runSeed(
-      seedInputFromRun(run, {
+    const out = runSeed({
+      ...seedInputFromRun(run, {
         scenario_id: input.scenario.scenario_id, staff: input.staff, evaluation: input.evaluation, architectures: input.architectures,
         days: input.scenario.process.horizon_s / DAY,
         review: { roster: rosterOf(input.scenario.sampling), timing: review.timing, reject_also: review.reject_also },
         ...(input.contrast && { contrast: input.contrast }), ...(input.clock_offsets && { clock_offsets: input.clock_offsets }),
         ...(input.scenario.breakout && { breakout: input.scenario.breakout }),
       }),
-    );
+      with_hold_limit: true,
+    });
     const after = await logHash(run.events);
     if (after !== truth_log_hash) throw new Error(`open loop: the truth log of seed ${seed} changed while the architectures were recorded (${truth_log_hash} before, ${after} after)`);
-    outcomes.push({ seed, truth_log_hash, key_text: out.key_text, cells: out.cells });
+    outcomes.push({ seed, truth_log_hash, key_text: out.key_text, cells: out.cells, hold_limit: out.hold_limit });
   }
   return { scenario_id: input.scenario.scenario_id, engine_version: ENGINE_VERSION, seeds: [...input.seeds], review, outcomes };
 };

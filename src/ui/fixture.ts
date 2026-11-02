@@ -59,6 +59,7 @@ export const READY: ReadyInfo = {
   ],
   evaluation: [
     { name: "staffed_window_h", value: 10, unit: "h", ref: "A098" },
+    { name: "hold_limit_min", value: 30, unit: "min", ref: "A046" },
     { name: "min_seeds", value: 20, unit: "seeds", ref: "A103" },
   ],
   challenge_variants: ["sample", "decision"],

@@ -1367,6 +1367,23 @@
       ],
       "provisional": true
     },
+    "A213": {
+      "grade": "P",
+      "range": "released or rejected per rule; no probability. Sensitivity variants are in A214 and A215",
+      "unit": "category",
+      "sources": [
+        "S015",
+        "S123",
+        "S124",
+        "S125",
+        "S126",
+        "S127",
+        "S128",
+        "S130",
+        "S132"
+      ],
+      "provisional": true
+    },
     "A219": {
       "grade": "A",
       "range": "above 0 and at most the lag (A138)",
@@ -1662,6 +1679,30 @@
       "verification": "agent-read"
     },
     "S122": {
+      "verification": "agent-read"
+    },
+    "S123": {
+      "verification": "agent-read"
+    },
+    "S124": {
+      "verification": "agent-read"
+    },
+    "S125": {
+      "verification": "agent-read"
+    },
+    "S126": {
+      "verification": "agent-read"
+    },
+    "S127": {
+      "verification": "agent-read"
+    },
+    "S128": {
+      "verification": "agent-read"
+    },
+    "S130": {
+      "verification": "agent-read"
+    },
+    "S132": {
       "verification": "agent-read"
     }
   },

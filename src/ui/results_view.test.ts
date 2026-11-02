@@ -84,6 +84,13 @@ describe("groupRows: the rows of one architecture as the screen shows them", () 
     expect(grouped.utilisation.map((r) => r.metric)).toEqual(["utilisation.per_24h.with_setup"]);
   });
 
+  it("Given the rows of the hold-time rule's share (spec section 8) Then they are a group of their own, in neither the record nor utilisation", () => {
+    const g = groupRows([share("exact_reconstruction"), share("hold_limit.rejected"), share("hold_limit.exact_reconstruction_limit_lifted"), share("hold_limit.availability_limit_lifted")]);
+    expect(g.hold_limit.map((r) => r.metric)).toEqual(["hold_limit.rejected", "hold_limit.exact_reconstruction_limit_lifted", "hold_limit.availability_limit_lifted"]);
+    expect(g.record.map((r) => r.metric)).toEqual(["exact_reconstruction"]);
+    expect(g.utilisation).toEqual([]);
+  });
+
   it("Given the detection rows Then each error type has recall, precision and the false-alarm rate together, and the per-detector counts are left out", () => {
     expect(grouped.detection.map((d) => d.type)).toEqual(["label_error", "feed_in_gap"]);
     for (const d of grouped.detection) {

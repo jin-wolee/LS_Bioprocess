@@ -44,11 +44,11 @@ const DETECTION = /^detection\.by_type\.([a-z_]+)\.(realised|recall|precision|fa
 const TIMING = /^(holding_time|turnaround)\./;
 
 /**
- * The rows of one architecture in the groups the screen shows: timing, the record, utilisation (shown once, from the shared truth run, not per architecture) and detection, with the
+ * The rows of one architecture in the groups the screen shows: timing, the record, the hold-time rule's share of the result (spec section 8), utilisation (shown once, from the shared truth run, not per architecture) and detection, with the
  * recall, the precision and the false-alarm rate of each error type together (rule 3 of spec section 8). The per-detector counts are not a metric of the section and are left out.
  */
-export const groupRows = (rows: readonly ReportRow[]): { timing: ReportRow[]; record: ReportRow[]; utilisation: ReportRow[]; detection: DetectionGroup[] } => {
-  const out = { timing: [] as ReportRow[], record: [] as ReportRow[], utilisation: [] as ReportRow[], detection: [] as DetectionGroup[] };
+export const groupRows = (rows: readonly ReportRow[]): { timing: ReportRow[]; record: ReportRow[]; hold_limit: ReportRow[]; utilisation: ReportRow[]; detection: DetectionGroup[] } => {
+  const out = { timing: [] as ReportRow[], record: [] as ReportRow[], hold_limit: [] as ReportRow[], utilisation: [] as ReportRow[], detection: [] as DetectionGroup[] };
   for (const r of rows) {
     const d = DETECTION.exec(r.metric);
     if (d) {
@@ -58,6 +58,7 @@ export const groupRows = (rows: readonly ReportRow[]): { timing: ReportRow[]; re
       group[field] = r;
     } else if (r.metric.startsWith("detection.")) continue;
     else if (r.metric.startsWith("utilisation.")) out.utilisation.push(r);
+    else if (r.metric.startsWith("hold_limit.")) out.hold_limit.push(r);
     else if (TIMING.test(r.metric)) out.timing.push(r);
     else out.record.push(r);
   }

@@ -4,8 +4,8 @@ In a synthetic plant, bench-scale bioreactors share a few at-line analyzers, and
 
 ## The two pages
 
-- [Explainer](https://jin-wolee.github.io/Lineage-Simulator-Bioprocessing/): a scroll page on the problem, with a slider that moves the measurement time and a matrix of which flag covers which error.
-- [Lab](https://jin-wolee.github.io/Lineage-Simulator-Bioprocessing/lab/): runs the synthetic plant in the browser and shows what the record of each architecture can reconstruct. It also follows one sample through each record, and sets a challenge: find the planted error in a record.
+- [Explainer](https://jin-wolee.github.io/LS_Bioprocess/): a scroll page on the problem, with a slider that moves the measurement time and a matrix of which flag covers which error.
+- [Lab](https://jin-wolee.github.io/LS_Bioprocess/lab/): runs the synthetic plant in the browser and shows what the record of each architecture can reconstruct. It also follows one sample through each record, and sets a challenge: find the planted error in a record.
 
 The site goes live when the author publishes it. Until then these addresses do not answer, and the pages can be built and served locally (see "Run it"). Both pages open in English and have a Korean toggle (ADR-0006); the language chosen on one page is kept when you follow the link to the other.
 
@@ -24,7 +24,7 @@ A data architecture is a set of ten flags, each one a property of the record. Pr
 | `append_only_versions` | corrections, reruns and reprocessing as new versions |
 | `write_time_keys` | the sample, unit and batch keys, fixed when written and never re-keyed |
 | `ingest_idempotency` | a duplicated or replayed file as a no-op |
-| `audit_trail` | who changed what, and when |
+| `audit_trail` | what changed and when (the old and the new value of a rerun, its version and its time), and the operator and qualification of the draw; not who changed a result or why |
 | `material_lot_links` | the lot used in an inoculation or addition, as a key |
 | `equipment_links` | the equipment item used by a batch, as a key |
 
@@ -32,11 +32,21 @@ The last two matter only when a contamination event is scripted: they decide whe
 
 - A, manual or Excel: no flag on.
 - B, LIMS-lite: `system_issued_id`, `ingest_idempotency`, `audit_trail` and `equipment_links`. It is modelled on what simple laboratory systems already do.
-- C, context-preserving: all ten. Some errors remain even here, for example a correct barcode stuck on the wrong tube, and the comparison reports them.
+- C, context-preserving: all ten. What the flags cannot remove is still reported, for example the results that the hold-time rule rejects (see "How to read the comparison"). A correct barcode stuck on the wrong tube is not modelled: the label error here is an id typed or written by hand, which `system_issued_id` prevents.
 
 C with one flag off, for each flag, shows which flag carries which effect. Two settings are independent of the flags: how a sample is labelled, and how a result becomes a record, by typing from the instrument screen or by parsing a synthetic device file (ADR-0005, ADR-0014).
 
 The gate is structural: each flag has a forced-error case whose expected outcome is written by hand before any run. Across seeds the lab shows a range per metric, with no composite score and no ranking column. It calls a run a comparison only when it has at least the minimum number of seeds (A103).
+
+## How to read the comparison
+
+A and B do not store the draw time or the link from a run to the instrument state that exact reconstruction asks for, so their exact reconstruction is zero by construction, whatever the seed. The comparison is a constructive example of what a record keeps, and so of which question it can answer afterwards. It is not a measure of the quality, the efficiency or the return of real spreadsheets or laboratory systems.
+
+The spread across seeds is the variation of operations and measurement that the inputs allow. The constants of the cell line do not change with the seed, so the spread is not the uncertainty of the model. The minimum number of seeds (A103) is a threshold of the design, not a proof of statistical sufficiency.
+
+The hold-time rule (`VR-010`; A046 and A213, both provisional, since their sources are not re-read in full) rejects a result whose sample waited too long between the draw and the run. Its limit is a proxy taken from blood-gas handling and applied, as an assumption, to every analyte. The lab shows how many requests the rule rejected and what exact reconstruction and availability would be if those were not counted as failures. That is the share of a model's result that one assumption makes, not the accuracy of a real laboratory.
+
+In the Break-out screen a hold is a state of the record and stops no culture. Its containment figures are the effect of tracking and holding on the record, not of a control of the culture or of how a contamination spreads, and its confirming tests are judged by coverage, not by a sensitivity.
 
 ## Numbers
 
@@ -100,5 +110,6 @@ Code is under the MIT licence (`LICENSE`). Text, figures and data tables in `doc
 ## 한국어 요약
 
 합성 데이터로 만든 시뮬레이터입니다. 바이오리액터 여러 대가 분석기 몇 대를 공유하는 가상의 플랜트를 한 번 돌려, 같은 실행을 여러 데이터 아키텍처로 기록하고 각 기록이 나중에 무엇을 복원할 수 있는지 비교합니다. 실제 설비를 예측하지 않습니다.
+비교는 기록이 무엇을 보존하는지를 보여 주는 구성적 예시이며, 실제 스프레드시트나 실험실 시스템의 품질을 재는 것이 아닙니다. 시드에 걸친 분포는 모형의 불확실성이 아닙니다.
 해설 페이지와 랩 두 곳이 있고, 저자가 공개하면 위 주소에서 열립니다. 모든 수치에는 근거 장부의 id(`S###`, `A###`)가 붙고, 오염 이벤트 역추적 화면은 근거 출처를 다시 읽을 때까지 공개 빌드에서 빠져 있습니다.
 DDL, SQL 쿼리 세 개, SimPy 핵심 루프는 저자가 직접 작성합니다(ADR-0010).

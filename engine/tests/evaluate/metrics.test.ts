@@ -12,7 +12,7 @@ import type { Event } from "../../src/generated/event.schema";
 import type { MaterialisedError } from "../../src/inject/types.ts";
 import type { RecordedDataset } from "../../src/record/types.ts";
 import { readJson } from "../support/paths.ts";
-import { A, CONFIG, WORLD, emptyDataset, seedInput } from "../support/eval_fixture.ts";
+import { A, CONFIG, ROSTER, WORLD, emptyDataset, seedInput } from "../support/eval_fixture.ts";
 
 // S2b Step 3: every metric of spec section 8, with its denominator, against the hand-built world of eval_fixture.ts. All expected numbers are
 // derived by hand from that file's header; none is read back from the evaluator. Architecture A has no flag; C has all ten (the ninth and tenth are read by nothing here).
@@ -59,7 +59,7 @@ describe("Utilisation is returned twice, each with and without setup", () => {
         { type: "visit_finished", t: x.end_s, ...ids },
       ];
     });
-    const u = utilisation(events, { analyzers: 1, days: 1, staffed_window_s: 36000 });
+    const u = utilisation(events, { analyzers: 1, days: 1, roster: ROSTER });
     expect(u.per_staffed_window.with_setup).toMatchObject({ num: 3600, den: 36000, value: 0.1 });
     expect(u.per_staffed_window.without_setup).toMatchObject({ num: 1800, den: 36000, value: 0.05 });
     expect(u.per_24h.with_setup).toMatchObject({ num: 3600, den: 86400, value: 3600 / 86400 });

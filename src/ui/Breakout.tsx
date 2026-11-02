@@ -127,6 +127,7 @@ export function Breakout({ ready, state, form, setForm, offer, onRun }: { ready:
       <section aria-labelledby="breakout-heading">
         <T as="h1" k="breakout.heading" id="breakout-heading" />
         <T as="p" k="breakout.lead" />
+        <T as="p" k="breakout.reading" data-note="reading" />
         {offer === "local_only" && <T as="p" k="breakout.local.notice" class="notice" data-note="not-for-publication" />}
       </section>
       <FormPanel ready={ready} form={form} setForm={setForm} onRun={onRun} busy={breakout.running !== null} />

@@ -44,7 +44,10 @@ export const A: Architecture = { ...arch(), id: "A" };
 export const B: Architecture = { ...arch("system_issued_id", "ingest_idempotency", "audit_trail"), id: "B", labelling: "preprinted_barcode" };
 export const C: Architecture = { ...arch(...FLAG_NAMES), id: "C", labelling: "issued_at_draw" };
 
-export const CONFIG: EvalConfig = { sla_s: 600, staffed_window_s: 36000, days: 1 };
+/** The roster of A201 as clock seconds: a weekday from 08:00 to 18:00 (10 h, A098) and a weekend day from 08:00 to 14:00 (6 h). */
+export const ROSTER: EvalConfig["roster"] = { start_s: 28800, end_weekday_s: 64800, end_weekend_s: 50400 };
+/** One day from a Monday, so the staffed window is the weekday's 36000 s. */
+export const CONFIG: EvalConfig = { sla_s: 600, roster: ROSTER, days: 1 };
 /** Limits of the validation rules; test-only values. */
 export const RULES: RuleConfig = { hold_limit_s: 1800, late_tolerance_s: 600, clock_tolerance_s: 900 };
 

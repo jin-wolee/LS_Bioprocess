@@ -204,7 +204,7 @@
 </div>
 <h3 data-i18n="t.h3a">What held time does to the sample</h3>
 <p data-i18n="t.stab" data-src="S012 A038 A039 A040">In the cited study, CHO samples held neat for up to 55 min at room temperature showed no decrease in viability according to the authors; they attribute the decline they measured to the diluent. The reported neat slope of &minus;0.03 percentage points per minute carries no significance test and is valid to 55 min. The simulator applies a slope of 0 to neat samples, and a diluent or handling slope (down to &minus;7.2 percentage points per hour) is a scenario knob.</p>
-<p data-i18n="t.proxy" data-src="A046" data-status="provisional">The 30 min hold limit used elsewhere in the design is a blood-gas rule borrowed from another domain.</p>
+<p data-i18n="t.proxy" data-src="A046" data-status="provisional">The 30 min hold limit used elsewhere in the design is a blood-gas rule borrowed from another domain and applied, as an assumption, to every analyte.</p>
 <h3 data-i18n="t.h3b">Second case: an offline pH that re-standardises the online probe</h3>
 <p data-i18n="t.ph" data-src="S013">A common practice treats the offline pH value as the source of truth and readjusts the online probe onto it when the two differ by more than a set criterion. Sampling procedure, equipment, hold time, temperature shift and CO2 degassing all add offsets to the offline value, and at higher cell density pH should not be considered stable after sampling. An offset that is wrong in the record can therefore propagate into the controller.</p>
 <figure class="fig">
@@ -258,7 +258,7 @@
 <label class="flag"><input type="checkbox" id="flag-append_only_versions" checked><span class="fn">append_only_versions</span><span class="fd" data-i18n="a.f5">corrections and reruns create versions</span></label>
 <label class="flag"><input type="checkbox" id="flag-write_time_keys" checked><span class="fn">write_time_keys</span><span class="fd" data-i18n="a.f6">sample, unit and batch keys fixed at write time</span></label>
 <label class="flag"><input type="checkbox" id="flag-ingest_idempotency" checked><span class="fn">ingest_idempotency</span><span class="fd" data-i18n="a.f7">duplicates and replays are no-ops</span></label>
-<label class="flag"><input type="checkbox" id="flag-audit_trail" checked><span class="fn">audit_trail</span><span class="fd" data-i18n="a.f8">who, when, what changed; operator and qualification</span></label>
+<label class="flag"><input type="checkbox" id="flag-audit_trail" checked><span class="fn">audit_trail</span><span class="fd" data-i18n="a.f8">what changed and when; operator and qualification of the draw</span></label>
 <label class="flag"><input type="checkbox" id="flag-material_lot_links" checked><span class="fn">material_lot_links</span><span class="fd" data-i18n="a.f9">the lot used in an inoculation or addition stored as a key</span></label>
 <label class="flag"><input type="checkbox" id="flag-equipment_links" checked><span class="fn">equipment_links</span><span class="fd" data-i18n="a.f10">the equipment item a batch used stored as a key</span></label>
 </fieldset>
@@ -332,7 +332,8 @@
 <td data-col="detected"><span class="txt" data-i18n="a.e10d">recorded container and hold context</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
 <td data-col="invisible"><span class="txt" data-i18n="a.e10i">context not recorded</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
 </tbody></table></div>
-<p data-i18n="a.mnote">Where the design names a rule rather than a flag, the matrix assumes the flag that rule needs (for example, the hold-time rule needs two_clocks). Preset C still has residual errors, such as a correct barcode stuck on the wrong tube, and they are reported, not hidden.</p>
+<p data-i18n="a.mnote">Where the design names a rule rather than a flag, the matrix assumes the flag that rule needs (for example, the hold-time rule needs two_clocks). What the flags cannot remove is still reported, not hidden, for example the results that the hold-time rule rejects. A correct barcode stuck on the wrong tube is not modelled: the label error here is an id typed or written by hand, which a system-issued id prevents.</p>
+<p data-i18n="a.read">How to read the comparison: A and B do not store what exact reconstruction asks for, so their exact reconstruction is zero by construction. The comparison is a constructive example of what a record keeps and so of which question it can answer; it is not a measure of the quality, the efficiency or the return of real spreadsheets or laboratory systems. The spread across seeds is the variation of operations and measurement that the inputs allow, not the uncertainty of the model.</p>
 </div>
 </section>
 
@@ -473,7 +474,7 @@
 <ul class="plain">
 <li data-i18n="m.o1">Recorders consume observable events only. A test changes hidden-only fields and requires the recorder output to stay byte-identical.</li>
 <li data-i18n="m.o2">The same scenario, seed and engine version give a byte-identical event log. Randomness is keyed by sample, analyte, attempt and purpose, so adding a sample never changes another sample's draws.</li>
-<li data-i18n="m.o3" data-src="A103">Stochastic comparisons run over at least 20 seeds and are reported with intervals. They are never gated, and no test requires that one architecture wins.</li>
+<li data-i18n="m.o3" data-src="A103">Stochastic comparisons run over at least 20 seeds and are reported as a spread across seeds, not as confidence intervals; the minimum is a threshold of the design, not a proof of statistical sufficiency. They are never gated, and no test requires that one architecture wins.</li>
 <li data-i18n="m.o4" data-src="A100">Online sensor series are recorded at a 60 s cadence in the truth world.</li>
 </ul>
 <h3 data-i18n="m.h3a">Profiles: bundles with an honest grade</h3>
@@ -539,7 +540,7 @@
 <li><b>S4</b> <span data-i18n="m.r4">downstream genealogy, HPLC contention, cell-line and operating-mode profiles</span></li>
 <li><b>S5</b> <span data-i18n="m.r5">release and write-up</span></li>
 </ol>
-<p data-i18n="m.ext">Extensions: break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3); the lab's Break-out screen is held back in the public build until the sources behind it are re-read. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed, not built yet.</p>
+<p data-i18n="m.ext">Extensions: break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3); the lab's Break-out screen is held back in the public build until the sources behind it are re-read. In that screen a hold is a state of the record and stops no culture, its containment figures are the effect of tracking and holding on the record, and its confirming tests are judged by coverage, not by a sensitivity. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed, not built yet.</p>
 <p><span class="placeholder" id="repo-link" data-i18n="m.repo">repository link: added at publication</span></p>
 </footer>
 </div>

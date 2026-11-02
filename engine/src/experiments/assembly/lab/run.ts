@@ -98,10 +98,10 @@ export const runLab = async (data: LabData, spec: RunSpec, hooks: RunHooks = {},
     if (hooks.isCancelled?.()) return { ok: false, reason: "cancelled", done: outcomes.length };
     const run = runScenario({ ...config, seed });
     const truth_log_hash = await logHash(run.events);
-    const out = runSeed(seedInputFromRun(run, { scenario_id: config.scenario_id, staff, evaluation, architectures, days: config.process.horizon_s / DAY, review: { roster, ...review }, ...raw }));
+    const out = runSeed({ ...seedInputFromRun(run, { scenario_id: config.scenario_id, staff, evaluation, architectures, days: config.process.horizon_s / DAY, review: { roster, ...review }, ...raw }), with_hold_limit: true });
     const after = await logHash(run.events);
     if (after !== truth_log_hash) throw new Error(`lab run: the truth log of seed ${seed} changed while the architectures were recorded (${truth_log_hash} before, ${after} after)`);
-    outcomes.push({ seed, truth_log_hash, key_text: out.key_text, cells: out.cells });
+    outcomes.push({ seed, truth_log_hash, key_text: out.key_text, cells: out.cells, hold_limit: out.hold_limit });
     hooks.onProgress?.(outcomes.length, spec.seeds.length);
     await yieldToLoop();
   }

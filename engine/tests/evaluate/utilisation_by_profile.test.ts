@@ -5,7 +5,7 @@ import { utilisation } from "../../src/evaluate/utilisation.ts";
 import type { Event } from "../../src/generated/event.schema";
 import { runScenario } from "../../src/run.ts";
 import { configOf, SMALL } from "../support/scenarios.ts";
-import { WORLD, seedInput } from "../support/eval_fixture.ts";
+import { ROSTER, WORLD, seedInput } from "../support/eval_fixture.ts";
 import { makeAjv } from "../support/schemas.ts";
 import { readJson } from "../support/paths.ts";
 import type { Json } from "../support/schemas.ts";
@@ -22,7 +22,7 @@ const visit = (request_id: string, n: number, analyzer: string, loaded: number, 
 //   AN-2: R1 visit 2, loaded at 1270, a fixture-only setup of 100 s, run 1370 to 1430: 160 busy, 60 productive.
 const EVENTS: Event[] = [...visit("R1", 1, "AN-1", 1000, 0, 1270), ...visit("R2", 1, "AN-1", 2000, 0, 2270), ...visit("R1", 2, "AN-2", 1270, 100, 1430)];
 const PROFILES = { "AN-1": "allinone_atline", "AN-2": "hplc", "AN-3": "allinone_atline" };
-const SPAN = { analyzers: 3, days: 1, staffed_window_s: 36000, profiles: PROFILES };
+const SPAN = { analyzers: 3, days: 1, roster: ROSTER, profiles: PROFILES };
 
 describe("utilisation by profile: hand events, two profiles, three instruments, one day", () => {
   const u = utilisation(EVENTS, SPAN);
@@ -57,7 +57,7 @@ describe("utilisation by profile: hand events, two profiles, three instruments, 
   });
 
   it("Given no map of instruments to profiles Then there is no by_profile (the hand worlds of the other tests)", () => {
-    expect("by_profile" in utilisation(EVENTS, { analyzers: 3, days: 1, staffed_window_s: 36000 })).toBe(false);
+    expect("by_profile" in utilisation(EVENTS, { analyzers: 3, days: 1, roster: ROSTER })).toBe(false);
   });
 });
 
@@ -65,7 +65,7 @@ describe("utilisation by profile: a run", () => {
   const one = runScenario(configOf("default", { settings: SMALL }));
   const mixed = runScenario(configOf("default", { settings: { ...SMALL, rerun_probability: 0 }, fields: { analyzer_profiles: ["allinone_atline", "hplc"] } as never }));
   const days = 8;
-  const span = (r: typeof one) => ({ analyzers: r.l3Input.analyzers.length, days, staffed_window_s: 36000, profiles: r.instrumentProfiles });
+  const span = (r: typeof one) => ({ analyzers: r.l3Input.analyzers.length, days, roster: ROSTER, profiles: r.instrumentProfiles });
 
   it("Given a fleet of one profile Then its single entry has the counts of the pooled figure, in all four cells", () => {
     const u = utilisation(one.events, span(one));

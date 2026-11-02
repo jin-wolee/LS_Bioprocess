@@ -22,7 +22,7 @@ afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 // the small default scenario, seed 1, under A, B and C with no action: the BASE of proof.test.ts
 const BASE = {
   truth: "9692942bf38f16b7826732e379dec3c721210c4a2c35839fd6f6e2cc5856c46d",
-  cells: { a_manual: "865965eccd541a5e330de9f66aad07332f74097971d96bd1b66cae4993456eab", b_lims_lite: "d5362a2426e480214c43827a8995e48bdc6e6ed02b7161af3d205aaa68dce21c", c_context: "dd6f6686ec1995793d794307ba449f4790cd1dc24eb808224ec2b2333f94cc20" },
+  cells: { a_manual: "4dd4b2452bdab1b53227554f37e214518969bdf4b1a544ddc5286c50a442e117", b_lims_lite: "67819158b45604fa3d97a439384042b46c036b607a12f52afa7eac39abb13050", c_context: "844ed248088e7fe70f7dc53224f1976d71d0a4abc082977ac8ffacff7accba00" },
 };
 // typed by hand from the fixtures
 const NAMES = ["add_feed", "analyzer_down", "change_lot", "move_draw", "raise_alarm", "set_capture_path", "set_flag_b", "set_flag_c", "set_labelling", "three_together"];

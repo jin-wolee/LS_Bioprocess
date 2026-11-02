@@ -54,6 +54,36 @@ describe("Detection: recall always beside precision and the false-alarm rate (sp
   });
 });
 
+describe("Architecture: the hold-time rule's share of the result (lab_ui.md section 23, item 2; spec section 8)", () => {
+  const HOLD = ["rejected", "exact_reconstruction_limit_lifted", "availability_limit_lifted"].map((f) => row(`hold_limit.${f}`));
+  const withRows = (id: string, rows: ReportRow[]): VNode[] => walk(Architecture({ block: { ...(BLOCKS.find((b) => b.id === id) as Block), rows }, blocks: BLOCKS, ready: READY }));
+  const section = (nodes: VNode[]): VNode | undefined => nodes.find((n) => n.props["data-hold-limit"] !== undefined);
+
+  it("Given an architecture with the three rows Then a group shows them as ordinary figures, after the record and before detection, with its lead, the hold limit as an input (A046) and the rejection at review (A213)", () => {
+    const nodes = withRows("c_context", [row("exact_reconstruction"), ...HOLD, ...DETECTION_ROWS]);
+    const group = section(nodes);
+    expect(group).toBeDefined();
+    const inside = walk(group);
+    expect(named(inside, "Figure").map((f) => (f.props.row as ReportRow).metric)).toEqual(HOLD.map((r) => r.metric));
+    expect(inside.some((n) => n.props.k === "results.group.hold_limit")).toBe(true);
+    const lead = inside.find((n) => n.props.k === "results.hold_limit.lead");
+    expect(Object.keys(lead?.props.parts as object)).toEqual(["limit", "review"]); // the limit (A046) and the rejection at review (A213), each through Ref
+    expect(inside.some((n) => n.props["data-note"] === "hold-limit-cannot")).toBe(false);
+    const order = nodes.flatMap((n) => (n.props["data-hold-limit"] !== undefined ? ["hold"] : typeof n.type === "function" && (n.type as { name?: string }).name === "Detection" ? ["detection"] : []));
+    expect(order.slice(0, 2)).toEqual(["hold", "detection"]);
+  });
+
+  it("Given an architecture whose rows read not evaluable Then the group says the rule cannot run on its record", () => {
+    const rows = HOLD.map((r): ReportRow => ({ ...r, status: "not_evaluable", median: null, lo: null, hi: null, denominator: null, den: null, reason: "sampled_at is not stored (two_clocks off)" }));
+    const inside = walk(section(withRows("a_manual", rows)));
+    expect(inside.some((n) => n.props["data-note"] === "hold-limit-cannot")).toBe(true);
+  });
+
+  it("Given a report with no such rows Then there is no group", () => {
+    expect(section(withRows("a_manual", [row("exact_reconstruction")]))).toBeUndefined();
+  });
+});
+
 describe("Architecture: the label-error sentence follows the flags, not the id (lab_ui.md section 10)", () => {
   it.each([
     ["a_manual", false, "no flag on: without the idempotency check no conflict arises"],

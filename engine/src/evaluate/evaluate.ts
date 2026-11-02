@@ -45,7 +45,7 @@ export const evaluate = (input: EvalInput): Metrics => {
     metrics: {
       holding_time: holdingTime(truth, facts, config.sla_s),
       turnaround: turnaround(truth, facts),
-      utilisation: utilisation(truth.events, { analyzers: truth.analyzers.length, days: config.days, staffed_window_s: config.staffed_window_s, ...(truth.analyzer_profiles && { profiles: truth.analyzer_profiles }) }),
+      utilisation: utilisation(truth.events, { analyzers: truth.analyzers.length, days: config.days, roster: config.roster, ...(truth.analyzer_profiles && { profiles: truth.analyzer_profiles }) }),
       availability: availability(truth, facts, ds, key),
       misattribution: misattribution(truth, lookups),
       detection: detection(truth, ds, key, input.not_evaluable),

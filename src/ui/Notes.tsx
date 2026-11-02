@@ -1,4 +1,6 @@
 import { FlagTable } from "./Flags.tsx";
+import { Ref } from "./Ref.tsx";
+import { holdParts } from "./hold_parts.tsx";
 import type { ReadyInfo } from "./state.ts";
 import { Label, T } from "./T.tsx";
 
@@ -7,8 +9,10 @@ import { Label, T } from "./T.tsx";
 
 const SCOPE = ["notes.scope.synthetic", "notes.scope.predict", "notes.scope.claims", "notes.scope.score", "notes.scope.server"] as const;
 const GRADES = ["grade.S", "grade.P", "grade.D", "grade.A"] as const;
+const READING = ["notes.reading.construct", "notes.reading.spread"] as const;
 
 export function Notes({ ready }: { ready: ReadyInfo | null }) {
+  const minimum = ready?.evaluation.find((e) => e.name === "min_seeds");
   return (
     <>
       <section aria-labelledby="notes-heading">
@@ -22,6 +26,31 @@ export function Notes({ ready }: { ready: ReadyInfo | null }) {
             <T key={k} as="li" k={k} />
           ))}
         </ul>
+      </section>
+
+      <section id="reading" aria-labelledby="reading-heading">
+        <T as="h2" k="notes.reading.heading" id="reading-heading" />
+        {READING.map((k) => (
+          <T key={k} as="p" k={k} />
+        ))}
+        <T as="p" k="notes.reading.seeds" parts={{ min: <Ref ids={[minimum?.ref ?? "A103"]}>{minimum ? `${minimum.value} ${minimum.unit}` : <Label>A103</Label>}</Ref> }} />
+      </section>
+
+      <section id="hold-rule" aria-labelledby="hold-rule-heading">
+        <T as="h2" k="notes.hold.heading" id="hold-rule-heading" />
+        <T as="p" k="notes.hold.text" parts={holdParts(ready?.evaluation ?? [])} />
+      </section>
+
+      <section id="audit-labels" aria-labelledby="audit-labels-heading">
+        <T as="h2" k="notes.audit.heading" id="audit-labels-heading" />
+        <T as="p" k="notes.audit.trail" />
+        <T as="p" k="notes.audit.label" />
+      </section>
+
+      <section id="breakout-reading" aria-labelledby="breakout-reading-heading">
+        <T as="h2" k="notes.breakout.heading" id="breakout-reading-heading" />
+        <T as="p" k="notes.breakout.hold" />
+        <T as="p" k="notes.breakout.tests" />
       </section>
 
       <section id="grades" aria-labelledby="grades-heading">

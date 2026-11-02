@@ -1,4 +1,3 @@
-import type { Metrics } from "../generated/metrics.schema";
 import { NOT_APPLICABLE } from "./ratio.ts";
 import { quantile } from "./stats.ts";
 
@@ -32,6 +31,14 @@ export interface AggregateTable {
 /** What lo and hi are: a spread across seeds. */
 export const INTERVAL_TEXT = "spread across seeds: the 5th to the 95th percentile, nearest rank; not a confidence interval";
 
+/** What the aggregate reads of a cell: the cell's identity and a document of numbers and ratios. A metrics document is one; so is the pseudo-cell that carries a figure of the report beside the metrics. */
+export interface Cell {
+  scenario_id: string;
+  architecture: string;
+  seed: number;
+  metrics: unknown;
+}
+
 const isRatio = (v: unknown): v is { value: number | null } => !!v && typeof v === "object" && "num" in v && "den" in v && "value" in v;
 
 /** Every number of a cell's metrics by path; a ratio contributes its value (null when undefined), never its counts. */
@@ -51,7 +58,7 @@ const shares = (node: unknown, path = ""): [string, Share][] => {
 };
 
 /** The denominator of every share by path: its wording (read from the first cell) and its count in each cell, in cell order (spec section 8: no metric without one). */
-export const denominatorsOf = (cells: readonly Metrics[]): Map<string, { text: string; counts: number[] }> => {
+export const denominatorsOf = (cells: readonly Cell[]): Map<string, { text: string; counts: number[] }> => {
   const out = new Map<string, { text: string; counts: number[] }>();
   for (const c of cells) {
     for (const [path, s] of shares(c.metrics)) {
@@ -63,7 +70,7 @@ export const denominatorsOf = (cells: readonly Metrics[]): Map<string, { text: s
   return out;
 };
 
-export const aggregate = (cells: readonly Metrics[], minSeeds: number): AggregateTable => {
+export const aggregate = (cells: readonly Cell[], minSeeds: number): AggregateTable => {
   const first = cells[0];
   if (!first) throw new Error("aggregate: no cells");
   if (cells.some((c) => c.architecture !== first.architecture || c.scenario_id !== first.scenario_id)) throw new Error("aggregate: cells of one scenario and one architecture only");

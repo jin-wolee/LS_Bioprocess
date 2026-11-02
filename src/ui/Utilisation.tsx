@@ -53,6 +53,12 @@ export function Utilisation({ report, view, ready }: { report: ExperimentReport;
     <section id="utilisation" class="utilisation" data-utilisation aria-labelledby="util-heading">
       <T as="h2" k="util.heading" id="util-heading" />
       <T as="p" k="util.lead" />
+      <p class="util-weekend" data-util-weekend>
+        <T k="util.weekend.lead" />{" "}
+        <Ref ids={["A201"]}>
+          <T k="util.weekend.value" />
+        </Ref>
+      </p>
       <T as="h3" k="util.pooled" />
       <div class="figures">
         {pooled.map((row) => {

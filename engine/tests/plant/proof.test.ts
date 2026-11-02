@@ -47,10 +47,11 @@ const ask = async (actions: readonly Action[], previous?: PlantKept) => {
   return out;
 };
 
-// Taken at the base commit be98442, before any engine code changed (the script is kept outside the repository): the small default scenario, seed 1, under A, B and C.
+// Taken at the base commit be98442, before any engine code changed (the script is kept outside the repository): the small default scenario, seed 1, under A, B and C. The three cell hashes
+// were taken again in A2 (2026-11-02, approved in advance; audit F4): the utilisation per staffed window follows the roster, and nothing else in a cell moved. The truth hash is the base commit's.
 const BASE = {
   truth: "9692942bf38f16b7826732e379dec3c721210c4a2c35839fd6f6e2cc5856c46d",
-  cells: { a_manual: "865965eccd541a5e330de9f66aad07332f74097971d96bd1b66cae4993456eab", b_lims_lite: "d5362a2426e480214c43827a8995e48bdc6e6ed02b7161af3d205aaa68dce21c", c_context: "dd6f6686ec1995793d794307ba449f4790cd1dc24eb808224ec2b2333f94cc20" },
+  cells: { a_manual: "4dd4b2452bdab1b53227554f37e214518969bdf4b1a544ddc5286c50a442e117", b_lims_lite: "67819158b45604fa3d97a439384042b46c036b607a12f52afa7eac39abb13050", c_context: "844ed248088e7fe70f7dc53224f1976d71d0a4abc082977ac8ffacff7accba00" },
 };
 
 describe("5.7 items 2 and 3: the plant's answer for the actions equals the run of the scenario written by hand", () => {

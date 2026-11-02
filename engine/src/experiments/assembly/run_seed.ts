@@ -1,6 +1,8 @@
 import type { Metrics } from "../../generated/metrics.schema";
 import { evaluate } from "../../evaluate/evaluate.ts";
 import type { EvalConfig } from "../../evaluate/config.ts";
+import { HOLD_RULE, holdLimit } from "../../evaluate/hold_limit.ts";
+import type { HoldLimit } from "../../evaluate/hold_limit.ts";
 import type { Truth } from "../../evaluate/truth.ts";
 import { inject } from "../../inject/inject.ts";
 import type { ForcedError } from "../../inject/types.ts";
@@ -48,6 +50,8 @@ export interface SeedInput {
   /** The break-out path only (spec 11.8.9 C12): the master data of the topology, handed to the recorder beside the events. Absent: the recorder ignores the break-out events and writes none of the tables of the extension. */
   breakout?: BreakoutInput;
   rules: RuleConfig;
+  /** Ask for the hold-time rule's share of the result (spec section 8): the open-loop experiment and the lab's Results do; the views of one sample and the plant do not. Default false. */
+  with_hold_limit?: boolean;
   /** The review of held and quarantined rows (A213 to A215, S2 review step): the roster, the timing and the sensitivity variants. */
   review: ReviewConfig;
   config: EvalConfig;
@@ -63,6 +67,8 @@ export interface RawRun {
 export interface SeedOutput {
   key_text: string;
   cells: Metrics[];
+  /** The hold-time rule's share of the result, by architecture, when the input asked for it; null where the record stores no hold time and the rule cannot run (spec section 8). Not part of a cell's metrics. */
+  hold_limit: Record<string, HoldLimit | null>;
   datasets: Record<string, RecordedDataset>;
   /** Present only with the raw layer on, by architecture id. */
   raw?: Record<string, RawRun>;
@@ -79,6 +85,7 @@ export const runSeed = (input: SeedInput): SeedOutput => {
   );
   const key_text = keyFile({ engine_version: input.engine_version, scenario_id: input.scenario_id, seed: input.seed }, Object.fromEntries(input.architectures.map((a, i) => [a.id, injected[i] as (typeof injected)[number]])));
   const datasets: Record<string, RecordedDataset> = {};
+  const hold_limit: Record<string, HoldLimit | null> = {};
   const rawRuns: Record<string, RawRun> = {};
   const cells = input.architectures.map((architecture, i) => {
     const out = injected[i] as (typeof injected)[number];
@@ -96,10 +103,19 @@ export const runSeed = (input: SeedInput): SeedOutput => {
       const key = controller ? { ...captured.key, not_modelled: [...captured.key.not_modelled, ...controller.not_modelled] } : captured.key;
       rawRuns[architecture.id] = { path: captured.path, key_text: rawKeyFile(head, key), metrics: captured.tables ? rawMetrics([...observationsOf(captured.key.files, captured.outputs), ...(controller ? controllerObservations(controller.outputs) : [])]) : NOT_APPLICABLE };
     }
-    const validated = validate(tables ? { ...recorded, raw: tables } : recorded, { ...input.rules, ...(input.entry_rules && { entry: input.entry_rules }) });
+    const toValidate = tables ? { ...recorded, raw: tables } : recorded;
+    const rules = (hold_limit_s: number | undefined) => ({ ...input.rules, ...(hold_limit_s !== undefined && { hold_limit_s }), ...(input.entry_rules && { entry: input.entry_rules }) });
+    const validated = validate(toValidate, rules(input.rules.hold_limit_s));
     const reviewed = review(validated.dataset, input.review);
     datasets[architecture.id] = reviewed;
-    return evaluate({ truth: input.truth, dataset: reviewed, not_evaluable: validated.not_evaluable, key_text, architecture: architecture.id, config: input.config });
+    const cell = evaluate({ truth: input.truth, dataset: reviewed, not_evaluable: validated.not_evaluable, key_text, architecture: architecture.id, config: input.config });
+    if (input.with_hold_limit) {
+      // the hold-time rule's share (spec section 8): absent where the rule cannot run; otherwise the same rows validated and reviewed again with the limit lifted, only if the rule rejected a request
+      hold_limit[architecture.id] = validated.not_evaluable.some((n) => n.rule === HOLD_RULE)
+        ? null
+        : holdLimit({ truth: input.truth, dataset: reviewed, cell, key_text, architecture: architecture.id, lifted: () => review(validate(toValidate, rules(Number.POSITIVE_INFINITY)).dataset, input.review) });
+    }
+    return cell;
   });
-  return { key_text, cells, datasets, ...(input.raw && { raw: rawRuns }) };
+  return { key_text, cells, hold_limit, datasets, ...(input.raw && { raw: rawRuns }) };
 };

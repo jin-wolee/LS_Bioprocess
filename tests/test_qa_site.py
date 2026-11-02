@@ -41,9 +41,14 @@ def test_nojekyll_must_be_empty():
     assert len(problems) == 1 and ".nojekyll" in problems[0]
 
 
+def test_the_stand_in_project_path_is_the_name_of_the_repository_of_the_pages_addresses():
+    # the Pages addresses are https://jin-wolee.github.io/LS_Bioprocess/ and .../lab/ (README.md, tests/test_readme.py): a project site lives under /<repository>/
+    assert qs.SUBPATH == "LS_Bioprocess"
+
+
 def test_a_request_of_the_served_origin_outside_the_path_of_the_site_is_found():
     # a root-absolute address (/assets/x.js) works at the root of a server and fails under /<repository>/; other origins and data: URLs are not this check's business
-    base = "http://127.0.0.1:8000/sample-lineage-lab/"
+    base = "http://127.0.0.1:8000/LS_Bioprocess/"
     urls = [
         base + "lab/index.html",
         base + "lab/assets/main-1a2b.js",
