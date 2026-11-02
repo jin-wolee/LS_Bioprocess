@@ -127,7 +127,7 @@
         "attempt": { "$ref": "#/$defs/count" },
         "visit": { "$ref": "#/$defs/count" },
         "analyzer": { "$ref": "#/$defs/ident" },
-        "outcome": { "type": "string", "enum": ["qc_passed", "qc_failed", "over_range"] }
+        "outcome": { "type": "string", "enum": ["qc_passed", "qc_failed", "over_range", "over_range_unresolved"] }
       }
     },
     "visit_finished": {

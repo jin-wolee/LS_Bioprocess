@@ -92,7 +92,7 @@
           "request_id": { "type": "string", "minLength": 1 },
           "attempt": { "type": "integer", "minimum": 1 },
           "visit": { "type": "integer", "minimum": 1 },
-          "outcome": { "type": "string", "enum": ["qc_passed", "qc_failed", "over_range"] }
+          "outcome": { "type": "string", "enum": ["qc_passed", "qc_failed", "over_range", "over_range_unresolved"] }
         }
       }
     },

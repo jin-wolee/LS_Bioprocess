@@ -24,7 +24,7 @@
           "setup_s": { "type": "integer", "minimum": 0 },
           "start_s": { "type": "integer", "minimum": 0 },
           "end_s": { "type": "integer", "minimum": 1 },
-          "outcome": { "type": "string", "enum": ["qc_passed", "qc_failed", "over_range"] }
+          "outcome": { "type": "string", "enum": ["qc_passed", "qc_failed", "over_range", "over_range_unresolved"] }
         }
       }
     }
