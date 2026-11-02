@@ -111,7 +111,7 @@ export const gridFault = (s: Params): string | null => {
 /**
  * The settings that place a scheduled event of the process (the inoculations of A188, the scheduled harvest of A004, the decision of A194, the shift of A195), resolved to whole seconds
  * as the loader resolves them: the message of the first that is not a whole minute, or null. A scenario file may place one off a whole minute (the Time contract rounds it to a whole
- * second, and the event is applied at the next step); the lab refuses it in a link (lab_ui.md section 4, "The settings of a spec"), so a run of the page has no event between two steps.
+ * second, and the event splits its step at its instant, spec 2.1); the lab refuses it in a link (lab_ui.md section 4, "The settings of a spec"), so a run of the page has no event between two steps.
  */
 export const scheduleFault = (s: Params): string | null => {
   const v = readAll(s, {
@@ -182,6 +182,8 @@ export interface Mult { mu: number; kd: number; prod: number }
 /** The scripted factors on the growth and death multipliers (rule S13), and the instant from which a stored step of a unit has them. */
 export interface Factor { mu: number; kd: number }
 export interface FactorStep extends Factor { t: number }
+/** An instant between two stored steps at which a moment split the step (spec 2.1), with the state after the moments of that instant. */
+export interface Split { t: number; state: State }
 
 export interface Reactor {
   unit_id: string;
@@ -196,6 +198,8 @@ export interface Reactor {
   shift_s: number;
   /** The multiplier moments that happened, in order, each with the factors in effect from it on (rule S13). Empty when the unit had none. */
   factors: FactorStep[];
+  /** The instants at which a moment between two steps split a step, in order (spec 2.1). Empty when every moment sat on a step. */
+  splits: Split[];
   step_s: number;
   /** Number of stored steps: index k is the state at inoculated_s + k * step_s, after the events of that instant. */
   n: number;
@@ -299,7 +303,7 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
 
   const size = Math.ceil((last - t0) / c.step_s) + 1;
   const r: Reactor = {
-    unit_id, batch_id, bay: Math.floor(i / c.baySize) + 1, slot: i % c.baySize, inoculated_s: t0, harvested_s: last, shift_s, factors: [], step_s: c.step_s, n: 0,
+    unit_id, batch_id, bay: Math.floor(i / c.baySize) + 1, slot: i % c.baySize, inoculated_s: t0, harvested_s: last, shift_s, factors: [], splits: [], step_s: c.step_s, n: 0,
     x: new Float64Array(size), d: new Float64Array(size), g: new Float64Array(size), q: new Float64Array(size), l: new Float64Array(size), p: new Float64Array(size),
   };
   const dead0 = (c.density * (100 - c.viability0)) / c.viability0;
@@ -313,46 +317,72 @@ const simulate = (c: ProcessConfig, i: number, events: Event[]): Reactor | undef
     events.push({ type: "process_event", t, unit_id, batch_id, kind, source, ...(amount !== undefined && { amount, amount_unit }) } as Event);
   };
 
+  // A moment between two steps splits its step (spec 2.1): `reach` integrates the state from `from` to the moment's instant with the multipliers in effect before it. A moment on a step finds
+  // the state there already, so a run whose moments all sit on steps integrates whole steps only. A stop or a harvest ends the unit: nothing is integrated past it.
+  let from = t0;
+  const reach = (at: number): void => {
+    if (at <= from) return;
+    advance(c, s, mult, at - from, from - t0);
+    from = at;
+  };
+  /** New multipliers from an instant: a change of them splits the step there; the same multipliers again (a factor of 1) leave it whole (rule S13). */
+  const rates = (at: number, next: Mult): void => {
+    if (next.mu !== mult.mu || next.kd !== mult.kd || next.prod !== mult.prod) reach(at);
+    Object.assign(mult, next);
+  };
   let m = 0;
   let done = false;
+  const apply = (mo: Moment): void => {
+    if (mo.kind === "stop") {
+      process(mo.t, "unit_stopped", "scripted");
+      r.harvested_s = mo.t;
+      done = true;
+    } else if (mo.kind === "alarm") process(mo.t, "alarm", "scripted");
+    else if (mo.kind === "scripted_feed") {
+      reach(mo.t);
+      process(mo.t, "feed", "scripted", bolus(c, s, volume, c.bolus), "L");
+    } else if (mo.kind === "multiplier") {
+      const ev = mo.ev as ScriptedEvent;
+      factor = { mu: ev.mu ?? factor.mu, kd: ev.kd ?? factor.kd };
+      r.factors.push({ t: mo.t, ...factor });
+      rates(mo.t, multOf(c, shiftOn, factor));
+    } else if (mo.kind === "shift") {
+      shiftOn = true;
+      rates(mo.t, multOf(c, shiftOn, factor));
+      process(mo.t, "temperature_shift", "scheduled", c.sensors.tempShiftSp, "C");
+    } else if (mo.kind === "decision") {
+      reach(mo.t); // the rule reads the state at its instant
+      if (viabilityOf(s) < c.harvestViability) {
+        process(mo.t, "harvest", "rule");
+        r.harvested_s = mo.t;
+        done = true;
+      } else {
+        const f = ruleShare(c, s);
+        if (f > 0) process(mo.t, "feed", "rule", bolus(c, s, volume, f), "L");
+      }
+    } else {
+      process(mo.t, "harvest", "scheduled");
+      r.harvested_s = mo.t;
+      done = true;
+    }
+  };
+
   for (let k = 0; ; k++) {
     const t = t0 + k * c.step_s;
-    while (m < moments.length && (moments[m] as Moment).t <= t && !done) {
-      const mo = moments[m++] as Moment;
-      if (mo.kind === "stop") {
-        process(mo.t, "unit_stopped", "scripted");
-        r.harvested_s = mo.t;
-        done = true;
-      } else if (mo.kind === "alarm") process(mo.t, "alarm", "scripted");
-      else if (mo.kind === "scripted_feed") process(mo.t, "feed", "scripted", bolus(c, s, volume, c.bolus), "L");
-      else if (mo.kind === "multiplier") {
-        const ev = mo.ev as ScriptedEvent;
-        factor = { mu: ev.mu ?? factor.mu, kd: ev.kd ?? factor.kd };
-        r.factors.push({ t: mo.t, ...factor });
-        Object.assign(mult, multOf(c, shiftOn, factor));
-      } else if (mo.kind === "shift") {
-        shiftOn = true;
-        Object.assign(mult, multOf(c, shiftOn, factor));
-        process(mo.t, "temperature_shift", "scheduled", c.sensors.tempShiftSp, "C");
-      } else if (mo.kind === "decision") {
-        if (viabilityOf(s) < c.harvestViability) {
-          process(mo.t, "harvest", "rule");
-          r.harvested_s = mo.t;
-          done = true;
-        } else {
-          const f = ruleShare(c, s);
-          if (f > 0) process(mo.t, "feed", "rule", bolus(c, s, volume, f), "L");
-        }
-      } else {
-        process(mo.t, "harvest", "scheduled");
-        r.harvested_s = mo.t;
-        done = true;
-      }
-    }
+    while (m < moments.length && (moments[m] as Moment).t <= t && !done) apply(moments[m++] as Moment);
     r.x[k] = s.x; r.d[k] = s.d; r.g[k] = s.g; r.q[k] = s.q; r.l[k] = s.l; r.p[k] = s.p;
     r.n = k + 1;
     if (done || t >= last) break;
-    advance(c, s, mult, c.step_s, k * c.step_s);
+    // the moments inside the step, each instant in turn, then the rest of the step; an instant that split the step is kept with the state after its moments, for stateAt
+    const next = t + c.step_s;
+    while (m < moments.length && (moments[m] as Moment).t < next && !done) {
+      const at = (moments[m] as Moment).t;
+      while (m < moments.length && (moments[m] as Moment).t === at && !done) apply(moments[m++] as Moment);
+      if (from === at && !done) r.splits.push({ t: at, state: { ...s } });
+    }
+    if (done) break;
+    advance(c, s, mult, next - from, from - t0);
+    from = next;
   }
   return r;
 };
@@ -369,16 +399,21 @@ export const runProcess = (c: ProcessConfig, seed: number, rng: Rng): ProcessRun
   return { cfg: c, reactors, byUnit: new Map(reactors.map((r) => [r.unit_id, r])), events, sensors };
 };
 
-/** The true state of a unit at any instant: the stored step before it, advanced by the remaining seconds with the same scheme. */
+/**
+ * The true state of a unit at any instant: the latest stored step or split at or before it (spec 2.1), advanced by the remaining seconds with the same scheme and the multipliers in effect
+ * from there, so every moment between the stored step and the instant counts. A stopped or harvested unit keeps the state of its end.
+ */
 export const stateAt = (run: ProcessRun, unit_id: string, t: number): CultureState => {
   const r = run.byUnit.get(unit_id);
   if (!r) throw new Error(`no such unit: ${unit_id}`);
   if (t < r.inoculated_s) throw new Error(`${unit_id} is not inoculated at ${t}`);
   const k = Math.min(Math.floor((t - r.inoculated_s) / r.step_s), r.n - 1);
   const tk = r.inoculated_s + k * r.step_s;
-  const s: State = { x: r.x[k] as number, d: r.d[k] as number, g: r.g[k] as number, q: r.q[k] as number, l: r.l[k] as number, p: r.p[k] as number };
-  const dt = Math.min(t, r.harvested_s) - tk;
-  if (dt > 0) advance(run.cfg, s, multOf(run.cfg, tk >= r.shift_s, r.factors.filter((x) => x.t <= tk).at(-1) ?? ONE), dt, tk - r.inoculated_s);
+  const split = r.splits.findLast((x) => x.t > tk && x.t <= t);
+  const from = split?.t ?? tk;
+  const s: State = split ? { ...split.state } : { x: r.x[k] as number, d: r.d[k] as number, g: r.g[k] as number, q: r.q[k] as number, l: r.l[k] as number, p: r.p[k] as number };
+  const dt = Math.min(t, r.harvested_s) - from;
+  if (dt > 0) advance(run.cfg, s, multOf(run.cfg, from >= r.shift_s, r.factors.filter((x) => x.t <= from).at(-1) ?? ONE), dt, from - r.inoculated_s);
   const ramp = run.cfg.phRamps?.[unit_id];
   return { vcd: s.x, viability: viabilityOf(s), glucose: s.g, glutamine: s.q, lactate: s.l, titer: s.p, ph: ramp === undefined ? run.cfg.ph : run.cfg.ph + rampAt(ramp, t) };
 };
