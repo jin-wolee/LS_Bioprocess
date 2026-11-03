@@ -11,7 +11,7 @@ qa_plant_helpers.py, the browser plumbing in qa_plant_browser.py, the checks of 
 
 Checks: plant_load, plant_frames, plant_clock, plant_shots, plant_halls, plant_record, plant_hall_shots, plant_truth, drilldown (P5c, in qa_plant_drill.py), plant_panels, plant_action (P6a, in qa_plant_action.py with the
 flows of qa_plant_act.py), plant_equal and plant_prefix (P6a, in qa_plant_equal.py), sc12 (P7c, in qa_plant_sc12.py: the five break-out cases, and the public build's refusal in qa_plant_sc12_public.py), size, matrix, plant_fallback, plant_a11y (P8a, in qa_plant_a11y.py: the keyboard, reduced motion, the
-hum, the room the chrome leaves, the phone, contrast and WebGL off). `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
+hum, the room the chrome leaves, the phone, contrast and WebGL off), plant_tour (P8b, in qa_plant_tour.py: the guided scene, from a fresh page). `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
 engine/tests/support/plant_reference_cli.ts under the engine's Node flags into --out (the screenshots of the actions go to act/).
 
 `plant_sweep` (P6c, in qa_plant_sweep.py) opens the plant under settings other than the default run's, each spec of tests/fixtures/plant/sweep/specs.json in a page of its own. The regular run holds the two
@@ -43,6 +43,7 @@ from qa_plant_motion import check_plant_clock, check_plant_frames, check_plant_s
 from qa_plant_panels import check_plant_panels
 from qa_plant_sweep import check_plant_sweep, sweep_report
 from qa_plant_sweep_helpers import load_specs
+from qa_plant_tour import check_plant_tour
 from qa_plant_truth import check_plant_truth
 
 REPO = Path(__file__).resolve().parents[1]
@@ -113,7 +114,8 @@ def main(argv=None) -> int:
                        guarded("size", lambda: check_size(browser, url, args.root)),
                        guarded("matrix", lambda: check_matrix(browser, url, args.out)),
                        guarded("plant_fallback", lambda: check_plant_fallback(pw, url, args.out)),
-                       guarded("plant_a11y", lambda: check_plant_a11y(pw, browser, url, args.out))]
+                       guarded("plant_a11y", lambda: check_plant_a11y(pw, browser, url, args.out)),
+                       guarded("plant_tour", lambda: check_plant_tour(pw, browser, url, args.out))]
         finally:
             browser.close()
     print(report(results, args.out))

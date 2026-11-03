@@ -16,7 +16,7 @@ from qa_checks import Result, first_line
 from qa_lab_browser import go, set_lang, start_challenge
 from qa_plant_browser import RECORD_PLANT_JS, open_plant, pause, plant_messages, seek, settle, state, wait_scene
 from qa_plant_drill_helpers import BAD_LINK_NOTES, back_problems, bad_link, count, lineage_problems, link_problems, newest_sample, plant_hash, read_hash
-from qa_plant_helpers import BUSY_START_S, PLANT_VIEWPORTS, plan_from_messages
+from qa_plant_helpers import BUSY_START_S, PLANT_VIEWPORTS, TOUR_SEEN_JS, plan_from_messages
 
 # An instant of the morning of day 8 with tubes on the floor and cards on the shelves, the reactor and the analyzer the check opens, and an action a reader could have made there: a feed on U10 at day 8 09:00.
 BUSY_S = BUSY_START_S + 25 * 60
@@ -207,11 +207,12 @@ def challenge_empties(page, problems: list[str]) -> None:
 
 
 @contextmanager
-def open_link(browser, url: str, href: str, size=PLANT_VIEWPORTS["1280"], init_script: str = RECORD_PLANT_JS):
-    """A fresh context (a cold load) opened on a hash, with its console errors and, by default, the recorder of the Worker's messages (the sweep gives a script that holds the other instruments as well)."""
-    ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, locale="en-US")
+def open_link(browser, url: str, href: str, size=PLANT_VIEWPORTS["1280"], init_script: str = RECORD_PLANT_JS, seen: bool = True, **context):
+    """A fresh context (a cold load) opened on a hash, with its console errors and, by default, the recorder of the Worker's messages (the sweep gives a script that holds the other instruments as well).
+    `seen`: the reader has seen the offer of the guided scene (P8b); `context`: more options of the browser context (a language, reduced motion)."""
+    ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, **{"locale": "en-US", **context})
     try:
-        ctx.add_init_script(init_script)
+        ctx.add_init_script((TOUR_SEEN_JS if seen else "") + init_script)
         page = ctx.new_page()
         errors: list[str] = []
         page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)

@@ -47,6 +47,12 @@ export const lookKey = (name: string): ((v: View) => View) | null => {
  */
 export const tubeScale = (dist: number): number => Math.min(2, Math.max(1, dist / 9));
 
+/**
+ * The share of the way to its goal that the camera goes in one frame of `dt` wall seconds (section 3.5): the whole way for a reader who prefers reduced motion, so the camera cuts to what a step of the
+ * tour (or a click on the objects list) brings it to; otherwise it eases, 1 - e^(-9 dt) of the way.
+ */
+export const easeOf = (reducedMotion: boolean, dt: number): number => (reducedMotion ? 1 : 1 - Math.exp(-9 * dt));
+
 export interface Camera {
   position: { x: number; y: number; z: number };
   target: { x: number; y: number; z: number };

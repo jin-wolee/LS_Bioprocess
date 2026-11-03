@@ -11,7 +11,7 @@ from qa_lab_helpers import served_path
 from qa_plant_a11y_helpers import hum_problems, reduced_problems
 from qa_plant_browser import settle, state, wait_scene
 from qa_plant_drill import open_link
-from qa_plant_helpers import DEFAULT_OBJECTS, PLANT_VIEWPORTS, split_requests
+from qa_plant_helpers import DEFAULT_OBJECTS, PLANT_VIEWPORTS, TOUR_SEEN_JS, split_requests
 
 # The plant with no instant in its link: the clock opens where the plan does, and plays unless the reader prefers reduced motion.
 START = "#/plant?scenario=default&arch=a_manual,b_lims_lite,c_context&seed=1&schema=1"
@@ -44,6 +44,7 @@ def tab_until(page, predicate_js: str, limit: int) -> int | None:
 def _open(browser, url: str, href: str, reduced: bool, size=PLANT_VIEWPORTS["1280"]):
     """A fresh context that prefers reduced motion or not, the plant opened on a link and its first plan drawn. Returns (context, page); the caller closes the context."""
     ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, locale="en-US", reduced_motion="reduce" if reduced else "no-preference")
+    ctx.add_init_script(TOUR_SEEN_JS)
     page = ctx.new_page()
     page.goto(url.rstrip("/") + "/" + href, wait_until="load")
     page.wait_for_selector("#main[data-ready=true]", timeout=60_000)

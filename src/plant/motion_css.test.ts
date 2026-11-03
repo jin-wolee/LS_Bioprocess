@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 // Reduced motion (docs/design/plant_ui.md section 9, P8a): nothing in the style sheets of the plant animates or eases unless the reader has not asked for reduced motion. Every `animation` and `transition`
 // declaration lies inside `@media (prefers-reduced-motion: no-preference)`; the browser-level half (the ring is not drawn, a follow cuts) is the check `plant_a11y`.
 
-const FILES = ["plant.css", "plant_act.css"].map((name) => ({ name, text: readFileSync(new URL(`./${name}`, import.meta.url), "utf8") }));
+const FILES = ["plant.css", "plant_act.css", "plant_tour.css"].map((name) => ({ name, text: readFileSync(new URL(`./${name}`, import.meta.url), "utf8") }));
 
 /** The at-rules (their preludes, outermost first) that enclose the character at `at`: the text before each `{` that is still open there. */
 const enclosing = (text: string, at: number): string[] => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ScenePlan } from "../protocol.ts";
-import { DEFAULT_VIEW, LIMITS, cameraAt, drag, followGoal, heading, keyDirection, lifted, lookKey, tilt, turn, zoom } from "./controls.ts";
+import { DEFAULT_VIEW, LIMITS, cameraAt, drag, easeOf, followGoal, heading, keyDirection, lifted, lookKey, tilt, turn, zoom } from "./controls.ts";
 import { layoutOf } from "./layout.ts";
 
 // docs/design/plant_ui.md section 3.4: drag to look, wheel to zoom, the keys of the table, a camera limited in zoom (4 to 40 m) and pitch that never goes below the floor or inside a vessel.
@@ -132,5 +132,20 @@ describe("where the camera follows a tube to", () => {
   it("Given a tube that is not on the floor Then there is no place to go to and the camera stays where it was", () => {
     expect(followGoal(undefined, false, true)).toBeNull();
     expect(followGoal(undefined, true, false)).toBeNull();
+  });
+});
+
+// P8b (docs/design/plant_ui.md section 3.5): a step of the tour brings the camera to its object; the camera glides to it, or cuts under reduced motion. `easeOf` is the share of the way to its goal that
+// the camera goes in one frame of `dt` wall seconds: 1 - e^(-9 dt) for a reader who has not asked for less motion, and the whole way (1) for one who has.
+describe("how far the camera goes toward its goal in a frame", () => {
+  it("Given a reader who prefers reduced motion Then the camera is on its goal in the next frame, whatever the frame time", () => {
+    for (const dt of [0, 0.001, 0.0167, 0.1]) expect(easeOf(true, dt)).toBe(1);
+  });
+
+  it("Given a reader who has not asked for less motion Then the camera goes 1 - e^(-9 dt) of the way: nothing at 0 s, about 0.2 at 0.025 s, about 0.59 at 0.1 s (the longest frame the loop allows)", () => {
+    expect(easeOf(false, 0)).toBe(0);
+    expect(easeOf(false, 0.025)).toBeCloseTo(0.2015, 4); // 1 - e^(-0.225) = 1 - 0.7985
+    expect(easeOf(false, 0.1)).toBeCloseTo(0.5934, 4); // 1 - e^(-0.9)
+    expect(easeOf(false, 0.1)).toBeLessThan(1);
   });
 });

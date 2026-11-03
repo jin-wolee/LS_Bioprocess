@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from "three";
-import { DEFAULT_VIEW, cameraAt, drag, followGoal, lifted, lookKey, tubeScale, zoom } from "../controls.ts";
+import { DEFAULT_VIEW, cameraAt, drag, easeOf, followGoal, lifted, lookKey, tubeScale, zoom } from "../controls.ts";
 import type { View } from "../controls.ts";
 import { focusOf } from "../focus.ts";
 import type { Point } from "../layout.ts";
@@ -10,13 +10,14 @@ import type { Scene, SceneOptions } from "../scene_types.ts";
 import { sceneAt } from "../scene_at.ts";
 import type { SceneState } from "../scene_at.ts";
 import type { Picked } from "../view.ts";
-import { RING, buildAvatar, buildRings } from "./avatar.ts";
+import { RING, buildAvatar, buildRings, ringHeight } from "./avatar.ts";
 import { buildRoom } from "./floor.ts";
 import { listen } from "./input.ts";
 import { buildBoards } from "./boards.ts";
 import { buildFlagsBoard } from "./flags.ts";
 import { buildItems } from "./items.ts";
 import { buildLabels } from "./labels.ts";
+import { buildLook } from "./look.ts";
 import { buildMotion } from "./motion.ts";
 import { buildOverlay } from "./overlay.ts";
 import { buildShelves } from "./shelves.ts";
@@ -51,6 +52,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
 
   const camera = new PerspectiveCamera(50, 1, 0.1, 300);
   const labels = buildLabels(host, layout, plan);
+  const look = buildLook(host);
   const boards = buildBoards(plan, labels);
   const flagsBoard = buildFlagsBoard(layout, plan, flags, scene, labels, disposables);
   const motion = buildMotion(layout, plan, built, { scene, hemi, sun, glass }, labels, disposables);
@@ -207,7 +209,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     }
 
     const goal = lookAt ?? walker.position;
-    const ease = reducedMotion ? 1 : 1 - Math.exp(-9 * dt);
+    const ease = easeOf(reducedMotion, dt);
     eye = { x: eye.x + (goal.x - eye.x) * ease, z: eye.z + (goal.z - eye.z) * ease };
     const cam = lifted(layout, cameraAt(view, eye, HEAD));
     camera.position.set(cam.position.x, cam.position.y, cam.position.z);
@@ -219,7 +221,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     const at = picked === null ? null : pointOf(picked);
     ring.visible = at !== null;
     if (at) {
-      ring.position.set(at.x, 0.05, at.z);
+      ring.position.set(at.x, ringHeight((picked as Picked).kind), at.z);
       ring.scale.setScalar(RING[(picked as Picked).kind]);
     }
     const followed = following === null ? undefined : state.tubes.find((x) => x.sample === following);
@@ -229,6 +231,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
       if (host.dataset.plantFollowNdc !== where) host.dataset.plantFollowNdc = where;
     }
     labels.update(camera, canvas.clientWidth || 1, canvas.clientHeight || 1);
+    look.update(lookAt, camera, HEAD);
     renderer.render(scene, camera);
     const n = String(renderer.info.render.calls);
     if (n !== calls) {
@@ -245,9 +248,11 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     renderer: stage.name,
     objects,
     focus(key: string) {
+      state = sceneAt(plan, playback.get().t); // the floor at the clock reading just set (a step of the tour seeks, then brings the camera), not at the last frame
       const target = focusOf(plan, layout, key, pointOf);
       if (!target) return;
       endFollow();
+      look.set(key);
       lookAt = target.at;
       view = { ...view, dist: Math.min(Math.max(target.radius * 5, 6), 18), ...(target.pitch !== undefined && { pitch: target.pitch }) };
       halo.position.set(target.at.x, 0.04, target.at.z);

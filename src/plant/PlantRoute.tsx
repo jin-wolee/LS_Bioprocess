@@ -12,6 +12,8 @@ import { RecordPanel } from "./RecordPanel.tsx";
 import { Intro } from "./Intro.tsx";
 import { LinkNotes } from "./LinkNotes.tsx";
 import { TextAlternative } from "./TextAlternative.tsx";
+import { Tour } from "./Tour.tsx";
+import { TourText } from "./TourText.tsx";
 import { flagMatrix } from "./flags_board.ts";
 import { TimeBar } from "./TimeBar.tsx";
 import { TubeList } from "./TubeList.tsx";
@@ -27,6 +29,7 @@ import { openingOf } from "./opening.ts";
 import { createPlayback } from "./playback.ts";
 import { useAddress } from "./useAddress.ts";
 import { useOpening } from "./useOpening.ts";
+import { useTour } from "./useTour.ts";
 import { DEFAULT_PLANT, hallsOf, isCase, scenarioOf } from "./spec.ts";
 import type { PlantAsk } from "./spec.ts";
 import { reducedMotion, tierOf, useScene } from "./useScene.ts";
@@ -123,6 +126,13 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
 
   useOpening(playback, wanted.t, wanted.play, scene.kind === "ready", reducedMotion(), lens, onLeave);
   useAddress(plant.spec, plant.running === null && plan !== null, engine);
+  // the guided scene (P8b, plant_ui.md section 3.5): it asks for its own run when the plant on screen is another, then frames each step with the clock, the pick, the record and the overlay
+  const settled = plant.running === null && plant.act.pending === null; // no request is in flight: the plan on screen is the answer to `spec`
+  const tour = useTour({
+    plan: full, playback, spec, settled, epoch: answer?.epoch ?? null, sceneReady: scene.kind === "ready", inCase: isCase(spec), truthOn: plant.truth.on, lens,
+    frame: (key) => mounted.current?.focus(key), choose, openRecord: onCard, closeRecord: onCardClose, setTruth: onTruth, ask: (asked) => onAct(asked, false),
+  });
+  const tourTruth = plant.truth.on && tour.sample !== null && plant.truth.sample?.sample_id === tour.sample.id ? plant.truth.sample.view : null;
 
   // the page state of section 10, written from the clock
   useEffect(() => {
@@ -214,6 +224,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
             data-plant-truth={!plant.truth.on ? "off" : locked ? "locked" : "on"}
             data-plant-pick={plan && picked ? keyOf(plan, picked) : undefined}
             data-plant-follow={plan && following !== null ? (plan.samples[following] as ScenePlan["samples"][number]).id : undefined}
+            data-plant-tour={tour.step === null ? undefined : tour.waiting ? "waiting" : tour.steps[tour.step]?.id}
             data-run-hash={answer ? answer.hashes.truth : undefined}
             data-cells-hash={answer ? JSON.stringify(answer.hashes.cells) : undefined}
           />
@@ -224,8 +235,9 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
           )}
           <div class="plant-huds">
             {full && playback && (
-              <Hud plan={full} playback={playback} scenario={scenarioOf(spec)} check={check} lens={lens} onLens={chooseLens} truth={{ on: plant.truth.on, locked }} onTruth={onTruth} spec={spec} busy={busy} onAct={onAct} />
+              <Hud plan={full} playback={playback} scenario={scenarioOf(spec)} check={check} lens={lens} onLens={chooseLens} truth={{ on: plant.truth.on, locked }} onTruth={onTruth} spec={spec} busy={busy} onAct={onAct} onTour={tour.start} />
             )}
+            {full && <Tour tour={tour} plan={full} truth={tourTruth} onOpen={(architecture) => { setLens(architecture); onCard(architecture, (tour.sample as { id: string }).id); }} />}
             <div class="plant-side">
               {plant.record && <RecordPanel record={plant.record} drill={drill} onClose={onCardClose} truth={plant.truth} />}
               {full && playback && picked && (
@@ -267,6 +279,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
           {webgl && <TubeList plan={full} playback={playback} onOpen={pickAndLook} />}
           {webgl && <CardList plan={full} playback={playback} lens={lens} onOpen={(architecture, sample_id) => { choose(null); onCard(architecture, sample_id); }} />}
           <TextAlternative plan={full} playback={playback} flags={flags} lens={lens} />
+          <TourText plan={full} spec={settled ? spec : null} engine={engine} />
         </div>
       )}
     </>

@@ -8,7 +8,7 @@ from base64 import b64encode
 from contextlib import contextmanager
 
 from qa_lab_browser import apply_state, open_lab
-from qa_plant_helpers import PLANT_VIEWPORTS
+from qa_plant_helpers import PLANT_VIEWPORTS, TOUR_SEEN_JS
 
 # Records the time of every animation frame (window.__plantFrames) and every value that data-plant-tubes takes (window.__plantTubes); wraps requestAnimationFrame before any page code runs. The
 # page ships none of it.
@@ -95,9 +95,10 @@ LIST_JS = """() => { const out = {}; for (const e of document.querySelectorAll('
 
 
 @contextmanager
-def open_plant(browser, url, size=PLANT_VIEWPORTS["1280"], scheme="light", theme="auto", lang="en", init_script=None):
-    """A cold load of Home with the lab ready, the language and theme chosen, then the plant entered through its entry on Home, as a reader does. Yields (page, errors, requests)."""
-    with open_lab(browser, url, size, scheme, init_script=init_script) as (page, errors, requests):
+def open_plant(browser, url, size=PLANT_VIEWPORTS["1280"], scheme="light", theme="auto", lang="en", init_script=None, seen=True):
+    """A cold load of Home with the lab ready, the language and theme chosen, then the plant entered through its entry on Home, as a reader does. Yields (page, errors, requests). `seen`: the reader has seen
+    the offer of the guided scene (P8b), so it does not stand over the plant; the check `plant_tour` opens the first visit with `seen=False`."""
+    with open_lab(browser, url, size, scheme, init_script=(TOUR_SEEN_JS if seen else "") + (init_script or "")) as (page, errors, requests):
         page.wait_for_selector("#main[data-ready=true]", timeout=60_000)
         apply_state(page, theme, lang)
         page.click("#enter-plant")

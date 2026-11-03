@@ -9,6 +9,7 @@ import { koItems } from "./ko_items.ts";
 import { koPlant } from "./ko_plant.ts";
 import { koResults } from "./ko_results.ts";
 import { koSetup } from "./ko_setup.ts";
+import { koTour } from "./ko_tour.ts";
 
 // Korean texts (ADR-0006: English first, Korean on a toggle). Typed Record<Key, string>, so a missing key is a type error. The Korean text introduces no number, claim or source that the
 // English text lacks (engine/tests/lab/i18n.test.ts). Terms follow site/infographic/src/i18n.js where one exists there (the grades, the provisional chip).
@@ -93,4 +94,4 @@ const koBase: Record<keyof typeof enBase, string> = {
   "grade.provisional": "잠정",
 };
 
-export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge, ...koBreakout, ...koPlant, ...koDrill, ...koAct, ...koItems };
+export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge, ...koBreakout, ...koPlant, ...koDrill, ...koAct, ...koItems, ...koTour };

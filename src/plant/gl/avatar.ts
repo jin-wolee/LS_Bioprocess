@@ -1,5 +1,6 @@
 import { BoxGeometry, CapsuleGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, RingGeometry, SphereGeometry } from "three";
 import type { BufferGeometry, Material } from "three";
+import { PLINTH } from "../dims.ts";
 import { PALETTE } from "./floor.ts";
 
 // The reader's figure and the three rings on the floor that go with it (docs/design/plant_ui.md sections 3.2 and 3.4): the mark where a click will walk to, the halo about an object the camera was
@@ -31,6 +32,9 @@ export const buildAvatar = (disposables: (BufferGeometry | Material)[]): Group =
 
 /** The size of the ring on the floor about a picked object, in metres. */
 export const RING = { reactor: 0.85, analyzer: 1.3, staff: 0.5, sample: 0.4, lot: 0.6, equipment: 0.9, confirm: 0.4 } as const;
+
+/** How high the ring lies: 0.05 m above what the object stands on, which for a reactor is the plinth of its bay (a ring on the floor under it would show nothing, P8b). */
+export const ringHeight = (kind: keyof typeof RING): number => (kind === "reactor" ? PLINTH : 0) + 0.05;
 
 /** The rings, hidden until the scene places them: `marker` where a click walks to, `halo` about an object the camera was brought to, `ring` about the object the panel shows (it follows the object while it moves). */
 export const buildRings = (disposables: (BufferGeometry | Material)[]): { marker: Mesh; halo: Mesh; ring: Mesh } => {

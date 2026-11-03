@@ -11,6 +11,7 @@ import { enItems } from "./en_items.ts";
 import { enPlant } from "./en_plant.ts";
 import { enResults } from "./en_results.ts";
 import { enSetup } from "./en_setup.ts";
+import { enTour } from "./en_tour.ts";
 
 export const enBase = {
   "app.title": "Sample Lineage Lab",
@@ -93,6 +94,6 @@ export const enBase = {
   "grade.provisional": "provisional",
 } as const;
 
-export const en = { ...enBase, ...enSetup, ...enResults, ...enNotes, ...enLineage, ...enChallenge, ...enBreakout, ...enPlant, ...enDrill, ...enAct, ...enItems } as const;
+export const en = { ...enBase, ...enSetup, ...enResults, ...enNotes, ...enLineage, ...enChallenge, ...enBreakout, ...enPlant, ...enDrill, ...enAct, ...enItems, ...enTour } as const;
 
 export type Key = keyof typeof en;

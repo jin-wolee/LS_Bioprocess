@@ -4,6 +4,7 @@ import type { CheckState, ScenePlan } from "../protocol.ts";
 import { Label, LangContext, T } from "../ui/T.tsx";
 import { ActionList } from "./ActionList.tsx";
 import { HumControl } from "./HumControl.tsx";
+import { TourButton } from "./Tour.tsx";
 import type { Playback } from "./playback.ts";
 import { lightAt } from "./scene_at.ts";
 import type { PlantAsk } from "./spec.ts";
@@ -36,9 +37,11 @@ export interface HudProps {
   spec: PlantAsk;
   busy: boolean;
   onAct: (spec: PlantAsk, play: boolean) => void;
+  /** The guided scene (P8b): the button that starts a tour. */
+  onTour: () => void;
 }
 
-export function Hud({ plan, playback, scenario, check, lens, onLens, truth, onTruth, spec, busy, onAct }: HudProps) {
+export function Hud({ plan, playback, scenario, check, lens, onLens, truth, onTruth, spec, busy, onAct, onTour }: HudProps) {
   const lang = useContext(LangContext);
   const [sheet, setSheet] = useState(false);
   const arrived = new Set(plan.records.map((r) => r.architecture));
@@ -99,6 +102,7 @@ export function Hud({ plan, playback, scenario, check, lens, onLens, truth, onTr
             </span>
             <HumControl />
           </div>
+          <TourButton onStart={onTour} />
           <div class="plant-hud plant-hud-lens" data-plant-hud="lens" role="group" aria-label={text(lang, "plant.hud.lens")} title={text(lang, "plant.hud.lens.hint")}>
             <T as="span" k="plant.hud.lens" class="plant-lens-label" />
             {plan.layout.architectures.map((a) => (

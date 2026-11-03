@@ -1,0 +1,52 @@
+/* The guided scene (docs/design/plant_ui.md section 3.5). The offer and the box are items of the grid of the route (plant.css), placed by grid lines like every other card: the offer at the top of the floor
+   (the middle column), the box in the left column over the place card and the list of actions, which are hidden while it is open, so no bar is covered and no row is added to the bottom stack. On a phone
+   both are a sheet at the foot of the floor and the panel of the picked object waits. Shape and text carry the meaning (ADR-0011): a stored slot is a solid square and the word, a slot the record does not
+   store a dashed hollow square and the word; a verdict is its word in a thin, a heavy or a dashed outline. Nothing here animates. */
+.plant-hud-tour { padding: 4px 8px; }
+.plant-hud-tour button { min-height: 28px; padding: 0 10px; font-size: 0.85rem; background: var(--bg); }
+.plant-hud-tour button:disabled { opacity: 0.55; cursor: default; }
+
+.plant-tour { pointer-events: auto; z-index: 3; box-sizing: border-box; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px 10px; font-size: 0.9rem; }
+.plant-tour:focus-visible { outline: 3px solid var(--accent); }
+.plant-tour h2 { margin: 4px 0; font-size: 1.05rem; }
+.plant-tour p { margin: 4px 0; }
+.plant-tour[data-tour="offer"] { grid-column: 2; grid-row: 1; justify-self: center; align-self: start; max-width: 26rem; }
+.plant-tour[data-tour="step"] { grid-column: 1; grid-row: 1 / 3; align-self: start; max-height: 100%; display: flex; flex-direction: column; }
+.plant-tour-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.plant-tour-progress { flex: 0 0 auto; }
+.plant-tour-progress, .plant-tour-note { color: var(--muted); font-size: 0.8rem; }
+.plant-tour-optional { font-weight: 700; }
+.plant-tour-buttons { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.plant-tour-buttons button { min-height: 32px; padding: 2px 12px; background: var(--bg); }
+.plant-tour-buttons button[data-tour-next], .plant-tour-buttons button[data-tour-take] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-tour-buttons button:disabled { opacity: 0.55; cursor: default; }
+
+.plant-tour-table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.8rem; }
+.plant-tour-table caption { text-align: left; font-weight: 600; padding: 4px 0; }
+.plant-tour-table th, .plant-tour-table td { text-align: left; vertical-align: top; padding: 3px 4px; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.plant-tour-table th[scope="col"] button { max-width: 100%; min-height: 24px; padding: 0 4px; font-size: 0.75rem; background: var(--bg); overflow-wrap: anywhere; }
+.plant-tour-slot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border: 2px solid currentColor; background: currentColor; vertical-align: -1px; }
+.plant-tour-table td[data-stored="0"] .plant-tour-slot { background: transparent; border-style: dashed; }
+.plant-tour-basis { display: block; color: var(--muted); }
+.plant-tour-verdicts { border: 1px dashed var(--border); border-radius: 8px; padding: 2px 8px 6px; margin: 8px 0; }
+.plant-tour-verdicts .plant-overlay-label { text-align: left; }
+.plant-tour-table td.v-correct { outline: 1px solid currentColor; outline-offset: -3px; }
+.plant-tour-table td.v-wrong { outline: 3px solid currentColor; outline-offset: -4px; font-weight: 700; }
+.plant-tour-table td.v-unanswerable { outline: 1px dashed currentColor; outline-offset: -3px; }
+
+@media (min-width: 600px) {
+  .plant-huds:has(.plant-tour[data-tour="step"]) .plant-hud-left { visibility: hidden; }
+  /* the hint of the floor stands aside (the box says what to look at), and the record the last step opens stays in the right column with the truth above its rows: the wide record of section 3.3 would
+     put the bars into the column of the box */
+  .plant-huds:has(.plant-tour[data-tour="step"]) .plant-hint { display: none; }
+  .plant-huds:has(.plant-tour[data-tour="step"]):has(.plant-record[data-record-truth="on"]) .plant-side { grid-column: 3; }
+  .plant-huds:has(.plant-tour[data-tour="step"]):has(.plant-record[data-record-truth="on"]) .plant-bottom { grid-column: 1 / 3; }
+  .plant-huds:has(.plant-tour[data-tour="step"]) .plant-record-body[data-truth-layout="beside"] { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 899px) {
+  .plant-tour[data-tour="step"] { grid-column: 1 / 3; max-width: 30rem; }
+}
+@media (max-width: 599px) {
+  .plant-tour[data-tour] { grid-column: 1; grid-row: 2; align-self: end; justify-self: stretch; max-width: none; max-height: min(100%, 24rem); z-index: 5; }
+  .plant-huds:has(.plant-tour[data-tour="step"]) .plant-side { display: none; }
+}

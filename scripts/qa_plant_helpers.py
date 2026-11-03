@@ -15,6 +15,10 @@ SOFTWARE_GL = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swi
 # The viewports of the plant: the one of the frame budget and the screenshots, and a phone.
 PLANT_VIEWPORTS = {"1280": (1280, 720), "390": (390, 844)}
 
+# A reader who has seen the offer of the guided scene (docs/design/plant_ui.md section 3.5): the key `plant.tour` of `localStorage`. The checks of the plant open the page as a returning reader would find it, so the
+# offer does not stand over what they measure; the check `plant_tour` opens it as a first visit finds it, with no storage.
+TOUR_SEEN_JS = "try { localStorage.setItem('plant.tour', 'seen'); } catch (e) { /* storage blocked */ }"
+
 # Budgets (docs/design/plant_ui.md section 8 and section 12, item 3, set by the author): the first load of the lab, the loader chunk inside it, the plant chunk fetched on entering.
 FIRST_LOAD_LIMIT = 300 * 1024
 LOADER_LIMIT = 4 * 1024

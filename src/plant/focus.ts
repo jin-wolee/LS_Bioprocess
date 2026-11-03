@@ -48,6 +48,18 @@ export const focusOf = (plan: ScenePlan, layout: Layout, key: string, where: (p:
     const at = found === null ? null : itemPoint(plan, layout, found);
     return at ? { at, radius: kind === "lot" ? 0.9 : kind === "equipment" ? 1.2 : 0.7 } : null;
   }
+  if (kind === "station") {
+    // a reactor and the aisle in front of it, where the operator stands for the draw (the first two steps of the tour): the middle between the vessel and its access point
+    const v = layout.vessels[plan.units.findIndex((u) => u.id === id)];
+    return v ? { at: { x: (v.x + v.access.x) / 2, z: (v.z + v.access.z) / 2 }, radius: 1.6 } : null;
+  }
+  if (kind === "halls") {
+    // the whole row of halls (the fourth step of the tour): level with the shelves, from as far as the camera goes in (a radius of 3.6 m is 18 m away). The box of the tour covers the left third of the
+    // view, so the camera looks 2.6 m west of the middle of the row of footprints and the halls stand to the right of the centre of the picture
+    const first = layout.halls[0]?.footprint;
+    const last = layout.halls[layout.halls.length - 1]?.footprint;
+    return first && last ? { at: { x: (first.x + last.x + last.w) / 2 - 2.6, z: first.z + first.d / 2 }, radius: 3.6, pitch: 0.2 } : null;
+  }
   if (kind === "hall") {
     // close to the shelves and level with them: the cards are a few centimetres wide
     const h = layout.halls.find((x) => x.architecture === id);
