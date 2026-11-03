@@ -129,15 +129,22 @@ describe("the request is checked", () => {
     ["halls that is not true", { halls: false }],
     ["a pick of the sample and the halls together", { sample_id: "U01-D06-1", halls: true }],
     ["a pick of a unit (not offered yet: no lab function gives the truth of a unit)", { unit_id: "U01" }],
-    ["a pick of the break-out (waits for P7)", { breakout: true }],
+    ["a break-out that is not true (P7b offers the pick of a case)", { breakout: false }],
+    ["a pick of the break-out and the halls together", { breakout: true, halls: true }],
   ])("Given %s Then checkTruthPick refuses it as invalid", (_, pick) => {
     const out = checkTruthPick(pick);
     expect(out.ok).toBe(false);
   });
 
-  it("Given a sample id or the halls Then the pick is accepted", () => {
+  it("Given a sample id, the halls or the break-out Then the pick is accepted", () => {
     expect(checkTruthPick({ sample_id: "U01-D06-1" })).toEqual({ ok: true, pick: { sample_id: "U01-D06-1" } });
     expect(checkTruthPick({ halls: true })).toEqual({ ok: true, pick: { halls: true } });
+    expect(checkTruthPick({ breakout: true })).toEqual({ ok: true, pick: { breakout: true } });
+  });
+
+  it("Given the pick of the break-out on a run that is not a break-out case Then it is refused as unknown_target (P7b): there is no event to show", () => {
+    const out = answerPlantTruth(whole.kept, challenges, { breakout: true });
+    expect(out).toMatchObject({ ok: false, code: "refused", reason: "unknown_target" });
   });
 
   it("Given a sample the run did not draw, or a draw that was skipped Then it is refused as unknown_target", () => {

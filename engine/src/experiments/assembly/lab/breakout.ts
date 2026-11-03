@@ -5,15 +5,17 @@ import { loadProfile } from "../../../profiles.ts";
 import type { ProfileLookup } from "../../../profiles.ts";
 import type { signalsOf } from "../../../record/investigate/investigate.ts";
 import type { Investigation, Reach } from "../../../record/investigate/investigate.ts";
+import type { Architecture } from "../../../record/architecture.ts";
 import { loadScenario } from "../../../scenario.ts";
 import { ENGINE_VERSION } from "../../../trace.ts";
 import { breakoutCase, investigateBreakoutSeed } from "../breakout.ts";
+import type { BreakoutCase } from "../breakout.ts";
 import { parseBreakoutConfig } from "../breakout_config.ts";
 import { MYCOPLASMA_NOTE, buildBreakoutReport } from "../breakout_report.ts";
 import type { ReviewUsed } from "../open_loop.ts";
 import { checkBounds } from "./action_bounds.ts";
 import { applyActions, parseActions } from "./actions.ts";
-import type { PlantRefusal } from "./actions.ts";
+import type { Action, PlantRefusal } from "./actions.ts";
 import { checkSeed } from "./challenges.ts";
 import type { Refusal } from "./challenges.ts";
 import { architecturesNamed } from "./seed_setup.ts";
@@ -176,7 +178,8 @@ const observedOf = (events: readonly { type: string }[]): ObservedView[] =>
     }
   });
 
-const eventsOf = (inv: Investigation): InvestigationEventView[] => {
+/** What the investigation of one record did, in time order, with the item each hold is on (the Break-out screen's `events`, and the plant's `holds`). */
+export const eventsOf = (inv: Investigation): InvestigationEventView[] => {
   const holds = new Map((inv.dataset.quality_hold ?? []).map((h) => [h.hold_id, h]));
   return inv.events.map((e): InvestigationEventView => {
     if (e.type === "result_reflagged") return { type: e.type, t: e.t, result_id: e.result_id, hold_id: e.hold_id };
@@ -200,15 +203,27 @@ const viewOf = (inv: Investigation, cell: BreakoutMetrics, rows: readonly Row[])
   };
 };
 
+/** A `breakout` request that passed its checks (and the plant's `plant_run` of a case, which asks the same): the case, the records and the seed it names, and the scenario document the run reads. */
+export interface BreakoutAsk {
+  case_id: string;
+  /** The case's own document, as the build bundles it. */
+  doc: ScenarioDoc;
+  /** The lookup of every profile, the event-type profiles of the build among them. */
+  lookup: ProfileLookup;
+  seed: number;
+  /** In the order named, with the operator actions applied to the record halls. */
+  architectures: Architecture[];
+  actions: Action[];
+  /** The document the run loads: the case's own, or a copy with the operator actions applied. */
+  source: unknown;
+}
+
 /**
- * The `breakout` request as the Worker receives it. The case, the architectures and the seed are user input and are checked (a link carries them); a scenario that fails the engine's own validation
- * throws with the engine's message, and the Worker reports it as `engine_error`.
- *
- * P5c (docs/design/plant_ui.md section 6, rule 9): an optional list of the plant's operator actions, checked as `plant_run` checks them (the shape, then the bounds against the case's own scenario) and applied to
- * the scenario document of the case and to the architectures named. With none, or an empty list, nothing below the check of the list runs and the answer is what it was. A capture path is refused:
- * the break-out records are made without the raw layer, so the action would be accepted and change nothing.
+ * The checks of the `breakout` request, in their order: the build offers the screen, the case, the architectures, the seed, the shape of the list of actions, then (with actions) `set_capture_path`
+ * and the bounds of plant_ui.md section 5.6 against the case's own scenario. The case, the architectures and the seed are user input (a link carries them). `plant_run` of a case calls this
+ * same function (plant_ui.md section 6, rule 11), so the two refuse alike.
  */
-export const answerBreakout = async (data: LabData, raw: { case: unknown; architectures: unknown; seed: unknown; actions?: unknown }): Promise<BreakoutAnswer> => {
+export const breakoutAsk = (data: LabData, raw: { case: unknown; architectures: unknown; seed: unknown; actions?: unknown }): { ok: true; ask: BreakoutAsk } | Refusal | PlantRefusal => {
   const offer = data.breakout;
   if (offer === undefined) return invalid("this build does not offer the Break-out screen");
   const ids = Object.keys(offer.scenarios);
@@ -239,22 +254,44 @@ export const answerBreakout = async (data: LabData, raw: { case: unknown; archit
     source = applied.scenario;
     architectures = applied.architectures;
   }
-  const c = breakoutCase({ case_id: raw.case, scenario: doc.scenario_id, set: {} }, loadScenario(structuredClone(source), lookup));
+  return { ok: true, ask: { case_id: raw.case, doc, lookup, seed: seed.seed, architectures, actions, source } };
+};
+
+/** The case of a checked ask, loaded, with what `breakoutTruth` and `investigateBreakoutSeed` take: the staff profile of the samplers, the evaluation settings and the review at its default. */
+export const breakoutRunOf = (data: LabData, ask: BreakoutAsk): { c: BreakoutCase; input: Parameters<typeof investigateBreakoutSeed>[2]; review: ReviewUsed } => {
+  const c = breakoutCase({ case_id: ask.case_id, scenario: ask.doc.scenario_id, set: {} }, loadScenario(structuredClone(ask.source), ask.lookup));
   const evaluation = evaluationSettings(data.evaluation);
   const review: ReviewUsed = { timing: "next_shift_start", reject_also: [] };
+  const staff = loadProfile(ask.lookup("staff", ask.doc.profiles.staff), "staff").params;
+  return { c, input: { staff, evaluation, architectures: ask.architectures }, review };
+};
 
-  const staff = loadProfile(lookup("staff", doc.profiles.staff), "staff").params;
-  const { outcome, events, investigations } = await investigateBreakoutSeed(c, seed.seed, { staff, evaluation, architectures }, review);
+/**
+ * The `breakout` request as the Worker receives it. The case, the architectures and the seed are user input and are checked (`breakoutAsk`); a scenario that fails the engine's own validation
+ * throws with the engine's message, and the Worker reports it as `engine_error`.
+ *
+ * P5c (docs/design/plant_ui.md section 6, rule 9): an optional list of the plant's operator actions, checked as `plant_run` checks them (the shape, then the bounds against the case's own scenario) and applied to
+ * the scenario document of the case and to the architectures named. With none, or an empty list, nothing below the check of the list runs and the answer is what it was. A capture path is refused:
+ * the break-out records are made without the raw layer, so the action would be accepted and change nothing.
+ */
+export const answerBreakout = async (data: LabData, raw: { case: unknown; architectures: unknown; seed: unknown; actions?: unknown }): Promise<BreakoutAnswer> => {
+  const asked = breakoutAsk(data, raw);
+  if (!asked.ok) return asked;
+  const { ask } = asked;
+  const { c, input, review } = breakoutRunOf(data, ask);
+  const { architectures } = ask;
+  const evaluation = input.evaluation;
+  const { outcome, events, investigations } = await investigateBreakoutSeed(c, ask.seed, input, review);
 
   const report = buildBreakoutReport(
-    { engine_version: ENGINE_VERSION, seeds: [seed.seed], review, cases: [{ case: c, outcomes: [outcome] }] },
+    { engine_version: ENGINE_VERSION, seeds: [ask.seed], review, cases: [{ case: c, outcomes: [outcome] }] },
     { experiment_id: "lab", min_seeds: evaluation.min_seeds, ablations_of: ablationBaseId(data) },
   );
   const reported = report.cases[0] as Case;
   return {
     ok: true,
     result: {
-      kind: "simulation_result", case: raw.case, scenario: doc.scenario_id, seed: seed.seed, engine_version: ENGINE_VERSION, architectures: architectures.map((a) => a.id), truth_log_hash: outcome.truth_log_hash,
+      kind: "simulation_result", case: ask.case_id, scenario: ask.doc.scenario_id, seed: ask.seed, engine_version: ENGINE_VERSION, architectures: architectures.map((a) => a.id), truth_log_hash: outcome.truth_log_hash,
       event: reported.event, inputs: reported.inputs, topology: reported.topology, observed: observedOf(events), needs: { ...BREAKOUT_NEEDS },
       c29: reported.event.type === "mycoplasma" ? MYCOPLASMA_NOTE : null,
       per_architecture: architectures.map((a, i) => viewOf(investigations[i] as Investigation, outcome.cells[i] as BreakoutMetrics, reported.architectures.find((x) => x.id === a.id)?.rows ?? [])),

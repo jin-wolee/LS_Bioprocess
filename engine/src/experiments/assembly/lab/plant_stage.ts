@@ -4,10 +4,11 @@ import { logHash } from "../../../trace.ts";
 import { runSeed } from "../run_seed.ts";
 import type { RecordedDataset } from "../../../record/types.ts";
 import type { Challenges } from "./challenges.ts";
-import { cellsDigest, checkPlantRequest, compare, keptHall, keptOf, planOf, truthOf } from "./plant.ts";
+import { cellsDigest, checkPlantRequest, compare, keptHall, keptOf, planOf, previousRun, truthOf } from "./plant.ts";
 import type { PlantAnswer, PlantKept, PlantSpec } from "./plant.ts";
 import type { PlantRefusal } from "./actions.ts";
 import type { PlanRecord } from "./plant_records.ts";
+import { checkCaseSpec, isCaseSpec, stageCase } from "./plant_case.ts";
 import { recordsOf } from "./plant_records.ts";
 import { materialisedOf } from "./seed_setup.ts";
 import type { LabData } from "./setup.ts";
@@ -52,7 +53,7 @@ export const stagePlant = async (data: LabData, spec: PlantSpec, previous?: Plan
   const first = await build(0)();
   return {
     ok: true,
-    answer: { plan: planOf(data, t, first.records), ...compare(previous, spec.actions, t.run.events), hashes: { truth: await logHash(t.run.events), cells: first.cells } },
+    answer: { plan: planOf(data, t, first.records), ...compare(previousRun(previous), spec.actions, t.run.events), hashes: { truth: await logHash(t.run.events), cells: first.cells } },
     kept,
     halls: t.architectures.slice(1).map((_, k) => build(k + 1)),
   };
@@ -60,6 +61,11 @@ export const stagePlant = async (data: LabData, spec: PlantSpec, previous?: Plan
 
 /** The `plant_run` request as the Worker receives it, answered progressively: the spec is checked and a locked run is refused (`checkPlantRequest`), then `stagePlant`. */
 export const answerPlantStart = async (data: LabData, challenges: Challenges, raw: { spec: unknown }, previous?: PlantKept): Promise<PlantStaged | PlantRefusal> => {
+  // a break-out case (plant_ui.md section 6, rule 11): checked as the `breakout` request is, and no challenge can lock it
+  if (isCaseSpec(raw.spec)) {
+    const asked = checkCaseSpec(data, raw.spec);
+    return asked.ok ? stageCase(data, asked, previous) : asked;
+  }
   const checked = checkPlantRequest(data, challenges, raw);
   return checked.ok ? stagePlant(data, checked.spec, previous) : checked;
 };

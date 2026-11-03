@@ -3,9 +3,12 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { answerBreakout } from "../../src/experiments/assembly/lab/breakout.ts";
 import { createChallenges } from "../../src/experiments/assembly/lab/challenges.ts";
 import { answerPlantRun, checkPlantSpec, runPlant } from "../../src/experiments/assembly/lab/plant.ts";
+import { answerPlantCase } from "../../src/experiments/assembly/lab/plant_case.ts";
 import { ENGINE_VERSION } from "../../src/trace.ts";
+import { breakoutData } from "../lab/breakout_data.ts";
 import { labData } from "../support/lab_data.ts";
 import { ENGINE_NODE_FLAGS } from "../support/node_flags.ts";
 import { ROOT, listFiles } from "../support/paths.ts";
@@ -139,4 +142,36 @@ describe("plant_reference_cli: the sweep of P6c (docs/design/plant_ui.md section
       expect(out.answer.hashes, s.name).toEqual({ truth: swept(s.name).truth, cells: swept(s.name).cells });
     }
   }, 300_000);
+});
+
+describe("plant_reference_cli: the break-out case of P7b (docs/design/plant_ui.md section 10)", () => {
+  // typed by hand: the medium-lot case at seed 9013 (the seed the Break-out check of the lab uses) under the five records of the Break-out form
+  const CASE = "sc12_medium_lot";
+  const ARCH5 = ["a_manual", "b_lims_lite", "c_context", "c_context_minus_material_lot_links", "c_context_minus_equipment_links"];
+  type BreakoutEntry = { case: string; seed: number; architectures: string[]; truth: string; cells: Record<string, string> };
+  const entries = (): BreakoutEntry[] => (reference as unknown as { breakout?: BreakoutEntry[] }).breakout ?? [];
+
+  it("Given the file Then it holds one break-out entry: the case, the seed, the five records, the truth hash and a digest of the cell of each record", () => {
+    expect(entries()).toHaveLength(1);
+    const e = entries()[0] as BreakoutEntry;
+    expect([e.case, e.seed, e.architectures]).toEqual([CASE, 9013, ARCH5]);
+    expect(e.truth).toMatch(/^[0-9a-f]{64}$/);
+    expect(Object.keys(e.cells).sort()).toEqual([...ARCH5].sort()); // the file is written in canonical key order
+    expect(Object.values(e.cells).every((d) => /^[0-9a-f]{64}$/.test(d))).toBe(true);
+  });
+
+  it("Given the entry Then the plant's own answer for the case (runPlantCase, no action) has its hashes", async () => {
+    const e = entries()[0] as BreakoutEntry;
+    const out = await answerPlantCase(breakoutData(), { case: e.case, architectures: e.architectures, seed: e.seed, actions: [] });
+    if (!out.ok) throw new Error(out.message);
+    expect(out.answer.hashes).toEqual({ truth: e.truth, cells: e.cells });
+  }, 120_000);
+
+  it("Given the entry Then its hashes are the Break-out request's: the truth_log_hash of the answer, and a cell digest that differs between a record with the lot links and one without", async () => {
+    const e = entries()[0] as BreakoutEntry;
+    const screen = await answerBreakout(breakoutData(), { case: e.case, architectures: e.architectures, seed: e.seed });
+    if (!screen.ok) throw new Error(screen.message);
+    expect(screen.result.truth_log_hash).toBe(e.truth);
+    expect(e.cells.c_context).not.toBe(e.cells.c_context_minus_material_lot_links);
+  }, 120_000);
 });

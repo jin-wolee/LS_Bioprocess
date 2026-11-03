@@ -5,9 +5,11 @@ import type { BreakoutMetrics } from "../../evaluate/breakout_metrics.ts";
 import type { Params } from "../../profiles.ts";
 import type { Architecture } from "../../record/architecture.ts";
 import { investigate, signalsOf } from "../../record/investigate/investigate.ts";
-import type { Investigation, InvestigationConfig } from "../../record/investigate/investigate.ts";
+import type { Investigation, InvestigationConfig, Signal } from "../../record/investigate/investigate.ts";
 import type { ReviewTiming } from "../../record/review.ts";
+import type { RecordedDataset } from "../../record/types.ts";
 import { runScenario } from "../../run.ts";
+import type { ScenarioRun } from "../../run.ts";
 import type { ScenarioConfig } from "../../scenario.ts";
 import { ENGINE_VERSION, logHash } from "../../trace.ts";
 import type { BreakoutCaseConfig } from "./breakout_config.ts";
@@ -88,6 +90,48 @@ export const breakoutCase = (c: BreakoutCaseConfig, scenario: ScenarioConfig): B
   return { case_id: c.case_id, scenario, assumed_lag: { seconds: Math.round(c.assumed_lag.value * HOUR), ref: c.assumed_lag.ref, swept: true } };
 };
 
+/** The truth of one seed of a case, which every architecture shares: the run, the hash taken before the first architecture, the input of the recorders and the decision settings of the investigation. */
+export interface BreakoutTruth {
+  run: ScenarioRun;
+  truth_log_hash: string;
+  /** The input of `runSeed`, with the architectures the caller named; the plant records them one at a time by replacing `architectures`. */
+  input: SeedInput;
+  cfg: InvestigationConfig;
+  /** The first signals of each affected unit, from the observable events. */
+  signals: Signal[];
+}
+
+/** What one architecture does with the shared truth: its recorded dataset, its investigation from the first signal and its scored cell. */
+export interface ArchitectureRun {
+  dataset: RecordedDataset;
+  investigation: Investigation;
+  cell: BreakoutMetrics;
+}
+
+/** The first half of a seed (spec 11.8.14, C42): run the truth once and hash it, then make the inputs every architecture is handed. */
+export const breakoutTruth = async (c: BreakoutCase, seed: number, input: Omit<BreakoutRunInput, "cases" | "seeds">, review: ReviewUsed): Promise<BreakoutTruth> => {
+  const b = blockOf(c);
+  const run = runScenario({ ...c.scenario, seed });
+  const truth_log_hash = await logHash(run.events);
+  const seedInput = seedInputFromRun(run, {
+    scenario_id: c.scenario.scenario_id, staff: input.staff, evaluation: input.evaluation, architectures: input.architectures, days: c.scenario.process.horizon_s / DAY,
+    review: { roster: rosterOf(c.scenario.sampling), timing: review.timing, reject_also: review.reject_also }, breakout: b,
+  });
+  // the decision settings of the investigation: the delays are the scenario's (A176), the assumed lag is the case's
+  const cfg: InvestigationConfig = { decision_delay_s: b.signal_to_response_s, conclusion_delay_s: b.positive_to_hold_s, assumed_lag_s: c.assumed_lag.seconds, review: seedInput.review };
+  return { run, truth_log_hash, input: seedInput, cfg, signals: signalsOf(seedInput.events) };
+};
+
+/** The second half (C42): for each architecture named, in that order, record it on the shared truth, investigate it from the first signal and score it. The architectures do not read each other. */
+export const investigateArchitectures = (t: BreakoutTruth, architectures: readonly Architecture[]): ArchitectureRun[] => {
+  const out = runSeed({ ...t.input, architectures });
+  return architectures.map((a) => {
+    const dataset = out.datasets[a.id] as RecordedDataset;
+    const investigation = investigate(dataset, t.signals, t.cfg);
+    return { dataset, investigation, cell: breakoutMetrics({ truth: t.input.truth, investigation, key_text: out.key_text, architecture: a.id }) };
+  });
+};
+
 /** One seed of a case in full: the outcome the experiment keeps, and what the lab screen shows besides it (the walk-back and the holds), which the cells reduce. */
 export interface BreakoutSeedRun {
   outcome: BreakoutSeedOutcome;
@@ -98,24 +142,11 @@ export interface BreakoutSeedRun {
 }
 
 export const investigateBreakoutSeed = async (c: BreakoutCase, seed: number, input: Omit<BreakoutRunInput, "cases" | "seeds">, review: ReviewUsed): Promise<BreakoutSeedRun> => {
-  const b = blockOf(c);
-  const run = runScenario({ ...c.scenario, seed });
-  const truth_log_hash = await logHash(run.events);
-  const seedInput = seedInputFromRun(run, {
-    scenario_id: c.scenario.scenario_id, staff: input.staff, evaluation: input.evaluation, architectures: input.architectures, days: c.scenario.process.horizon_s / DAY,
-    review: { roster: rosterOf(c.scenario.sampling), timing: review.timing, reject_also: review.reject_also }, breakout: b,
-  });
-  const out = runSeed(seedInput);
-  // the decision settings of the investigation: the delays are the scenario's (A176), the assumed lag is the case's
-  const cfg: InvestigationConfig = { decision_delay_s: b.signal_to_response_s, conclusion_delay_s: b.positive_to_hold_s, assumed_lag_s: c.assumed_lag.seconds, review: seedInput.review };
-  const signals = signalsOf(seedInput.events);
-  const investigations = input.architectures.map((a) => investigate(out.datasets[a.id] as NonNullable<(typeof out.datasets)[string]>, signals, cfg));
-  const cells = input.architectures.map((a, i) =>
-    breakoutMetrics({ truth: seedInput.truth, investigation: investigations[i] as Investigation, key_text: out.key_text, architecture: a.id }),
-  );
-  const after = await logHash(run.events);
-  if (after !== truth_log_hash) fail(c, `the truth log of seed ${seed} changed while the architectures were recorded and investigated (${truth_log_hash} before, ${after} after)`);
-  return { outcome: { seed, truth_log_hash, cells }, events: seedInput.events, investigations };
+  const truth = await breakoutTruth(c, seed, input, review);
+  const runs = investigateArchitectures(truth, input.architectures);
+  const after = await logHash(truth.run.events);
+  if (after !== truth.truth_log_hash) fail(c, `the truth log of seed ${seed} changed while the architectures were recorded and investigated (${truth.truth_log_hash} before, ${after} after)`);
+  return { outcome: { seed, truth_log_hash: truth.truth_log_hash, cells: runs.map((r) => r.cell) }, events: truth.input.events, investigations: runs.map((r) => r.investigation) };
 };
 
 export const runBreakoutSeed = async (c: BreakoutCase, seed: number, input: Omit<BreakoutRunInput, "cases" | "seeds">, review: ReviewUsed): Promise<BreakoutSeedOutcome> =>

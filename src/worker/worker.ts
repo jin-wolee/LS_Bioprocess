@@ -15,6 +15,7 @@ import { checkRunActions, runLab } from "../../engine/src/experiments/assembly/l
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
 import { checkRunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
 import type { RunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
+import { truthKeyOf } from "../../engine/src/experiments/assembly/lab/truth_key.ts";
 import type { CheckDetail, CheckState, ErrorCode, ResultFooter, Response } from "../protocol.ts";
 import { LAB_DATA } from "./data.ts";
 
@@ -39,6 +40,9 @@ import { LAB_DATA } from "./data.ts";
 // P5b adds `plant_truth` (docs/design/plant_ui.md section 6, rule 8): the truth overlay, asked for on the reader's switch only. It is read from the run the Worker kept (the truth log, the halls with
 // the errors the injector materialised on them) with no recompute: for a sample the lineage view's truth column and verdicts, for the halls the placeholders. A challenge open on the same run answers
 // `locked` at the moment of the request; no plant_ready, plant_halls or plant_record_view carries any of it.
+//
+// P7b lets `plant_run` take a break-out case (docs/design/plant_ui.md section 6, rule 11): a `spec` with a `case` is checked as the `breakout` request is and answered with the same messages, `plant_ready` and one
+// `plant_halls` for each other architecture; a build that bundles no SC12 file refuses it as `breakout` does. `plant_truth` answers the pick `{ breakout: true }` for a case.
 //
 // P5c adds `actions` to `lineage` and `breakout` (docs/design/plant_ui.md section 6, rule 9): the operator actions of the plant a drill-down was opened from, checked as `plant_run` checks them, so the
 // lineage view of a sample is made from the run the plant shows. A refusal of an action arrives as `error` with code `refused`, its `reason` and its `index`. `challenge_start` refuses a list of actions.
@@ -206,7 +210,8 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       if (!out.ok) return post({ type: "error", id, epoch, code: out.code, message: out.message, ...(out.code === "refused" && { reason: out.reason, index: out.index }) });
       plantKept = out.kept;
       keptEpoch = epoch;
-      post({ type: "plant_ready", id, epoch, ...out.answer, key: challenges.keyOf(out.kept.run, out.kept.seed) });
+      // the key of the truth of the run, its actions stripped; a break-out case has no run spec and no challenge can be opened on it, so its key is that of its own truth log (plant_ui.md section 6, rule 11)
+      post({ type: "plant_ready", id, epoch, ...out.answer, key: out.kept.run === null ? truthKeyOf(out.kept.events) : challenges.keyOf(out.kept.run, out.kept.seed) });
       // the other halls, one at a time, a turn of the event loop between them; a newer epoch stops the ones still pending and nothing is posted for them (section 5.5)
       for (const build of out.halls) {
         await yieldToLoop();

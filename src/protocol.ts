@@ -34,10 +34,11 @@ export type Request =
   | { type: "challenge_guess"; id: number; challenge: string; target: { sample_id: string } | { decision_id: string } }
   | { type: "challenge_giveup"; id: number; challenge: string }
   | { type: "breakout"; id: number; case: string; architectures: string[]; seed: number; actions?: PlantAction[] }
-  | { type: "plant_run"; id: number; epoch: number; spec: PlantSpec }
+  // `spec` (P7b, plant_ui.md section 6, rule 11): the run form, or a break-out case, told apart by its `case` key
+  | { type: "plant_run"; id: number; epoch: number; spec: PlantSpec | PlantCaseSpec }
   | { type: "plant_record"; id: number; epoch: number; architecture: string; sample_id: string }
-  // the picks the plant offers (plant_ui.md section 6, rule 8): a pick of a unit and of the break-out wait, and the Worker refuses them as `invalid_spec`
-  | { type: "plant_truth"; id: number; epoch: number; pick: { sample_id: string } | { halls: true } };
+  // the picks the plant offers (plant_ui.md section 6, rule 8): a pick of a unit waits and the Worker refuses it as `invalid_spec`; `{ breakout: true }` (P7b) is answered for a break-out case only
+  | { type: "plant_truth"; id: number; epoch: number; pick: { sample_id: string } | { halls: true } | { breakout: true } };
 
 export type ChallengeVariant = "sample" | "decision";
 
@@ -56,6 +57,14 @@ export type PlantAction =
 
 export interface PlantSpec {
   run: RunSpec;
+  seed: number;
+  actions: PlantAction[];
+}
+
+/** The break-out form of the plant's spec (P7b): one of the five SC12 cases of `ready.breakout`, the record halls (the architectures the Break-out screen offers), one seed and the operator actions. */
+export interface PlantCaseSpec {
+  case: string;
+  architectures: string[];
   seed: number;
   actions: PlantAction[];
 }
@@ -94,12 +103,20 @@ export interface PlanCard {
   version_s: number[];
 }
 
+/** What a record's investigation did (P7b): the six events of the Break-out screen; `on` and `target` index into the plan's `units`, `lots`, `equipment` or `samples`, and are null for `deviation_closed`. */
+export interface PlanHold {
+  t: number;
+  event: "hold_placed" | "hold_quarantined" | "hold_released" | "hold_rejected" | "result_reflagged" | "deviation_closed";
+  on: "unit" | "lot" | "equipment" | "sample" | null;
+  target: number | null;
+}
+
 /** What the page draws of one seed: integer seconds of the run, indices into the arrays of the same plan, no hidden field and no value of a result. */
 export interface ScenePlan {
   schema_version: "1";
   seed: number;
   horizon_s: number;
-  layout: { bays: { size: number; profile: string }[]; analyzers: { profile: string; group: string }[]; architectures: string[] };
+  layout: { bays: { size: number; profile: string }[]; analyzers: { profile: string; group: string }[]; architectures: string[]; items?: { lots: string[]; equipment: string[] } };
   units: { id: string; bay: number; slot: number; profile: string; batch: string | null; start_s: number | null; end_s: number | null }[];
   analyzers: { id: string; profile: string; group: string }[];
   staff: { id: string; on_duty: [number, number][] }[];
@@ -107,7 +124,11 @@ export interface ScenePlan {
   marks: { t: number; unit: number; kind: string; source: "rule" | "scheduled" | "scripted" | null; item: string | null }[];
   windows: { analyzer: number; kind: "qc" | "maintenance" | "closed"; from_s: number; to_s: number }[];
   calibrations: { analyzer: number; t: number }[];
-  records: { architecture: string; flags_on: string[]; cards: PlanCard[] }[];
+  records: { architecture: string; flags_on: string[]; cards: PlanCard[]; holds?: PlanHold[] }[];
+  /** A break-out case only (P7b, plant_ui.md section 4.1): the lots and equipment items its events name, with the units and instants that take them, and the results of the confirming tests. */
+  lots?: { id: string; kind: "seed" | "medium"; uses: { unit: number; t: number }[] }[];
+  equipment?: { id: string; uses: { unit: number; t: number }[] }[];
+  confirms?: { sample: number; test: string; result_s: number; outcome: "detected" | "not_detected" }[];
 }
 
 export type CheckState = "pending" | "identical" | "failed" | "error";
@@ -249,7 +270,9 @@ export interface TruthPlaceholder {
 }
 export type TruthOverlay =
   | { kind: "sample"; sample: LineageView["sample"]; truth: LineageView["truth"]; columns: Pick<LineageColumn, "architecture" | "answers" | "realised_errors">[] }
-  | { kind: "halls"; halls: { architecture: string; placeholders: TruthPlaceholder[] }[] };
+  | { kind: "halls"; halls: { architecture: string; placeholders: TruthPlaceholder[] }[] }
+  // P7b, a break-out case only: the event as the Break-out screen prints it, and the units it reached with the instant each became contaminated (an index into the plan's `units`)
+  | { kind: "breakout"; event: BreakoutResult["event"]; affected: { unit: number; onset_s: number }[] };
 
 // The challenge (lab_ui.md section 9). A record is what the reader searches; a reveal exists only after the guess or the give-up.
 export interface RecordView {

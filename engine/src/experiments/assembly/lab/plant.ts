@@ -1,4 +1,5 @@
 import type { Event } from "../../../generated/event.schema";
+import type { BreakoutMetrics } from "../../../evaluate/breakout_metrics.ts";
 import type { Metrics } from "../../../generated/metrics.schema";
 import type { MaterialisedError } from "../../../inject/types.ts";
 import { loadScenario } from "../../../scenario.ts";
@@ -12,6 +13,7 @@ import type { RecordedDataset } from "../../../record/types.ts";
 import { ACTION_CLASS, applyActions, canonicalActions, parseActions } from "./actions.ts";
 import type { Action, PlantBase, PlantRefusal } from "./actions.ts";
 import { checkBounds } from "./action_bounds.ts";
+import type { BreakoutResult } from "./breakout.ts";
 import { checkSeed } from "./challenges.ts";
 import type { Challenges } from "./challenges.ts";
 import { layoutSpec, plannedIds, scenePlan } from "./plant_plan.ts";
@@ -60,6 +62,14 @@ export interface KeptHall {
   materialised: readonly MaterialisedError[];
 }
 
+/** What the Worker keeps of a break-out case (plant_ui.md section 6, rule 11): which case it was asked with and the event as the Break-out screen prints it, for the pick `{ breakout: true }`. */
+export interface KeptCase {
+  case: string;
+  /** The architectures as the request named them. */
+  architectures: string[];
+  event: BreakoutResult["event"];
+}
+
 /**
  * What the Worker keeps for the next answer and for `plant_record`. It never leaves the Worker: the page gets a plan, hashes and, on request, the rows of one card. `events` is the truth log;
  * `halls` holds the halls built so far, by architecture id, which a progressive answer fills one at a time.
@@ -68,9 +78,11 @@ export interface PlantKept {
   actions: Action[];
   events: readonly Event[];
   halls: Map<string, KeptHall>;
-  /** The checked run and its seed: the lock of a challenge is asked of them at the moment of a truth request. */
-  run: RunSpec;
+  /** The checked run and its seed: the lock of a challenge is asked of them at the moment of a truth request. Null for a break-out case, which no challenge can be opened on. */
+  run: RunSpec | null;
   seed: number;
+  /** Present for a break-out case only. */
+  breakout?: KeptCase;
   /** The ids of the planned samples in the order of the plan's `samples` (the placeholders of the truth overlay point into this order). */
   samples: string[];
 }
@@ -170,8 +182,11 @@ export const planOf = (data: LabData, t: PlantTruth, records: PlanRecord[]): Sce
     layout: layoutSpec(data, t.spec.run, t.config, t.architectures.map((a) => a.id)), records,
   });
 
-/** The digest of the metric cells of one hall (lab_ui.md section 7). */
-export const cellsDigest = (cell: Metrics): Promise<string> => sha256Hex(canonicalJson(cell));
+/** The digest of the metric cells of one hall (lab_ui.md section 7); for a break-out case the cell is the Break-out screen's `BreakoutMetrics`. */
+export const cellsDigest = (cell: Metrics | BreakoutMetrics): Promise<string> => sha256Hex(canonicalJson(cell));
+
+/** The answer a run is compared with: the previous one, unless that was a break-out case (a different kind of run, whose log a plant run has nothing to say about). */
+export const previousRun = (previous: PlantKept | undefined): PlantKept | undefined => (previous?.breakout ? undefined : previous);
 
 /** What the Worker keeps of a built hall: its dataset, the samples it holds a card of and the errors the injector materialised on it. */
 export const keptHall = (dataset: RecordedDataset, record: PlanRecord, samples: readonly string[], materialised: readonly MaterialisedError[]): KeptHall =>
@@ -199,7 +214,7 @@ export const runPlant = async (data: LabData, spec: PlantSpec, previous?: PlantK
   for (const [i, id] of ids.entries()) kept.halls.set(id, keptHall(datasets[i] as RecordedDataset, records[i] as PlanRecord, t.samples, materialised[id] as MaterialisedError[]));
   return {
     ok: true,
-    answer: { plan: planOf(data, t, records), ...compare(previous, spec.actions, t.run.events), hashes: { truth: await logHash(t.run.events), cells } },
+    answer: { plan: planOf(data, t, records), ...compare(previousRun(previous), spec.actions, t.run.events), hashes: { truth: await logHash(t.run.events), cells } },
     kept,
   };
 };

@@ -45,10 +45,23 @@ export interface PlanCard {
   version_s: number[];
 }
 
+/** What one record's investigation did (P7b, plant_ui.md section 4.1): the six events of the Break-out screen, in the words of its `events`. */
+export type HoldEvent = "hold_placed" | "hold_quarantined" | "hold_released" | "hold_rejected" | "result_reflagged" | "deviation_closed";
+
+/** One event of an investigation. `on` and `target` say what a hold is on: an index into the plan's `units` (a batch), `lots`, `equipment` or `samples` (a result); both null for `deviation_closed`. */
+export interface PlanHold {
+  t: number;
+  event: HoldEvent;
+  on: "unit" | "lot" | "equipment" | "sample" | null;
+  target: number | null;
+}
+
 export interface PlanRecord {
   architecture: string;
   flags_on: string[];
   cards: PlanCard[];
+  /** The hall of a break-out case only: what that architecture's investigation did, in time order. */
+  holds?: PlanHold[];
 }
 
 const groupBy = <T>(rows: readonly T[], key: (row: T) => string | null): Map<string, T[]> => {

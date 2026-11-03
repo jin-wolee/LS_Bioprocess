@@ -5,6 +5,8 @@
 // bytes in Node and in every browser (ADR-0019) they are the same. It never writes a golden. The QA runs it into qa_out/plant/; nothing in package.json does.
 // P6c: the same file also holds `sweep`, an entry for each spec of tests/fixtures/plant/sweep/specs.json (docs/design/plant_ui.md section 10): the spec run by the lab's own path with no action, the strict
 // truth hash and the digest of the cells of each hall, for the check `plant_sweep`.
+// P7b: the same file also holds `breakout`, one entry for a break-out case (docs/design/plant_ui.md section 10): the case run by the Break-out screen's own path (`investigateBreakoutSeed`, through
+// `screenRun`), with no plant module, as the strict truth hash and the digest of the cell of each record, for the check of P7c.
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
 import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
 import { parseArchitecture } from "../../src/record/architecture.ts";
@@ -14,6 +16,8 @@ import { scenarioConfig } from "../../src/experiments/assembly/lab/setup.ts";
 import type { LabData } from "../../src/experiments/assembly/lab/setup.ts";
 import { runSeed } from "../../src/experiments/assembly/run_seed.ts";
 import { ENGINE_VERSION, canonicalJson, logHash, sha256Hex } from "../../src/trace.ts";
+import { breakoutData } from "../lab/breakout_data.ts";
+import { screenRun } from "./breakout_screen.ts";
 import { labData } from "./lab_data.ts";
 import { writeText } from "./lab_files.ts";
 import { listFiles, readJson } from "./paths.ts";
@@ -72,6 +76,12 @@ const bySpec = async (s: SweepSpec): Promise<{ name: string; seed: number; truth
   };
 };
 
+/** The case of the reference: the medium-lot case at the seed the lab's Break-out check uses, under the five records the Break-out form offers (A, B, C, and C without each of the two link flags). */
+const BREAKOUT_CASES = [{
+  case: "sc12_medium_lot", seed: 9013,
+  architectures: ["a_manual", "b_lims_lite", "c_context", "c_context_minus_material_lot_links", "c_context_minus_equipment_links"],
+}];
+
 const started = performance.now();
 const fixtures = [];
 for (const file of listFiles("tests", "fixtures", "plant").filter((name) => name.endsWith(".json"))) {
@@ -81,6 +91,11 @@ for (const file of listFiles("tests", "fixtures", "plant").filter((name) => name
 }
 const sweep = [];
 for (const spec of readJson<{ specs: SweepSpec[] }>("tests", "fixtures", "plant", "sweep", "specs.json").specs) sweep.push(await bySpec(spec));
-const reference = { schema_version: "1", engine_version: ENGINE_VERSION, node: { version: process.version, flags: process.execArgv }, fixtures, sweep };
+const breakout = [];
+for (const c of BREAKOUT_CASES) {
+  const run = await screenRun(breakoutData(), c.case, c.seed, c.architectures);
+  breakout.push({ ...c, truth: run.truth, cells: run.cells });
+}
+const reference = { schema_version: "1", engine_version: ENGINE_VERSION, node: { version: process.version, flags: process.execArgv }, fixtures, sweep, breakout };
 writeText(out, `${canonicalJson(reference, 2)}\n`);
-console.log(`plant reference for engine ${ENGINE_VERSION} on node ${process.version}: ${fixtures.length} fixtures (${fixtures.map((x) => x.name).join(", ")}) and ${sweep.length} specs of the sweep; ${((performance.now() - started) / 1000).toFixed(1)} s`);
+console.log(`plant reference for engine ${ENGINE_VERSION} on node ${process.version}: ${fixtures.length} fixtures (${fixtures.map((x) => x.name).join(", ")}) and ${sweep.length} specs of the sweep and ${breakout.length} break-out case; ${((performance.now() - started) / 1000).toFixed(1)} s`);

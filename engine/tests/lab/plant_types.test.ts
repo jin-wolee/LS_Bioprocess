@@ -3,10 +3,11 @@ import { ACTION_KINDS } from "../../src/experiments/assembly/lab/actions.ts";
 import type { Action, RefusalReason } from "../../src/experiments/assembly/lab/actions.ts";
 import type { SampleRecord as EngineRecord } from "../../src/experiments/assembly/lab/lineage.ts";
 import type { PlantAnswer } from "../../src/experiments/assembly/lab/plant.ts";
+import type { PlantCaseSpec as EngineCaseSpec } from "../../src/experiments/assembly/lab/plant_case.ts";
 import type { PlantHall } from "../../src/experiments/assembly/lab/plant_stage.ts";
 import type { ScenePlan as EnginePlan } from "../../src/experiments/assembly/lab/plant_plan.ts";
 import type { TruthOverlay as EngineTruth, TruthPick } from "../../src/experiments/assembly/lab/plant_truth.ts";
-import type { PlantAction, RefusalReason as PageReason, Request, Response, SampleRecord, ScenePlan, TruthOverlay } from "../../../src/protocol.ts";
+import type { PlantAction, PlantCaseSpec, PlantSpec, RefusalReason as PageReason, Request, Response, SampleRecord, ScenePlan, TruthOverlay } from "../../../src/protocol.ts";
 
 // P3 (docs/design/plant_ui.md section 6): the page imports no engine module, so src/protocol.ts declares the shapes of the plant's plain data. Nothing here runs at run time but the list of kinds;
 // the checks are types, which `npm run typecheck` verifies: a field added to the engine's scene plan or action without the same field in the protocol fails to compile.
@@ -30,10 +31,20 @@ describe("the plant shapes of src/protocol.ts are the engine's", () => {
     expectTypeOf<Extract<Request, { type: "plant_record" }>>().toEqualTypeOf<{ type: "plant_record"; id: number; epoch: number; architecture: string; sample_id: string }>();
   });
 
-  it("Given the truth overlay of P5b Then plant_truth_view carries the engine's overlay and plant_truth is asked for by a sample id or the halls, the two picks the Worker answers", () => {
-    expectTypeOf<TruthOverlay>().toEqualTypeOf<EngineTruth>();
-    expectTypeOf<Extract<Response, { type: "plant_truth_view" }>["view"]>().toEqualTypeOf<EngineTruth>();
+  it("Given the truth overlay of P5b and P7b Then plant_truth_view carries a view the protocol has, the sample and halls kinds equal the engine's, and plant_truth is asked for by a sample id, the halls or the break-out, the picks the Worker answers", () => {
+    type Kind<T, K extends string> = Extract<T, { kind: K }>;
+    expectTypeOf<Kind<TruthOverlay, "sample">>().toEqualTypeOf<Kind<EngineTruth, "sample">>();
+    expectTypeOf<Kind<TruthOverlay, "halls">>().toEqualTypeOf<Kind<EngineTruth, "halls">>();
+    // the event of the break-out view is the Break-out screen's, which the page declares more loosely than the schema's literals (BreakoutResult); the engine's view is assignable to it, and `affected` is the same
+    expectTypeOf<EngineTruth>().toExtend<TruthOverlay>();
+    expectTypeOf<Kind<TruthOverlay, "breakout">["affected"]>().toEqualTypeOf<Kind<EngineTruth, "breakout">["affected"]>();
+    expectTypeOf<Extract<Response, { type: "plant_truth_view" }>["view"]>().toEqualTypeOf<TruthOverlay>();
     expectTypeOf<Extract<Request, { type: "plant_truth" }>["pick"]>().toEqualTypeOf<TruthPick>();
+  });
+
+  it("Given a break-out case (P7b) Then the protocol's case form is the engine's, and plant_run takes it beside the run form", () => {
+    expectTypeOf<PlantCaseSpec>().toEqualTypeOf<EngineCaseSpec>();
+    expectTypeOf<Extract<Request, { type: "plant_run" }>["spec"]>().toEqualTypeOf<PlantSpec | PlantCaseSpec>();
   });
 
   it("Given the kinds of the engine Then there are eight, as in section 5.2", () => {

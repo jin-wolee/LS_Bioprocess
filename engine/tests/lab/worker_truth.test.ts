@@ -75,7 +75,7 @@ describe("plant_truth: the epoch, the checks and the lock", () => {
     ["no pick", { pick: undefined }, 20, 5],
     ["a pick of no kind", { pick: {} }, 20, 5],
     ["a pick of a unit (not offered yet)", { pick: { unit_id: "U01" } }, 20, 5],
-    ["a pick of the break-out (waits for P7)", { pick: { breakout: true } }, 20, 5],
+    ["a pick of the break-out that is not true (P7b offers the pick of a case)", { pick: { breakout: false } }, 20, 5],
   ])("Given a request with %s Then invalid_spec", async (_, extra, id, epoch) => {
     const { ask, plant } = setup();
     await plant(1, 5);
