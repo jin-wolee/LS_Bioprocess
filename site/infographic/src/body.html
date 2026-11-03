@@ -34,7 +34,7 @@
 <h1 id="h-premise" class="nochip" data-i18n="p.h1" data-src="A022">N bioreactors, 2 shared analyzers: where does the context go?</h1>
 <div class="ruler" aria-hidden="true"></div>
 <div class="notice" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">Status: the lab is built and runs the synthetic plant in your browser. The plant is a scene to walk through, with a text version where the browser has no WebGL. The Break-out screen, and the Break-out cases in the plant, are held back in the public build until the sources behind them are re-read. All data is synthetic, built from public sources and labelled assumptions. This page states no simulation result, and nothing on it predicts a real laboratory.</p></div>
-<p class="lede" data-i18n="p.thesis">A process-development lab runs many small bioreactors but only a couple of at-line analyzers. Every sample travels from a vessel to an instrument, and on the way a bare number can lose its context: which reactor, which moment, which instrument state. The problem is context preservation, not throughput.</p>
+<p class="lede" data-i18n="p.thesis">A process-development lab runs many small bioreactors but only a couple of at-line analyzers. Every sample travels from a vessel to an instrument, and the problem is the context a bare number can lose on the way: which reactor, which moment, which instrument state.</p>
 <figure class="fig" data-src="A102">
 <div tabindex="0" class="fig-scroll"><svg class="wide-only" viewBox="0 0 760 130" role="img" aria-labelledby="hero-t" aria-describedby="hero-d">
 <title id="hero-t">One sample, three moments</title>
@@ -84,12 +84,12 @@
 <text class="m b halo" x="187.7" y="158" text-anchor="middle">45 min</text>
 </svg>
 </div>
-<figcaption data-i18n="p.f.cap">The case this page is built around: a result measured at 09:25 describes a sample drawn at 08:40, before the 09:00 feed. Example times, not data.</figcaption>
+<figcaption data-i18n="p.f.cap">A result measured at 09:25 describes a sample drawn at 08:40, before the 09:00 feed. The times are invented for illustration.</figcaption>
 </figure>
 <div data-src="A001 A022"><dl class="facts">
 <div><dt data-i18n="p.k.def">Reactors</dt><dd>24 <small data-i18n="p.k.defd">in two bays of 12</small></dd></div>
 <div><dt data-i18n="p.k.an">Analyzers</dt><dd>2 <small data-i18n="p.k.and">shared at-line instruments</small></dd></div>
-<div><dt data-i18n="p.k.range">Scenario range</dt><dd>N 5&ndash;100, M 1&ndash;6 <small data-i18n="p.k.ranged">reactors N and analyzers M; settings, not measurements</small></dd></div>
+<div><dt data-i18n="p.k.range">Scenario range</dt><dd>N 5&ndash;100, M 1&ndash;6 <small data-i18n="p.k.ranged">reactors N and analyzers M; both are scenario settings</small></dd></div>
 <div><dt data-i18n="p.k.read">How to read a figure</dt><dd class="mono" style="font-size:.95rem">id &middot; grade <small data-i18n="p.k.readd">every figure carries a ledger id and a grade: sourced, proxy, derived or assumed. A dashed amber chip marks a provisional figure.</small></dd></div>
 </dl></div>
 </div>
@@ -194,11 +194,11 @@
 <ol class="steps" aria-label="Story steps" data-i18n-aria="t.steps">
 <li data-step-li="1" data-i18n="t.st1" data-src="A102">Draw at 08:40. <code>sampled_at</code> is the instant the sample leaves the process.</li>
 <li data-step-li="2" data-i18n="t.st2" data-src="A102">Bolus feed at 09:00. The reactor's state changes while the sample waits.</li>
-<li data-step-li="3" data-i18n="t.st3" data-src="A102">Measurement at 09:25. <code>measured_at</code> is the end of the run, not the draw.</li>
+<li data-step-li="3" data-i18n="t.st3" data-src="A102">Measurement at 09:25. <code>measured_at</code> is the instant the run ends.</li>
 <li data-step-li="4" data-i18n="t.st4">Two joins. One keeps the draw time and sees the state the sample came from; the other keeps the measurement time and may not.</li>
 </ol>
 <div class="defs">
-<div><h4>hold_time</h4><p data-i18n="t.d1" data-src="A102 S001"><code>run_started_at</code> minus <code>sampled_at</code>, truth stamps. It ends when the run starts, so it is the 45 min span minus the 4.5 min run: 40.5 min. It is not the queue wait alone.</p></div>
+<div><h4>hold_time</h4><p data-i18n="t.d1" data-src="A102 S001"><code>run_started_at</code> minus <code>sampled_at</code>, truth stamps. It ends when the run starts, so it is the 45 min span minus the 4.5 min run: 40.5 min. The queue wait is only part of it.</p></div>
 <div><h4>turnaround</h4><p data-i18n="t.d2"><code>available_at</code> minus <code>sampled_at</code>. It includes measurement, ingestion and review, and tells whether a result could inform a decision.</p></div>
 <div><h4 data-i18n="t.d3h">Why two clocks</h4><p data-i18n="t.d3">With one stored time (the measured time) the draw time cannot be reconstructed, and neither rule above can run.</p></div>
 </div>
@@ -236,7 +236,7 @@
 <tr><th scope="row" data-i18n="ph.t.r2">Mini-scale liquid handler</th><td>mean about 0.05</td></tr>
 <tr><th scope="row" data-i18n="ph.t.r3">250 L single-use vessels, syringe sampling</th><td>mean 0.021</td></tr>
 </tbody></table></div>
-<p data-i18n="ph.note">The size of the offset depends on equipment and local procedure, so the simulator sweeps this range and reports sensitivity. No single offset is presented as general, and the effect on control is a model-internal result under stated assumptions, not a prediction.</p>
+<p data-i18n="ph.note">The size of the offset depends on equipment and local procedure, so the simulator sweeps this range and reports sensitivity. No single offset is presented as general. The effect on control is a result inside the model, under stated assumptions, and predicts nothing about a real plant.</p>
 </div>
 </section>
 
@@ -244,7 +244,7 @@
 <p class="rail" aria-hidden="true">architectures</p>
 <div>
 <h2 id="h-arch" data-i18n="a.h2">One sample, three ways to record it</h2>
-<p data-i18n="a.lead">Three hard-coded architectures would hide which mechanism makes the difference. The design uses ten independent feature flags instead. A, B and C are presets of those flags (ADR-0005, ADR-0017, ADR-0020), and the ablation is C with exactly one flag switched off. B is not a straw man: barcodes, automatic capture and an audit trail are real features of simple laboratory systems.</p>
+<p data-i18n="a.lead">Three hard-coded architectures would hide which mechanism makes the difference. The design uses ten independent feature flags instead. A, B and C are presets of those flags (ADR-0005, ADR-0017, ADR-0020), and the ablation is C with exactly one flag switched off. B is built from features that simple laboratory systems really have: barcodes, automatic capture and an audit trail.</p>
 <div class="presets" id="flag-presets" role="group" aria-label="Presets" data-i18n-aria="a.presets">
 <button type="button" class="btn" data-preset="A" aria-pressed="false"><span data-i18n="a.pA">A manual / Excel</span></button>
 <button type="button" class="btn" data-preset="B" aria-pressed="false"><span data-i18n="a.pB">B LIMS-lite</span></button>
@@ -332,7 +332,7 @@
 <td data-col="detected"><span class="txt" data-i18n="a.e10d">recorded container and hold context</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.nowd">current: detected</span></span></td>
 <td data-col="invisible"><span class="txt" data-i18n="a.e10i">context not recorded</span><span class="now"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.nowi">current: invisible</span></span></td></tr>
 </tbody></table></div>
-<p data-i18n="a.mnote">Where the design names a rule rather than a flag, the matrix assumes the flag that rule needs (for example, the hold-time rule needs two_clocks). What the flags cannot remove is still reported, not hidden, for example the results that the hold-time rule rejects. A correct barcode stuck on the wrong tube is not modelled: the label error here is an id typed or written by hand, which a system-issued id prevents.</p>
+<p data-i18n="a.mnote">Where the design names a rule rather than a flag, the matrix assumes the flag that rule needs (for example, the hold-time rule needs two_clocks). What the flags cannot remove is still reported, for example the results that the hold-time rule rejects. A correct barcode stuck on the wrong tube is not modelled: the label error here is an id typed or written by hand, which a system-issued id prevents.</p>
 <p data-i18n="a.read">How to read the comparison: A and B do not store what exact reconstruction asks for, so their exact reconstruction is zero by construction. The comparison is a constructive example of what a record keeps and so of which question it can answer; it is not a measure of the quality, the efficiency or the return of real spreadsheets or laboratory systems. The spread across seeds is the variation of operations and measurement that the inputs allow, not the uncertainty of the model.</p>
 </div>
 </section>
@@ -399,7 +399,7 @@
 <p class="rail" aria-hidden="true">systems</p>
 <div>
 <h2 id="h-systems" data-i18n="s.h2">Where the record lives: system boundaries and integration reality</h2>
-<p data-i18n="s.lead" data-src="A056">Several systems each hold part of the story: the historian holds process tags such as <code>U03.pH</code>, the batch record holds events, and some system holds the in-process test result. Which one owns routine in-process results is site-dependent, so the model treats it as a setting, not a norm.</p>
+<p data-i18n="s.lead" data-src="A056">Several systems each hold part of the story: the historian holds process tags such as <code>U03.pH</code>, the batch record holds events, and some system holds the in-process test result. Which one owns routine in-process results is site-dependent, so the model treats it as a setting.</p>
 <figure class="fig" data-src="A001">
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
 <div tabindex="0" class="fig-scroll"><svg viewBox="0 0 760 320" role="img" aria-labelledby="sy-t" aria-describedby="sy-d">
@@ -428,12 +428,12 @@
 <h3 data-i18n="s.h3a">Getting results out of an instrument</h3>
 <div class="cards">
 <div class="card" data-src="A036 S003" data-status="provisional"><h4 data-i18n="s.c1h">CSV file drop (baseline)</h4><p data-i18n="s.c1">The all-in-one analyzer exports a CSV file to a shared folder on its bridge computer. The simulator models this path first. The file carries a local time, often without a stated zone.</p></div>
-<div class="card" data-src="S004" data-status="provisional"><h4 data-i18n="s.c2h">Vendor OPC server</h4><p data-i18n="s.c2">A vendor OPC server exists as a separately licensed add-on. It is described here, not modelled as the default.</p></div>
-<div class="card" data-src="S040" data-status="provisional"><h4 data-i18n="s.c3h">SiLA 2, OPC UA LADS (future)</h4><p data-i18n="s.c3">One vendor map describes SiLA 2 adoption as slow and OPC UA LADS as early on installed fleets. A future direction, not the installed base.</p></div>
+<div class="card" data-src="S004" data-status="provisional"><h4 data-i18n="s.c2h">Vendor OPC server</h4><p data-i18n="s.c2">A vendor OPC server exists as a separately licensed add-on. The simulator does not model it by default.</p></div>
+<div class="card" data-src="S040" data-status="provisional"><h4 data-i18n="s.c3h">SiLA 2, OPC UA LADS (future)</h4><p data-i18n="s.c3">One vendor map describes SiLA 2 adoption as slow and OPC UA LADS as early on installed fleets.</p></div>
 </div>
 <h3 data-i18n="s.h3b">Clocks and time zones are a data-integrity control</h3>
 <p data-i18n="s.clock" data-src="S029 S030">UK MHRA guidance asks for access to controlled or synchronised clocks for recording timed events and for specifying the time zone (section 5.1). The WHO guidance lists restricting the ability to change any clock used for recording timed events, including clocks in process instrumentation (section 4.12). The design stores every instant in UTC with the source's own offset beside it.</p>
-<p data-i18n="s.clock2" data-src="A049">How often a clock is wrong has no source. The wrong-clock scenario (SC6) uses a +5 h offset on one analyzer as a neutral stress case, not an estimate.</p>
+<p data-i18n="s.clock2" data-src="A049">How often a clock is wrong has no source. The wrong-clock scenario (SC6) uses a +5 h offset on one analyzer as a neutral stress case.</p>
 <h3 data-i18n="s.h3c">EU Annex 11</h3>
 <p data-i18n="s.a11" data-src="S027">The European Commission lists Annex 11 on computerised systems as the January 2011 revision. That is the text this page treats as current.</p>
 <p data-i18n="s.a11b" data-src="S028" data-status="provisional">A revised Annex 11, a revised Chapter 4 and a new draft Annex 22 on AI went to consultation from 7 July to 7 October 2025. The revision is a draft and not final.</p>
@@ -474,10 +474,10 @@
 <ul class="plain">
 <li data-i18n="m.o1">Recorders consume observable events only. A test changes hidden-only fields and requires the recorder output to stay byte-identical.</li>
 <li data-i18n="m.o2">The same scenario, seed and engine version give a byte-identical event log. Randomness is keyed by sample, analyte, attempt and purpose, so adding a sample never changes another sample's draws.</li>
-<li data-i18n="m.o3" data-src="A103">Stochastic comparisons run over at least 20 seeds and are reported as a spread across seeds, not as confidence intervals; the minimum is a threshold of the design, not a proof of statistical sufficiency. They are never gated, and no test requires that one architecture wins.</li>
+<li data-i18n="m.o3" data-src="A103">Stochastic comparisons run over at least 20 seeds and are reported as a spread across seeds, without confidence intervals. The minimum is a threshold of the design and proves nothing about statistical sufficiency. The comparisons are never gated, and no test requires that one architecture wins.</li>
 <li data-i18n="m.o4" data-src="A100">Online sensor series are recorded at a 60 s cadence in the truth world.</li>
 </ul>
-<h3 data-i18n="m.h3a">Profiles: bundles with an honest grade</h3>
+<h3 data-i18n="m.h3a">Profiles: named bundles, graded by their weakest part</h3>
 <p data-i18n="m.pr.lead">Bioreactor type, analyzer type and staff proficiency each change how data is recorded. Each is a named bundle of sourced and assumed parts, and a bundle takes the grade of its weakest component.</p>
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
 <div tabindex="0" class="tablewrap"><table>
@@ -485,7 +485,7 @@
 <thead><tr><th data-i18n="m.pr.h1">Profile</th><th data-i18n="m.pr.h2">What it changes</th><th data-i18n="m.pr.h3">Bundle grade</th></tr></thead>
 <tbody>
 <tr><th scope="row">bench_manual</th><td data-i18n="m.pr.b1">operator draws into a closed container or syringe; the sample is a negligible share of the culture</td><td data-src="A067" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
-<tr><th scope="row">micro_mini_parallel</th><td data-i18n="m.pr.b2" data-src="A112 A114">a liquid handler draws into a cup; a 600 &micro;L sample is a burden for daily sampling of micro-scale vessels, mini-scale vessels hold 100 to 250 mL</td><td data-src="A065 A066" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row">micro_mini_parallel</th><td data-i18n="m.pr.b2" data-src="A112 A114">a liquid handler draws into a cup; a 600 &micro;L sample is a burden for daily sampling of micro-scale vessels; mini-scale vessels hold 100 to 250 mL</td><td data-src="A065 A066" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
 <tr><th scope="row">pilot</th><td data-i18n="m.pr.b3">sterile syringe from a sampling line; the size class boundary and purge volumes are assumptions</td><td data-src="A068" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
 <tr><th scope="row">allinone_atline</th><td data-i18n="m.pr.a1" data-src="S001">one queue, one file, one clock: 16 analytes in 4.5 min from 275 &micro;L</td><td data-src="A069" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
 <tr><th scope="row">split_cellcounter_metabolite</th><td data-i18n="m.pr.a2">two queues and two visits; the two results can be measured at different times and carry different clocks</td><td data-src="A070" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
@@ -542,7 +542,7 @@
 <li><b>S4</b> <span data-i18n="m.r4">downstream genealogy, HPLC contention, cell-line and operating-mode profiles</span></li>
 <li><b>S5</b> <span data-i18n="m.r5">release and write-up</span></li>
 </ol>
-<p data-i18n="m.ext">Extensions: break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3); the lab's Break-out screen and the Break-out cases in the plant are held back in the public build until the sources behind them are re-read. In that screen a hold is a state of the record and stops no culture, its containment figures are the effect of tracking and holding on the record, and its confirming tests are judged by coverage, not by a sensitivity. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed, not built yet.</p>
+<p data-i18n="m.ext">Break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3). The lab's Break-out screen and the Break-out cases in the plant are held back in the public build until the sources behind them are re-read. In that screen a hold is a state of the record and stops no culture. Its containment figures show the effect of tracking and holding on the record, and its confirming tests are judged by coverage, not by a sensitivity. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed but not built yet.</p>
 <p><span class="placeholder" id="repo-link" data-i18n="m.repo">repository link: added at publication</span></p>
 </footer>
 </div>

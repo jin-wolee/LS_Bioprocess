@@ -42,7 +42,7 @@ export const enBreakout = {
   "breakout.event.contaminated_at.none": "no instant: the onset is the instant of the named draw, which the seed decides",
   "breakout.event.horizon": "Horizon of the run",
   "breakout.inputs.heading": "Assumed inputs of this case",
-  "breakout.inputs.lead": "The ledger gives no number for these. Each is a choice of the test, printed with every result and not a finding.",
+  "breakout.inputs.lead": "The ledger gives no number for these. Each is a choice of the test and is printed with every result.",
   "breakout.source.scenario_input": "scenario input, assumed",
   "breakout.source.profile_default": "default of the event type",
   "breakout.source.decision_setting": "setting of the investigation, not truth",

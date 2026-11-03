@@ -24,7 +24,7 @@ export const enNotes = {
 
   "notes.grades.heading": "Grades and the provisional chip",
   "notes.grades.lead": "Every input carries the id of its entry in the assumption ledger and the grade of that entry:",
-  "notes.grades.provisional": "A dashed chip marks a figure that rests on a source the project has not re-read in full yet. It is shown, not hidden, and it stays until that source is re-read.",
+  "notes.grades.provisional": "A dashed chip marks a figure that rests on a source the project has not re-read in full yet. The chip stays until that source is re-read.",
   "notes.grades.assumed": "A figure of grade assumed has no source: it is a choice of the simulation, and a result that depends on it says so by carrying the id.",
 
   "notes.dialect.heading": "Device formats",

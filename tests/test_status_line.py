@@ -100,7 +100,7 @@ SQL_KO = (
 )
 ROAD_EN = "lab UI in the browser with a walkable plant, break-out events with the investigation walk-back"
 ROAD_KO = "걸어 다닐 수 있는 플랜트가 있는 브라우저 실험실 UI, 이탈 이벤트와 조사 역추적"
-EXT_HELD_EN = "the lab's Break-out screen and the Break-out cases in the plant are held back in the public build until the sources behind them are re-read"
+EXT_HELD_EN = "The lab's Break-out screen and the Break-out cases in the plant are held back in the public build until the sources behind them are re-read"
 EXT_HELD_KO = "랩의 오염 이벤트 역추적 화면과 플랜트 안의 이탈 사례는 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다"
 
 

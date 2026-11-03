@@ -11,7 +11,7 @@ export const enPlant = {
   "home.plant.nowebgl": "This browser does not offer WebGL version two, so the three-dimensional plant is not available here. The same plant is described as text, and every other screen of the lab works without it.",
 
   "plant.heading": "The plant",
-  "plant.lead": "One seed of the scenario {scenario} as a place to walk through. The run plays from the opening of its first shift, and the staff, the tubes and the analyzers move as the log says; pause it, seek it or step between events with the controls under the floor. The cards on the shelves of the record halls show what each data architecture stored, and any card can be opened to read its record. The bar under the floor takes your actions: the Worker checks each one and recomputes the run from its start.",
+  "plant.lead": "One seed of the scenario {scenario} as a place to walk through. The run plays from the opening of its first shift, and the staff, the tubes and the analyzers move as the log says. Pause it, seek it or step between events with the controls under the floor. The cards on the shelves of the record halls show what each data architecture stored, and any card can be opened to read its record. The bar under the floor takes your actions: the Worker checks each one and recomputes the run from its start.",
   "plant.boot": "Loading the plant scene and the first plan.",
   "plant.status.heading": "Status",
   "plant.status.plan.waiting": "Waiting for the plan from the Worker.",
@@ -68,14 +68,14 @@ export const enPlant = {
   "plant.bar.set_capture_path": "Change the capture path",
 
   "plant.objects.heading": "Objects of the plant",
-  "plant.objects.lead": "Every reactor, analyzer, member of the staff and record hall, in order. Choose one to bring the camera to it; the panel of a reactor, an analyzer or an operator opens, and the Escape key closes it.",
+  "plant.objects.lead": "Every reactor, analyzer, member of the staff and record hall, in order. Choose one to bring the camera to it. The panel of a reactor, an analyzer or an operator opens, and the Escape key closes it.",
   "plant.kind.reactor": "Reactors",
   "plant.kind.analyzer": "Analyzers",
   "plant.kind.hall": "Record halls",
   "plant.objects.look": "Look at {name}",
 
   "plant.cards.heading": "Cards of the lens hall",
-  "plant.cards.lead": "The newest cards on the shelves of the hall the lens reads, at the clock instant. Choose one to open its record; the Escape key closes the record.",
+  "plant.cards.lead": "The newest cards on the shelves of the hall the lens reads, at the clock instant. Choose one to open its record. The Escape key closes the record.",
   "plant.cards.legend": "A card shows, from the top, the unit, sampled_at, the process context and the value. A solid square is a field the record stores and a dashed hollow square is a field it does not. A green bar at the foot means the result is knowable, a triangle on the top edge is a finding of the record's own rules, and a sheet behind the card is an earlier version.",
   "plant.cards.none": "No card is on the shelves of this hall yet.",
   "plant.cards.open": "Open the card of {sample}",
@@ -148,7 +148,7 @@ export const enPlant = {
 
   "plant.kind.staff": "Staff",
   "plant.tubes.heading": "Tubes on the floor",
-  "plant.tubes.lead": "The samples whose tubes are on the floor at the clock instant, the newest draw first. Choose one to open its panel; the Escape key closes the panel.",
+  "plant.tubes.lead": "The samples whose tubes are on the floor at the clock instant, the newest draw first. Choose one to open its panel. The Escape key closes the panel.",
   "plant.tubes.none": "No tube is on the floor at this instant.",
   "plant.tubes.open": "Open the sample {sample}",
 

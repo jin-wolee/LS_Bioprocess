@@ -25,7 +25,7 @@ export const koNotes: Record<keyof typeof enNotes, string> = {
 
   "notes.grades.heading": "등급과 잠정 칩",
   "notes.grades.lead": "모든 입력에는 가정 원장에서의 항목 id와 그 항목의 등급이 붙습니다.",
-  "notes.grades.provisional": "점선 칩은 프로젝트가 아직 다 다시 읽지 않은 출처에 기대는 수치를 뜻합니다. 숨기지 않고 보여 주며, 그 출처를 다시 읽을 때까지 유지됩니다.",
+  "notes.grades.provisional": "점선 칩은 프로젝트가 아직 다 다시 읽지 않은 출처에 기대는 수치를 뜻합니다. 그 출처를 다시 읽을 때까지 칩이 남아 있습니다.",
   "notes.grades.assumed": "등급이 가정인 수치는 출처가 없습니다. 시뮬레이션의 선택이며, 그것에 기대는 결과는 id를 달아 그 사실을 밝힙니다.",
 
   "notes.dialect.heading": "장치 형식",

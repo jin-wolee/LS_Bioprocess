@@ -53,7 +53,7 @@ export const koChallenge: Record<keyof typeof enChallenge, string> = {
   "challenge.decision.samples": "pH 결과가 있는 시료",
 
   "reveal.heading": "진실",
-  "reveal.lead": "추측한 뒤에 보여 주는, 시뮬레이션이 가진 심어진 것의 기록입니다.",
+  "reveal.lead": "무엇을 심었는지에 대한 시뮬레이션 자체의 기록이며, 추측한 뒤에 보여 줍니다.",
   "reveal.planted.heading": "심어진 것",
   "reveal.planted.type": "유형",
   "reveal.planted.affected": "영향받은 것",

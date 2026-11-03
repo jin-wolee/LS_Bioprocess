@@ -5,7 +5,7 @@ export const enTour = {
   "plant.tour.button": "Take the tour",
   "plant.tour.button.hint": "A short tour of one sample: its draw, a feed before its measurement, and what each record kept.",
   "plant.tour.offer.heading": "New here? A short tour",
-  "plant.tour.offer.text": "Follow one sample from its draw to the three record halls, and see what each record kept about when it was drawn and which process context its result was joined to. A few steps; skip it at any one.",
+  "plant.tour.offer.text": "Follow one sample from its draw to the three record halls, and see what each record kept about when it was drawn and which process context its result was joined to. It takes a few steps, and you can skip it at any of them.",
   "plant.tour.offer.take": "Take the tour",
   "plant.tour.offer.later": "Not now",
 

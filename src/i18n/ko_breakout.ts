@@ -4,7 +4,7 @@ import type { enBreakout } from "./en_breakout.ts";
 export const koBreakout: Record<keyof typeof enBreakout, string> = {
   "breakout.heading": "오염 이벤트 역추적",
   "breakout.lead": "스크립트된 오염 이벤트가 리액터 하나에 닿습니다. 공장은 신호를 보이고, 확인 시료를 채취하고, 보류를 걸고, 조사는 신호에서부터 거슬러 올라갑니다. 사례와 시드, 비교할 기록을 고르세요. 각 기록은 자신이 저장한 것만으로 조사하고, 이벤트가 실제로 건드린 것과 대조해 측정합니다. 수치는 표시된 입력 아래의 시뮬레이션 결과이며 실제 공장의 예측이 아닙니다.",
-  "breakout.reading": "보류는 기록의 상태일 뿐 배양을 멈추지 않으므로, 격리 수치는 추적과 보류가 기록에 미치는 효과이며 배양 관리나 오염이 퍼지는 방식의 효과가 아닙니다. 확인 검사는 민감도가 아니라 포괄 범위로 판정합니다.",
+  "breakout.reading": "보류는 기록의 상태이고 배양을 멈추지 않으므로, 격리 수치는 추적과 보류가 기록에 미치는 효과이며 배양 관리나 오염이 퍼지는 방식의 효과가 아닙니다. 확인 검사는 민감도가 아니라 포괄 범위로 판정합니다.",
   "breakout.local.notice": "공개용 아님. 이 로컬 빌드는 화면의 수치가 아직 모두 재확인되지 않은 출처에 기대고 있는데도 오염 이벤트 역추적 화면을 보여 줍니다. 공개 빌드는 그 출처가 재확인될 때까지 이 화면을 제공하지 않습니다.",
   "breakout.refused.heading": "이 빌드는 오염 이벤트 역추적 화면을 제공하지 않습니다",
   "breakout.refused.text": "오염 이벤트의 입력과 지연 시간, 로트 토폴로지는 아직 모두 재확인되지 않은 출처에 기대고 있고, 확장 기능의 어떤 것도 그 출처가 재확인되기 전에는 공개 페이지에 올리지 않습니다. 로컬 빌드는 이 화면을 공개용 아님으로 표시해 보여 줍니다.",
@@ -42,7 +42,7 @@ export const koBreakout: Record<keyof typeof enBreakout, string> = {
   "breakout.event.contaminated_at.none": "시각 없음: 발병 시점은 지정된 채취의 시각이며 시드가 정합니다",
   "breakout.event.horizon": "실행 기간",
   "breakout.inputs.heading": "이 사례의 가정된 입력",
-  "breakout.inputs.lead": "원장에는 이 값들의 숫자가 없습니다. 각각은 시험이 정한 선택이며 모든 결과와 함께 인쇄되고, 발견이 아닙니다.",
+  "breakout.inputs.lead": "원장에는 이 값들의 숫자가 없습니다. 각각은 시험이 정한 선택이며 모든 결과와 함께 인쇄됩니다.",
   "breakout.source.scenario_input": "시나리오 입력, 가정",
   "breakout.source.profile_default": "이벤트 유형의 기본값",
   "breakout.source.decision_setting": "조사의 설정, 진실이 아님",
