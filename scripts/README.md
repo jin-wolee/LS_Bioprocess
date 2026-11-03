@@ -19,3 +19,4 @@ What is where. Run the Python ones with `uv run python scripts/<name>` from the 
 | `qa/qa_plant.py`, `qa/qa_plant_*.py` | the plant: the script and its checks, helpers and browser plumbing, one file per concern |
 | `qa/qa_site.py`, `qa/qa_site_plant.py` | the assembled `dist/site/`, the plant route included |
 | `qa/qa_timing.py` | the timing mode (`judge` or `report`) the three browser QA scripts share |
+| `media/make_media.py`, `media/media_*.py` | makes the pictures of the two READMEs into `docs/media/` (two GIFs and the screenshots) in headless Chromium and ffmpeg; `uv run python scripts/media/make_media.py`, `--help` lists the parts and flags |

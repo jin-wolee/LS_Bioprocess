@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:perf": "vitest run --mode perf --reporter=default",
     "build:lab": "uv run --frozen --quiet python scripts/lab_ledger.py --check && node --no-maglev-escape-analysis engine/tests/support/lab_reference_cli.ts dist/lab-public/reference.json && vite build -c src/vite.config.ts",
+    "preview": "uv run --frozen --quiet python scripts/assemble_site.py && uv run --frozen --quiet python -m http.server --bind 127.0.0.1 --directory dist/site 8000",
     "gen:types": "json2ts --input data/schemas --output engine/src/generated --cwd data/schemas",
     "check": "npm run lint && npm run typecheck && npm run test && npm run test:perf"
   },

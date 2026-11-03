@@ -36,6 +36,7 @@ honest comparison, not a prediction about any real plant.
 uv run pytest -q                                      # hook, guard and check_docs tests
 uv run --frozen python scripts/check_docs.py --all    # banned tokens, ADR format, ledgers, id references
 uv run python scripts/qa/qa_infographic.py            # headless page QA, output in qa_out/ (when it exists)
+uv run python scripts/media/make_media.py             # the README's screenshots and demo GIFs into docs/media/ (needs ffmpeg)
 npm run check                                         # Node-side checks (when package.json exists)
 bash scripts/check_all.sh --manual                    # the Stop-hook gate on demand (docs check, pytest, Node checks, Math.random grep)
 git ls-files -co --exclude-standard                   # inventory incl. untracked; search with `git grep --untracked`
