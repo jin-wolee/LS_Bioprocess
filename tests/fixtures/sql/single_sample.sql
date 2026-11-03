@@ -1,4 +1,4 @@
--- One sample end to end, explicit column lists only (prompts/60_user_track.md, Card A, acceptance 5).
+-- One sample end to end, explicit column lists only (docs/prompts/60_user_track.md, Card A, acceptance 5).
 -- Columns outside the required names of Card A must be nullable or have defaults, so this file never names them.
 -- Times are synthetic. Day 0 of the scenario is a Monday.
 INSERT INTO unit (unit_id, unit_tag) VALUES ('U03', 'U03');

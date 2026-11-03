@@ -26,7 +26,7 @@ describe("hand-made controller fixtures", () => {
 
   it("Given the records the parser makes from the controller fixtures Then each validates against the canonical record schema (the envelope with raw_ref as file and line, and the payload; a field a family does not carry is null)", () => {
     const ajv = makeAjv();
-    ajv.addSchema(readJson<Json>("schemas", "canonical_record.schema.json"));
+    ajv.addSchema(readJson<Json>("data", "schemas", "canonical_record.schema.json"));
     let n = 0;
     for (const f of files) {
       for (const c of controllerCases(f.family, f.name)) {
@@ -41,7 +41,7 @@ describe("hand-made controller fixtures", () => {
   });
   it("Given a canonical alarm record with no raw_ref, an unknown state of the record or a tag name with no role Then the schema refuses it", () => {
     const ajv = makeAjv();
-    ajv.addSchema(readJson<Json>("schemas", "canonical_record.schema.json"));
+    ajv.addSchema(readJson<Json>("data", "schemas", "canonical_record.schema.json"));
     const c = controllerCases("ctrl_neutral", "deadband")[0] as ReturnType<typeof controllerCases>[number];
     const r = runControllerCase("ctrl_neutral", "deadband", c).last.historian[0] as unknown as Json;
     expect(isValid(ajv, "canonical_record", { ...r, envelope: { ...(r.envelope as Json), raw_ref: undefined } })).toBe(false);

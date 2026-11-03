@@ -4,7 +4,7 @@ import { ko } from "../i18n/ko.ts";
 import { EXPLAINER_HREF, SiteLink } from "./SiteLink.tsx";
 
 // The way back from the lab to the explainer page (lab_ui.md section 13). The Pages site holds the infographic at its root and the lab one folder below it (`lab/`), so the way back is the
-// relative address `../`; a relative address works under any Pages path (a project site lives under /<repository>/). scripts/qa_site.py follows the link on the assembled folder.
+// relative address `../`; a relative address works under any Pages path (a project site lives under /<repository>/). scripts/qa/qa_site.py follows the link on the assembled folder.
 
 interface VNode {
   type: unknown;

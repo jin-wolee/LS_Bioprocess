@@ -1,4 +1,4 @@
-// Writes the canonical tables of one dataset as CSV files for the acceptance tests of the author's SQL (prompts/20 Step 12; tests/user_track/test_queries.py):
+// Writes the canonical tables of one dataset as CSV files for the acceptance tests of the author's SQL (docs/prompts/20 Step 12; tests/user_track/test_queries.py):
 //   node engine/tests/support/sql_tables_cli.ts <output directory> scenario   the default scenario at the small size (six reactors, eight days), seed 1, architecture C
 //   node engine/tests/support/sql_tables_cli.ts <output directory> sc4        the noise-free fixture of SC4 (a bias of +0.5 on AN-2 only), architecture C
 // One <table>.csv per table (header = column names, a null is an empty cell, times as 'YYYY-MM-DD hh:mm:ss'), plus facts.json with the numbers the test needs for its own expectations.

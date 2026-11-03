@@ -68,13 +68,13 @@ The pages ship no result. The lab computes its results in your browser on each v
 engine/              the TypeScript simulation engine (seeded, no Math.random); its tests sit beside it
 src/                 the lab page (Preact), its Web Worker, the English and Korean dictionaries
 site/infographic/    the explainer: src/ -> build.py -> index.html
-scenarios/           scenarios, profiles, architectures and experiments, as data with ledger references
-schemas/             JSON schemas for the data the engine reads and writes
-sql/                 the canonical DDL and three SQL queries, written by AI from the specification (ADR-0022)
-reference/           the SimPy core loop, written by AI from the specification (ADR-0022)
+data/scenarios/      scenarios, profiles, architectures and experiments, as data with ledger references
+data/schemas/        JSON schemas for the data the engine reads and writes
+reference/sql/       the canonical DDL and three SQL queries, written by AI from the specification (ADR-0022)
+reference/simpy/     the SimPy core loop, written by AI from the specification (ADR-0022)
 docs/                adr/ decisions, design/ specifications, research/ ledgers, reviews/, progress.md
-prompts/             the briefs and principles that the AI sessions work from
-scripts/             checks, site assembly, headless page QA, Claude Code hooks, git hooks
+docs/prompts/        the briefs and principles that the AI sessions work from
+scripts/             checks, site assembly, Claude Code hooks, git hooks; qa/ holds the headless page QA (scripts/README.md)
 tests/               pytest for the scripts, the hooks, the docs check and the Pages workflow
 .github/workflows/   the Pages workflow, started by hand; it checks and runs the browser QA before any deploy
 .claude/             CLAUDE.md, hook settings, skills, agents, the list of author-owned paths (empty since ADR-0022)
@@ -95,9 +95,9 @@ npm run check                                   # lint, typecheck, Vitest, then 
 bash scripts/check_all.sh --manual              # the full gate; add --lab and --plant for the end-to-end checks of the lab and the plant
 
 uv run python site/infographic/build.py         # rebuild the explainer page
-uv run python scripts/qa_infographic.py         # headless check of the explainer, output in qa_out/
+uv run python scripts/qa/qa_infographic.py   # headless check of the explainer, output in qa_out/
 uv run python scripts/assemble_site.py          # build dist/site/: the explainer at the root, the lab under lab/
-uv run python scripts/qa_site.py                # headless check of dist/site/, the plant route included
+uv run python scripts/qa/qa_site.py          # headless check of dist/site/, the plant route included
 uv run python -m http.server --directory dist/site 8000   # then open http://127.0.0.1:8000/
 ```
 
@@ -109,13 +109,13 @@ The Pages workflow is started by the author by hand. It runs the checks above an
 
 Decisions are written as ADRs in `docs/adr/`. The AI tools write them as Proposed; the decider's note and the change to Accepted are the author's own commits (ADR-0002).
 
-Much of the engine, the lab and the documents were written with AI coding tools (Claude Code) working from written briefs in `prompts/`. Scripts and tests check what they produce, and the author decides at set gates: accepting an ADR, anything published, the author's own track, and release (`prompts/PRINCIPLES.md`, section 1). Pushing and publishing are the author's alone, and hooks stop the tools from doing either.
+Much of the engine, the lab and the documents were written with AI coding tools (Claude Code) working from written briefs in `docs/prompts/`. Scripts and tests check what they produce, and the author decides at set gates: accepting an ADR, anything published, the author's own track, and release (`docs/prompts/PRINCIPLES.md`, section 1). Pushing and publishing are the author's alone, and hooks stop the tools from doing either.
 
-The database schema (`sql/schema.sql`), three SQL queries (an as-of join of results to process context, a recursive lineage query and a bridging correction) and a SimPy core loop (`reference/sim_core.py`) were written by AI (Claude Code) under ADR-0022, clean-room from the specification: the writer read the design documents, the schemas, the fixtures and the acceptance tests, and did not read the engine's source. The author did not write them. ADR-0022 replaces ADR-0010's plan that the author writes these five files, for these five files only. Agreement with the TypeScript engine is measured by `tests/user_track/` (`uv run pytest -m user_track -q`), which runs the SimPy loop on the hand traces and the engine's golden traces and compares integer times exactly, and runs the schema and the queries against hand-typed fixtures; all of its tests pass. The files are a second implementation that does not copy the engine's code; they are not independent of the model family that wrote the specification.
+The database schema (`reference/sql/schema.sql`), three SQL queries (an as-of join of results to process context, a recursive lineage query and a bridging correction) and a SimPy core loop (`reference/simpy/sim_core.py`) were written by AI (Claude Code) under ADR-0022, clean-room from the specification: the writer read the design documents, the schemas, the fixtures and the acceptance tests, and did not read the engine's source. The author did not write them. ADR-0022 replaces ADR-0010's plan that the author writes these five files, for these five files only. Agreement with the TypeScript engine is measured by `tests/user_track/` (`uv run pytest -m user_track -q`), which runs the SimPy loop on the hand traces and the engine's golden traces and compares integer times exactly, and runs the schema and the queries against hand-typed fixtures; all of its tests pass. The files are a second implementation that does not copy the engine's code; they are not independent of the model family that wrote the specification.
 
 ## Licences
 
-Code is under the MIT licence (`LICENSE`). Text, figures and data tables in `docs/`, `prompts/` and the explainer are under CC BY 4.0 (`docs/LICENSE-docs.md`). Sources cited in the ledgers keep their own terms; the ledgers hold only short quotes and links (ADR-0008).
+Code is under the MIT licence (`LICENSE`). Text, figures and data tables in `docs/`, `docs/prompts/` and the explainer are under CC BY 4.0 (`docs/LICENSE-docs.md`). Sources cited in the ledgers keep their own terms; the ledgers hold only short quotes and links (ADR-0008).
 
 ## 한국어 요약
 

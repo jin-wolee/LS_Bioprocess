@@ -79,7 +79,7 @@ describe("By detector: the rules and the evidence that could run are counted by 
 
 describe("The metrics schema carries the ruling", () => {
   const ajv = makeEvalAjv();
-  it("Then every cell validates against schemas/metrics.schema.json", () => {
+  it("Then every cell validates against data/schemas/metrics.schema.json", () => {
     for (const c of out.cells) expect(validates(ajv, "metrics", c), JSON.stringify(ajv.errors)).toBe(true);
   });
 

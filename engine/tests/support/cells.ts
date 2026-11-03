@@ -12,13 +12,13 @@ import type { RuleConfig } from "../../src/record/validate.ts";
 import { VALID_QUALIFICATIONS } from "./cell_stream.ts";
 import { readJson } from "./paths.ts";
 
-// The forced-error cells (spec section 6; prompts/20 Step 4): one hand-built stream per row of the hypothesis matrix, one error, run through
+// The forced-error cells (spec section 6; docs/prompts/20 Step 4): one hand-built stream per row of the hypothesis matrix, one error, run through
 // A, B, C and each single-flag ablation of C. This module only runs a row through a configuration and names what happened; the expected
 // outcome of every cell is typed by hand in cell_tables.ts, from the matrix, the flag table and the rule catalogue, never from this output.
 // The classification of a cell (Cell, cellOf, inKey, ruleFlags) moved to the lab folder in S3e (engine/src/experiments/assembly/lab/outcome.ts, where the reveal of the challenge uses it);
 // it is re-exported here, so the rows and the tables are unchanged and stay the oracle.
 
-const preset = (name: string): Architecture => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+const preset = (name: string): Architecture => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
 const C = preset("c_context");
 
 /** The 13 configurations in table order: A, B, C, then C minus system_issued_id ... C minus equipment_links (the order of the flag table). */

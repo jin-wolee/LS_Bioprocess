@@ -1,4 +1,4 @@
--- Hand fixture of Card B3 (prompts/60_user_track.md): the inter-instrument offset per analyte from control material measured on both instruments after a lot change, and the
+-- Hand fixture of Card B3 (docs/prompts/60_user_track.md): the inter-instrument offset per analyte from control material measured on both instruments after a lot change, and the
 -- corrected values of the target instrument. Parameters of the test: $reference_instrument = 'REF', $target_instrument = 'TGT', $changeover_at = 2030-01-10 00:00:00.
 -- Explicit column lists only; synthetic times. Expected answers are in expected_bridging.csv.
 --

@@ -13,7 +13,7 @@ import { ROOT } from "../support/paths.ts";
 // `gzip -c <file> | wc -c`. It sits in `npm run check`, so the Stop hook catches a regression early. The end-to-end check `size` repeats the sums over the files that a cold load requests, and
 // over the plant chunk that entering the plant requests.
 
-const FIRST_LOAD = 300 * 1024; // bytes: the lab's first load (prompts/00 section 4; plant_ui.md section 8)
+const FIRST_LOAD = 300 * 1024; // bytes: the lab's first load (docs/prompts/00 section 4; plant_ui.md section 8)
 const LOADER = 4 * 1024; // bytes: the loader chunk, the capability check and the dynamic import, inside the first load (plant_ui.md section 8, table)
 const PLANT = 200 * 1024; // bytes: the plant chunk, the scene and three.js, fetched on entering the plant (plant_ui.md section 12, item 3)
 

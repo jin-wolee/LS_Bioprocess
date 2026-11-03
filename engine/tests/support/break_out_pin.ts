@@ -24,13 +24,13 @@ export const EIGHT: readonly FlagName[] = [
 /** The two flags the pins do not see: a dataset is compared with these two keys removed. */
 export const NEW_FLAGS = ["material_lot_links", "equipment_links"] as const;
 
-const preset = (name: string): Architecture => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+const preset = (name: string): Architecture => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
 export const C: Architecture = preset("c_context");
 /** A, B, C and C minus each of the eight flags: the eleven architectures of experiment 1 before the two flags. */
 export const OLD_ELEVEN: Architecture[] = [preset("a_manual"), preset("b_lims_lite"), C, ...EIGHT.map((f) => ablate(C, f))];
 
 const staff = loadProfile(lookup("staff", "experienced"), "staff").params;
-const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
 const scenario = configOf("default", { settings: SMALL });
 const REVIEW = { timing: "next_shift_start" as const, reject_also: [] as string[] };
 

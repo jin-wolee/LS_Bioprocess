@@ -5,7 +5,7 @@ import { readJson } from "../support/paths.ts";
 import { lookup, rawScenario } from "../support/scenarios.ts";
 
 // The config of the break-out experiment SC12 and the scenario patch of a swept case. The refusals are the rules of every seed list (neutral integers, no repeat, none date-shaped, at least the A103
-// minimum of 20) and the shape of a case. Expected messages are typed by hand from the rules in the brief of the experiment-config (prompts/20 Step 4).
+// minimum of 20) and the shape of a case. Expected messages are typed by hand from the rules in the brief of the experiment-config (docs/prompts/20 Step 4).
 
 const SEEDS = Array.from({ length: 20 }, (_, i) => 100 + 7 * i);
 const doc = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
@@ -14,8 +14,8 @@ const doc = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
 const P = (value: number, unit: string, ref: string) => ({ value, unit, ref });
 
 describe("The break-out experiment config", () => {
-  it("Given the file scenarios/experiments/sc12.json Then it parses with the A103 minimum", () => {
-    const c = parseBreakoutConfig(readJson("scenarios", "experiments", "sc12.json"), 20);
+  it("Given the file data/scenarios/experiments/sc12.json Then it parses with the A103 minimum", () => {
+    const c = parseBreakoutConfig(readJson("data", "scenarios", "experiments", "sc12.json"), 20);
     expect(c.experiment_id).toBe("sc12");
     expect(c.cases.length).toBeGreaterThan(6);
     expect(c.cases.every((x) => x.set !== undefined)).toBe(true);

@@ -14,7 +14,7 @@ import type { Patch } from "./scenarios.ts";
 // Test-side file access for the capture-path contrast runner (engine/src reads no file): the config in, the plain-data input of `runContrast` out.
 
 export const loadContrast = (configDoc: unknown, p: Patch = {}, seeds?: readonly number[]): { config: ContrastConfig; input: ContrastInput } => {
-  const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+  const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
   const config = parseContrastConfig(configDoc, evaluation.min_seeds);
   const doc = patched(rawScenario(config.scenario), p);
   doc.raw_layer = true;
@@ -28,7 +28,7 @@ export const loadContrast = (configDoc: unknown, p: Patch = {}, seeds?: readonly
   return {
     config,
     input: {
-      scenario, seeds: seeds ?? config.seeds, presets: config.presets.map((n) => parseArchitecture(readJson("scenarios", "architectures", `${n}.json`))), blocks: config.blocks,
+      scenario, seeds: seeds ?? config.seeds, presets: config.presets.map((n) => parseArchitecture(readJson("data", "scenarios", "architectures", `${n}.json`))), blocks: config.blocks,
       analyzer: lookup("analyzer", (doc.profiles as { analyzer: string }).analyzer) as Profile, dialects: DIALECTS, controllers: CONTROLLERS,
       staff: loadProfile(lookup("staff", staffId), "staff").params, evaluation, review: REVIEW,
     },

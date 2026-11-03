@@ -1,7 +1,7 @@
 """The language choice is carried between the two pages (S3h3; docs/design/lab_ui.md section 13; ADR-0006 keeps English the default).
 
 On Pages the infographic (at the root) and the lab (under lab/) are one origin, so one localStorage key carries the choice. The infographic's script prefixes every key with `sll.`; the lab names its key
-in src/i18n/index.ts. The expected key is typed by hand: `sll.lang`. src/i18n/lang_key.test.ts tests the lab's reading and writing; scripts/qa_site.py carries a choice across the click in a browser.
+in src/i18n/index.ts. The expected key is typed by hand: `sll.lang`. src/i18n/lang_key.test.ts tests the lab's reading and writing; scripts/qa/qa_site.py carries a choice across the click in a browser.
 """
 from __future__ import annotations
 

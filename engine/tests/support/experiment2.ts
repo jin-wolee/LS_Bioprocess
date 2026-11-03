@@ -17,16 +17,16 @@ export interface ClosedLoopExperiment {
 }
 
 export const loadClosedLoop = (configDoc: unknown): ClosedLoopExperiment => {
-  const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+  const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
   const config = parseClosedLoopConfig(configDoc, evaluation.min_seeds);
   return {
     config,
     head: { experiment_id: config.experiment_id, min_seeds: evaluation.min_seeds, bootstrap: config.bootstrap, assumptions: config.assumptions },
     input: {
-      scenario: loadScenario(readJson("scenarios", `${config.scenario}.json`), lookup),
+      scenario: loadScenario(readJson("data", "scenarios", `${config.scenario}.json`), lookup),
       seeds: config.seeds,
       evaluation,
-      architectures: config.presets.map((name) => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`))),
+      architectures: config.presets.map((name) => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`))),
       variants: config.variants,
     },
   };

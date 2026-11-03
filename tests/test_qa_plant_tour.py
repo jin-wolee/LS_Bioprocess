@@ -1,9 +1,9 @@
-"""Tests of the pure helpers of the check `plant_tour` (scripts/qa_plant_tour_helpers.py; docs/design/plant_ui.md sections 3.5 and 10, P8b). Expected values are typed from the single-sample trace of SC3
+"""Tests of the pure helpers of the check `plant_tour` (scripts/qa/qa_plant_tour_helpers.py; docs/design/plant_ui.md sections 3.5 and 10, P8b). Expected values are typed from the single-sample trace of SC3
 (docs/design/single_sample_trace.md) and hand arithmetic on it, never read off the helpers."""
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "qa"))
 
 from qa_plant_tour_helpers import (  # noqa: E402
     TRACE, card_cells, centre_problems, expected_steps, offer_problems, reduced_tour_problems, step_problems, tour_sample, trace_problems, truth_request_problems, verdict_problems,

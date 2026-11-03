@@ -1,7 +1,7 @@
-"""Pure helpers of scripts/qa_plant_act_helpers.py (the checks `plant_action`, `plant_equal` and `plant_prefix` of the headless QA of the plant, docs/design/plant_ui.md section 10, P6a).
+"""Pure helpers of scripts/qa/qa_plant_act_helpers.py (the checks `plant_action`, `plant_equal` and `plant_prefix` of the headless QA of the plant, docs/design/plant_ui.md section 10, P6a).
 
 Expected values are hand arithmetic on instants and plans typed by hand (day 3 at 09:00 is 3 x 86,400 + 9 x 3,600 = 291,600 s), never taken from the code under test. The browser checks themselves run
-through `uv run python scripts/qa_plant.py`.
+through `uv run python scripts/qa/qa_plant.py`.
 """
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import sys
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_plant_act_helpers as qa  # noqa: E402
 
 SMALL_KEYS = "scenario=default&set.bay_size=6&set.cohort_size=6&set.horizon_days=8&set.production_days=6&set.reactor_count=6&arch=a_manual,b_lims_lite,c_context&seed=1"

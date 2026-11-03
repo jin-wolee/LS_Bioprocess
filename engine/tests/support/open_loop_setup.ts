@@ -9,7 +9,7 @@ import { SMALL, configOf, lookup } from "./scenarios.ts";
 // The inputs of the open-loop tests: the default scenario at a small size, the experienced staff profile, and the thirteen architectures of experiment 1
 // (A, B, C and the ten ablations of C, in the order of the flag table). Seeds are test-only values.
 
-const preset = (name: string): Architecture => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+const preset = (name: string): Architecture => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
 
 export const PRESETS: Architecture[] = ["a_manual", "b_lims_lite", "c_context"].map(preset);
 export const ALL_ARCHS: Architecture[] = [...PRESETS, ...ABLATIONS(PRESETS[2] as Architecture).map((x) => x.config)];
@@ -25,7 +25,7 @@ export const openLoopInput = (seeds: readonly number[], over: Partial<OpenLoopIn
   scenario: configOf("default", { settings: SMALL }),
   seeds,
   staff: STAFF,
-  evaluation: evaluationSettings(readJson("scenarios", "evaluation", "default.json")),
+  evaluation: evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json")),
   architectures: ALL_ARCHS,
   ...over,
 });

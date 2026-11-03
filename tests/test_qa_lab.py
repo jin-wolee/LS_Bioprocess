@@ -1,6 +1,6 @@
-"""Pure helpers of scripts/qa_lab_helpers.py (the headless QA of the lab page, docs/design/lab_ui.md section 12).
+"""Pure helpers of scripts/qa/qa_lab_helpers.py (the headless QA of the lab page, docs/design/lab_ui.md section 12).
 
-Expected values are hand arithmetic, never taken from the code under test. The browser checks themselves run through `uv run python scripts/qa_lab.py`.
+Expected values are hand arithmetic, never taken from the code under test. The browser checks themselves run through `uv run python scripts/qa/qa_lab.py`.
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ import pytest
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_lab_breakout_helpers as bo  # noqa: E402
 import qa_lab_helpers as qc  # noqa: E402
 from qa_checks import VIEWPORTS  # noqa: E402

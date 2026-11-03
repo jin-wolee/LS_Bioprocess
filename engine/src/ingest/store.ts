@@ -1,5 +1,5 @@
 // The ingest store: what an adapter remembers between files (data_model section 7, rules active when ingest_idempotency is on). It is the only state of the parser, and it
-// is passed in, so ingesting a set of files twice or in another order is a property of the function and the store (prompts/20 Step 6).
+// is passed in, so ingesting a set of files twice or in another order is a property of the function and the store (docs/prompts/20 Step 6).
 
 export interface KnownRow {
   content: string;

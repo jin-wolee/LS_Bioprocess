@@ -10,7 +10,7 @@ import { ROOT, readJson } from "./support/paths.ts";
 import type { Json } from "./support/schemas.ts";
 import { makeWorkload } from "./support/workload.ts";
 
-// Invariants I1-I9 over generated workloads (prompts/10 Step 6). 250 seeds each (the brief asks for at least 200).
+// Invariants I1-I9 over generated workloads (docs/prompts/10 Step 6). 250 seeds each (the brief asks for at least 200).
 // The workload ranges are test-only inputs. Each check is recomputed here from the log and the input, not from engine internals.
 
 type Ev = Record<string, number | string>;
@@ -168,7 +168,7 @@ describe("I7 keyed-RNG independence: a rerun never changes another sample's nois
 
 describe("I8 observation contract: hidden fields never reach the recorder-visible stream", () => {
   const hidden = (): Map<string, string[]> => {
-    const defs = readJson<Json>("schemas", "event.schema.json").$defs as Record<string, Json>;
+    const defs = readJson<Json>("data", "schemas", "event.schema.json").$defs as Record<string, Json>;
     const out = new Map<string, string[]>();
     for (const def of Object.values(defs)) {
       const props = def.properties as Record<string, Json> | undefined;

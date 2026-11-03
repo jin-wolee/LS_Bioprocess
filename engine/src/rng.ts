@@ -3,7 +3,7 @@ import { uniformInt } from "pure-rand/distribution/uniformInt";
 import { xoroshiro128plusFromState } from "pure-rand/generator/xoroshiro128plus";
 import { cos, log } from "./xmath.ts";
 
-// Keyed streams (prompts/10 Step 1, RNG row). One canonical key tuple everywhere:
+// Keyed streams (docs/prompts/10 Step 1, RNG row). One canonical key tuple everywhere:
 //   (run_seed, physical_sample_id, analyte, attempt, purpose)
 // and a draw that belongs to a unit, an instrument or a generator puts that entity's id in the second slot and "-", 0 after it.
 // Stream seed = splitmix64-based hash of the canonical key string, in BigInt modulo 2^64, synchronous.

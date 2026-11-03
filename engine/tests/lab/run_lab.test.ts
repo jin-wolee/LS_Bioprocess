@@ -25,13 +25,13 @@ const rowOf = (out: ReturnType<typeof done>, architecture: string, metric: strin
 describe("runLab: the same numbers as the experiment runner", () => {
   it("Given the default scenario at the small size, two seeds, A and C When the lab runs Then the report equals the report of runOpenLoop and buildReport (experiment id lab)", async () => {
     const out = done(await runLab(data, spec()));
-    const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+    const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
     const reference = await runOpenLoop({
       scenario: configOf("default", { settings: SMALL }),
       seeds: [1009, 1103],
       staff: loadProfile(lookup("staff", "experienced"), "staff").params,
       evaluation,
-      architectures: ["a_manual", "c_context"].map((n) => parseArchitecture(readJson("scenarios", "architectures", `${n}.json`))),
+      architectures: ["a_manual", "c_context"].map((n) => parseArchitecture(readJson("data", "scenarios", "architectures", `${n}.json`))),
     });
     expect(out.report).toEqual(buildReport(reference, { experiment_id: "lab", min_seeds: 20, ablations_of: "c_context" }));
     expect(out.report.meets_min_seeds).toBe(false);

@@ -3,7 +3,7 @@ import { runL3 } from "../src/analysis.ts";
 import type { L3Input, L3Output } from "../src/analysis.ts";
 import { listFiles, readJson } from "./support/paths.ts";
 
-// Hand-calculated fixtures F1-F7 (prompts/10 Step 3). Expected values were typed from the brief, never from engine output.
+// Hand-calculated fixtures F1-F7 (docs/prompts/10 Step 3). Expected values were typed from the brief, never from engine output.
 // Times are exact (===). The runner is generic: it only knows the fixture file format.
 
 interface ExpectedRun {

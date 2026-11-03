@@ -7,9 +7,9 @@
 #              While .claude/.batch-running exists (the orchestrator writes the batch name and start time there for the length of an executor batch) it prints one line
 #              and exits 0 without running anything or touching .dirty and .last-check, so the first turn after the marker is removed runs the gate.
 #   --manual   Ignore stdin, stop_hook_active, stored state and the batch marker: always run, print a summary, exit 0 (PASS) or 1 (FAIL).
-#   --lab      Also run the end-to-end checks of the lab page (scripts/qa_lab.py: builds the lab, then headless Chromium, Firefox and WebKit; about a minute). Never part of the
+#   --lab      Also run the end-to-end checks of the lab page (scripts/qa/qa_lab.py: builds the lab, then headless Chromium, Firefox and WebKit; about a minute). Never part of the
 #              Stop hook, which passes no flag; the S3 batches use `--manual --lab` (docs/design/lab_ui.md section 12).
-#   --plant    Also run the end-to-end checks of the plant (scripts/qa_plant.py: builds the lab, then headless Chromium with software WebGL; about a minute). Never part of the Stop
+#   --plant    Also run the end-to-end checks of the plant (scripts/qa/qa_plant.py: builds the lab, then headless Chromium with software WebGL; about a minute). Never part of the Stop
 #              hook; the plant batches use `--manual --lab --plant` (docs/design/plant_ui.md section 10).
 set -u
 MANUAL=0; LAB=0; PLANT=0
@@ -72,9 +72,9 @@ if [ -n "$RANDOM_HITS" ]; then
 fi
 
 # The end-to-end checks of the lab page, last because they are the slowest; qa_lab.py prints one `FAIL  qa_lab <check>: ...` line per failed check, which the summary below keeps.
-if [ $LAB -eq 1 ]; then step qa_lab uv run --frozen --quiet python scripts/qa_lab.py; fi
+if [ $LAB -eq 1 ]; then step qa_lab uv run --frozen --quiet python scripts/qa/qa_lab.py; fi
 # The plant's end-to-end checks (qa_plant.py prints `FAIL  qa_plant <check>: ...` lines the same way).
-if [ $PLANT -eq 1 ]; then step qa_plant uv run --frozen --quiet python scripts/qa_plant.py; fi
+if [ $PLANT -eq 1 ]; then step qa_plant uv run --frozen --quiet python scripts/qa/qa_plant.py; fi
 
 # The summary. Never cut: each step's "FAIL  <step> failed", the Math.random line and the count lines (Vitest's, eslint's when it counts errors), so a failed gate
 # always says which one. Cut after 40 lines, with a note of how many: the lines that name a failure. Vitest indents its own (" FAIL  <file> > <test>"); eslint prints

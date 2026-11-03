@@ -1,5 +1,5 @@
-// Runner of the capture-path contrast (prompts/20 Step 6): node engine/tests/support/contrast_cli.ts <report.json>
-// Runs the seed list of scenarios/experiments/capture_contrast.json (SC1 with the raw layer on, A, B and C each on manual_transcription and on adapter_ingest, paired by seed) and
+// Runner of the capture-path contrast (docs/prompts/20 Step 6): node engine/tests/support/contrast_cli.ts <report.json>
+// Runs the seed list of data/scenarios/experiments/capture_contrast.json (SC1 with the raw layer on, A, B and C each on manual_transcription and on adapter_ingest, paired by seed) and
 // writes the report to the path given on the command line. Stochastic, reported and never gated; the report is not committed. Run directly by Node (native type stripping),
 // so it imports modules with explicit .ts extensions only.
 import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
@@ -15,7 +15,7 @@ if (!out) {
   console.error("usage: node engine/tests/support/contrast_cli.ts <path of the report to write>");
   process.exit(2);
 }
-const { config, input } = loadContrast(readJson("scenarios", "experiments", "capture_contrast.json"));
+const { config, input } = loadContrast(readJson("data", "scenarios", "experiments", "capture_contrast.json"));
 const started = performance.now();
 const report = await runContrast(input, { experiment_id: config.experiment_id });
 writeFileSync(resolve(out), `${canonicalJson(report, 2)}\n`);

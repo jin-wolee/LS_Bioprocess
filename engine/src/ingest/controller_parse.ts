@@ -4,7 +4,7 @@ import { parseControllerRow } from "./controller_row.ts";
 import type { ControllerEnv } from "./controller_row.ts";
 import type { IngestStore } from "./store.ts";
 
-// The generic controller parser (spec 2.4.1; data_model 16; prompts/20 Step 7): one function from file text and a controller entry to a raw_file, raw_record rows, canonical
+// The generic controller parser (spec 2.4.1; data_model 16; docs/prompts/20 Step 7): one function from file text and a controller entry to a raw_file, raw_record rows, canonical
 // records (historian values, alarm events, batch phase records) and parse_error rows. It branches on no profile id: the log a file belongs to comes from the file-name prefix of
 // the entry, and a line is read by the role of its columns. Per line the outcome is loaded, no-op, or an action hold, quarantine or reject with its rule id (VR-025, VR-024,
 // VR-023, VR-008, VR-008b). The parser never reads truth, the raw quirk key or the run bookkeeping.

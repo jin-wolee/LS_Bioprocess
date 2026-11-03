@@ -11,7 +11,7 @@ Bioreactor type and size change how a sample is taken and how much culture it co
 1. **Combinatorial scalar parameters on every scenario** (volume, vessel count, service time, error rates and so on as independent knobs).
    - Pro: maximal flexibility.
    - Con: dozens of knobs; nonsensical combinations; sources scattered across many fields; hard to read what a scenario means.
-2. **Profiles: named data bundles for bioreactor, analyzer and staff, chosen by scenarios; the engine stays generic.** Profiles live as JSON under `scenarios/profiles/{bioreactor,analyzer,staff}/`, validated by a schema in which every numeric parameter is `{value, unit, ref}` and `ref` must resolve to a ledger id.
+2. **Profiles: named data bundles for bioreactor, analyzer and staff, chosen by scenarios; the engine stays generic.** Profiles live as JSON under `data/scenarios/profiles/{bioreactor,analyzer,staff}/`, validated by a schema in which every numeric parameter is `{value, unit, ref}` and `ref` must resolve to a ledger id.
    - Pro: a scenario reads as "this bay, this analyzer, this crew"; each bundle carries its sources and its honest grade; adding a profile adds data, not code.
    - Con: bundles mix sourced and assumed parts; many small files; profile boundaries (for example the pilot size class) are partly the author's choice.
 3. **Engine subclasses per profile.**

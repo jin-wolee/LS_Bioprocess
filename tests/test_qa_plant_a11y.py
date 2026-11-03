@@ -1,8 +1,8 @@
-"""Tests of the pure helpers of the check `plant_a11y` (scripts/qa_plant_a11y_helpers.py; docs/design/plant_ui.md section 10, P8a). Expected values are hand arithmetic on small rectangles."""
+"""Tests of the pure helpers of the check `plant_a11y` (scripts/qa/qa_plant_a11y_helpers.py; docs/design/plant_ui.md section 10, P8a). Expected values are hand arithmetic on small rectangles."""
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "qa"))
 
 from qa_plant_a11y_helpers import (  # noqa: E402
     FLOOR_MIN, TABS_TO_LIST, contrast_problems, cover_problems, cut_problems, hum_problems, inside, overlaps, reduced_problems, share_problems, tab_problems,

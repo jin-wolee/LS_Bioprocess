@@ -59,7 +59,7 @@ describe("Zone 1: truth modules are importable only from the observe side, the e
     expect(restricted(await messages(importOf("../../process.ts"), "engine/src/record/deep/planted.ts")).length).toBe(1);
   });
 
-  // S2e1: the raw device layer (ADR-0014, prompts/20 Step 5). raw/ and ingest/ are already in BLOCKED above; the adapters folder is one level deeper.
+  // S2e1: the raw device layer (ADR-0014, docs/prompts/20 Step 5). raw/ and ingest/ are already in BLOCKED above; the adapters folder is one level deeper.
   it.each(TRUTH)("ingest/adapters/ importing %s.ts is an error (the adapter entries and the bridge read recorded data and plain data only)", async (m) => {
     const found = restricted(await messages(importOf(`../../${m}.ts`), "engine/src/ingest/adapters/planted.ts"));
     expect(found.length).toBe(1);
@@ -118,7 +118,7 @@ describe("Zone 2: the error answer key is importable only inside engine/src/eval
   });
 });
 
-// S2e1 rework W1: the raw quirk key is hidden (schemas/raw_quirk_key.schema.json, spec 2.4.1 rule 6): the evaluator is its only reader. The key types live in raw/key.ts and the generated
+// S2e1 rework W1: the raw quirk key is hidden (data/schemas/raw_quirk_key.schema.json, spec 2.4.1 rule 6): the evaluator is its only reader. The key types live in raw/key.ts and the generated
 // type of the schema; the emitter writes them, the assembly writes the key file, the evaluator reads it. Everything else is refused, the parser included.
 describe("Zone 5: the hidden raw quirk key is importable only from evaluate/, experiments/assembly/ and raw/", () => {
   const KEY = (dir: string): string[] => [`${up(dir)}raw/key.ts`, `${up(dir)}raw/key`, `${up(dir)}generated/raw_quirk_key.schema`];

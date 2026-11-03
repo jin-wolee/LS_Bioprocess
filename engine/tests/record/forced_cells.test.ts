@@ -5,7 +5,7 @@ import { ATTRIB, INSTRUMENT, LATE, LOT, RERUN, TECHNIQUE } from "../support/cell
 import { CONFIGS, CONFIG_NAMES, classify } from "../support/cells.ts";
 import type { Cell, CellRow } from "../support/cells.ts";
 
-// S2c1, the structural gate of the recorders (spec section 6; prompts/20 Step 4; 00 section 2 item 8): for each row of the hypothesis matrix of spec
+// S2c1, the structural gate of the recorders (spec section 6; docs/prompts/20 Step 4; 00 section 2 item 8): for each row of the hypothesis matrix of spec
 // section 5 that is not (raw) or (manual), one hand-built stream with one forced error, run through A, B, C and the ten single-flag ablations of C (the ninth and tenth flags equal C in every cell here: no break-out event, so nothing reads them).
 // Every expected cell is typed by hand in support/cell_tables.ts before any run. `detected` names its evidence: a rule id, or a named check of the record
 // (audit_event, bridging_study, lot_link, container_hold). A cell the design does not decide is a todo, not a guess; none is open at present.

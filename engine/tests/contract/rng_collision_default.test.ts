@@ -4,7 +4,7 @@ import { canonicalKey, streamSeed } from "../../src/rng.ts";
 import type { StreamKey } from "../../src/rng.ts";
 import { configOf } from "../support/scenarios.ts";
 
-// The stream-seed collision test of the RNG row (prompts/10 Step 1), now on the default scenario:
+// The stream-seed collision test of the RNG row (docs/prompts/10 Step 1), now on the default scenario:
 // up to 200 seeds (the A103 upper bound) times the streams the run itself asks for, enumerated from the run, never hard-coded.
 
 describe("Contract: stream-seed collisions on the default scenario", () => {

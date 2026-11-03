@@ -3,7 +3,7 @@ import { runMmc } from "../src/mmc.ts";
 import type { MmcResult } from "../src/mmc.ts";
 
 /*
- * M/M/c check (prompts/10 Step 7; engine unit test only, not a scenario).
+ * M/M/c check (docs/prompts/10 Step 7; engine unit test only, not a scenario).
  *
  * The numbers are test-only inputs, not domain claims. Hand-calculated target, fixed before the run and never taken from the engine:
  *   c = 2, mean service 270 s, utilisation 0.8  ->  lambda = 0.8 * 2 / 270 = 0.005926 /s, mean interarrival 270 / 1.6 = 168.75 s, offered load a = 1.6.

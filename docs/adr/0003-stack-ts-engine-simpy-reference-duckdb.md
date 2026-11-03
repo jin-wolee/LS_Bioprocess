@@ -42,7 +42,7 @@ Proposed: TypeScript engine in a Web Worker with a SimPy reference; DuckDB as th
 
 - Positive: browser-only deployment; an independent reference; SQL that expresses the as-of and lineage ideas directly.
 - Negative: dual maintenance of the core loop; a version pin that has to be revisited when `typescript-eslint` widens its peer range; DuckDB-WASM is heavy, so it is an optional lazy load and not part of the default bundle.
-- The TypeScript engine is accepted on invariants, hand-calculated fixtures and an M/M/c-only test mode. SimPy parity is a separate gate that does not block the engine (`prompts/00_master_build.md`, section 4).
+- The TypeScript engine is accepted on invariants, hand-calculated fixtures and an M/M/c-only test mode. SimPy parity is a separate gate that does not block the engine (`docs/prompts/00_master_build.md`, section 4).
 - Pyodide and a server are out of scope.
 
 ## Evidence

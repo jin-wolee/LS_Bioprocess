@@ -17,7 +17,7 @@ import { CONFIGS } from "./cells.ts";
 import { DIALECTS } from "./raw_run.ts";
 import { lookup } from "./scenarios.ts";
 
-// The forced-error cells of the matrix rows marked (raw) and (manual) (spec section 5; prompts/20 Step 6): one hand-built stream of one sample per row, one error forced through
+// The forced-error cells of the matrix rows marked (raw) and (manual) (spec section 5; docs/prompts/20 Step 6): one hand-built stream of one sample per row, one error forced through
 // the device settings, the adapter's belief or the transcription step, run through A, B, C and each single-flag ablation of C once per capture path. This module runs a row and
 // names what happened; the expected cells are typed by hand in raw_cell_tables.ts from the matrix, the rule catalogue and the evaluability of each rule. Test-only values throughout.
 // A row reads "not_applicable" on the path where its class cannot arise (never zero); the harness shows why: nothing is parsed on manual_transcription and no entry is typed on adapter_ingest.

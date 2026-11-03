@@ -39,7 +39,7 @@ describe("the page (src/ui, src/main.tsx, src/i18n, src/protocol.ts) imports no 
         "engine/src/experiments/assembly/lab/home.ts",
         "engine/src/trace.ts",
         "engine/tests/support/paths.ts",
-        "scenarios/default.json",
+        "data/scenarios/default.json",
       ])("importing %s is an error", async (path) => {
         expect(await refused(`${up(file)}${path}`, file)).toBe(1);
       });
@@ -146,7 +146,7 @@ describe("the Worker entry (src/worker/worker.ts) reaches the engine only throug
   });
 
   it("importing the scenario files directly is an error (they come through ./data.ts)", async () => {
-    expect(await refused("../../scenarios/default.json", file)).toBe(1);
+    expect(await refused("../../data/scenarios/default.json", file)).toBe(1);
   });
 
   it("importing a Node-only module is an error", async () => {
@@ -158,7 +158,7 @@ describe("the Worker's data module (src/worker/data.ts) bundles JSON and nothing
   const file = "src/worker/data.ts";
 
   it("importing the scenario, profile, architecture and evaluation files is allowed", async () => {
-    for (const ok of ["../../scenarios/default.json", "../../scenarios/profiles/staff/experienced.json", "../../scenarios/architectures/a_manual.json", "../../scenarios/evaluation/default.json"]) {
+    for (const ok of ["../../data/scenarios/default.json", "../../data/scenarios/profiles/staff/experienced.json", "../../data/scenarios/architectures/a_manual.json", "../../data/scenarios/evaluation/default.json"]) {
       expect(await refused(ok, file), ok).toBe(0);
     }
   });

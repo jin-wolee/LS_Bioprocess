@@ -1,7 +1,7 @@
 {
   "fixture": "F3",
   "title": "One rerun: a failed attempt re-enters the queue and delays others, other draws stay fixed",
-  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
+  "note": "Service, setup and clock times are fixture-only inputs, not domain claims (docs/prompts/10 Step 3). Times are integer seconds from day 0, 00:00:00.",
   "cases": [
     {
       "case": "F3",

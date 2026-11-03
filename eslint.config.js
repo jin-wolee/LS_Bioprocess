@@ -17,7 +17,7 @@ const APPROXIMATED = [
 }));
 const POWER_MESSAGE = "The exponent operator is implementation-approximated and differs between JavaScript engines (ADR-0019): write x * x, or use engine/src/xmath.ts.";
 
-// 2026-10-29 S2 Step 0: import zones (spec section 3, rule 2; prompts/20 Step 0). A later config object replaces the options of
+// 2026-10-29 S2 Step 0: import zones (spec section 3, rule 2; docs/prompts/20 Step 0). A later config object replaces the options of
 // no-restricted-imports for the files it matches, so every zone repeats the Node-only ban through restrict().
 const NODE_PATTERN = { group: ["node:*"], message: "No Node-only imports in engine/src." };
 const restrict = (...zone) => ["error", { paths: NODE_ONLY, patterns: [NODE_PATTERN, ...zone] }];
@@ -47,7 +47,7 @@ const HIDDEN_EVENT = {
   regex: `(^|/)generated/event\\.schema${EXT}$`,
   message: "The generated Event type carries the hidden truth fields: the recorded side uses ObservableEvent from engine/src/observe.ts.",
 };
-// 2026-10-30 S2e1: the raw quirk key is hidden (schemas/raw_quirk_key.schema.json; spec 2.4.1 rule 6): the evaluator is its only reader. Its types live in raw/key.ts; the emitter (raw/**) writes
+// 2026-10-30 S2e1: the raw quirk key is hidden (data/schemas/raw_quirk_key.schema.json; spec 2.4.1 rule 6): the evaluator is its only reader. Its types live in raw/key.ts; the emitter (raw/**) writes
 // them and the experiment assembly writes the key file. Every other file is refused, the parser and the recorders included. The reader folders get their own zone objects at the end of this file.
 const RAW_KEY = {
   regex: `(^|/)(raw/key|generated/raw_quirk_key\\.schema)${EXT}$`,
@@ -96,7 +96,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    // Contract rules (prompts/10 Step 1) apply to engine/src only; tests may use Node modules to load fixtures.
+    // Contract rules (docs/prompts/10 Step 1) apply to engine/src only; tests may use Node modules to load fixtures.
     files: ["engine/src/**/*.ts"],
     rules: {
       "no-restricted-properties": [

@@ -5,10 +5,10 @@ import { loadExperiment } from "../support/experiment1.ts";
 import { ALL_IDS } from "../support/open_loop_setup.ts";
 import { readJson } from "../support/paths.ts";
 
-// S2c2: the seed list of experiment 1 is written in config before any run (prompts/20 Step 4, A103), and a short or date-shaped list fails here.
+// S2c2: the seed list of experiment 1 is written in config before any run (docs/prompts/20 Step 4, A103), and a short or date-shaped list fails here.
 
-const minSeeds = evaluationSettings(readJson("scenarios", "evaluation", "default.json")).min_seeds;
-const doc = readJson<{ seeds: number[] } & Record<string, unknown>>("scenarios", "experiments", "experiment1.json");
+const minSeeds = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json")).min_seeds;
+const doc = readJson<{ seeds: number[] } & Record<string, unknown>>("data", "scenarios", "experiments", "experiment1.json");
 
 describe("Experiment 1 config: the seed list is written first", () => {
   it("Given the config file Then it lists at least 20 seeds (A103), once each, as non-negative integers", () => {

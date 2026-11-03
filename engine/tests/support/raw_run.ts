@@ -52,7 +52,7 @@ export const rawConfigOf = (name: string, p: Patch = {}, over: RawOverrides = {}
 };
 
 const staff = loadProfile(lookup("staff", "experienced"), "staff").params;
-const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
 
 /** The input of `runSeed` for a layer-on scenario run, with the raw setup and the typed-entry rules built from the scenario, the analyzer profile and the dialects. */
 export const rawInputOf = (run: ScenarioRun, config: ScenarioConfig, scenario_id: string, architectures: readonly Architecture[], days: number): SeedInput => {

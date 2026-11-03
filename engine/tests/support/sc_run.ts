@@ -12,7 +12,7 @@ import { lookup } from "./scenarios.ts";
 // One scenario run through chosen architectures with the assembly of S2b (production settings: no forced errors). Test-side only.
 
 const staff = loadProfile(lookup("staff", "experienced"), "staff").params;
-const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
 
 export const inputOf = (run: ScenarioRun, scenario_id: string, architectures: readonly Architecture[], days: number): SeedInput =>
   seedInputFromRun(run, { scenario_id, staff, evaluation, architectures, days, review: REVIEW });

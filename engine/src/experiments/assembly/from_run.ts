@@ -68,7 +68,7 @@ export const seedInputFromRun = (run: ScenarioRun, s: RunSettings): SeedInput =>
   ...(s.raw && { raw: withLayout(s.raw, run) }),
   ...(s.entry_rules && { entry_rules: s.entry_rules }),
   ...(s.breakout && { breakout: breakoutMasterOf(s.breakout) }),
-  // the tolerances of VR-003 and VR-004 have no ledger entry (scenarios/evaluation/default.json): those two rules are reported as not evaluable
+  // the tolerances of VR-003 and VR-004 have no ledger entry (data/scenarios/evaluation/default.json): those two rules are reported as not evaluable
   rules: { hold_limit_s: s.evaluation.hold_limit_s },
   review: s.review,
   config: { sla_s: s.evaluation.sla_s, roster: s.review.roster, days: s.days, ...(s.contrast && { contrast: s.contrast }) },

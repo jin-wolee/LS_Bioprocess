@@ -1,7 +1,7 @@
 import type { ObservableEvent } from "../observe.ts";
 import type { Architecture } from "../record/architecture.ts";
 
-// The error injector (S2b, prompts/20 Step 2). It works on the observable stream only, receives everything it needs as plain data from the
+// The error injector (S2b, docs/prompts/20 Step 2). It works on the observable stream only, receives everything it needs as plain data from the
 // experiment assembly, and returns plain data; the assembly writes the answer key. Types: the rows of the hypothesis matrix of spec section 5
 // that an injector can materialise, plus planned-versus-actual time (a structural limit of preset B, not a random error).
 

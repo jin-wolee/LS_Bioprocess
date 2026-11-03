@@ -502,7 +502,7 @@ def test_eslint_warnings_alone_add_nothing_to_the_summary(lab):
 
 
 # ---------- --lab: the end-to-end run of the lab page (docs/design/lab_ui.md section 12) ----------
-# The throwaway repo gets a stub in place of scripts/qa_lab.py that logs each run into the gitignored qa_out/, like the probe test above, and exits as told.
+# The throwaway repo gets a stub in place of scripts/qa/qa_lab.py that logs each run into the gitignored qa_out/, like the probe test above, and exits as told.
 QA_LAB_STUB = '''import sys
 from pathlib import Path
 
@@ -517,7 +517,7 @@ sys.exit(EXIT)
 
 
 def qa_lab_stub(lab, exit_code: int = 0) -> None:
-    lab.write("scripts/qa_lab.py", QA_LAB_STUB.replace("EXIT", str(exit_code)))
+    lab.write("scripts/qa/qa_lab.py", QA_LAB_STUB.replace("EXIT", str(exit_code)))
 
 
 def lab_runs(lab) -> int:

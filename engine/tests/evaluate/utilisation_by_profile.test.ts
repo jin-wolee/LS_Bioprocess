@@ -104,7 +104,7 @@ describe("utilisation by profile: a run", () => {
 
 describe("the metrics schema", () => {
   const ajv = makeAjv();
-  ajv.addSchema(readJson<Json>("schemas", "metrics.schema.json"));
+  ajv.addSchema(readJson<Json>("data", "schemas", "metrics.schema.json"));
   it("Given a utilisation block with by_profile Then the metrics schema accepts it, and rejects an entry without its profile", () => {
     const u = utilisation(EVENTS, SPAN);
     const validate = ajv.getSchema("metrics.schema.json#/properties/metrics/properties/utilisation");

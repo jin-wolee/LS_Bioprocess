@@ -1,6 +1,6 @@
-// Runner of experiment 2 (prompts/20 Step 4, SC8): node engine/tests/support/experiment2_cli.ts <report.json>
-// Runs the seed list of scenarios/experiments/experiment2.json through the closed loop (oracle, A, B, C and the sensitivity variants), builds the report, validates it against
-// schemas/closed_loop_report.schema.json and writes it to the path given on the command line. Prints the timing and a compact summary. The report is not committed.
+// Runner of experiment 2 (docs/prompts/20 Step 4, SC8): node engine/tests/support/experiment2_cli.ts <report.json>
+// Runs the seed list of data/scenarios/experiments/experiment2.json through the closed loop (oracle, A, B, C and the sensitivity variants), builds the report, validates it against
+// data/schemas/closed_loop_report.schema.json and writes it to the path given on the command line. Prints the timing and a compact summary. The report is not committed.
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
 import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
 import { writeFileSync } from "node:fs";
@@ -18,7 +18,7 @@ if (!out) {
   process.exit(2);
 }
 
-const { config, input, head } = loadClosedLoop(readJson("scenarios", "experiments", "experiment2.json"));
+const { config, input, head } = loadClosedLoop(readJson("data", "scenarios", "experiments", "experiment2.json"));
 const started = performance.now();
 const result = runClosedLoop(input);
 const ran = performance.now();

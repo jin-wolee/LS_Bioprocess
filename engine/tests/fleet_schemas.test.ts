@@ -52,9 +52,9 @@ describe("The bundled profile files name their bundle (A065 to A073, ADR-0012)",
   const KIND_WORD: Record<string, string> = { bioreactor: "profile_bioreactor", analyzer: "profile_analyzer", staff: "profile_staff" };
 
   it("Given the profile folders Then every file is in the table above and carries the bundle typed there", () => {
-    const files = ["bioreactor", "analyzer", "staff"].flatMap((kind) => listFiles("scenarios", "profiles", kind).map((f) => `${kind}/${f.replace(/\.json$/, "")}`));
+    const files = ["bioreactor", "analyzer", "staff"].flatMap((kind) => listFiles("data", "scenarios", "profiles", kind).map((f) => `${kind}/${f.replace(/\.json$/, "")}`));
     expect(files.sort()).toEqual(Object.keys(EXPECTED).sort());
-    for (const [file, bundle] of Object.entries(EXPECTED)) expect(readJson<Json>("scenarios", "profiles", `${file}.json`).bundle, file).toBe(bundle);
+    for (const [file, bundle] of Object.entries(EXPECTED)) expect(readJson<Json>("data", "scenarios", "profiles", `${file}.json`).bundle, file).toBe(bundle);
   });
 
   it("Given each bundle id Then the ledger has it as a bundle (components) of the profile's own kind", () => {

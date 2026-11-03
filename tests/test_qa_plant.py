@@ -1,6 +1,6 @@
-"""Pure helpers of scripts/qa_plant_helpers.py (the headless QA of the plant, docs/design/plant_ui.md section 10).
+"""Pure helpers of scripts/qa/qa_plant_helpers.py (the headless QA of the plant, docs/design/plant_ui.md section 10).
 
-Expected values are hand arithmetic, never taken from the code under test. The browser checks themselves run through `uv run python scripts/qa_plant.py`.
+Expected values are hand arithmetic, never taken from the code under test. The browser checks themselves run through `uv run python scripts/qa/qa_plant.py`.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import pytest
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_plant_helpers as qp  # noqa: E402
 
 HASH = "a" * 64
@@ -205,8 +205,8 @@ def test_two_runs_at_the_fixed_instant_must_differ_in_no_pixel():
 
 
 def test_each_script_of_the_plant_qa_is_a_small_file_of_one_concern():
-    # the repository's target for a source file is 300 lines (prompts/PRINCIPLES.md section 3): the checks are split by concern as the lab's are
-    for path in sorted((REPO / "scripts").glob("qa_plant*.py")):
+    # the repository's target for a source file is 300 lines (docs/prompts/PRINCIPLES.md section 3): the checks are split by concern as the lab's are
+    for path in sorted((REPO / "scripts" / "qa").glob("qa_plant*.py")):
         assert len(path.read_text(encoding="utf-8").splitlines()) <= 300, path.name
 
 
@@ -288,7 +288,7 @@ def test_the_software_gl_arguments_are_the_spikes():
 
 
 # ---------- --plant: the end-to-end run of the plant (docs/design/plant_ui.md section 10) ----------
-# The throwaway repo gets stubs in place of scripts/qa_plant.py and scripts/qa_lab.py that log each run into the gitignored qa_out/ and exit as told, as the tests of --lab do.
+# The throwaway repo gets stubs in place of scripts/qa/qa_plant.py and scripts/qa/qa_lab.py that log each run into the gitignored qa_out/ and exit as told, as the tests of --lab do.
 import json  # noqa: E402
 
 from helpers import run  # noqa: E402
@@ -315,7 +315,7 @@ def lab(repo):
 
 
 def stub(lab, name: str, exit_code: int = 0) -> None:
-    lab.write(f"scripts/{name}.py", STUB.replace("NAME", name).replace("EXIT", str(exit_code)))
+    lab.write(f"scripts/qa/{name}.py", STUB.replace("NAME", name).replace("EXIT", str(exit_code)))
 
 
 def ran(lab, name: str) -> int:

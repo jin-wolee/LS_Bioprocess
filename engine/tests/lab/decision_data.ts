@@ -10,7 +10,7 @@ export const DECISION_SCENARIO = "sc08_ph_restandardisation";
 
 export const decisionData = (): LabData => ({
   ...labData(),
-  decision: { scenario: readJson("scenarios", `${DECISION_SCENARIO}.json`), experiment: readJson("scenarios", "experiments", "experiment2.json") },
+  decision: { scenario: readJson("data", "scenarios", `${DECISION_SCENARIO}.json`), experiment: readJson("data", "scenarios", "experiments", "experiment2.json") },
 });
 
 /** The settings of the small world of the decision tests (a quarter of the plant, a technique error in every second sample). */

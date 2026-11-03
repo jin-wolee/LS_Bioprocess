@@ -1,5 +1,5 @@
-// The config of an experiment run (scenarios/experiments/*.json): which scenario, which architectures, which seeds. The engine reads no file: the
-// caller passes the parsed JSON. The seed list is written before any run (prompts/20 Step 4); the minimum comes from the evaluation settings (A103).
+// The config of an experiment run (data/scenarios/experiments/*.json): which scenario, which architectures, which seeds. The engine reads no file: the
+// caller passes the parsed JSON. The seed list is written before any run (docs/prompts/20 Step 4); the minimum comes from the evaluation settings (A103).
 
 export interface ExperimentConfig {
   experiment_id: string;

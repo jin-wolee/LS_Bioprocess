@@ -3,10 +3,10 @@ import { DAY, dayOf, isWeekend } from "./support/metrics.ts";
 import { runOf } from "./support/scenarios.ts";
 
 // SC2 Shift-start burst (spec 7): why wait when mean utilisation is low?
-// Metrics are reported, not gated (spec section 8; prompts/00 section 2 item 8). These tests gate structural facts only: where each plan
+// Metrics are reported, not gated (spec section 8; docs/prompts/00 section 2 item 8). These tests gate structural facts only: where each plan
 // puts the planned times, and what the plan leaves alone. The metric question (the p90 hold_time of the burst arm against the staggered
 // arm) is reported in docs/progress.md over 20 seeds with its spread, whatever its sign, and is never asserted here.
-// The burst arm is scenarios/default.json, the staggered arm is scenarios/sc02_shift_burst.json.
+// The burst arm is data/scenarios/default.json, the staggered arm is data/scenarios/sc02_shift_burst.json.
 
 const BAY_WIDTH_MIN = 45; // A203: written out here for the independent check
 const BAY_START_MIN = [480, 525]; // bay 1 from 08:00, bay 2 from 08:45

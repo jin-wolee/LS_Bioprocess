@@ -33,7 +33,7 @@ const keysOf = (cfg: ReturnType<typeof configOf>): StreamKey[] => {
 
 describe("The action keys (section 5.4)", () => {
   const base = keysOf(configOf("default", { settings: SMALL }));
-  const doc = applyActions({ scenario: scenarioDocument(data, "default", SMALL), capture_path: undefined, architectures: ["a_manual"].map((id) => parseArchitecture(readJson("scenarios", "architectures", `${id}.json`))) }, ALL).scenario;
+  const doc = applyActions({ scenario: scenarioDocument(data, "default", SMALL), capture_path: undefined, architectures: ["a_manual"].map((id) => parseArchitecture(readJson("data", "scenarios", "architectures", `${id}.json`))) }, ALL).scenario;
   const acted = keysOf({ ...loadScenario(doc, lookup), seed: 1 });
 
   it("Given the table of action keys Then it is empty: no action takes a draw of its own", () => {

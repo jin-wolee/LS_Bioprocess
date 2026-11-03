@@ -3,7 +3,7 @@
 - **Date:** 2026-11-03
 ## Context
 
-ADR-0010 (accepted 2026-10-29) reserves five files for the author: the canonical DDL (`sql/schema.sql`), three SQL queries (`sql/queries/asof_join.sql`, `lineage_recursive.sql`, `bridging_offset.sql`) and the SimPy core loop (`reference/sim_core.py`). They are listed in `.claude/user_owned.txt`, an edit guard keeps AI tools out of them, and their acceptance tests in `tests/user_track/` skip while the files are absent. None of the files exists yet, so the parity of an independent implementation with the TypeScript engine is unproven, and the README says so.
+ADR-0010 (accepted 2026-10-29) reserves five files for the author: the canonical DDL (`reference/sql/schema.sql`), three SQL queries (`reference/sql/queries/asof_join.sql`, `lineage_recursive.sql`, `bridging_offset.sql`) and the SimPy core loop (`reference/simpy/sim_core.py`). They are listed in `.claude/user_owned.txt`, an edit guard keeps AI tools out of them, and their acceptance tests in `tests/user_track/` skip while the files are absent. None of the files exists yet, so the parity of an independent implementation with the TypeScript engine is unproven, and the README says so.
 
 On 2026-11-03 the author asked for the files to be written by AI because there is no time to write them now. An external adversarial audit of 2026-11-02 named the absence of an independent second implementation as a gap, and named the author's own SQL and SimPy as the strongest evidence of technical ownership a portfolio could show. The two pull in different directions: the request closes the parity gap; it gives up the authorship claim of ADR-0010.
 

@@ -1,6 +1,6 @@
 # Single-sample failure trace
 
-Status: S2d deliverable (prompts/20 Step 10). One sample of scenario SC3, followed through architectures A, B and C, with each architecture's answer to three questions an analyst would ask afterwards. Synthetic data only; nothing here describes a real system. The table is the output of the recorders, not typed prose.
+Status: S2d deliverable (docs/prompts/20 Step 10). One sample of scenario SC3, followed through architectures A, B and C, with each architecture's answer to three questions an analyst would ask afterwards. Synthetic data only; nothing here describes a real system. The table is the output of the recorders, not typed prose.
 
 ## The question
 

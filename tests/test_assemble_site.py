@@ -14,6 +14,7 @@ import pytest
 from helpers import REPO
 
 sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import assemble_site as asm  # noqa: E402
 import qa_site  # noqa: E402
 

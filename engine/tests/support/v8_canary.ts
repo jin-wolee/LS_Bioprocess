@@ -23,7 +23,7 @@ async function runChild(): Promise<void> {
   const { canonicalJson } = await import("../../src/trace.ts");
   const { loadClosedLoop } = await import("./experiment2.ts");
   const { readJson } = await import("./paths.ts");
-  const { input, head } = loadClosedLoop(readJson("scenarios", "experiments", "experiment2.json"));
+  const { input, head } = loadClosedLoop(readJson("data", "scenarios", "experiments", "experiment2.json"));
   console.log(canonicalJson(buildClosedLoopReport(runClosedLoop({ ...input, seeds: input.seeds.slice(0, 2) }), { ...head, min_seeds: 2 })));
 }
 

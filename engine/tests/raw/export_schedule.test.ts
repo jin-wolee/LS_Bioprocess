@@ -16,7 +16,7 @@ import { isValid, makeAjv } from "../support/schemas.ts";
 // the manual path gives the same result. window_end (the default of spec 2.4.2): the file leaves at the end of the staffed window of that day. Instants are seconds of the scenario,
 // day 0 a Monday; the roster is typed by hand from A201: weekdays end at 18:00 (64800 s), weekends at 14:00 (50400 s).
 
-const preset = (name: string) => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+const preset = (name: string) => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
 const [B, C] = [preset("b_lims_lite"), preset("c_context")];
 const END_WEEKDAY = 64800;
 const END_WEEKEND = 50400;

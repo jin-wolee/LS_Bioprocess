@@ -1,6 +1,6 @@
-"""Acceptance test for the author's SimPy core loop, reference/sim_core.py (prompts/60_user_track.md, Card C).
+"""Acceptance test for the author's SimPy core loop, reference/simpy/sim_core.py (docs/prompts/60_user_track.md, Card C).
 
-Marker `user_track`: skipped, with a message, while reference/sim_core.py is absent. The test is written by the AI path and
+Marker `user_track`: skipped, with a message, while reference/simpy/sim_core.py is absent. The test is written by the AI path and
 never edited to make the author's code pass. It runs the loop on every trace and compares exactly on integer times:
 - the 19 hand traces F1-F7 and variants (tests/fixtures/traces/) against the hand-typed expectation,
 - the 20 parity traces (tests/golden/parity/) against the expected_result of the TS core.
@@ -16,14 +16,14 @@ from referencing import Registry, Resource
 pytestmark = pytest.mark.user_track
 
 ROOT = Path(__file__).resolve().parents[2]
-SIM_CORE = ROOT / "reference" / "sim_core.py"
+SIM_CORE = ROOT / "reference" / "simpy" / "sim_core.py"
 HAND_TRACES = sorted((ROOT / "tests" / "fixtures" / "traces").glob("*.json"))
 PARITY_TRACES = sorted((ROOT / "tests" / "golden" / "parity").glob("parity_*.json"))
 HAND_FIXTURES = sorted((ROOT / "tests" / "fixtures" / "hand").glob("F*.json"))
 
 
 def _validator() -> Draft202012Validator:
-    schemas = {p.name: json.loads(p.read_text()) for p in (ROOT / "schemas").glob("*.schema.json")}
+    schemas = {p.name: json.loads(p.read_text()) for p in (ROOT / "data" / "schemas").glob("*.schema.json")}
     registry = Registry().with_resources((name, Resource.from_contents(doc)) for name, doc in schemas.items())
     return Draft202012Validator(schemas["trace_result.schema.json"], registry=registry)
 
@@ -31,7 +31,7 @@ def _validator() -> Draft202012Validator:
 @pytest.fixture(scope="module")
 def sim_core() -> Path:
     if not SIM_CORE.exists():
-        pytest.skip("reference/sim_core.py is absent: the SimPy core loop is the author's Card C; this parity test runs once it exists")
+        pytest.skip("reference/simpy/sim_core.py is absent: the SimPy core loop is the author's Card C; this parity test runs once it exists")
     return SIM_CORE
 
 

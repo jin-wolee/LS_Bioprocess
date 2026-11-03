@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { saveLang, savedLang } from "./index.ts";
 
 // The language choice is carried between the two pages (S3h3). On Pages they share one origin, so they share one localStorage; the infographic keeps its choice under `sll.lang` (site/infographic/src/app.js)
-// and the lab now reads and writes the same key. The default stays English (ADR-0006). tests/test_language_carry.py checks that the two pages name the same key; scripts/qa_site.py carries a choice across a click.
+// and the lab now reads and writes the same key. The default stays English (ADR-0006). tests/test_language_carry.py checks that the two pages name the same key; scripts/qa/qa_site.py carries a choice across a click.
 
 const KEY = "sll.lang";
 

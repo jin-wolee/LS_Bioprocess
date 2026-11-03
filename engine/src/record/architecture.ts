@@ -1,7 +1,7 @@
 import type { Architecture } from "../generated/architecture.schema";
 
 // An architecture is ten flags and a labelling method (spec section 5; ADR-0005, ADR-0017, ADR-0020). The engine reads no files, so the JSON of a preset
-// is checked here with the same rules as schemas/architecture.schema.json (a test compares the two on the same bad documents).
+// is checked here with the same rules as data/schemas/architecture.schema.json (a test compares the two on the same bad documents).
 
 export type { Architecture };
 export type FlagName = keyof Architecture["flags"];

@@ -6,7 +6,7 @@ import type { EmittedFile, KeyRow } from "./key.ts";
 import { BANNER } from "./types.ts";
 import type { AnalysisRow, DeviceSettings, Dialect } from "./types.ts";
 
-// The generic emitter (spec section 2.4.1; prompts/20 Step 5): one function from analysis rows, dialect data and plain-data injections to file text. It branches on
+// The generic emitter (spec section 2.4.1; docs/prompts/20 Step 5): one function from analysis rows, dialect data and plain-data injections to file text. It branches on
 // no dialect id: the shape comes from the dialect data and the device settings. Integer seconds become wall-clock text only here. It returns the realised quirks as
 // plain data (key_rows); the assembly writes them to the raw quirk key, and only the evaluator reads that.
 

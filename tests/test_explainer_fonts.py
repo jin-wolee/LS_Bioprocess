@@ -4,7 +4,7 @@
 `site/infographic/fonts/` (SIL Open Font License 1.1, the licence texts beside the files) and asks no other origin for anything.
 
 The expected values are typed by hand from the brief: Archivo is one variable file per subset (width 62 to 125, weight 400 to 800), IBM Plex Mono has the weights 400, 500, 600 and 700, each family in
-the subsets latin and latin-ext, and the Google link and the two preconnects are gone. The headless run of the same rule is `scripts/qa_infographic.py` and `scripts/qa_site.py` (check `origin`).
+the subsets latin and latin-ext, and the Google link and the two preconnects are gone. The headless run of the same rule is `scripts/qa/qa_infographic.py` and `scripts/qa/qa_site.py` (check `origin`).
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ import pytest
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_infographic as qa  # noqa: E402
 import qa_site  # noqa: E402
 

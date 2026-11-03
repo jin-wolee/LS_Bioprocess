@@ -14,7 +14,7 @@ export interface Finding {
 
 export type RangeFlag = "above_analytical" | "below_analytical" | "above_process" | "below_process";
 
-/** An analyzer result (schemas/canonical_record.schema.json, result_record). */
+/** An analyzer result (data/schemas/canonical_record.schema.json, result_record). */
 export interface CanonicalResult {
   record_kind: "result";
   envelope: {
@@ -63,7 +63,7 @@ interface ControllerRecord<K extends string, P> {
   findings: Finding[];
 }
 
-/** A controller tag value (schemas/canonical_record.schema.json, historian_value); the tag is unit_tag.signal.role (data_model 16.4). */
+/** A controller tag value (data/schemas/canonical_record.schema.json, historian_value); the tag is unit_tag.signal.role (data_model 16.4). */
 export type CanonicalHistorian = ControllerRecord<"tag_value", { tag: string; ts: number; value: number; quality: string }>;
 
 /** One alarm transition (alarm_event). `tag` and `severity` are null where the family's alarm log carries none. */

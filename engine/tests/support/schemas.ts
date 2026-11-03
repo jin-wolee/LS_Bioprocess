@@ -11,7 +11,7 @@ export const SCHEMA_NAMES = ["scenario", "profile", "event", "trace", "trace_res
 export const makeAjv = (): Ajv2020 => {
   const ajv = new Ajv2020({ strict: true, allErrors: true });
   ajv.addKeyword("x-visibility");
-  for (const n of SCHEMA_NAMES) ajv.addSchema(readJson<Json>("schemas", `${n}.schema.json`));
+  for (const n of SCHEMA_NAMES) ajv.addSchema(readJson<Json>("data", "schemas", `${n}.schema.json`));
   return ajv;
 };
 
@@ -36,7 +36,7 @@ export const refsOf = (node: unknown, out: string[] = []): string[] => {
   return out;
 };
 
-/** A document is rejected when the schema fails or, for profiles, a ref is not a ledger id (prompts/10 Step 2). */
+/** A document is rejected when the schema fails or, for profiles, a ref is not a ledger id (docs/prompts/10 Step 2). */
 export const rejected = (ajv: Ajv2020, name: string, doc: unknown): boolean => {
   const validate = ajv.getSchema(`${name}.schema.json`);
   if (!validate) throw new Error(`schema ${name} did not compile`);

@@ -4,7 +4,7 @@ import { runScenario } from "../../src/run.ts";
 import { configOf, runOf } from "../support/scenarios.ts";
 import { makeAjv } from "../support/schemas.ts";
 
-// Contract, Time row (prompts/10 Step 1): all event times are integer seconds. Every instant or duration the engine derives from a
+// Contract, Time row (docs/prompts/10 Step 1): all event times are integer seconds. Every instant or duration the engine derives from a
 // scenario parameter is rounded to whole seconds once, at load, with floor(x + 0.5). A parameter inside its ledger range can be
 // fractional in seconds: a cohort interval of 1.1 d is 95040 s, but 1.1 * 86400 is 95040.00000000001 in floating point.
 

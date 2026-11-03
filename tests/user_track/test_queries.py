@@ -1,7 +1,7 @@
-"""Acceptance tests for the author's three SQL queries (prompts/60_user_track.md, cards B1 to B3; data_model.md sections 5, 12 and 13).
+"""Acceptance tests for the author's three SQL queries (docs/prompts/60_user_track.md, cards B1 to B3; data_model.md sections 5, 12 and 13).
 
-Marker `user_track`: each test skips, with a message, while its query file under sql/queries/ is absent. Written by the AI path against the contracts of the cards and never edited to make
-the author's SQL pass. The schema is the author's sql/schema.sql when it exists, otherwise the minimal fixture schema tests/fixtures/sql/fixture_schema.sql; fixtures insert with explicit
+Marker `user_track`: each test skips, with a message, while its query file under reference/sql/queries/ is absent. Written by the AI path against the contracts of the cards and never edited to make
+the author's SQL pass. The schema is the author's reference/sql/schema.sql when it exists, otherwise the minimal fixture schema tests/fixtures/sql/fixture_schema.sql; fixtures insert with explicit
 column lists, so both give the same names. Expected answers were computed by hand first and are in tests/fixtures/sql/expected_*.csv, with the arithmetic beside them.
 
 Two kinds of check: the hand fixtures of the cards, and integration checks on the engine's recorded data (one scenario and seed, one noise-free fixture), loaded through a test-only dump
@@ -22,8 +22,8 @@ import pytest
 pytestmark = pytest.mark.user_track
 
 ROOT = Path(__file__).resolve().parents[2]
-SCHEMA = ROOT / "sql" / "schema.sql"
-QUERIES = ROOT / "sql" / "queries"
+SCHEMA = ROOT / "reference" / "sql" / "schema.sql"
+QUERIES = ROOT / "reference" / "sql" / "queries"
 FIXTURES = ROOT / "tests" / "fixtures" / "sql"
 DUMP_CLI = ROOT / "engine" / "tests" / "support" / "sql_tables_cli.ts"
 LOAD_ORDER = ["unit", "operator", "batch", "method", "instrument", "instrument_state", "sample", "aliquot", "analysis_request", "run", "result", "historian_value"]
@@ -35,7 +35,7 @@ TIMEOUT_S = 30
 def _query(name: str) -> str:
     path = QUERIES / name
     if not path.exists():
-        pytest.skip(f"sql/queries/{name} is absent: it is the author's card ({name}); this acceptance test runs once it exists")
+        pytest.skip(f"reference/sql/queries/{name} is absent: it is the author's card ({name}); this acceptance test runs once it exists")
     return path.read_text()
 
 

@@ -16,7 +16,7 @@ import { ROOT, readJson } from "./paths.ts";
 
 export const ANCHOR = "2030-01-07";
 export const FIXTURES = join(ROOT, "tests", "fixtures", "raw");
-export const dialectOf = (id: string): Dialect => readJson<Dialect>("scenarios", "profiles", "dialect", `${id}.json`);
+export const dialectOf = (id: string): Dialect => readJson<Dialect>("data", "scenarios", "profiles", "dialect", `${id}.json`);
 
 export interface FixtureCase {
   name: string;

@@ -7,7 +7,7 @@ import { structural } from "./structural.ts";
 import { ERROR_TYPES } from "./types.ts";
 import type { DrawnType, ForcedError, InjectInput, InjectResult, MaterialisedError } from "./types.ts";
 
-// Fair by construction (prompts/20 Step 2): the opportunities do not depend on the architecture (opportunities.ts); an architecture
+// Fair by construction (docs/prompts/20 Step 2): the opportunities do not depend on the architecture (opportunities.ts); an architecture
 // materialises one when u < rate(type, architecture, staff), the rate being 0 where the mechanism cannot exist (catalogue.ts); coupling
 // is monotone because the draw is compared with the rate and never re-drawn. Forced mode (fixtures) bypasses the rate, not the mechanism.
 // A replayed file is the one exception to "prevented means the stream is untouched": it is a source event, common to all architectures.

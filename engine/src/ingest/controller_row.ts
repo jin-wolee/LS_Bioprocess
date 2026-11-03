@@ -6,7 +6,7 @@ import type { ControllerEntry, EntryLog } from "./controller_entry.ts";
 import { parseStamp } from "./stamp.ts";
 import type { IngestStore } from "./store.ts";
 
-// One data line of a controller log to a canonical record (data_model 16.3 and 16.4; prompts/20 Step 7): the outcome is loaded, no-op, or an action hold, quarantine or reject
+// One data line of a controller log to a canonical record (data_model 16.3 and 16.4; docs/prompts/20 Step 7): the outcome is loaded, no-op, or an action hold, quarantine or reject
 // with its rule id. A rule changes a state and never a value. The line is read by the role of its columns (the entry, from the profile), never by position or label. The parser
 // reads the text, the entry and the store; it never reads truth, the raw quirk key or the run bookkeeping.
 

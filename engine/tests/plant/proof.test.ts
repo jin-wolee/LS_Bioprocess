@@ -29,7 +29,7 @@ const plantSpec = (actions: readonly unknown[]) => ({ run: { schema_version: "1"
 /** The run of the hand-written fixture by the lab's own path: no plant module is involved. */
 const byHand = async (f: Fixture) => {
   const handData: LabData = { ...data, scenarios: { ...data.scenarios, default: patched(rawScenario("default"), { fields: f.hand.scenario_fields }) } };
-  const halls = f.hand.architectures.map((a) => parseArchitecture(typeof a === "string" ? readJson("scenarios", "architectures", `${a}.json`) : a));
+  const halls = f.hand.architectures.map((a) => parseArchitecture(typeof a === "string" ? readJson("data", "scenarios", "architectures", `${a}.json`) : a));
   const spec = { schema_version: "1" as const, scenario: "default", settings: SMALL, architectures: HALLS, seeds: [1] };
   const config = scenarioConfig(handData, "default", SMALL, 1, f.hand.capture_path ? { capture_path: f.hand.capture_path } : {});
   const { run, input } = labSeedOf(handData, spec, config, halls);

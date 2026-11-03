@@ -65,14 +65,14 @@ def make_root(tmp_path, scenario_refs=("A001",), i18n_text="", ledger_assumption
     (tmp_path / "docs/research").mkdir(parents=True)
     (tmp_path / "docs/research/sources.yaml").write_text(SOURCES, encoding="utf-8")
     (tmp_path / "docs/research/assumptions.yaml").write_text(ledger_assumptions, encoding="utf-8")
-    (tmp_path / "scenarios").mkdir()
+    (tmp_path / "data" / "scenarios").mkdir(parents=True)
     settings = {f"s{i}": {"value": 1, "unit": "u", "ref": ref} for i, ref in enumerate(scenario_refs)}
     doc = {"settings": settings, "stability": [{"rate": {"value": 1, "unit": "u", "ref": scenario_refs[0]}}]}
     if bundle is not None:
         doc["bundle"] = bundle
-    (tmp_path / "scenarios/x.json").write_text(json.dumps(doc), encoding="utf-8")
+    (tmp_path / "data/scenarios/x.json").write_text(json.dumps(doc), encoding="utf-8")
     (tmp_path / "src/worker").mkdir(parents=True)
-    (tmp_path / "src/worker/data.ts").write_text('import x from "../../scenarios/x.json";\nexport const D = x;\n', encoding="utf-8")
+    (tmp_path / "src/worker/data.ts").write_text('import x from "../../data/scenarios/x.json";\nexport const D = x;\n', encoding="utf-8")
     if i18n_text:
         (tmp_path / "src/i18n").mkdir()
         (tmp_path / "src/i18n/en.ts").write_text(i18n_text, encoding="utf-8")
@@ -114,7 +114,7 @@ def test_ids_in_the_dictionaries_are_included_and_every_id_is_listed_once_in_id_
 
 def test_the_ids_are_those_of_the_files_data_ts_imports_not_of_every_scenario_file(tmp_path):
     root = make_root(tmp_path, ("A001",))
-    (root / "scenarios/not_shipped.json").write_text(json.dumps({"settings": {"a": {"value": 1, "unit": "u", "ref": "A003"}}}), encoding="utf-8")
+    (root / "data/scenarios/not_shipped.json").write_text(json.dumps({"settings": {"a": {"value": 1, "unit": "u", "ref": "A003"}}}), encoding="utf-8")
     assert "A003" not in view_of(root)["assumptions"]
 
 
@@ -128,7 +128,7 @@ def test_the_bundle_field_of_a_shipped_profile_file_is_named_like_a_ref_and_its_
 def test_a_bundle_id_in_no_ledger_fails_and_names_the_file(tmp_path):
     with pytest.raises(SystemExit) as e:
         view_of(make_root(tmp_path, ("A001",), bundle="A998"))
-    assert "A998" in str(e.value) and "scenarios/x.json" in str(e.value)
+    assert "A998" in str(e.value) and "data/scenarios/x.json" in str(e.value)
 
 
 def test_a_bundle_grade_follows_the_ledger_when_the_ledger_changes(tmp_path):
@@ -140,7 +140,7 @@ def test_a_bundle_grade_follows_the_ledger_when_the_ledger_changes(tmp_path):
 def test_an_id_in_no_ledger_fails_and_names_the_id_and_the_file(tmp_path):
     with pytest.raises(SystemExit) as e:
         view_of(make_root(tmp_path, ("A001", "A999")))
-    assert "A999" in str(e.value) and "scenarios/x.json" in str(e.value)
+    assert "A999" in str(e.value) and "data/scenarios/x.json" in str(e.value)
 
 
 def test_an_unknown_id_in_a_dictionary_fails_and_names_the_dictionary(tmp_path):
@@ -218,18 +218,18 @@ def test_no_second_list_of_the_bundle_ids_ships_in_src_worker():
 
 
 # ---------- the public build and the Break-out screen (lab_ui.md sections 6 and 20; ADR-0013) ----------
-# The screen shows the ids of its own files: the `breakout` block (and the horizon setting) of each scenarios/sc12_*.json, every ref of the event-type profiles, and the ids of its dictionaries.
+# The screen shows the ids of its own files: the `breakout` block (and the horizon setting) of each data/scenarios/sc12_*.json, every ref of the event-type profiles, and the ids of its dictionaries.
 # While any of them follows to a source below main-reread, the public build does not offer the screen. Throwaway ledgers; the real ledgers are never edited.
 def make_breakout_root(tmp_path, block_refs=("A001",), other_refs=(), profile_refs=(), i18n_text="", ledger_sources=SOURCES):
     root = make_root(tmp_path, ("A001",), i18n_text="")
     (root / "docs/research/sources.yaml").write_text(ledger_sources, encoding="utf-8")
     param = lambda ref: {"value": 1, "unit": "u", "ref": ref}  # noqa: E731
     sc12 = {"settings": {f"other{i}": param(r) for i, r in enumerate(other_refs)} | {"horizon_days": param("A001")}, "breakout": {"origin": {"contaminated_at": param(block_refs[0])}, "inputs": {f"i{i}": param(r) for i, r in enumerate(block_refs)}}}
-    (root / "scenarios/sc12_x.json").write_text(json.dumps(sc12), encoding="utf-8")
-    (root / "scenarios/profiles/breakout").mkdir(parents=True)
-    (root / "scenarios/profiles/breakout/bact.json").write_text(json.dumps({"bundle": profile_refs[0] if profile_refs else "A001", "params": {f"p{i}": param(r) for i, r in enumerate(profile_refs)}}), encoding="utf-8")
+    (root / "data/scenarios/sc12_x.json").write_text(json.dumps(sc12), encoding="utf-8")
+    (root / "data/scenarios/profiles/breakout").mkdir(parents=True)
+    (root / "data/scenarios/profiles/breakout/bact.json").write_text(json.dumps({"bundle": profile_refs[0] if profile_refs else "A001", "params": {f"p{i}": param(r) for i, r in enumerate(profile_refs)}}), encoding="utf-8")
     data_ts = root / "src/worker/data.ts"
-    data_ts.write_text(data_ts.read_text(encoding="utf-8") + 'import s from "../../scenarios/sc12_x.json";\nimport p from "../../scenarios/profiles/breakout/bact.json";\n', encoding="utf-8")
+    data_ts.write_text(data_ts.read_text(encoding="utf-8") + 'import s from "../../data/scenarios/sc12_x.json";\nimport p from "../../data/scenarios/profiles/breakout/bact.json";\n', encoding="utf-8")
     if i18n_text:
         (root / "src/i18n").mkdir(exist_ok=True)
         (root / "src/i18n/en_breakout.ts").write_text(i18n_text, encoding="utf-8")
@@ -295,7 +295,7 @@ def test_a_copy_of_the_real_ledgers_with_those_sources_re_read_makes_the_real_sc
 
     import yaml
 
-    for d in ("docs/research", "scenarios", "src/worker", "src/i18n"):
+    for d in ("docs/research", "data/scenarios", "src/worker", "src/i18n"):
         shutil.copytree(REPO / d, tmp_path / d)
     sources = yaml.safe_load((tmp_path / "docs/research/sources.yaml").read_text(encoding="utf-8"))
     text = (tmp_path / "docs/research/sources.yaml").read_text(encoding="utf-8")
@@ -348,7 +348,7 @@ def public_of(root):
 
 
 def test_the_public_view_lacks_an_id_that_only_the_break_out_files_name_and_the_sources_behind_it(tmp_path):
-    # A001 is named by scenarios/x.json too; A002 (S001 and S002) only by the block of the SC12 scenario; A003 only by its process settings
+    # A001 is named by data/scenarios/x.json too; A002 (S001 and S002) only by the block of the SC12 scenario; A003 only by its process settings
     root = make_breakout_root(tmp_path, block_refs=("A001", "A002"), other_refs=("A003",))
     public = public_of(root)
     assert list(public["assumptions"]) == ["A001"] and public["sources"] == {"S001": {"verification": "main-reread"}}

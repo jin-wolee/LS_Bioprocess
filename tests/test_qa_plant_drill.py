@@ -1,6 +1,6 @@
-"""Pure helpers of scripts/qa_plant_drill_helpers.py (the check `drilldown` of the headless QA of the plant, docs/design/plant_ui.md section 10, P5c).
+"""Pure helpers of scripts/qa/qa_plant_drill_helpers.py (the check `drilldown` of the headless QA of the plant, docs/design/plant_ui.md section 10, P5c).
 
-Expected values are hand arithmetic on a plan and on messages typed by hand, never taken from the code under test. The browser check itself runs through `uv run python scripts/qa_plant.py`.
+Expected values are hand arithmetic on a plan and on messages typed by hand, never taken from the code under test. The browser check itself runs through `uv run python scripts/qa/qa_plant.py`.
 """
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import sys
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_plant_drill_helpers as qd  # noqa: E402
 
 

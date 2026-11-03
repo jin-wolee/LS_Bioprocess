@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture.schema.json",
+  "title": "Architecture",
+  "description": "A data architecture: the ten independent feature flags of docs/design/simulation_spec.md section 5 (ADR-0005; the ninth and tenth, ADR-0017 and ADR-0020) and the labelling method. Presets A, B and C are data under data/scenarios/architectures/. There is no eleventh flag: an unknown key under flags is rejected, and a new flag needs its own Proposed ADR.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "flags", "labelling"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "id": { "type": "string", "minLength": 1 },
+    "flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail", "material_lot_links", "equipment_links"],
+      "properties": {
+        "system_issued_id": { "type": "boolean", "description": "On: the key is issued by the system at label creation. Off: typed or handwritten." },
+        "two_clocks": { "type": "boolean", "description": "On: sampled_at and measured_at are stored separately. Off: one time is stored, the measured time." },
+        "available_at": { "type": "boolean", "description": "On: each row carries when it became knowable. Off: queries see rows as of now." },
+        "instrument_state_snapshot": { "type": "boolean", "description": "On: the run links instrument, calibration and reagent lot. Off: a free-text analyzer name at most." },
+        "append_only_versions": { "type": "boolean", "description": "On: a correction, rerun or reprocess creates a version. Off: overwrite in place." },
+        "write_time_keys": { "type": "boolean", "description": "On: sample_id, unit_id and batch_id are fixed at write time and never re-keyed. Off: unit and batch are attached later by a time join." },
+        "ingest_idempotency": { "type": "boolean", "description": "On: source event id and key, duplicates and replays are no-ops. Off: duplicates double count." },
+        "audit_trail": { "type": "boolean", "description": "On: who, when and what changed, with operator id. Off: no history." },
+        "material_lot_links": { "type": "boolean", "description": "On: an inoculation or a medium or feed addition stores the lot id as a key, and the recorder writes the consumed_in and seeded_from edges (ADR-0017). Off: no edge, at most a free-text lot name. Read only where lots exist (the break-out extension)." },
+        "equipment_links": { "type": "boolean", "description": "On: an equipment_use event stores the equipment id as a key, and the recorder writes the used_in edge (ADR-0020). Off: no edge, at most a free-text equipment name. Read only where equipment items exist (the break-out extension)." }
+      }
+    },
+    "labelling": { "type": "string", "enum": ["handwritten", "preprinted_barcode", "issued_at_draw"], "description": "The L2 labelling method (spec section 2.2); set independently of the flags." },
+    "capture_path": { "type": "string", "enum": ["manual_transcription", "adapter_ingest"], "description": "How a result an instrument has produced becomes a record (spec section 5, 'Capture path'; ADR-0014): typed by hand from the screen or printout, or parsed from the raw device file. A setting, not a flag. The preset default (A manual_transcription, B and C adapter_ingest) is inert while the scenario's raw_layer is off; a scenario may override it." },
+    "source_of_record": { "type": "string", "enum": ["lims", "mes_ebr"], "description": "The system of record for routine in-process results (spec section 5, A056). A setting, not a flag; nothing in S2a reads it." }
+  }
+}

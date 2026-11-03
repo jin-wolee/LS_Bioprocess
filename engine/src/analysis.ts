@@ -3,7 +3,7 @@ import type { Event } from "./generated/event.schema";
 import { SEP, createRng } from "./rng.ts";
 import type { StreamKey } from "./rng.ts";
 
-// L3 analysis core (spec section 2.3; contract in prompts/10 Step 1). Plain input objects in, truth log and runs out:
+// L3 analysis core (spec section 2.3; contract in docs/prompts/10 Step 1). Plain input objects in, truth log and runs out:
 // no profile, scenario or ledger value is read here. No unplanned breakdown (no catalogue scenario needs it).
 //
 // Modelling choices recorded in docs/progress.md: no backfill (strict head of line); a run is checked against the windows of its

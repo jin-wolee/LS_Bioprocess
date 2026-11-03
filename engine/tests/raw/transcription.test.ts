@@ -23,7 +23,7 @@ import { SMALL, lookup } from "../support/scenarios.ts";
 // Step 6: the transcription step of manual_transcription and the sample taken through both paths (spec section 5, "Capture path"; test-only values and ids). C's flags (all ten on).
 // Instants are seconds of the scenario, day 0 the synthetic Monday 2030-01-07.
 
-const C = parseArchitecture(readJson("scenarios", "architectures", "c_context.json"));
+const C = parseArchitecture(readJson("data", "scenarios", "architectures", "c_context.json"));
 const ALLINONE = lookup("analyzer", "allinone_atline") as Profile;
 
 // Three hand-built glucose results of an all-in-one analyzer: S1 4.2, S2 5.1, S3 6.0 g/L, drawn at 1100, 1200, 1300 by OP-1, measured 400 s after a 100 s wait

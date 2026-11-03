@@ -4,7 +4,7 @@ import { roundDuration } from "./clock.ts";
 import { createRng } from "./rng.ts";
 import type { StreamKey } from "./rng.ts";
 
-// M/M/c validation mode (prompts/10 Step 7): a plain config, not a scenario file. Poisson arrivals, exponential service, c identical
+// M/M/c validation mode (docs/prompts/10 Step 7): a plain config, not a scenario file. Poisson arrivals, exponential service, c identical
 // servers, FIFO; no transport, windows, shifts, noise or reruns. It drives the same L3 core as every other run. The numbers it is
 // called with are test-only inputs. Integer-second rounding of the sampled durations is a known tiny bias.
 

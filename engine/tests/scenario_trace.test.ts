@@ -8,7 +8,7 @@ import { toTraceResult, traceOfRun } from "../src/trace.ts";
 import { runOf } from "./support/scenarios.ts";
 import { makeAjv } from "./support/schemas.ts";
 
-// Trace export of a scenario run (prompts/11 Step 1): the L3 part exports a trace.json valid against the frozen schema,
+// Trace export of a scenario run (docs/prompts/11 Step 1): the L3 part exports a trace.json valid against the frozen schema,
 // and replaying it through the S1a core gives the same runs. Randomness drawn in the scenario (qc_failed, over_range) travels as forced_outcomes.
 
 describe("Trace export of a scenario run", () => {

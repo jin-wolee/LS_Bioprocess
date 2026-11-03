@@ -57,14 +57,14 @@ describe("scenarioInfos: the inputs the page shows with their ids", () => {
   const info = scenarioInfos(data);
 
   it("Given the bundled data Then the scenario default is listed with its description and profiles from the file", () => {
-    const file = readJson<{ description: string; profiles: Record<string, string> }>("scenarios", "default.json");
+    const file = readJson<{ description: string; profiles: Record<string, string> }>("data", "scenarios", "default.json");
     expect(info.map((s) => s.id)).toEqual(["default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down"]);
     expect(info[0]?.description).toBe(file.description);
     expect(info[0]?.profiles).toEqual(file.profiles);
   });
 
   it("Given the file Then every setting is listed in file order as name, value, unit and ledger id, and the first is reactor_count (A001)", () => {
-    const file = readJson<{ settings: Record<string, { value: number; unit: string; ref: string }> }>("scenarios", "default.json");
+    const file = readJson<{ settings: Record<string, { value: number; unit: string; ref: string }> }>("data", "scenarios", "default.json");
     const settings = info[0]?.settings ?? [];
     expect(settings.length).toBe(Object.keys(file.settings).length);
     expect(settings[0]).toEqual({ name: "reactor_count", value: 24, unit: "reactors", ref: "A001" });

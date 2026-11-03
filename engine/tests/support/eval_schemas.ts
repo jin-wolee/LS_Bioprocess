@@ -6,7 +6,7 @@ import type { Json } from "./schemas.ts";
 export const makeEvalAjv = (): Ajv2020 => {
   const ajv = new Ajv2020({ strict: true, allErrors: true });
   ajv.addKeyword("x-visibility");
-  for (const n of ["metrics", "answer_key", "experiment_report", "closed_loop_report", "breakout_report"]) ajv.addSchema(readJson<Json>("schemas", `${n}.schema.json`));
+  for (const n of ["metrics", "answer_key", "experiment_report", "closed_loop_report", "breakout_report"]) ajv.addSchema(readJson<Json>("data", "schemas", `${n}.schema.json`));
   return ajv;
 };
 

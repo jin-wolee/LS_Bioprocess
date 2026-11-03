@@ -3,9 +3,9 @@ import type { Profile } from "../generated/profile.schema";
 import { param } from "../profiles.ts";
 import type { Params } from "../profiles.ts";
 
-// Break-out event-type profile (spec 11.4, 11.8.2; data under scenarios/profiles/breakout/): what an event type looks like in the process data (the lag, the ramp, which signals move and
+// Break-out event-type profile (spec 11.4, 11.8.2; data under data/scenarios/profiles/breakout/): what an event type looks like in the process data (the lag, the ramp, which signals move and
 // by how much) and which confirming tests it has (turnaround and volume). It is an ordinary profile of kind `breakout`: loadProfile (profiles.ts) has checked the kind, the file against
-// schemas/profile.schema.json and that every number is {value, unit, ref}. This reader checks only what a schema cannot say: that the break-out fields are present, that the names they
+// data/schemas/profile.schema.json and that every number is {value, unit, ref}. This reader checks only what a schema cannot say: that the break-out fields are present, that the names they
 // use resolve (a param or a scenario input), that the alarm signal is one of the signals and moves, and that the units are the ones the engine expects. It reads by name and unit, never by profile id. A volume the ledger gives no number for is declared under `scenario_inputs` and comes from the scenario (spec 11.8.3), and so is a ramp with no default (`ramp_input`), the delays and multipliers of the host effects (rule S13) and the flag that says whether a test covers the organism (A146, A224).
 
 const DAY = 86400;

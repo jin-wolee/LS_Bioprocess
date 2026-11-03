@@ -1,7 +1,7 @@
 """The link from the infographic to the lab (docs/design/lab_ui.md section 13; the S3a ruling, Open item 6: a link-only change under site/infographic/).
 
 The Pages site holds the infographic at its root and the lab under lab/, so the link is the relative address `lab/` and works under any Pages path. The lab's way back (`../`) is tested in
-src/ui/site_link.test.ts. scripts/qa_site.py clicks both links on the assembled folder.
+src/ui/site_link.test.ts. scripts/qa/qa_site.py clicks both links on the assembled folder.
 """
 from __future__ import annotations
 

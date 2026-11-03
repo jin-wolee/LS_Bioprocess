@@ -1,10 +1,10 @@
 import type { Source } from "./types.ts";
 
-// The hidden raw quirk key (schemas/raw_quirk_key.schema.json, annotated hidden; spec section 2.4.1, rule 6) and the file the emitter returns beside it. Only the emitter, the
+// The hidden raw quirk key (data/schemas/raw_quirk_key.schema.json, annotated hidden; spec section 2.4.1, rule 6) and the file the emitter returns beside it. Only the emitter, the
 // experiment assembly (which writes the key file) and the evaluator (which reads it) may import this module (eslint.config.js, zone 5): the parser, the recorders, the injector and
 // the decision arms never see which quirks were realised or what a stamp was meant to say.
 
-/** One entry of the raw quirk key for a written row (schemas/raw_quirk_key.schema.json, files[].rows[]). */
+/** One entry of the raw quirk key for a written row (data/schemas/raw_quirk_key.schema.json, files[].rows[]). */
 export interface KeyRow {
   line: number;
   sample_id: string;

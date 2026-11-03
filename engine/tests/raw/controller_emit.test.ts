@@ -10,7 +10,7 @@ import type { AlarmTransition, PhaseTransition, TagRow } from "../../src/raw/con
 import { BANNER } from "../../src/raw/types.ts";
 import { ANCHOR, profileOf } from "../support/controller_fixtures.ts";
 
-// Step 7, the controller emitter (spec 2.4.1 and 2.4.3; prompts/20 Step 7). One generic function from plain data and a controller profile to file text, branching on no profile id.
+// Step 7, the controller emitter (spec 2.4.1 and 2.4.3; docs/prompts/20 Step 7). One generic function from plain data and a controller profile to file text, branching on no profile id.
 // The expected file texts and rows are typed by hand from the profile data and the design; row values, ids, users and instants are test-only. Scenario second 0 is
 // 2030-01-07 00:00:00 UTC (the synthetic Monday), so 08:00:00 is 28800 and one day is 86400.
 

@@ -16,7 +16,7 @@ import { rosterOf, seedInputFromRun } from "./from_run.ts";
 import { entryConfigFor, rawSetupFor } from "./raw_setup.ts";
 import { runSeed } from "./run_seed.ts";
 
-// The capture-path contrast (spec section 5, "Automatic linkage alone"; prompts/20 Step 6): one scenario with the raw layer on and one seed list, each preset run on each path
+// The capture-path contrast (spec section 5, "Automatic linkage alone"; docs/prompts/20 Step 6): one scenario with the raw layer on and one seed list, each preset run on each path
 // with the truth run, the flags and the labelling method unchanged, paired by seed (common random numbers: the same truth run and the same keyed draws). Per spec section 8
 // metric it reports the median and the spread across seeds of the paired difference (adapter_ingest minus manual_transcription) with the seed count and the denominators. The
 // ingest metrics of spec section 2.4.7 exist on one side only: manual_transcription reads "not applicable" and no difference is ever formed with it. Stochastic and never

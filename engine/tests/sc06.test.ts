@@ -4,7 +4,7 @@ import { CLOCK_CELLS } from "./support/cell_tables.ts";
 import { CONFIGS, classify, run } from "./support/cells.ts";
 
 // SC6 Wrong clock (spec 7): what if one clock is wrong? One analyzer, AN-1, runs 5 h (18000 s) ahead (A049, S029, S030); it measures all three samples of the
-// fixture. Structural relations only (prompts/20 Step 4): the offset sits in the recorded stamps whatever the architecture, no flag prevents it, and
+// fixture. Structural relations only (docs/prompts/20 Step 4): the offset sits in the recorded stamps whatever the architecture, no flag prevents it, and
 // what each architecture can see follows the forced-error cell table of the clock row (support/cell_tables.ts, typed by hand from the matrix and the
 // rule catalogue). The VR-004 tolerance is 600 s (test-only). Author decision of 2026-10-29: every architecture that stores an ingestion stamp (all but A) detects the offset by VR-004, B and C minus two_clocks included.
 

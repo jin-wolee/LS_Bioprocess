@@ -19,18 +19,18 @@ export interface BreakoutExperiment {
 }
 
 export const loadSc12 = (configDoc: unknown, only?: readonly string[]): BreakoutExperiment => {
-  const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+  const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
   const config = parseBreakoutConfig(configDoc, evaluation.min_seeds);
-  const preset = (name: string) => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+  const preset = (name: string) => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
   const ablated = ABLATIONS(preset(config.ablations_of)).map((x) => x.config);
   const chosen = config.cases.filter((c) => only === undefined || only.includes(c.case_id));
-  const staffs = new Set(chosen.map((c) => readJson<{ profiles: { staff: string } }>("scenarios", `${c.scenario}.json`).profiles.staff));
+  const staffs = new Set(chosen.map((c) => readJson<{ profiles: { staff: string } }>("data", "scenarios", `${c.scenario}.json`).profiles.staff));
   if (staffs.size !== 1) throw new Error(`the cases use ${staffs.size} staff profiles; the runner takes one`);
   return {
     config,
     head: { experiment_id: config.experiment_id, min_seeds: evaluation.min_seeds, ablations_of: config.ablations_of },
     input: {
-      cases: chosen.map((c) => breakoutCase(c, loadScenario(patchScenario(readJson("scenarios", `${c.scenario}.json`), c.set, c.case_id), lookup))),
+      cases: chosen.map((c) => breakoutCase(c, loadScenario(patchScenario(readJson("data", "scenarios", `${c.scenario}.json`), c.set, c.case_id), lookup))),
       seeds: config.seeds,
       staff: loadProfile(lookup("staff", [...staffs][0] as string), "staff").params,
       evaluation,

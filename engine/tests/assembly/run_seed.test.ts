@@ -15,8 +15,8 @@ import { REVIEW } from "../support/review_setup.ts";
 
 const run = runOf("default", { settings: SMALL });
 const staff = loadProfile(lookup("staff", "experienced"), "staff").params;
-const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
-const architectures = ["a_manual", "b_lims_lite", "c_context"].map((n) => parseArchitecture(readJson("scenarios", "architectures", `${n}.json`)));
+const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
+const architectures = ["a_manual", "b_lims_lite", "c_context"].map((n) => parseArchitecture(readJson("data", "scenarios", "architectures", `${n}.json`)));
 const requests = run.events.filter((e) => e.type === "sample_drawn" || e.type === "draw_skipped_volume_budget").length;
 const input = seedInputFromRun(run, { scenario_id: "default-small", staff, evaluation, architectures, days: 8, review: REVIEW });
 
@@ -45,7 +45,7 @@ describe("One truth run, three architectures", () => {
     }
   });
 
-  it("Then every cell validates against schemas/metrics.schema.json and the key file against schemas/answer_key.schema.json", () => {
+  it("Then every cell validates against data/schemas/metrics.schema.json and the key file against data/schemas/answer_key.schema.json", () => {
     const ajv = makeEvalAjv();
     for (const c of out.cells) expect(validates(ajv, "metrics", c), JSON.stringify(ajv.errors)).toBe(true);
     expect(validates(ajv, "answer_key", JSON.parse(out.key_text)), JSON.stringify(ajv.errors)).toBe(true);

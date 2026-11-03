@@ -8,7 +8,7 @@ Most of the repository is built with AI assistance, and the project says so. The
 
 ## Options
 
-1. **The author writes three artefacts; AI writes specifications, fixtures, acceptance tests and reviews.** The artefacts are the canonical DDL (`sql/schema.sql`), three SQL queries (`sql/queries/*.sql`: an as-of window join of results to process context, a recursive lineage query, and a bridging correction) and the SimPy core loop (`reference/sim_core.py`). These paths are listed in `.claude/user_owned.txt`; an edit guard blocks AI writes there, and reviews go to `docs/user_track/reviews/`.
+1. **The author writes three artefacts; AI writes specifications, fixtures, acceptance tests and reviews.** The artefacts are the canonical DDL (`reference/sql/schema.sql`), three SQL queries (`reference/sql/queries/*.sql`: an as-of window join of results to process context, a recursive lineage query, and a bridging correction) and the SimPy core loop (`reference/simpy/sim_core.py`). These paths are listed in `.claude/user_owned.txt`; an edit guard blocks AI writes there, and reviews go to `docs/user_track/reviews/`.
    - Pro: the author owns and can explain the core; the boundary is real and checkable; AI reviewers can only point out problems and ask questions.
    - Con: schedule risk and a learning cost (recursive CTEs and as-of joins take practice); the AI path has to proceed without waiting.
 2. **AI writes everything; the author reviews.**
@@ -38,7 +38,7 @@ Proposed: option 1, with these rules.
 
 ## Evidence
 
-- `prompts/00_master_build.md` (sections 3, 11 and 12), `.claude/user_owned.txt`, `CLAUDE.md` (invariant 5).
+- `docs/prompts/00_master_build.md` (sections 3, 11 and 12), `.claude/user_owned.txt`, `CLAUDE.md` (invariant 5).
 - No domain number is involved.
 
 ## Author statement (verbatim, if any)

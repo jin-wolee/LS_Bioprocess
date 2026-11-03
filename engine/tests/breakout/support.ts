@@ -10,7 +10,7 @@ import type { Json } from "../support/schemas.ts";
 // Test side of the break-out truth batch (spec 11.8.4, 11.8.5 row 2). The scenarios here are the layouts of FX12a and FX12e written as data: three reactors in one bay, all inoculated
 // at 0 h (the fixtures count hours from the inoculation), the default scenario otherwise. Every value typed below is a test design choice or comes from the fixture text; none is read from the engine.
 
-export const breakoutProfile = (id: string): unknown => readJson("scenarios", "profiles", "breakout", `${id}.json`);
+export const breakoutProfile = (id: string): unknown => readJson("data", "scenarios", "profiles", "breakout", `${id}.json`);
 
 export const q = (value: number, unit: string, ref: string): Json => ({ value, unit, ref });
 /** An instant or a delay in hours. The ref is A177 for the topology, A176 for the response delays and A157 for an event instant the scenario chooses. */

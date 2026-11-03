@@ -1,4 +1,4 @@
-// Time and event order (prompts/10 Step 1). Time is an integer number of seconds from scenario t0; the engine has no timezones.
+// Time and event order (docs/prompts/10 Step 1). Time is an integer number of seconds from scenario t0; the engine has no timezones.
 
 /** Event priority at equal t, ascending. `dispatch` is internal: its effects are the logged visit_started and run_started. */
 export const PRIORITY = { capacityRestored: 0, visitFinished: 1, requestQueued: 2, capacityRemoved: 3, dispatch: 4 } as const;

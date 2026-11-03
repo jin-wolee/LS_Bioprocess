@@ -4,7 +4,7 @@ import { logKindOf } from "./controller_types.ts";
 import type { AlarmTransition, ControllerFile, ControllerProfile, PhaseTransition, TagRow } from "./controller_types.ts";
 import { BANNER } from "./types.ts";
 
-// The generic controller emitter (spec 2.4.1; prompts/20 Step 7): one function from tag rows, alarm and phase transitions and a controller profile to file text. It branches on no
+// The generic controller emitter (spec 2.4.1; docs/prompts/20 Step 7): one function from tag rows, alarm and phase transitions and a controller profile to file text. It branches on no
 // profile id: the logs, their columns and the role of each column are profile data. Integer seconds become wall-clock text only here. The files are cut by the scenario's
 // controller_log_cut (A217): one file per record type per day, which reaches the host at the end of its day, or one file per row, which reaches the host at its own stamp.
 // A log with no row has no file (an empty log carries no information), so the second family's user-event and error exports are never written: nothing models a user action or a

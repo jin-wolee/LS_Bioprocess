@@ -36,9 +36,9 @@ DATA_TS = Path("src/worker/data.ts")
 I18N_DIR = Path("src/i18n")
 JSON_IMPORT = re.compile(r'from\s+"([^"]+\.json)"')
 # the files of the Break-out screen: its scenarios (the `breakout` block and the horizon setting are shown; the process settings are not), its event-type profiles and its dictionaries
-BREAKOUT_SCENARIO = re.compile(r"(^|/)scenarios/sc12_[^/]+\.json$")
-BREAKOUT_PROFILE = re.compile(r"(^|/)scenarios/profiles/breakout/[^/]+\.json$")
-BREAKOUT_EXPERIMENT = re.compile(r"(^|/)scenarios/experiments/sc12\.json$")
+BREAKOUT_SCENARIO = re.compile(r"(^|/)data/scenarios/sc12_[^/]+\.json$")
+BREAKOUT_PROFILE = re.compile(r"(^|/)data/scenarios/profiles/breakout/[^/]+\.json$")
+BREAKOUT_EXPERIMENT = re.compile(r"(^|/)data/scenarios/experiments/sc12\.json$")
 BREAKOUT_DICTIONARY = "*breakout*.ts"
 
 

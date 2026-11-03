@@ -6,7 +6,7 @@
  */
 
 /**
- * A data architecture: the ten independent feature flags of docs/design/simulation_spec.md section 5 (ADR-0005; the ninth and tenth, ADR-0017 and ADR-0020) and the labelling method. Presets A, B and C are data under scenarios/architectures/. There is no eleventh flag: an unknown key under flags is rejected, and a new flag needs its own Proposed ADR.
+ * A data architecture: the ten independent feature flags of docs/design/simulation_spec.md section 5 (ADR-0005; the ninth and tenth, ADR-0017 and ADR-0020) and the labelling method. Presets A, B and C are data under data/scenarios/architectures/. There is no eleventh flag: an unknown key under flags is rejected, and a new flag needs its own Proposed ADR.
  */
 export interface Architecture {
   schema_version: "1";

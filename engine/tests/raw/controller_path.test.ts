@@ -14,13 +14,13 @@ import { rawConfigOf, rawInputOf } from "../support/raw_run.ts";
 import { SMALL, runOf } from "../support/scenarios.ts";
 import { inputOf } from "../support/sc_run.ts";
 
-// Step 7, the controller side on the capture path (spec section 5, "Capture path", rule 3; prompts/20 Step 7). Controller logs are machine files: on adapter_ingest they are parsed
+// Step 7, the controller side on the capture path (spec section 5, "Capture path", rule 3; docs/prompts/20 Step 7). Controller logs are machine files: on adapter_ingest they are parsed
 // (RQ9 to RQ11) and the dataset has historian values, alarm events and batch phase records; on manual_transcription a person can copy a result but not a tag log, so the historian
 // values reach the recorder as observable events, as with the layer off, and no alarm or phase record exists. The scenario is the small one with two bays of two units, one bay on
 // each controller family; the expected rows are typed by hand from the design: the inoculations (08:00 and a step of 15 min: 28800, 29700, 30600 and 31500 s, A188), the shift at 10:00
 // on culture day 4 (381600 s, A195), and the set points (pH 7, DO 30 %, temperature 37 C then 33 C, A198). The alarm rows of a hand-given sequence are test-only values.
 
-const preset = (name: string) => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+const preset = (name: string) => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
 const [A, B, C] = [preset("a_manual"), preset("b_lims_lite"), preset("c_context")];
 const TWO_BAYS = { seed: 1, settings: { reactor_count: 4, bay_size: 2, cohort_size: 4, horizon_days: 8, production_days: 6 } };
 const T0 = { U01: 28800, U02: 29700, U03: 30600, U04: 31500 } as const;

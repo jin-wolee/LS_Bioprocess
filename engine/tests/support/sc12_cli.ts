@@ -1,5 +1,5 @@
 // Runner of SC12, the break-out experiment (spec 11.5 and 11.8): node --no-maglev-escape-analysis engine/tests/support/sc12_cli.ts <report.json>
-// Runs the seed list of scenarios/experiments/sc12.json through every case and the thirteen architectures, builds the report, validates it against schemas/breakout_report.schema.json and writes it
+// Runs the seed list of data/scenarios/experiments/sc12.json through every case and the thirteen architectures, builds the report, validates it against data/schemas/breakout_report.schema.json and writes it
 // to the path given on the command line. Prints the timing, the inputs of each case and a compact table. The report is not committed (it is not under version control), and nothing here ranks or
 // judges: SC12 is reported and never gated. Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
 import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
@@ -19,7 +19,7 @@ if (!out) {
   process.exit(2);
 }
 
-const { config, input, head } = loadSc12(readJson("scenarios", "experiments", "sc12.json"));
+const { config, input, head } = loadSc12(readJson("data", "scenarios", "experiments", "sc12.json"));
 const started = performance.now();
 const result = await runBreakout(input);
 const ran = performance.now();

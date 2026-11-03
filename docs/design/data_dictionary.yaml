@@ -187,7 +187,7 @@ entities:
     columns:
       - {name: adapter_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key with adapter_version: dialect and instrument"}
       - {name: adapter_version, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "immutable once a file was parsed with it (K21)"}
-      - {name: dialect_id, type: string, nullable: false, unit: null, values: [allinone_csv, counter_csv, cds_table, ctrl_neutral, ctrl_bench], time: neither, visibility: observable, default: null, description: "the dialect (scenarios/profiles/dialect/) or the controller family (scenarios/profiles/controller/); the engine never branches on it"}
+      - {name: dialect_id, type: string, nullable: false, unit: null, values: [allinone_csv, counter_csv, cds_table, ctrl_neutral, ctrl_bench], time: neither, visibility: observable, default: null, description: "the dialect (data/scenarios/profiles/dialect/) or the controller family (data/scenarios/profiles/controller/); the engine never branches on it"}
       - {name: device_class, type: string, nullable: false, unit: null, values: [analyzer, controller], time: neither, visibility: observable, default: null, description: "an analyzer dialect, or a controller family (S2e2: one adapter per controller, one controller per bay)"}
       - {name: instrument_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the instrument whose files the adapter reads (the source system of everything loaded)"}
       - {name: date_order, type: string, nullable: false, unit: null, values: [year_first, day_first, month_first, unknown], time: neither, visibility: observable, default: null, description: "what the parser believes about the order of the stamp (RQ2); unknown lets one row of a file pin it"}
@@ -422,7 +422,7 @@ entities:
       - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only: when this version became knowable"}
       - {name: context_as_of, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the stated time of the process context: what was known at this second; the same on every row of an export. Chosen by the caller of the export; the default is the end of the horizon, and the package metadata (`context_as_of_basis`) says which"}
 
-  # ---- hidden truth: never given to a recorder, never in a recorded or exported output (spec section 3, rule 1). The names are the fields annotated "x-visibility": "hidden" in schemas/event.schema.json (a test compares).
+  # ---- hidden truth: never given to a recorder, never in a recorded or exported output (spec section 3, rule 1). The names are the fields annotated "x-visibility": "hidden" in data/schemas/event.schema.json (a test compares).
   truth_result_measured:
     emitted: false
     description: "hidden fields of the truth event result_measured"
@@ -455,10 +455,10 @@ entities:
 
 # ---- documents of the evaluator and the experiments (their own schemas; not tables) ------------------------------------------------------------------------------------------------
 documents:
-  answer_key: {schema: schemas/answer_key.schema.json, visibility: hidden, description: "which errors the injector materialised where; written by the assembly, read only by the evaluator (spec section 3, rule 2)"}
-  metrics: {schema: schemas/metrics.schema.json, visibility: observable, description: "the metrics of one (scenario, seed, architecture) cell, computed by the evaluator from recorded datasets, truth and the key; a result, not a record: no recorder reads it"}
-  experiment_report: {schema: schemas/experiment_report.schema.json, visibility: observable, description: "the stochastic report of experiment 1"}
-  closed_loop_report: {schema: schemas/closed_loop_report.schema.json, visibility: observable, description: "the report of experiment 2"}
+  answer_key: {schema: data/schemas/answer_key.schema.json, visibility: hidden, description: "which errors the injector materialised where; written by the assembly, read only by the evaluator (spec section 3, rule 2)"}
+  metrics: {schema: data/schemas/metrics.schema.json, visibility: observable, description: "the metrics of one (scenario, seed, architecture) cell, computed by the evaluator from recorded datasets, truth and the key; a result, not a record: no recorder reads it"}
+  experiment_report: {schema: data/schemas/experiment_report.schema.json, visibility: observable, description: "the stochastic report of experiment 1"}
+  closed_loop_report: {schema: data/schemas/closed_loop_report.schema.json, visibility: observable, description: "the report of experiment 2"}
 
 # ---- state machines (data_model section 6) -------------------------------------------------------------------------------------------------------------------------------------------
 # `by` lists the roles allowed to cause the transition. `basis`: diagram = the role is the label in the state diagram of section 6; default = the diagram draws the step without a person (a validation

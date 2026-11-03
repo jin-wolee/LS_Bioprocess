@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // P4 (docs/design/plant_ui.md section 4.3): the table from event type to what the reader sees is total. This reads the table from the design note and the event types from
-// schemas/event.schema.json, in the pattern of tests/test_explainer_flags.py: a type of the schema with no row, a row with an empty floor cell, and a "Not drawn" with no reason all fail, and so
+// data/schemas/event.schema.json, in the pattern of tests/test_explainer_flags.py: a type of the schema with no row, a row with an empty floor cell, and a "Not drawn" with no reason all fail, and so
 // does a process_event kind (the schema's enum) that no row names. The note is the single source of truth for what is drawn; scene_at.ts is tested against it row by row in scene_at.test.ts.
 
 const NOTE = readFileSync(new URL("../../docs/design/plant_ui.md", import.meta.url), "utf8");
-const SCHEMA = JSON.parse(readFileSync(new URL("../../schemas/event.schema.json", import.meta.url), "utf8")) as {
+const SCHEMA = JSON.parse(readFileSync(new URL("../../data/schemas/event.schema.json", import.meta.url), "utf8")) as {
   $defs: Record<string, { properties?: { type?: { const?: string }; kind?: { enum: string[] } } }>;
 };
 
@@ -48,7 +48,7 @@ describe("The table from event type to screen is total (section 4.3)", () => {
     expect(new Set(typesOfSchema()).size).toBe(28);
   });
 
-  it("Given every type of schemas/event.schema.json Then the first column of the table names it", () => {
+  it("Given every type of data/schemas/event.schema.json Then the first column of the table names it", () => {
     const named_ = new Set(rows.flatMap(named));
     const missing = typesOfSchema().filter((t) => !named_.has(t));
     expect(missing, `types with no row in section 4.3: ${missing.join(", ")}`).toEqual([]);

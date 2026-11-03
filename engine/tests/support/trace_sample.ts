@@ -8,7 +8,7 @@ import type { ScenarioRun } from "../../src/run.ts";
 import { ENGINE_VERSION } from "../../src/trace.ts";
 import { keyErrors } from "./sc_run.ts";
 
-// The single-sample failure trace (prompts/20 Step 10; docs/design/single_sample_trace.md). One sample of SC3, picked by a rule that reads the truth log only, and the
+// The single-sample failure trace (docs/prompts/20 Step 10; docs/design/single_sample_trace.md). One sample of SC3, picked by a rule that reads the truth log only, and the
 // real rows of A, B and C for it. Test-side: it reads truth (to pick, and to give the verdicts), as the evaluator does. The pick rule and the three questions moved to the lab folder in S3e
 // (engine/src/experiments/assembly/lab/pick.ts and questions.ts, where the lineage view uses them); they are re-exported here, so the tests and the fixture generator are unchanged.
 

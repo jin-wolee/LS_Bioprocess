@@ -1,4 +1,4 @@
--- Hand fixture of Card B1 (prompts/60_user_track.md): the as-of join of results to the historian value effective at sampled_at and known at the decision time.
+-- Hand fixture of Card B1 (docs/prompts/60_user_track.md): the as-of join of results to the historian value effective at sampled_at and known at the decision time.
 -- Explicit column lists only; synthetic times (2030-01-07 is a Monday). Expected answers are in expected_asof_join.csv, computed by hand below.
 --
 -- Unit U03 (unit_tag U03) has one historian tag, U03.pH, with four rows (ts, value, ingested_at):

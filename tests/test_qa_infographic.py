@@ -1,4 +1,4 @@
-"""Pure helpers of scripts/qa_checks.py (contrast maths, alpha compositing, size, i18n diff).
+"""Pure helpers of scripts/qa/qa_checks.py (contrast maths, alpha compositing, size, i18n diff).
 
 Expected values are hand arithmetic from the WCAG 2.x definitions, never taken from the code under test.
 """
@@ -11,7 +11,7 @@ import pytest
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_checks as qc  # noqa: E402
 import qa_infographic as qa  # noqa: E402
 

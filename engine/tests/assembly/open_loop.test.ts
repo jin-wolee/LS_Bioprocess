@@ -44,7 +44,7 @@ describe("Open loop: one truth run per seed, thirteen architectures", () => {
     }
   });
 
-  it("Then every cell validates against schemas/metrics.schema.json and every key against schemas/answer_key.schema.json", () => {
+  it("Then every cell validates against data/schemas/metrics.schema.json and every key against data/schemas/answer_key.schema.json", () => {
     const ajv = makeEvalAjv();
     for (const o of out.outcomes) {
       for (const c of o.cells) expect(validates(ajv, "metrics", c), JSON.stringify(ajv.errors)).toBe(true);

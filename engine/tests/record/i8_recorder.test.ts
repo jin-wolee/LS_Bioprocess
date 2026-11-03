@@ -14,10 +14,10 @@ import type { Json } from "../support/schemas.ts";
 import { arch } from "../support/record_fixture.ts";
 
 // I8 against the real recorder (S2a): perturbing hidden fields, the sensor truth included, leaves the recorder output byte-identical.
-// The hidden fields are read from the `x-visibility: hidden` annotations of schemas/event.schema.json, not from observe.ts.
+// The hidden fields are read from the `x-visibility: hidden` annotations of data/schemas/event.schema.json, not from observe.ts.
 
 const hiddenTable = (): Map<string, string[]> => {
-  const defs = (readJson<Json>("schemas", "event.schema.json").$defs ?? {}) as Record<string, Json>;
+  const defs = (readJson<Json>("data", "schemas", "event.schema.json").$defs ?? {}) as Record<string, Json>;
   const table = new Map<string, string[]>();
   for (const def of Object.values(defs)) {
     const props = def.properties as Record<string, Json> | undefined;

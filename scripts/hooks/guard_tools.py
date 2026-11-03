@@ -4,7 +4,7 @@
 1. GitHub MCP write tools (create/push/fork/merge/update/delete...) can create repos and push
    without any git command, so they are blocked. Read-only tools (get_/list_/search_/*_read) pass.
 2. The headed Playwright MCP (`mcp__playwright__*`) opens a visible browser; this project
-   uses headless checks only (playwright-headless MCP or scripts/qa_*.py).
+   uses headless checks only (playwright-headless MCP or scripts/qa/qa_*.py).
 3. Files listed in .claude/user_owned.txt belong to the author's own implementation track;
    Claude may review them but must not write them.
 

@@ -14,7 +14,7 @@ import type { AlarmTransition, ControllerFile, ControllerProfile, PhaseTransitio
 import type { CapturePath } from "../../raw/types.ts";
 import type { HistorianRow, ValidationFindingRow } from "../../record/types.ts";
 
-// The controller side of the capture step (spec section 5, "Capture path", rule 3; prompts/20 Step 7). Controller logs are machine files, so a person cannot copy them: on
+// The controller side of the capture step (spec section 5, "Capture path", rule 3; docs/prompts/20 Step 7). Controller logs are machine files, so a person cannot copy them: on
 // manual_transcription nothing is emitted and nothing is parsed, and the historian values reach the recorder as observable events, as with the layer off. On adapter_ingest each
 // bay's controller writes the logs of its profile from observable data only (the process values, the set points of the scenario and the shift, the process events), the adapter
 // parses them, and the dataset gets historian values, alarm events and batch phase records. The assembly may read the layout of the bays; the emitter and the parser receive plain

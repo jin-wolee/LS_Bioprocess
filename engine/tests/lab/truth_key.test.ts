@@ -30,7 +30,7 @@ describe("F7 rework: a capture path does not make another truth", () => {
 });
 
 // The first round of F7, kept: a setting written out at its default value (24 reactors, A001), the scenario's own lists (`bench_manual` for 2 bays and `allinone_atline` for 2 analyzers,
-// scenarios/default.json) and `-0` for the default initial lactate of 0 (A209) are the same run and locked; 6 reactors, another analyzer list and seed 2 are other runs and are not; the
+// data/scenarios/default.json) and `-0` for the default initial lactate of 0 (A209) are the same run and locked; 6 reactors, another analyzer list and seed 2 are other runs and are not; the
 // architectures and the operator actions are not part of a run's truth.
 describe("F7: the lock holds for every expression of the same run", () => {
   it("Given a sample challenge open on the default run, seed 1 Then the expressions of that run are locked and other runs are not", () => {
@@ -72,7 +72,7 @@ const perturbed = (base: RunSpec, name: string, own: number): RunSpec | null => 
 describe("F7 rework: the lock is exactly the truth, setting by setting", () => {
   // The small default plant (6 reactors, 8 days), seed 1. Each setting of the bundled default scenario is moved to the first value of the tries that the run accepts; the request is locked
   // exactly when its truth log hash equals the challenge's, so no setting can be in the key without being in the truth, or in the truth without being in the key. Two settings take no other
-  // value alone (typed by hand from scenarios/default.json and the engine's checks): the sensor cadence must be a whole multiple of the 60 s step and divide one minute, so 60 s only
+  // value alone (typed by hand from data/scenarios/default.json and the engine's checks): the sensor cadence must be a whole multiple of the 60 s step and divide one minute, so 60 s only
   // (sensors.ts, process.ts), and the run plans one regular sample per reactor and day (sampling.ts, S1b).
   it("Given a challenge on the small default run When each setting is moved alone Then the request is locked if and only if the truth log is the challenge's", async () => {
     const base: RunSpec = { ...ALL, settings: SMALL };

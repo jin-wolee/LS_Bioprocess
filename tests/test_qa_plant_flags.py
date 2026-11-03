@@ -1,6 +1,6 @@
 """Pure helpers of the P6b checks of the headless QA of the plant (docs/design/plant_ui.md section 10): the matrix of the flags board against the plan, the flag form against the cell it was opened
 from, the `run` request of Results against the actions Setup carried, the actions printed among the inputs of Results, and the sample a draw is moved for. Expected values are hand arithmetic on plans
-and requests typed here, never taken from the code under test. The browser checks run through `uv run python scripts/qa_plant.py`.
+and requests typed here, never taken from the code under test. The browser checks run through `uv run python scripts/qa/qa_plant.py`.
 """
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import sys
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_plant_act_helpers as qa  # noqa: E402
 import qa_plant_drill_helpers as qd  # noqa: E402
 

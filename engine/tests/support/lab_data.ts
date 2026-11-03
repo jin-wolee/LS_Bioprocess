@@ -14,12 +14,12 @@ export const LAB_PROFILES: readonly (readonly [kind: "bioreactor" | "analyzer" |
 export const LAB_DIALECTS = ["allinone_csv", "counter_csv", "cds_table"] as const;
 
 export const labData = (): LabData => ({
-  scenarios: Object.fromEntries(LAB_SCENARIOS.map((id) => [id, readJson("scenarios", `${id}.json`)])),
+  scenarios: Object.fromEntries(LAB_SCENARIOS.map((id) => [id, readJson("data", "scenarios", `${id}.json`)])),
   lookup,
   profiles: LAB_PROFILES.map(([kind, id]) => lookup(kind, id)),
-  dialects: Object.fromEntries(LAB_DIALECTS.map((id) => [id, readJson("scenarios", "profiles", "dialect", `${id}.json`)])),
-  architectures: ["a_manual", "b_lims_lite", "c_context"].map((name) => readJson("scenarios", "architectures", `${name}.json`)),
-  evaluation: readJson("scenarios", "evaluation", "default.json"),
-  experiment: readJson("scenarios", "experiments", "experiment1.json"),
+  dialects: Object.fromEntries(LAB_DIALECTS.map((id) => [id, readJson("data", "scenarios", "profiles", "dialect", `${id}.json`)])),
+  architectures: ["a_manual", "b_lims_lite", "c_context"].map((name) => readJson("data", "scenarios", "architectures", `${name}.json`)),
+  evaluation: readJson("data", "scenarios", "evaluation", "default.json"),
+  experiment: readJson("data", "scenarios", "experiments", "experiment1.json"),
   rawLayer: readJson("src", "worker", "raw_layer.json"),
 });

@@ -1,6 +1,6 @@
-"""Pure helpers of scripts/qa_plant_truth_helpers.py (the checks `plant_truth` and `plant_panels` of the headless QA of the plant, docs/design/plant_ui.md section 10, P5b).
+"""Pure helpers of scripts/qa/qa_plant_truth_helpers.py (the checks `plant_truth` and `plant_panels` of the headless QA of the plant, docs/design/plant_ui.md section 10, P5b).
 
-Expected values are hand arithmetic on a plan typed by hand, never taken from the code under test. The browser checks themselves run through `uv run python scripts/qa_plant.py`.
+Expected values are hand arithmetic on a plan typed by hand, never taken from the code under test. The browser checks themselves run through `uv run python scripts/qa/qa_plant.py`.
 """
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import sys
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_plant_truth_helpers as qp  # noqa: E402
 
 # A plan typed by hand (the shape of the Worker's ScenePlan, the parts the helpers read): two halls over five samples (the fourth skipped, the fifth never drawn), two operators, two analyzers of one group.

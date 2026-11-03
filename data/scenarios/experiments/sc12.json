@@ -1,0 +1,26 @@
+{
+  "schema_version": "1",
+  "experiment_id": "sc12",
+  "description": "SC12 Contamination break-out and walk-back (spec 11.5 and 11.8): one truth run per case and seed, recorded under every architecture of the list and investigated from the first signal. The seed list is written here before any run (the experiment-config rules, docs/prompts/20 Step 4): 20 seeds (A103, the minimum in data/scenarios/evaluation/default.json), neutral integers, none date-shaped, chosen by hand and not a function of any result. Stochastic, reported with the seed count and the spread, never gated. A case is a scenario file, with a swept input of its break-out block (`set`) and an assumed lag of the walk-back (`assumed_lag`, a decision setting) where the case names one: the first six cases are the five scenarios (the mycoplasma one with the nucleic-acid target covering the organism and not covering it, A146 and A224), the rest are the sweeps beside the default that rule S12 asks for (the assumed lag over the range of A139 and A138, and the delay d1 of A176). Without `assumed_lag` the walk-back assumes the lag the scenario gives the event. Every input without a default is a scenario input, printed with the result.",
+  "presets": ["a_manual", "b_lims_lite", "c_context"],
+  "ablations_of": "c_context",
+  "seeds": [
+    9013, 9127, 9239, 9341, 9463, 9547, 9661, 9743, 9857, 9967,
+    10069, 10177, 10267, 10399, 10501, 10607, 10709, 10831, 10937, 11047
+  ],
+  "cases": [
+    {"case_id": "medium_lot", "scenario": "sc12_medium_lot"},
+    {"case_id": "seed_lot", "scenario": "sc12_seed_lot"},
+    {"case_id": "sampling", "scenario": "sc12_sampling"},
+    {"case_id": "equipment", "scenario": "sc12_equipment"},
+    {"case_id": "mycoplasma_nat_covers", "scenario": "sc12_mycoplasma"},
+    {"case_id": "mycoplasma_nat_misses", "scenario": "sc12_mycoplasma", "set": {"inputs.nat_target_covers_organism": {"value": 0, "unit": "flag", "ref": "A224"}}},
+    {"case_id": "medium_lot_assumed_lag_4h", "scenario": "sc12_medium_lot", "assumed_lag": {"value": 4, "unit": "h", "ref": "A139"}},
+    {"case_id": "medium_lot_assumed_lag_36h", "scenario": "sc12_medium_lot", "assumed_lag": {"value": 36, "unit": "h", "ref": "A139"}},
+    {"case_id": "medium_lot_d1_6h", "scenario": "sc12_medium_lot", "set": {"response.signal_to_response": {"value": 6, "unit": "h", "ref": "A176"}}},
+    {"case_id": "medium_lot_d1_12h", "scenario": "sc12_medium_lot", "set": {"response.signal_to_response": {"value": 12, "unit": "h", "ref": "A176"}}},
+    {"case_id": "seed_lot_assumed_lag_12h", "scenario": "sc12_seed_lot", "assumed_lag": {"value": 12, "unit": "h", "ref": "A139"}},
+    {"case_id": "seed_lot_assumed_lag_4h", "scenario": "sc12_seed_lot", "assumed_lag": {"value": 4, "unit": "h", "ref": "A139"}},
+    {"case_id": "mycoplasma_assumed_lag_6d", "scenario": "sc12_mycoplasma", "assumed_lag": {"value": 144, "unit": "h", "ref": "A138"}}
+  ]
+}

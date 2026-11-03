@@ -1,7 +1,7 @@
-"""Pure helper of scripts/qa_site.py (the headless QA of the assembled site folder, docs/design/lab_ui.md section 13).
+"""Pure helper of scripts/qa/qa_site.py (the headless QA of the assembled site folder, docs/design/lab_ui.md section 13).
 
 The expected problems are typed by hand from the rule of the design: the folder holds the infographic page at its root, the fonts the page names under fonts/ with their two licences, the lab under
-lab/ and an empty .nojekyll, and nothing of site/infographic/ besides its index.html and fonts/. The browser checks run through `uv run python scripts/qa_site.py`.
+lab/ and an empty .nojekyll, and nothing of site/infographic/ besides its index.html and fonts/. The browser checks run through `uv run python scripts/qa/qa_site.py`.
 """
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import sys
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_site as qs  # noqa: E402
 
 GOOD = [".nojekyll", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt", "fonts/README.md", "fonts/archivo-latin.woff2", "index.html", "lab/assets/main-1a2b.js", "lab/index.html", "lab/reference.json"]
@@ -70,7 +70,7 @@ def test_a_font_the_page_names_and_the_folder_lacks_is_a_problem():
     assert qs.font_problems([*GOOD, "fonts/ibm-plex-mono-400-latin.woff2"], PAGE) == []
 
 
-# ---- the plant route on the assembled site (P9, docs/design/plant_ui.md section 11): scripts/qa_site_plant.py ----
+# ---- the plant route on the assembled site (P9, docs/design/plant_ui.md section 11): scripts/qa/qa_site_plant.py ----
 import qa_site_plant as qp  # noqa: E402
 
 PLANT_CHUNK = "assets/plant_scene-Bq3x9Z.js"

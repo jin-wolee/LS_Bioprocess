@@ -1,4 +1,4 @@
-"""The timing mode of the browser QA (P9, audit item 21; docs/design/lab_ui.md section 13): scripts/qa_timing.py and the places that use it.
+"""The timing mode of the browser QA (P9, audit item 21; docs/design/lab_ui.md section 13): scripts/qa/qa_timing.py and the places that use it.
 
 The author's decision of 2026-11-03: the Pages workflow runs the browser QA before a deploy, and a CI runner's software renderer is not the machine the budgets were measured on. In the mode `report` the checks
 that measure time (the lab's `time`, the plant's `plant_frames`, the round trip of `plant_action`, the times of a spec of `plant_sweep`) print their numbers with their conditions and do not fail on a limit; a time
@@ -12,7 +12,7 @@ import pytest
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_plant_act_helpers as act  # noqa: E402
 import qa_plant_helpers as ph  # noqa: E402
 import qa_plant_sweep_helpers as sw  # noqa: E402
@@ -94,7 +94,7 @@ def test_a_time_that_was_not_measured_fails_in_both_modes():
 # ---- the three scripts take the mode, and the workflow names it ----------------------------------------------------------------------
 @pytest.mark.parametrize("script", ["qa_lab.py", "qa_plant.py", "qa_site.py"])
 def test_each_browser_qa_takes_the_timing_mode_and_sets_it_before_its_checks(script):
-    source = (REPO / "scripts" / script).read_text(encoding="utf-8")
+    source = (REPO / "scripts" / "qa" / script).read_text(encoding="utf-8")
     assert '"--timing"' in source and 'choices=("judge", "report")' in source
     assert source.index("set_mode(args.timing)") < source.index("sync_playwright() as pw")
 
@@ -107,7 +107,7 @@ def test_each_browser_qa_takes_the_timing_mode_and_sets_it_before_its_checks(scr
 ])
 def test_each_check_that_measures_time_asks_the_timing_mode_what_to_do_with_a_time_over_its_limit(script, judges, not_this):
     # the call sites cannot be run without a browser: this keeps a check from going back to failing on a limit in the mode `report` (the mutation of P9: the combined function in place of the split)
-    source = (REPO / "scripts" / script).read_text(encoding="utf-8")
+    source = (REPO / "scripts" / "qa" / script).read_text(encoding="utf-8")
     assert judges in source
     if not_this:
         assert not_this not in source

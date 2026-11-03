@@ -3,7 +3,7 @@ import { runL3 } from "../../src/analysis.ts";
 import type { L3Input, L3Output } from "../../src/analysis.ts";
 import { T, mini, req } from "../support/mini.ts";
 
-// All numbers here are test-only inputs (prompts/10: no domain values in S1a).
+// All numbers here are test-only inputs (docs/prompts/10: no domain values in S1a).
 const starts = (out: L3Output) => out.runs.map((r) => [r.request_id, r.attempt, r.analyzer, r.start_s, r.end_s]);
 type Ev = Record<string, number | string>;
 const events = (out: L3Output, type: string): Ev[] => (out.events as unknown as Ev[]).filter((e) => e.type === type);

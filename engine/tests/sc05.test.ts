@@ -4,7 +4,7 @@ import { DAY, holds } from "./support/metrics.ts";
 import { runOf } from "./support/scenarios.ts";
 
 // SC5 One analyzer down (spec 7): whom does the priority rule hand the cost?
-// Metrics are reported, not gated (spec section 8; prompts/00 section 2 item 8). These tests gate structural facts only: that nothing
+// Metrics are reported, not gated (spec section 8; docs/prompts/00 section 2 item 8). These tests gate structural facts only: that nothing
 // changes before the window opens, that no run occupies the analyzer inside it, that the window is logged where the ledger puts it, and
 // that the queue order of each policy equals its definition. The metric questions (the hold_time of samples that arrive during or just
 // before the window, and who bears the cost under EDF against FIFO) are reported in docs/progress.md over 20 seeds, never asserted here.

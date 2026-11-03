@@ -1,4 +1,4 @@
-// Child-process entry of the data dictionary tests (tests/test_data_dictionary.py; prompts/20 Step 9): node engine/tests/support/dictionary_cli.ts
+// Child-process entry of the data dictionary tests (tests/test_data_dictionary.py; docs/prompts/20 Step 9): node engine/tests/support/dictionary_cli.ts
 // Runs the recorders, the validation rules, the review step and the export on hand-built streams (every architecture, several variants) and on the default scenario at the small size,
 // and prints one JSON document: for every table the columns that were emitted with the types seen, whether a null was seen and the few distinct values of a text column; the states
 // seen; the state transitions performed, with their role; the transition table of the code; every key that occurs anywhere in the recorded or exported output.

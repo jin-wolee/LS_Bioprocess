@@ -82,7 +82,7 @@ export interface ExperimentReport {
 }
 export interface Row {
   /**
-   * Path in the metrics document (schemas/metrics.schema.json); a share contributes its value.
+   * Path in the metrics document (data/schemas/metrics.schema.json); a share contributes its value.
    */
   metric: string;
   /**

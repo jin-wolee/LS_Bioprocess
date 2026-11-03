@@ -11,7 +11,7 @@ import { docOf, fx12a, runOfDoc } from "./support.ts";
 // Spec 11.8.2 rule S6: `contamination_onset` exists only in the truth log. `observe()` drops its type, and changing it (or any other hidden field) leaves the observable stream and the
 // recorder output byte-identical (section 3, rule 1).
 
-const preset = (name: string) => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+const preset = (name: string) => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
 const recorded = (run: ScenarioRun, events: readonly Event[], arch: string): string =>
   canonicalJson({ ...record({ events: observeEvents(events), sensors: run.observableSensors }, preset(arch)), historian: null }); // the series are the engine's own arrays in both
 
@@ -30,7 +30,7 @@ describe("Truth-only event: contamination_onset", () => {
   });
 
   it("Given the schema marks the event hidden as a whole When TRUTH_ONLY_TYPES is read Then it is exactly the event definitions annotated x-visibility hidden at their own level", () => {
-    const defs = readJson<{ $defs: Record<string, { "x-visibility"?: string; properties?: { type?: { const?: string } } }> }>("schemas", "event.schema.json").$defs;
+    const defs = readJson<{ $defs: Record<string, { "x-visibility"?: string; properties?: { type?: { const?: string } } }> }>("data", "schemas", "event.schema.json").$defs;
     const annotated = Object.values(defs).filter((d) => d["x-visibility"] === "hidden").map((d) => d.properties?.type?.const).sort();
     expect(annotated).toEqual(["contamination_onset"]);
     expect([...TRUTH_ONLY_TYPES].sort()).toEqual(annotated);

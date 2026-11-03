@@ -49,13 +49,13 @@ jobs:
       - name: Install headless Chromium (the Playwright of uv.lock pins the build)
         run: uv run --frozen playwright install --with-deps chromium
       - name: Lab QA in Chromium (the times are reported, not judged; no Firefox or WebKit)
-        run: uv run --frozen python scripts/qa_lab.py --timing report --no-engines
+        run: uv run --frozen python scripts/qa/qa_lab.py --timing report --no-engines
       - name: Plant QA in Chromium with software WebGL (the times are reported, not judged)
-        run: uv run --frozen python scripts/qa_plant.py --timing report
+        run: uv run --frozen python scripts/qa/qa_plant.py --timing report
       - name: Build the public lab and assemble dist/site (after the QA above, which builds the local lab into dist/lab)
         run: uv run --frozen python scripts/assemble_site.py
       - name: Site QA over the assembled dist/site (the times are reported, not judged)
-        run: uv run --frozen python scripts/qa_site.py --timing report
+        run: uv run --frozen python scripts/qa/qa_site.py --timing report
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist/site

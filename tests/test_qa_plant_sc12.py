@@ -1,8 +1,8 @@
-"""Pure helpers of scripts/qa_plant_sc12_helpers.py (the check `sc12` on the plant of the headless QA, docs/design/plant_ui.md section 10, P7c).
+"""Pure helpers of scripts/qa/qa_plant_sc12_helpers.py (the check `sc12` on the plant of the headless QA, docs/design/plant_ui.md section 10, P7c).
 
 Expected values are hand arithmetic on a plan typed by hand (the case of src/plant/fixture_case.ts: ML-1 added to U01 and U02 at 3000 s, SL-A taken at 1000 and 2000 s, TL-1 used at 4000 and 8000 s, U01-CONF
 and U02-CONF drawn at 9000 s, U01-SIG-CONF at 12000 s, U02-SIG-CONF skipped, the results at 20000 and 30000 s, the holds of c_context at 7500, 10000 and 25000 s), never taken from the code under test.
-The browser checks themselves run through `uv run python scripts/qa_plant.py`.
+The browser checks themselves run through `uv run python scripts/qa/qa_plant.py`.
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import sys
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_plant_sc12_helpers as q  # noqa: E402
 
 

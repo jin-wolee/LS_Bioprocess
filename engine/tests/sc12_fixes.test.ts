@@ -28,7 +28,7 @@ import { lookup, rawScenario } from "./support/scenarios.ts";
 // assumed lag is the type's, C41) and F8 (each signal draws its own confirming sample, so the deviation closes; the author's ruling of 2026-10-31). The probes' inputs are used as given (scenario,
 // seed, the changed input); every expectation is typed from the amended rule, never read off the code. No value, sign or ordering of a reported metric is asserted (section 8, anti-gaming rule 8).
 
-const CONFIG = readJson("scenarios", "experiments", "sc12.json");
+const CONFIG = readJson("data", "scenarios", "experiments", "sc12.json");
 const PRESETS = ["a_manual", "b_lims_lite", "c_context"];
 const REVIEW = { timing: "next_shift_start" as const, reject_also: [] as string[] };
 const pair = (r: { num: number; den: number }) => [r.num, r.den];
@@ -140,7 +140,7 @@ describe("F8: each signal draws its own confirming sample, so every hold is deci
   });
 });
 
-describe("F6: the report (C40 as amended; schemas/breakout_report.schema.json, additive)", () => {
+describe("F6: the report (C40 as amended; data/schemas/breakout_report.schema.json, additive)", () => {
   let report: BreakoutReport;
   beforeAll(async () => {
     const { input, head } = loadSc12(CONFIG, ["medium_lot", "seed_lot", "sampling"]);

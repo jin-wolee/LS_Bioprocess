@@ -9,13 +9,13 @@ import { makeEvalAjv, validates } from "./support/eval_schemas.ts";
 import { readJson } from "./support/paths.ts";
 import { loadSc12 } from "./support/sc12.ts";
 
-// SC12 Contamination break-out and walk-back, the experiment (spec 11.5, 11.8.4, rule S12): the five scenarios of scenarios/sc12_*.json and the experiment config
-// scenarios/experiments/sc12.json, run through the thirteen architectures. Structural relations only (spec 8, anti-gaming rule 8): that the truth is one run shared by every architecture, that
+// SC12 Contamination break-out and walk-back, the experiment (spec 11.5, 11.8.4, rule S12): the five scenarios of data/scenarios/sc12_*.json and the experiment config
+// data/scenarios/experiments/sc12.json, run through the thirteen architectures. Structural relations only (spec 8, anti-gaming rule 8): that the truth is one run shared by every architecture, that
 // the report prints the inputs, that a zero denominator says so, that nothing is ordered. No value, sign or ordering of a metric is asserted: SC12 is reported and never gated. The seeds below are
 // test-only values, not the seed list of the experiment (that is written in the config, before any run).
 
 const SEEDS = [31, 32];
-const CONFIG = readJson("scenarios", "experiments", "sc12.json");
+const CONFIG = readJson("data", "scenarios", "experiments", "sc12.json");
 const IDS = [
   "a_manual", "b_lims_lite", "c_context", "c_context_minus_system_issued_id", "c_context_minus_two_clocks", "c_context_minus_available_at", "c_context_minus_instrument_state_snapshot",
   "c_context_minus_append_only_versions", "c_context_minus_write_time_keys", "c_context_minus_ingest_idempotency", "c_context_minus_audit_trail", "c_context_minus_material_lot_links",
@@ -131,7 +131,7 @@ describe("SC12 contamination break-out and walk-back: the report", () => {
     report = buildBreakoutReport(await runBreakout({ ...input, seeds: SEEDS }), head);
   }, 120_000);
 
-  it("Given the report When it is validated Then it fits schemas/breakout_report.schema.json, and with two seeds it says that it does not reach the minimum of A103", () => {
+  it("Given the report When it is validated Then it fits data/schemas/breakout_report.schema.json, and with two seeds it says that it does not reach the minimum of A103", () => {
     const ajv = makeEvalAjv();
     expect(validates(ajv, "breakout_report", report), JSON.stringify(ajv.errors)).toBe(true);
     expect([report.n_seeds, report.min_seeds, report.meets_min_seeds]).toEqual([2, 20, false]);

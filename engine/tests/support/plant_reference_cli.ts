@@ -43,7 +43,7 @@ const data = labData();
 /** The run of a hand-written fixture by the lab's own path: the scenario fields typed by hand laid over the small default scenario, the capture path and the record halls as the fixture names them. */
 const byHand = async (f: Fixture): Promise<{ truth: string; cells: Record<string, string> }> => {
   const handData: LabData = { ...data, scenarios: { ...data.scenarios, default: patched(rawScenario("default"), { fields: f.hand.scenario_fields }) } };
-  const halls = f.hand.architectures.map((a) => parseArchitecture(typeof a === "string" ? readJson("scenarios", "architectures", `${a}.json`) : a));
+  const halls = f.hand.architectures.map((a) => parseArchitecture(typeof a === "string" ? readJson("data", "scenarios", "architectures", `${a}.json`) : a));
   const spec = { schema_version: "1" as const, scenario: "default", settings: SMALL, architectures: HALLS, seeds: [1] };
   const config = scenarioConfig(handData, "default", SMALL, 1, f.hand.capture_path ? { capture_path: f.hand.capture_path } : {});
   const { run, input } = labSeedOf(handData, spec, config, halls);
@@ -63,7 +63,7 @@ interface SweepSpec {
 
 /** The run of a spec of the sweep by the lab's own path, no action: the scenario laid out by `scenarioConfig` with the profile lists and the capture path, the halls as the files have them. */
 const bySpec = async (s: SweepSpec): Promise<{ name: string; seed: number; truth: string; cells: Record<string, string> }> => {
-  const halls = s.run.architectures.map((id) => parseArchitecture(readJson("scenarios", "architectures", `${id}.json`)));
+  const halls = s.run.architectures.map((id) => parseArchitecture(readJson("data", "scenarios", "architectures", `${id}.json`)));
   const spec: RunSpec = { schema_version: "1", ...s.run, seeds: [s.seed] };
   const extras = { ...(s.run.bay_profiles && { bay_profiles: s.run.bay_profiles }), ...(s.run.analyzer_profiles && { analyzer_profiles: s.run.analyzer_profiles }), ...(s.run.capture_path && { capture_path: s.run.capture_path }) };
   const { run, input } = labSeedOf(data, spec, scenarioConfig(data, s.run.scenario, s.run.settings, s.seed, extras), halls);

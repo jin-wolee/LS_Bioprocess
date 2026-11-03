@@ -19,7 +19,7 @@ import type { Json } from "../support/schemas.ts";
 // SC8 (experiment 2, spec 6.2): one shared lab run per seed, the pH loop run once per arm. Small scenario (6 reactors, 8 days) and test-only seeds. Nothing here asserts a sign,
 // a size or an ordering of the arms: the structural relations are the invariance of the open loop, the shared draws, the zero-bias identity and C's exclusion rule.
 
-const EVAL = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+const EVAL = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
 const NAME = "sc08_ph_restandardisation";
 const ZERO_STABILITY = [
   { effect: "linear_rate", analyte: "ph", container: "closed", rate: { value: 0, unit: "pH/h", ref: "A043" }, valid_to: { value: 30, unit: "min", ref: "A046" } },

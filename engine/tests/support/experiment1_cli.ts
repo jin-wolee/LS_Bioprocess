@@ -1,6 +1,6 @@
-// Runner of experiment 1 (prompts/20 Step 4): node engine/tests/support/experiment1_cli.ts <report.json> [--timing=next_shift_start|shift_end|next_day_start] [--reject-also=VR-015,VR-020]
+// Runner of experiment 1 (docs/prompts/20 Step 4): node engine/tests/support/experiment1_cli.ts <report.json> [--timing=next_shift_start|shift_end|next_day_start] [--reject-also=VR-015,VR-020]
 // The two options are the sensitivity variants of the review step (A214, A215); without them the default review runs. The report states which review it used.
-// Runs the seed list of scenarios/experiments/experiment1.json through every architecture, validates the report against schemas/experiment_report.schema.json
+// Runs the seed list of data/scenarios/experiments/experiment1.json through every architecture, validates the report against data/schemas/experiment_report.schema.json
 // and writes it to the path given on the command line. Prints the timing and a compact summary. The report is not committed (it is not under version control).
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.
 import "./require_node_flags.ts"; // ADR-0016: exits 2 without the Node flags of the engine, before any engine module loads
@@ -30,7 +30,7 @@ if (timing !== undefined && !["next_shift_start", "shift_end", "next_day_start"]
 const rejectAlso = option("reject-also")?.split(",");
 const review: NonNullable<OpenLoopInput["review"]> = { ...(timing !== undefined && { timing: timing as NonNullable<NonNullable<OpenLoopInput["review"]>["timing"]> }), ...(rejectAlso && { reject_also: rejectAlso }) };
 
-const { config, input, head } = loadExperiment(readJson("scenarios", "experiments", "experiment1.json"));
+const { config, input, head } = loadExperiment(readJson("data", "scenarios", "experiments", "experiment1.json"));
 const started = performance.now();
 const result = await runOpenLoop({ ...input, review });
 const ran = performance.now();

@@ -16,7 +16,7 @@ import { BREAKOUT_SCENARIOS, breakoutData } from "./breakout_data.ts";
 // medium-lot case at seed 9013 are pins typed from a first run of the engine (whose cells stand on the hand-typed fixtures FX12a, FX12e and FX12m of spec 11.8.4), not an oracle of their own.
 
 const data = breakoutData();
-const SEED = 9013; // the first seed of scenarios/experiments/sc12.json
+const SEED = 9013; // the first seed of data/scenarios/experiments/sc12.json
 const ARCHS = ["a_manual", "b_lims_lite", "c_context", "c_context_minus_material_lot_links"];
 
 const must = (a: BreakoutAnswer): BreakoutResult => {
@@ -98,7 +98,7 @@ describe("the medium-lot case, seed 9013", () => {
 
   it("Given the same truth run Then the truth log hash is the one of an independent run of the scenario, and the result holds no hidden field", async () => {
     const r = must(await run());
-    const cfg = loadScenario(readJson("scenarios", "sc12_medium_lot.json"), lookup);
+    const cfg = loadScenario(readJson("data", "scenarios", "sc12_medium_lot.json"), lookup);
     expect(r.truth_log_hash).toBe(await logHash(runScenario({ ...cfg, seed: SEED }).events));
     const text = JSON.stringify(r);
     expect(text).not.toMatch(/contamination_onset|true_value|true_state|"noise"|answer_key|quirk/);

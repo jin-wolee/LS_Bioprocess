@@ -1,7 +1,7 @@
 import { checkSeeds } from "./config.ts";
 
-// The config of experiment 2 (scenarios/experiments/experiment2.json): which scenario, which architectures, the sensitivity variants, the seed list, the bootstrap settings
-// and the assumption ids the result text names. The engine reads no file: the caller passes the parsed JSON. The seed list is written before any run (prompts/20 Step 4).
+// The config of experiment 2 (data/scenarios/experiments/experiment2.json): which scenario, which architectures, the sensitivity variants, the seed list, the bootstrap settings
+// and the assumption ids the result text names. The engine reads no file: the caller passes the parsed JSON. The seed list is written before any run (docs/prompts/20 Step 4).
 
 export interface Variant {
   id: string;

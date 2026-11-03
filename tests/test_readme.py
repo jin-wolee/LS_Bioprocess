@@ -192,7 +192,7 @@ def test_every_ledger_id_it_cites_exists():
 def test_the_repository_map_names_every_folder_and_file_of_the_root():
     block = re.search(r"```\n(.*?)```", section(README, "Repository map"), re.S).group(1)
     mapped = {m.group(1).rstrip("/") for m in re.finditer(r"^(\S+?/?)\s{2,}\S", block, re.M)}
-    project_files = set(re.findall(r"`([^`]+)`", section(README, "Repository map").split("The root also holds", 1)[1].split("`sql/`", 1)[0]))
+    project_files = set(re.findall(r"`([^`]+)`", section(README, "Repository map").split("The root also holds", 1)[1].split("`reference/sql/`", 1)[0]))
     named = {n.rstrip("/").split("/")[0] for n in mapped} | project_files
     top = {p.split("/")[0] for p in inventory()} - {"README.md", ".gitignore"}
     assert top - named == set(), f"the map lacks: {sorted(top - named)}"
@@ -202,9 +202,9 @@ def test_the_repository_map_names_every_folder_and_file_of_the_root():
 
 def test_sql_and_reference_exist_and_the_map_says_ai_wrote_them_under_adr_0022():
     # ADR-0022: the five files exist and are written by AI from the specification; the map lists both folders and says so
-    assert (REPO / "sql" / "schema.sql").is_file() and (REPO / "reference" / "sim_core.py").is_file()
+    assert (REPO / "reference" / "sql" / "schema.sql").is_file() and (REPO / "reference" / "simpy" / "sim_core.py").is_file()
     block = re.search(r"```\n(.*?)```", section(README, "Repository map"), re.S).group(1)
-    for folder in ("sql", "reference"):
+    for folder in ("reference/sql", "reference/simpy"):
         line = re.search(rf"^{folder}/\s{{2,}}(.*)$", block, re.M)
         assert line, f"the map does not list {folder}/"
         assert "written by AI" in line.group(1) and "ADR-0022" in line.group(1), line.group(1)

@@ -55,7 +55,7 @@ describe("The seed-aggregate table", () => {
 });
 
 describe("Evaluation settings are data with ledger refs", () => {
-  const doc = readJson<{ params: unknown }>("scenarios", "evaluation", "default.json");
+  const doc = readJson<{ params: unknown }>("data", "scenarios", "evaluation", "default.json");
   it("Then the SLA threshold, staffed window, hold limit and seed minimum are read in seconds and seeds (A097, A098, A046, A103)", () => {
     expect(evaluationSettings(doc)).toEqual({ sla_s: 1800, staffed_window_s: 36000, hold_limit_s: 1800, min_seeds: 20 });
   });

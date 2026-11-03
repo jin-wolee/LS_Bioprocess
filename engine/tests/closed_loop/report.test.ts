@@ -71,7 +71,7 @@ describe("SC8 report: the numbers", () => {
     expect(report.notes.join(" ")).toMatch(/grade A/);
   });
 
-  it("Then it validates against schemas/closed_loop_report.schema.json", () => {
+  it("Then it validates against data/schemas/closed_loop_report.schema.json", () => {
     const ajv = makeEvalAjv();
     expect(validates(ajv, "closed_loop_report", report), JSON.stringify(ajv.errors)).toBe(true);
   });

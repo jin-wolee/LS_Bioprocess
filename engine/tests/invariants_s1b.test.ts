@@ -15,7 +15,7 @@ import { configOf, lookup, rawScenario } from "./support/scenarios.ts";
 import type { Json } from "./support/schemas.ts";
 import { loadScenario } from "../src/scenario.ts";
 
-// Invariants I1-I11 of prompts/10 Step 6 and prompts/11 Step 2 on the full engine: the default scenario, 200 seeds each.
+// Invariants I1-I11 of docs/prompts/10 Step 6 and docs/prompts/11 Step 2 on the full engine: the default scenario, 200 seeds each.
 // Every check is recomputed here from the log and the input, not from engine internals. Each seed runs once; its checks run in
 // one pass and the violations are kept, so 200 full runs (24 reactors, 21 days) are not held in memory at once.
 // I12 (the 1 s budget) is in perf_i12.test.ts.
@@ -44,7 +44,7 @@ const deepFreeze = <T>(o: T): T => {
 
 // ---- hidden fields from the schema, perturbed recursively (numbers +1.5, booleans flipped, strings suffixed)
 const hiddenTable = (): Map<string, string[]> => {
-  const defs = readJson<Json>("schemas", "event.schema.json").$defs as Record<string, Json>;
+  const defs = readJson<Json>("data", "schemas", "event.schema.json").$defs as Record<string, Json>;
   const out = new Map<string, string[]>();
   for (const def of Object.values(defs)) {
     const props = def.properties as Record<string, Json> | undefined;

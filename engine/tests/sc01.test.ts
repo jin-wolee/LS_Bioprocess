@@ -9,7 +9,7 @@ import { eventsOf } from "./support/sc_run.ts";
 import { runOf } from "./support/scenarios.ts";
 
 // SC1 Ordinary Tuesday (spec 7): what disappears on an ordinary day? The default scenario, seed 1, recorded under A, B, C and the ten ablations of C
-// (prompts/20 Step 4). Structural relations only (spec section 8, anti-gaming rule 8): that every configuration is produced from one truth run, that the
+// (docs/prompts/20 Step 4). Structural relations only (spec section 8, anti-gaming rule 8): that every configuration is produced from one truth run, that the
 // truth log is the same one whatever the recorder does with it, and that every cell counts the same requests. No ordering of the architectures is asserted.
 
 describe("SC1 ordinary Tuesday", () => {

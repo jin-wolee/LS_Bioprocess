@@ -11,7 +11,7 @@ import { rawConfigOf, rawInputOf } from "../support/raw_run.ts";
 // own stamp, so the adapter-side ingested_at equals the manual-side one for every historian key; daily, a file reaches the host at the end of its day. SC1 seed 1, B and C, the
 // export schedule per_run so that only the controller cut differs. Instants are seconds of the scenario, day 0 a Monday; one day is 86400 s.
 
-const preset = (name: string) => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+const preset = (name: string) => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
 const [B, C] = [preset("b_lims_lite"), preset("c_context")];
 const DAY = 86400;
 

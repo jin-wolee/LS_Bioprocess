@@ -1,6 +1,6 @@
-"""Acceptance test for the author's canonical DDL, sql/schema.sql (prompts/60_user_track.md, Card A; data_model.md sections 4 and 13).
+"""Acceptance test for the author's canonical DDL, reference/sql/schema.sql (docs/prompts/60_user_track.md, Card A; data_model.md sections 4 and 13).
 
-Marker `user_track`: skipped, with a message, while sql/schema.sql is absent. Written by the AI path against the card's acceptance list
+Marker `user_track`: skipped, with a message, while reference/sql/schema.sql is absent. Written by the AI path against the card's acceptance list
 and never edited to make the author's DDL pass. DuckDB has no triggers, so the integrity rules are SELECTs of violating rows
 (tests/fixtures/sql/integrity/): a good dataset returns no row, a bad dataset at least one, both loaded through the author's schema.
 """
@@ -13,7 +13,7 @@ import pytest
 pytestmark = pytest.mark.user_track
 
 ROOT = Path(__file__).resolve().parents[2]
-SCHEMA = ROOT / "sql" / "schema.sql"
+SCHEMA = ROOT / "reference" / "sql" / "schema.sql"
 FIXTURES = ROOT / "tests" / "fixtures" / "sql"
 INTEGRITY = FIXTURES / "integrity"
 
@@ -67,7 +67,7 @@ SNAPSHOT_TABLES = ["sample", "result", "method"]
 @pytest.fixture(scope="module")
 def schema_text() -> str:
     if not SCHEMA.exists():
-        pytest.skip("sql/schema.sql is absent: the canonical DDL is the author's Card A; this acceptance test runs once it exists")
+        pytest.skip("reference/sql/schema.sql is absent: the canonical DDL is the author's Card A; this acceptance test runs once it exists")
     return SCHEMA.read_text()
 
 
@@ -147,7 +147,7 @@ def test_single_sample_fixture_loads_with_explicit_column_lists(con) -> None:
 def test_schema_uses_no_deny_listed_construct(schema_text: str) -> None:
     code = _strip_comments(schema_text)
     hits = [name for name, pattern in DENY.items() if re.search(pattern, code, flags=re.I)]
-    assert not hits, f"non-portable constructs in sql/schema.sql: {hits}"
+    assert not hits, f"non-portable constructs in reference/sql/schema.sql: {hits}"
 
 
 def _load_good_with_snapshots(connection) -> None:

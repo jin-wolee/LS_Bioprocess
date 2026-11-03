@@ -61,16 +61,16 @@ describe("A217 in the ledger", () => {
 
 describe("the controller profile data", () => {
   const ajv = makeAjv();
-  ajv.addSchema(readJson<Json>("schemas", "controller_profile.schema.json"));
+  ajv.addSchema(readJson<Json>("data", "schemas", "controller_profile.schema.json"));
   it.each(["ctrl_neutral", "ctrl_bench"])("Given %s Then every log names the role of each of its columns, one role per column", (id) => {
-    const doc = readJson<{ logs: { columns: string[]; roles: string[] }[] }>("scenarios", "profiles", "controller", `${id}.json`);
+    const doc = readJson<{ logs: { columns: string[]; roles: string[] }[] }>("data", "scenarios", "profiles", "controller", `${id}.json`);
     expect(isValid(ajv, "controller_profile", doc)).toBe(true);
     for (const log of doc.logs) expect(log.roles.length).toBe(log.columns.length);
   });
   it("Given the controller files (ADR-0014 R1 and R2) Then every column label is a short field name of at most three words, every modeled_on id resolves in the source ledger, and the ids are the vendor-neutral ones", () => {
     const sources = ledgerIds();
     for (const id of ["ctrl_neutral", "ctrl_bench"]) {
-      const doc = readJson<{ profile_id: string; modeled_on: string[]; logs: { columns: string[]; file_prefix: string }[]; stamp: { ref: string }; phase_model: { ref: string } }>("scenarios", "profiles", "controller", `${id}.json`);
+      const doc = readJson<{ profile_id: string; modeled_on: string[]; logs: { columns: string[]; file_prefix: string }[]; stamp: { ref: string }; phase_model: { ref: string } }>("data", "scenarios", "profiles", "controller", `${id}.json`);
       expect(doc.profile_id).toBe(id);
       for (const l of doc.logs) for (const c of l.columns) expect(c.length <= 24 && c.split(" ").length <= 3, c).toBe(true);
       for (const s of doc.modeled_on) expect(sources.has(s), s).toBe(true);
@@ -78,7 +78,7 @@ describe("the controller profile data", () => {
     }
   });
   it("Given a profile with a log whose roles are missing, or a stamp form that does not exist Then the schema refuses it", () => {
-    const doc = readJson<{ logs: Record<string, unknown>[]; stamp: Record<string, unknown> }>("scenarios", "profiles", "controller", "ctrl_neutral.json");
+    const doc = readJson<{ logs: Record<string, unknown>[]; stamp: Record<string, unknown> }>("data", "scenarios", "profiles", "controller", "ctrl_neutral.json");
     const noRoles: Record<string, unknown> = { ...(doc.logs[0] as Record<string, unknown>) };
     delete noRoles.roles;
     expect(isValid(ajv, "controller_profile", { ...doc, logs: [noRoles] })).toBe(false);

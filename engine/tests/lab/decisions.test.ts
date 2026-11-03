@@ -26,7 +26,7 @@ import { SMALL, lookup, patched, rawScenario } from "../support/scenarios.ts";
 //   U03-D01-2: drawn 121144, run starts 121956 (hold 812 s), result 122226, open.     U06-D01-2: drawn 121845, run starts 122808, result 123078, closed.
 // At 201600 U01's newest row is U01-D01-2's (closed, hold 1122 s: used by every architecture); at 203400 U03's newest row is U03-D01-2's (open: skipped by every architecture).
 
-const EVAL = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+const EVAL = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
 const A: Architecture = ALL_ARCHS[0]!;
 const C: Architecture = ALL_ARCHS[2]!;
 const C_MINUS: Architecture = ALL_ARCHS[3]!; // c_context_minus_system_issued_id
@@ -212,7 +212,7 @@ describe("The sample that is planted", () => {
 });
 
 describe("The plant at the full size of experiment 2 (the first five seeds of its list)", () => {
-  const { input } = loadClosedLoop(readJson("scenarios", "experiments", "experiment2.json"));
+  const { input } = loadClosedLoop(readJson("data", "scenarios", "experiments", "experiment2.json"));
 
   it.each(input.seeds.slice(0, 5))("Given seed %i Then the picked plant changes the decision that read its row in A and in C without system_issued_id, and changes nothing in C", (seed) => {
     const lab = runScenario({ ...input.scenario, seed, feedback: false });

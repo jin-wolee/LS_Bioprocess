@@ -14,7 +14,7 @@ import { SCENARIO, buildTrace, pickSample } from "../support/trace_sample.ts";
 import type { SingleSampleTrace } from "../support/trace_sample.ts";
 import { BEGIN, END, stamp, traceTable, withTable } from "../support/trace_table.ts";
 
-// Single-sample failure trace (prompts/20 Step 10). The pick rule is tested on a hand-built truth log; the fixture is a golden that this file reads and never writes
+// Single-sample failure trace (docs/prompts/20 Step 10). The pick rule is tested on a hand-built truth log; the fixture is a golden that this file reads and never writes
 // (it is created once by engine/tests/support/trace_cli.ts, its checksum is in tests/fixtures/trace/CHECKSUMS.txt, not in tests/golden/CHECKSUMS.txt: orchestrator decision).
 
 const read = (...parts: string[]): string => readFileSync(join(ROOT, ...parts), "utf8");

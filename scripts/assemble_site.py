@@ -3,7 +3,7 @@
 
     uv run python scripts/assemble_site.py
 
-The Pages workflow (.github/workflows/pages.yml) runs this script and uploads `dist/site/`; run it locally to get the same folder, then `uv run python scripts/qa_site.py` to check it
+The Pages workflow (.github/workflows/pages.yml) runs this script and uploads `dist/site/`; run it locally to get the same folder, then `uv run python scripts/qa/qa_site.py` to check it
 (docs/design/lab_ui.md section 13). It builds the lab first, as the public build: VITE_LAB_LOCAL is taken out of the environment, so a shell that exports it cannot put the
 "not for publication" Break-out screen into the folder, and a `dist/lab` left by `qa_lab.py` (a local build) is replaced. Only `site/infographic/index.html` and `site/infographic/fonts/` are copied from
 `site/infographic/`: the page names its fonts by relative address (`fonts/...`) and asks no other origin for them, and the folder carries the licence texts beside the files (SIL OFL 1.1); the build

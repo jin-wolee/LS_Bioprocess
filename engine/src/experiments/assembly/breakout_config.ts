@@ -2,7 +2,7 @@ import type { Param } from "../../generated/profile.schema";
 import { checkParams } from "../../profiles.ts";
 import { checkSeeds } from "./config.ts";
 
-// The config of the break-out experiment SC12 (scenarios/experiments/sc12.json): which cases, which architectures, which seeds. A case is one scenario file, optionally with a swept input of its
+// The config of the break-out experiment SC12 (data/scenarios/experiments/sc12.json): which cases, which architectures, which seeds. A case is one scenario file, optionally with a swept input of its
 // break-out block and an assumed lag for the walk-back. The engine reads no file: the caller passes the parsed JSON, and the seed list is written before any run (the rules of every seed list,
 // `checkSeeds`: neutral integers, no repeat, none date-shaped, at least the A103 minimum).
 

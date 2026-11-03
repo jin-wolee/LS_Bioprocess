@@ -9,7 +9,7 @@ import { SMALL, runOf } from "./support/scenarios.ts";
 
 // SC7 Re-run and dilution (spec 7): how are reruns and dilutions recorded? A small variant of the default scenario with the run-level rerun probability
 // raised to 0.5 (test-only; the ledger default is A088), seed 1, recorded as A (overwrite in place, no versions) and C (append-only versions). Structural
-// relations only (prompts/20 Step 4): where the first attempt of a rerun request survives, and where it does not. The expected values come from the truth
+// relations only (docs/prompts/20 Step 4): where the first attempt of a rerun request survives, and where it does not. The expected values come from the truth
 // log (the attempts and values the instrument reported), never from the recorder.
 
 const A = CONFIGS[0];

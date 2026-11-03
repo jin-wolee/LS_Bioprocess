@@ -1,4 +1,4 @@
--- Hand fixture of Card B2 (prompts/60_user_track.md): all ancestors of an item through lineage_edge, one row per distinct ancestor at its minimum depth.
+-- Hand fixture of Card B2 (docs/prompts/60_user_track.md): all ancestors of an item through lineage_edge, one row per distinct ancestor at its minimum depth.
 -- Explicit column lists only; synthetic times. Edges point in the direction of derivation (from_item_id derives to_item_id); the relation is any of the eight values of data_model
 -- section 12 and the query ignores it. Expected answers are in expected_lineage.csv.
 --

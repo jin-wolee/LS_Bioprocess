@@ -5,7 +5,7 @@ import { parseStamp } from "./stamp.ts";
 import type { DateOrder } from "../raw/types.ts";
 import type { IngestStore } from "./store.ts";
 
-// One data line to canonical results (prompts/20 Step 6): the outcome is loaded, no-op, or an action hold, quarantine or reject with its rule id. A rule changes a
+// One data line to canonical results (docs/prompts/20 Step 6): the outcome is loaded, no-op, or an action hold, quarantine or reject with its rule id. A rule changes a
 // state and never a value. The parser reads the file text, the adapter entry and the store; it never reads truth and never reads the raw quirk key.
 
 export interface RowEnv {

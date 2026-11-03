@@ -1,7 +1,7 @@
 """The infographic's status line says what exists now (S3h3): the lab is built, the Break-out screen is held back (docs/design/lab_ui.md sections 6 and 20; ADR-0013).
 
 The texts are typed by hand from that state and compared with the page's sources and with the committed page. The Korean text introduces no number, claim or source that the English lacks (ADR-0006).
-The headless page QA (scripts/qa_infographic.py) reads the built page in both languages.
+The headless page QA (scripts/qa/qa_infographic.py) reads the built page in both languages.
 """
 from __future__ import annotations
 

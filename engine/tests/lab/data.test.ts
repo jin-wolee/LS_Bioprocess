@@ -33,7 +33,7 @@ describe("the bundled data", () => {
   });
 
   it("Given the decision variant Then the bundle holds SC8 and the experiment 2 config as the files say, and SC8 is not among the scenarios of the Setup picker", () => {
-    expect(LAB_DATA.decision).toEqual({ scenario: readJson("scenarios", "sc08_ph_restandardisation.json"), experiment: readJson("scenarios", "experiments", "experiment2.json") });
+    expect(LAB_DATA.decision).toEqual({ scenario: readJson("data", "scenarios", "sc08_ph_restandardisation.json"), experiment: readJson("data", "scenarios", "experiments", "experiment2.json") });
     expect(Object.keys(LAB_DATA.scenarios)).not.toContain("sc08_ph_restandardisation");
   });
 

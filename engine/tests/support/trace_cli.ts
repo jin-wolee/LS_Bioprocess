@@ -1,4 +1,4 @@
-// The recorded command that creates the single-sample trace fixture (prompts/20 Step 10): node engine/tests/support/trace_cli.ts
+// The recorded command that creates the single-sample trace fixture (docs/prompts/20 Step 10): node engine/tests/support/trace_cli.ts
 // It runs SC3 (seed 1) through A, B and C with the production assembly, picks the sample by the rule of trace_sample.ts, writes tests/fixtures/trace/single_sample_trace.json and
 // registers its checksum in tests/fixtures/trace/CHECKSUMS.txt. It refuses to run when the fixture exists: the fixture is read-only after this command and is never regenerated.
 // Run directly by Node (native type stripping), so it imports modules with explicit .ts extensions only.

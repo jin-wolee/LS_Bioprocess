@@ -102,7 +102,7 @@ export interface Scenario {
    */
   breakout?: {
     /**
-     * The event-type profile under scenarios/profiles/breakout/ (for example bacterial); data, never branched on by id.
+     * The event-type profile under data/scenarios/profiles/breakout/ (for example bacterial); data, never branched on by id.
      */
     profile: string;
     lag?: Param;

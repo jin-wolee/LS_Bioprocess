@@ -20,9 +20,9 @@ interface Fixture { description: string; actions: Action[]; hand: { scenario_fie
 const fixture = (name: string): Fixture => readJson<Fixture>("tests", "fixtures", "plant", `${name}.json`);
 
 const HALLS = ["a_manual", "b_lims_lite", "c_context"];
-const base = (): PlantBase => ({ scenario: scenarioDocument(data, "default", SMALL), capture_path: undefined, architectures: HALLS.map((id) => parseArchitecture(readJson("scenarios", "architectures", `${id}.json`))) });
+const base = (): PlantBase => ({ scenario: scenarioDocument(data, "default", SMALL), capture_path: undefined, architectures: HALLS.map((id) => parseArchitecture(readJson("data", "scenarios", "architectures", `${id}.json`))) });
 /** The record halls a fixture writes by hand: an id names a bundled record, an object is a document typed in the fixture. */
-const handHalls = (hand: Fixture["hand"]) => hand.architectures.map((a) => (typeof a === "string" ? readJson("scenarios", "architectures", `${a}.json`) : a));
+const handHalls = (hand: Fixture["hand"]) => hand.architectures.map((a) => (typeof a === "string" ? readJson("data", "scenarios", "architectures", `${a}.json`) : a));
 
 describe("The action kinds are the rows of plant_ui.md section 5.2", () => {
   const text = readFileSync(join(ROOT, "docs", "design", "plant_ui.md"), "utf8");
@@ -177,7 +177,7 @@ describe("applyActions: the mapping of section 5.2 against the hand fixtures", (
   it("Given a switch of a flag or a record that does not exist Then applyActions throws, and a switch that makes two halls equal throws", () => {
     expect(() => applyActions(base(), [{ kind: "set_flag", at: 60, architecture: "zzz", flag: "audit_trail", on: false }])).toThrow(/no record zzz/);
     expect(() => applyActions(base(), [{ kind: "set_flag", at: 60, architecture: "c_context", flag: "no_such_flag", on: false }])).toThrow(/no record c_context with a flag no_such_flag/);
-    const two = { ...base(), architectures: [...base().architectures, parseArchitecture({ ...(readJson("scenarios", "architectures", "c_context.json") as Json), id: "c_context_minus_audit_trail", flags: { ...(readJson<{ flags: Json }>("scenarios", "architectures", "c_context.json").flags), audit_trail: false } })] };
+    const two = { ...base(), architectures: [...base().architectures, parseArchitecture({ ...(readJson("data", "scenarios", "architectures", "c_context.json") as Json), id: "c_context_minus_audit_trail", flags: { ...(readJson<{ flags: Json }>("data", "scenarios", "architectures", "c_context.json").flags), audit_trail: false } })] };
     expect(() => applyActions(two, [{ kind: "set_flag", at: 60, architecture: "c_context", flag: "audit_trail", on: false }])).toThrow(/would both be c_context_minus_audit_trail/);
   });
 

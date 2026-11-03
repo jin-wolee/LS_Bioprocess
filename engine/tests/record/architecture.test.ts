@@ -9,9 +9,9 @@ import type { Json } from "../support/schemas.ts";
 // S2a Step 1: the architecture schema, the three presets as data, and the ablation configs. Expected values are typed by hand from
 // spec section 5 and ADR-0005, ADR-0017, ADR-0020 (the flag table, the preset table, "no eleventh flag"; the ninth and tenth flags are the lot and equipment links of the break-out extension).
 
-const schema = readJson<Json>("schemas", "architecture.schema.json");
+const schema = readJson<Json>("data", "schemas", "architecture.schema.json");
 const validate = new Ajv2020({ strict: true, allErrors: true }).compile(schema);
-const preset = (name: string): Json => readJson<Json>("scenarios", "architectures", `${name}.json`);
+const preset = (name: string): Json => readJson<Json>("data", "scenarios", "architectures", `${name}.json`);
 const HAND_FLAGS = ["system_issued_id", "two_clocks", "available_at", "instrument_state_snapshot", "append_only_versions", "write_time_keys", "ingest_idempotency", "audit_trail", "material_lot_links", "equipment_links"];
 const none = (): Record<string, boolean> => Object.fromEntries(HAND_FLAGS.map((f) => [f, false]));
 const only = (...on: string[]): Record<string, boolean> => ({ ...none(), ...Object.fromEntries(on.map((f) => [f, true])) });
@@ -43,8 +43,8 @@ describe("architecture.schema.json", () => {
 });
 
 describe("presets A, B and C are data (spec section 5, ADR-0005)", () => {
-  it("scenarios/architectures holds exactly the three preset files", () => {
-    expect(listFiles("scenarios", "architectures")).toEqual(["a_manual.json", "b_lims_lite.json", "c_context.json"]);
+  it("data/scenarios/architectures holds exactly the three preset files", () => {
+    expect(listFiles("data", "scenarios", "architectures")).toEqual(["a_manual.json", "b_lims_lite.json", "c_context.json"]);
   });
 
   it.each(["a_manual", "b_lims_lite", "c_context"])("%s validates against the schema and carries its own id", (name) => {

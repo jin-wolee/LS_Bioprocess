@@ -10,7 +10,7 @@ import type { RecordedDataset } from "../../src/record/types.ts";
 import { SENSORS, STREAM, arch } from "../support/record_fixture.ts";
 import { FLAG_NAMES } from "../../src/record/architecture.ts";
 
-// Step 11 FAIR export (prompts/20; data_model section 10): one row per (sample x analyte x released version), as CSV plus a Frictionless-style datapackage.json.
+// Step 11 FAIR export (docs/prompts/20; data_model section 10): one row per (sample x analyte x released version), as CSV plus a Frictionless-style datapackage.json.
 // The expected rows are typed by hand from the fixture of support/record_fixture.ts (three samples, S2 reran once), with the arithmetic beside them.
 //   hold_time = run.started_at - sampled_at; turnaround = available_at - sampled_at; both need two_clocks (and available_at for the second).
 //   C, S1: draw 1100, run 1500, measured 2000 -> hold 400, turnaround 900.   S2 v1: draw 5000, run 6000, measured 6500 -> 1000, 1500.

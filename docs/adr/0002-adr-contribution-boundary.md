@@ -33,7 +33,7 @@ Proposed: option 1. Claude writes status `Proposed` only and leaves the decider'
 
 ## Evidence
 
-- Repository invariants in `CLAUDE.md` (invariant 4) and `prompts/00_master_build.md` (invariant 4).
+- Repository invariants in `CLAUDE.md` (invariant 4) and `docs/prompts/00_master_build.md` (invariant 4).
 - Format check: `scripts/check_docs.py` (ADR sections, statuses, empty-note warning).
 
 ## Author statement (verbatim, if any)

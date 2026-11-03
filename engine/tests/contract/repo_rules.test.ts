@@ -58,7 +58,7 @@ describe("Contract: seeds are neutral integers", () => {
   });
 
   it("no scenario, trace or fixture file carries a date-shaped seed", () => {
-    const roots = ["tests", "scenarios"].map((d) => join(ROOT, d));
+    const roots = [["tests"], ["data", "scenarios"]].map((d) => join(ROOT, ...d));
     const files = roots.flatMap((r) => { try { return walk(r); } catch { return []; } }).filter((f) => f.endsWith(".json"));
     expect(files.length).toBeGreaterThan(20);
     const bad: string[] = [];

@@ -11,8 +11,8 @@ export const BREAKOUT_PROFILES = ["bacterial", "mycoplasma"] as const;
 export const breakoutData = (): LabData => ({
   ...labData(),
   breakout: {
-    scenarios: Object.fromEntries(BREAKOUT_SCENARIOS.map((id) => [id, readJson("scenarios", `${id}.json`)])),
-    profiles: BREAKOUT_PROFILES.map((id) => readJson("scenarios", "profiles", "breakout", `${id}.json`)),
-    experiment: readJson("scenarios", "experiments", "sc12.json"),
+    scenarios: Object.fromEntries(BREAKOUT_SCENARIOS.map((id) => [id, readJson("data", "scenarios", `${id}.json`)])),
+    profiles: BREAKOUT_PROFILES.map((id) => readJson("data", "scenarios", "profiles", "breakout", `${id}.json`)),
+    experiment: readJson("data", "scenarios", "experiments", "sc12.json"),
   },
 });

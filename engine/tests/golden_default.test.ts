@@ -7,7 +7,7 @@ import { canonicalJson, canonicalJsonl, ENGINE_VERSION, logHash } from "../src/t
 import { ROOT, listFiles } from "./support/paths.ts";
 import { configOf } from "./support/scenarios.ts";
 
-// Golden event logs of the default scenario (prompts/11 Step 4, 00 section 2 item 9). The files in tests/golden/ were created once by a recorded command
+// Golden event logs of the default scenario (docs/prompts/11 Step 4, 00 section 2 item 9). The files in tests/golden/ were created once by a recorded command
 // (docs/progress.md) and are read-only from then on: this test only reads them, compares and reports. It never writes or regenerates a file.
 // The logs are `runScenario(...).events`; sensor ticks are in `sensors`, not in `events`, so they are not part of the files.
 
@@ -43,7 +43,7 @@ describe("Golden event logs of the default scenario: checksums", () => {
 });
 
 describe("Golden event logs of the default scenario: the engine reproduces them", () => {
-  it.each(SEEDS)("Given seed %i and scenarios/default.json When the scenario runs Then the canonical log equals the golden file byte for byte", (seed) => {
+  it.each(SEEDS)("Given seed %i and data/scenarios/default.json When the scenario runs Then the canonical log equals the golden file byte for byte", (seed) => {
     const actual = canonicalJsonl(runScenario({ ...configOf("default"), seed }).events);
     const golden = read(`default_seed${seed}.trace.jsonl`);
     expect(actual === golden, firstDifference(actual, golden)).toBe(true);

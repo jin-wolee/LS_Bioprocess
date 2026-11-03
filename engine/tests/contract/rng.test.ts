@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SEP, canonicalKey, createRng, entityKey, hashString, splitmix64, streamSeed, wordsFromSeed } from "../../src/rng.ts";
 import type { StreamKey } from "../../src/rng.ts";
 
-// Expected values come from an independent Python implementation of the construction in prompts/10 Step 1
+// Expected values come from an independent Python implementation of the construction in docs/prompts/10 Step 1
 // (splitmix64 mix, 4 UTF-16 code units per block), not from the engine.
 describe("Contract: RNG key and stream seed", () => {
   it("splitmix64 from seed 0 yields the published reference outputs", () => {

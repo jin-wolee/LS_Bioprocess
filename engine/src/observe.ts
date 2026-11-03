@@ -2,7 +2,7 @@ import type { Event } from "./generated/event.schema";
 import type { SensorSeries } from "./sensors.ts";
 
 // Truth log to observable stream (spec section 3). Recorders see observable events only. Hidden fields carry
-// "x-visibility": "hidden" in schemas/event.schema.json; this table mirrors those annotations and a test compares the two.
+// "x-visibility": "hidden" in data/schemas/event.schema.json; this table mirrors those annotations and a test compares the two.
 const HIDDEN = {
   result_measured: ["true_value", "noise", "stability_kind", "stability_delta", "extrapolated"],
   sample_drawn: ["true_state"],
@@ -10,7 +10,7 @@ const HIDDEN = {
   calibration_recorded: ["drift_before_pct"],
 } as const;
 export const HIDDEN_FIELDS: Record<string, readonly string[]> = HIDDEN;
-/** Event types that exist in the truth log only (schemas/event.schema.json marks the whole definition `x-visibility: hidden`; spec 11.8.2 rule S6): `observe` drops them, a recorder never meets them. */
+/** Event types that exist in the truth log only (data/schemas/event.schema.json marks the whole definition `x-visibility: hidden`; spec 11.8.2 rule S6): `observe` drops them, a recorder never meets them. */
 export const TRUTH_ONLY_TYPES = ["contamination_onset"] as const;
 type TruthOnly = (typeof TRUTH_ONLY_TYPES)[number];
 

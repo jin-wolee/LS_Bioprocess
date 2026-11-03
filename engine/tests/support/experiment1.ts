@@ -18,11 +18,11 @@ export interface Experiment {
 }
 
 export const loadExperiment = (configDoc: unknown): Experiment => {
-  const evaluation = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+  const evaluation = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
   const config = parseExperimentConfig(configDoc, evaluation.min_seeds);
-  const preset = (name: string) => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+  const preset = (name: string) => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
   const ablated = ABLATIONS(preset(config.ablations_of)).map((x) => x.config);
-  const rawScenario = readJson<{ profiles: { staff: string } }>("scenarios", `${config.scenario}.json`);
+  const rawScenario = readJson<{ profiles: { staff: string } }>("data", "scenarios", `${config.scenario}.json`);
   return {
     config,
     head: { experiment_id: config.experiment_id, min_seeds: evaluation.min_seeds, ablations_of: config.ablations_of },

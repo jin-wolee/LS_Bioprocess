@@ -1,4 +1,4 @@
--- A minimal schema for the acceptance tests of the author's three queries (tests/user_track/test_queries.py), used ONLY when sql/schema.sql (the author's Card A) is absent.
+-- A minimal schema for the acceptance tests of the author's three queries (tests/user_track/test_queries.py), used ONLY when reference/sql/schema.sql (the author's Card A) is absent.
 -- It is not the canonical DDL: it holds the tables and columns that the fixtures of tests/fixtures/sql/ insert (the required names of Card A, data_model sections 2, 3 and 5)
 -- and nothing else, so a query is tested against the same names whichever schema is loaded. Standard SQL, no constraint beyond keys and not-null on the keys.
 CREATE TABLE unit (unit_id VARCHAR PRIMARY KEY, unit_tag VARCHAR);

@@ -7,13 +7,13 @@ import { CONFIGS } from "./support/cells.ts";
 import { eventsOf, inputOf, keyErrors, mixedUp } from "./support/sc_run.ts";
 import { runOf } from "./support/scenarios.ts";
 
-// SC3 Feed in the gap (spec 7, 6.1): which timestamp should the join use? scenarios/sc03_feed_in_gap.json scripts a bolus feed at 09:00 (A102) on twelve
-// reactors on days 3 and 4 while the routine decision stays at 10:00 (A050, A194). Structural relations only (prompts/20 Step 4): the count of samples with a
+// SC3 Feed in the gap (spec 7, 6.1): which timestamp should the join use? data/scenarios/sc03_feed_in_gap.json scripts a bolus feed at 09:00 (A102) on twelve
+// reactors on days 3 and 4 while the routine decision stays at 10:00 (A050, A194). Structural relations only (docs/prompts/20 Step 4): the count of samples with a
 // feed in the gap equals a count made independently from the truth log; the architecture that joins by the measured time attaches post-feed context to
 // exactly those samples; the one that joins by the draw time with keys fixed at write attaches none. Nothing is asserted about how many samples there are.
 //
 // The gap here runs from the draw to the first measurement (draw < feed <= measured_at), as in spec 6.1 ("between draw and measurement"): a feed during the
-// 270 s run itself changes the joined context as well, so an interval that stopped at run.started_at (prompts/20 Step 4) would miss it. The narrower
+// 270 s run itself changes the joined context as well, so an interval that stopped at run.started_at (docs/prompts/20 Step 4) would miss it. The narrower
 // interval is counted too, in the last test, as a subset.
 
 const A = CONFIGS[0];
@@ -31,7 +31,7 @@ interface Fact {
   epoch_at_measurement: number;
   /** A feed of the batch with draw < t <= measurement. */
   feed_in_gap: boolean;
-  /** A feed of the batch with draw <= t <= run start (the interval of prompts/20 Step 4). */
+  /** A feed of the batch with draw <= t <= run start (the interval of docs/prompts/20 Step 4). */
   feed_before_run: boolean;
   rerun: boolean;
 }

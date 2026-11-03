@@ -5,7 +5,7 @@
 
 After S3 the author looked at the lab and set the end goal of the project: a virtual laboratory and manufacturing plant that a person understands by looking at it, not pages of tables. The S3 screens (Setup, Results, Lineage, Challenge, Break-out) show the comparison of data architectures as forms, tables and small SVG drawings; the author judged that a person cannot read them at a glance.
 
-The engine already produces what a living plant view needs. A run is a deterministic event log of the truth world (reactors, sampling, logistics, analyzer queues, runs, results, process events, break-out events) and of what each architecture records, and the same seed gives the same bytes in Node and in every browser (ADR-0019). The lab runs the engine in a Web Worker (ADR-0003, ADR-0018) within a first-load budget of 300 KB gzip (`prompts/00_master_build.md` section 4).
+The engine already produces what a living plant view needs. A run is a deterministic event log of the truth world (reactors, sampling, logistics, analyzer queues, runs, results, process events, break-out events) and of what each architecture records, and the same seed gives the same bytes in Node and in every browser (ADR-0019). The lab runs the engine in a Web Worker (ADR-0003, ADR-0018) within a first-load budget of 300 KB gzip (`docs/prompts/00_master_build.md` section 4).
 
 The author chose, in chat on 2026-10-31: a 3D plant; game-like operation (the reader acts on the plant during a run, for example moves a sampling time or switches a flag, and sees the consequence); built before the S4 features.
 
@@ -26,7 +26,7 @@ The author chose, in chat on 2026-10-31: a 3D plant; game-like operation (the re
 Proposed: option 3 (the author's choice).
 
 - The plant view becomes the lab's main screen; the S3 screens stay as drill-downs reached from objects of the plant (a reactor, a sample, a record).
-- The 3D library is pinned to an exact version at least two weeks old (the rule of ADR-0018), loaded only when the plant view opens, so the first load of the lab keeps its 300 KB budget; the plant view gets a budget of its own, set from a measured spike and written into `prompts/00_master_build.md` section 4 once the author accepts it.
+- The 3D library is pinned to an exact version at least two weeks old (the rule of ADR-0018), loaded only when the plant view opens, so the first load of the lab keeps its 300 KB budget; the plant view gets a budget of its own, set from a measured spike and written into `docs/prompts/00_master_build.md` section 4 once the author accepts it.
 - An operator action is plain data: it enters the scenario as a scripted event with the canonical key of invariant 2, the Worker recomputes the run from its start, and the view resumes at the action's instant. The page never computes a result itself.
 - The truth stays separate (invariant 1): the plant shows the truth world as the simulation's own view, labelled as such; every record view shows only what that architecture stored; no action reveals a hidden field of a record.
 - The headless QA renders the scene in Chromium (software WebGL), checks frame time, the action round trip and that a recomputed run equals a run of the same scenario with the actions written in by hand.
@@ -42,7 +42,7 @@ Proposed: option 3 (the author's choice).
 ## Evidence
 
 - Decisions it builds on: ADR-0003 and ADR-0018 (engine in a Web Worker, Preact page), ADR-0019 (the same bytes in every browser), ADR-0005 (architectures as flags), ADR-0013 (break-out events).
-- Budgets: `prompts/00_master_build.md` section 4. The engine run time: `docs/progress.md`, the S3 close.
+- Budgets: `docs/prompts/00_master_build.md` section 4. The engine run time: `docs/progress.md`, the S3 close.
 - No `S###` or `A###` applies: this is a product and tooling decision.
 
 ## Author statement (verbatim, if any)

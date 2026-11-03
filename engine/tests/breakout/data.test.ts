@@ -126,6 +126,6 @@ describe("The engine is generic about the event type", () => {
   it("Given the same block with the lag changed in the scenario When the profile id is untouched Then only data changed: the lag of 20 h moves the signal to 25 h", () => {
     const run = runOfDoc(docOf(set(fx12a(), "lag", h(20, "A139"))));
     expect(run.events.filter((e) => e.type === "signal_observed").map((e) => e.t)).toEqual([25 * 3600]);
-    expect(readJson<{ params: Record<string, { value: number }> }>("scenarios", "profiles", "breakout", "bacterial.json").params.onset_to_signal_lag_h?.value).toBe(12);
+    expect(readJson<{ params: Record<string, { value: number }> }>("data", "scenarios", "profiles", "breakout", "bacterial.json").params.onset_to_signal_lag_h?.value).toBe(12);
   });
 });

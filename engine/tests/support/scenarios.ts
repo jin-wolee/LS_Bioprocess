@@ -6,10 +6,10 @@ import type { ScenarioConfig } from "../../src/scenario.ts";
 import { readJson } from "./paths.ts";
 import type { Json } from "./schemas.ts";
 
-// Test-side access to scenarios/ and scenarios/profiles/ (engine/src reads no files).
+// Test-side access to data/scenarios/ and data/scenarios/profiles/ (engine/src reads no files).
 
-export const rawScenario = (name: string): Json => readJson<Json>("scenarios", `${name}.json`);
-export const lookup = (kind: ProfileKind, id: string): unknown => readJson("scenarios", "profiles", kind, `${id}.json`);
+export const rawScenario = (name: string): Json => readJson<Json>("data", "scenarios", `${name}.json`);
+export const lookup = (kind: ProfileKind, id: string): unknown => readJson("data", "scenarios", "profiles", kind, `${id}.json`);
 
 export interface Patch {
   seed?: number;

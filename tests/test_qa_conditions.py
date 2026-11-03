@@ -1,6 +1,6 @@
-"""Pure helpers of scripts/qa_lab_conditions.py: the conditions every time measurement of the QA records (docs/design/plant_ui.md section 8, "The conditions of a measurement"; the audit's item 23).
+"""Pure helpers of scripts/qa/qa_lab_conditions.py: the conditions every time measurement of the QA records (docs/design/plant_ui.md section 8, "The conditions of a measurement"; the audit's item 23).
 
-Expected values are hand arithmetic or text typed by hand, never taken from the code under test. The browser checks that call it run through `uv run python scripts/qa_plant.py` and `qa_lab.py`.
+Expected values are hand arithmetic or text typed by hand, never taken from the code under test. The browser checks that call it run through `uv run python scripts/qa/qa_plant.py` and `qa_lab.py`.
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import pytest
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_lab_conditions as qc  # noqa: E402
 
 

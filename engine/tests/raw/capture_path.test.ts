@@ -18,7 +18,7 @@ import { runScenario } from "../../src/run.ts";
 // Step 5: the capture_path setting (spec section 5, "Capture path"; ADR-0014). The preset files carry the default (A manual_transcription, B and C adapter_ingest); it is inert
 // while raw_layer is off; a scenario may override it. Test-only: the small scenario (6 reactors, 8 days) and seed 1.
 
-const preset = (name: string) => parseArchitecture(readJson("scenarios", "architectures", `${name}.json`));
+const preset = (name: string) => parseArchitecture(readJson("data", "scenarios", "architectures", `${name}.json`));
 const [A, B, C] = [preset("a_manual"), preset("b_lims_lite"), preset("c_context")];
 const golden = (seed: number): string => (JSON.parse(readFileSync(join(ROOT, "tests", "golden", `default_seed${seed}.summary.json`), "utf8")) as { log_hash: string }).log_hash;
 
@@ -28,7 +28,7 @@ describe("capture_path in the architecture presets and the scenario", () => {
   });
   it("Given the architecture schema Then a capture_path other than the two values is rejected, and an architecture without one is still valid (inert while the layer is off)", () => {
     const ajv = makeAjv();
-    ajv.addSchema(readJson("schemas", "architecture.schema.json"));
+    ajv.addSchema(readJson("data", "schemas", "architecture.schema.json"));
     expect(isValid(ajv, "architecture", { ...A, capture_path: "by_fax" })).toBe(false);
     expect(isValid(ajv, "architecture", A)).toBe(true);
     const without: Record<string, unknown> = { ...A };

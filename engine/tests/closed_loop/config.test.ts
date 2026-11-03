@@ -4,7 +4,7 @@ import { readJson } from "../support/paths.ts";
 import { ledgerIds, refsOf } from "../support/schemas.ts";
 import { rawScenario } from "../support/scenarios.ts";
 
-// The config of experiment 2 (scenarios/experiments/experiment2.json): scenario, architectures, the sensitivity variant, the seed list (written before any run, at least 20
+// The config of experiment 2 (data/scenarios/experiments/experiment2.json): scenario, architectures, the sensitivity variant, the seed list (written before any run, at least 20
 // seeds, A103), the bootstrap settings and the assumption ids the result text names. The engine reads no file: the caller passes the parsed JSON.
 
 const SEEDS = Array.from({ length: 20 }, (_, i) => 5000 + i * 7);
@@ -60,9 +60,9 @@ describe("SC8 experiment 2 config: the rules of the seed list and the settings",
 });
 
 describe("SC8 experiment 2 config: the file in the repository", () => {
-  const doc = readJson<typeof DOC>("scenarios", "experiments", "experiment2.json");
+  const doc = readJson<typeof DOC>("data", "scenarios", "experiments", "experiment2.json");
 
-  it("Given scenarios/experiments/experiment2.json Then it parses with the A103 minimum of 20 seeds", () => {
+  it("Given data/scenarios/experiments/experiment2.json Then it parses with the A103 minimum of 20 seeds", () => {
     const c = parseClosedLoopConfig(doc, 20);
     expect(c.seeds.length).toBeGreaterThanOrEqual(20);
     expect(c.scenario).toBe("sc08_ph_restandardisation");
@@ -71,7 +71,7 @@ describe("SC8 experiment 2 config: the file in the repository", () => {
   it("Then every assumption id it names is in the ledger, and every id is cited in the SC8 scenario or the evaluation settings it runs", () => {
     const ids = ledgerIds();
     for (const id of doc.assumptions) expect(ids.has(id), id).toBe(true);
-    const cited = new Set([...refsOf(rawScenario("sc08_ph_restandardisation")), ...refsOf(readJson("scenarios", "evaluation", "default.json")), ...refsOf(readJson("scenarios", "profiles", "analyzer", "allinone_atline.json")), "A103", "A037"]);
+    const cited = new Set([...refsOf(rawScenario("sc08_ph_restandardisation")), ...refsOf(readJson("data", "scenarios", "evaluation", "default.json")), ...refsOf(readJson("data", "scenarios", "profiles", "analyzer", "allinone_atline.json")), "A103", "A037"]);
     for (const id of doc.assumptions) expect(cited.has(id), `${id} is named by the result text but no setting of the run carries it`).toBe(true);
   });
 

@@ -83,7 +83,7 @@ def owned_repo(tmp_path):
     (root / ".claude").mkdir(parents=True)
     run(["git", "init", "-q"], cwd=root)
     (root / ".claude/user_owned.txt").write_text(
-        "# author-owned\nsql/schema.sql\nsql/queries/*.sql\nreference/sim_core.py\n", encoding="utf-8"
+        "# author-owned\nreference/sql/schema.sql\nreference/sql/queries/*.sql\nreference/simpy/sim_core.py\n", encoding="utf-8"
     )
     return root
 
@@ -114,20 +114,20 @@ def test_tool_guard_allows_reads_and_headless(owned_repo, tool):
 
 
 @pytest.mark.parametrize("tool", ["Write", "Edit"])
-@pytest.mark.parametrize("rel", ["sql/schema.sql", "sql/queries/lineage.sql", "reference/sim_core.py"])
+@pytest.mark.parametrize("rel", ["reference/sql/schema.sql", "reference/sql/queries/lineage.sql", "reference/simpy/sim_core.py"])
 def test_tool_guard_blocks_user_owned_paths(owned_repo, tool, rel):
     r = tools_guard(owned_repo, tool, file_path=str(owned_repo / rel))
     assert r.returncode == 2
     assert "user_owned" in r.stderr
 
 
-@pytest.mark.parametrize("rel", ["src/engine.ts", "sql/queries/notes.txt", "sql/other.sql"])
+@pytest.mark.parametrize("rel", ["src/engine.ts", "reference/sql/queries/notes.txt", "reference/sql/other.sql"])
 def test_tool_guard_allows_other_repo_paths(owned_repo, rel):
     assert tools_guard(owned_repo, "Write", file_path=str(owned_repo / rel)).returncode == 0
 
 
 def test_tool_guard_ignores_paths_outside_the_repo(owned_repo, tmp_path):
-    outside = tmp_path / "elsewhere" / "sql" / "schema.sql"
+    outside = tmp_path / "elsewhere" / "reference" / "sql" / "schema.sql"
     assert tools_guard(owned_repo, "Write", file_path=str(outside)).returncode == 0
 
 

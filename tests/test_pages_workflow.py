@@ -1,7 +1,7 @@
 """The Pages workflow (.github/workflows/pages.yml, docs/design/lab_ui.md section 13).
 
 The workflow is written here and run only by the author. These tests read the file: the trigger, the default of the one input, the pins of the actions, what gets uploaded and which steps run in
-which order. They cannot run the workflow; scripts/assemble_site.py and scripts/qa_site.py check the folder it uploads.
+which order. They cannot run the workflow; scripts/assemble_site.py and scripts/qa/qa_site.py check the folder it uploads.
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from helpers import REPO
 WORKFLOW = REPO / ".github" / "workflows" / "pages.yml"
 
 # Read from the public release lists and tags of each action on 2026-10-31 (api.github.com/repos/<owner>/<repo>/releases and /commits/<tag>); the release date is the one of the release page.
-# The rule (the Preact rule of prompts/30): a pinned release is at least two weeks old on the day it is pinned. Moving a pin means reading the new tag and date and changing this table first.
+# The rule (the Preact rule of docs/prompts/30): a pinned release is at least two weeks old on the day it is pinned. Moving a pin means reading the new tag and date and changing this table first.
 READ_ON = date(2026, 10, 31)
 PINS = {
     "actions/checkout": ("v7.0.1", "3d3c42e5aac5ba805825da76410c181273ba90b1", date(2026, 7, 20)),
@@ -133,7 +133,7 @@ def test_uv_is_the_version_of_the_lockfile_toolchain(wf):
 def test_the_build_steps_run_in_this_order(wf):
     # P9 (audit item 21): the browser QA runs before anything is uploaded. The lab and plant QA build the lab as a local build into dist/lab, so the public build of assemble_site.py comes after them,
     # and the site QA checks that assembled folder, which is the one the upload step takes.
-    wanted = ["npm ci", "uv sync --frozen", "check_docs.py --all --ci", "pytest -q", "npm run check", "playwright install", "scripts/qa_lab.py", "scripts/qa_plant.py", "scripts/assemble_site.py", "scripts/qa_site.py"]
+    wanted = ["npm ci", "uv sync --frozen", "check_docs.py --all --ci", "pytest -q", "npm run check", "playwright install", "scripts/qa/qa_lab.py", "scripts/qa/qa_plant.py", "scripts/assemble_site.py", "scripts/qa/qa_site.py"]
     commands = runs(wf, "build")
     at = []
     for fragment in wanted:
@@ -143,7 +143,7 @@ def test_the_build_steps_run_in_this_order(wf):
     assert at == sorted(at)
     every = steps(wf, "build")
     uploads = [i for i, s in enumerate(every) if str(s.get("uses", "")).startswith("actions/upload-pages-artifact@")]
-    assert len(uploads) == 1 and uploads[0] > max(i for i, s in enumerate(every) if "scripts/qa_site.py" in s.get("run", ""))
+    assert len(uploads) == 1 and uploads[0] > max(i for i, s in enumerate(every) if "scripts/qa/qa_site.py" in s.get("run", ""))
 
 
 def test_the_banned_token_list_comes_from_the_secret_in_one_step_only(wf):
@@ -189,13 +189,13 @@ def test_playwright_is_a_dependency_of_the_lockfile():
 
 
 def test_each_browser_qa_runs_in_the_timing_mode_report_and_the_lab_qa_skips_the_other_engines(wf):
-    # a CI runner's software renderer is not the machine of the budgets: the times are printed with their conditions and do not fail (scripts/qa_timing.py); every other failure fails the run
-    lab = step_running(wf, "scripts/qa_lab.py")["run"]
-    plant = step_running(wf, "scripts/qa_plant.py")["run"]
-    site = step_running(wf, "scripts/qa_site.py")["run"]
-    assert lab.split() == ["uv", "run", "--frozen", "python", "scripts/qa_lab.py", "--timing", "report", "--no-engines"]
-    assert plant.split() == ["uv", "run", "--frozen", "python", "scripts/qa_plant.py", "--timing", "report"]
-    assert site.split() == ["uv", "run", "--frozen", "python", "scripts/qa_site.py", "--timing", "report"]
+    # a CI runner's software renderer is not the machine of the budgets: the times are printed with their conditions and do not fail (scripts/qa/qa_timing.py); every other failure fails the run
+    lab = step_running(wf, "scripts/qa/qa_lab.py")["run"]
+    plant = step_running(wf, "scripts/qa/qa_plant.py")["run"]
+    site = step_running(wf, "scripts/qa/qa_site.py")["run"]
+    assert lab.split() == ["uv", "run", "--frozen", "python", "scripts/qa/qa_lab.py", "--timing", "report", "--no-engines"]
+    assert plant.split() == ["uv", "run", "--frozen", "python", "scripts/qa/qa_plant.py", "--timing", "report"]
+    assert site.split() == ["uv", "run", "--frozen", "python", "scripts/qa/qa_site.py", "--timing", "report"]
 
 
 def test_no_step_of_the_build_job_may_fail_without_failing_the_job(wf):
@@ -213,5 +213,5 @@ def test_the_deploy_job_still_needs_the_build_job_and_the_build_job_cannot_run_f
 
 
 def test_the_qa_steps_do_not_see_the_banned_token_secret(wf):
-    for fragment in ("playwright install", "scripts/qa_lab.py", "scripts/qa_plant.py", "scripts/qa_site.py"):
+    for fragment in ("playwright install", "scripts/qa/qa_lab.py", "scripts/qa/qa_plant.py", "scripts/qa/qa_site.py"):
         assert "env" not in step_running(wf, fragment)

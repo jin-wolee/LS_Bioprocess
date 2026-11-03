@@ -79,7 +79,7 @@ export interface Stage {
   transfer?: string;
   method_id?: string;
   /**
-   * The output dialect of the raw device layer that writes this visit (spec section 2.4.2); a key of scenarios/profiles/dialect/. Read only with raw_layer on.
+   * The output dialect of the raw device layer that writes this visit (spec section 2.4.2); a key of data/scenarios/profiles/dialect/. Read only with raw_layer on.
    */
   dialect?: string;
   storage: "ice" | "room_temperature" | "frozen";

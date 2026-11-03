@@ -6,7 +6,7 @@ import type { RowEnv } from "./row.ts";
 import { pinOrder } from "./stamp.ts";
 import type { IngestStore } from "./store.ts";
 
-// The generic parser (spec section 2.4.1; data_model section 16; prompts/20 Step 6): one function from file text and an adapter entry to a raw_file, raw_record rows,
+// The generic parser (spec section 2.4.1; data_model section 16; docs/prompts/20 Step 6): one function from file text and an adapter entry to a raw_file, raw_record rows,
 // canonical records and parse_error rows. It branches on no dialect id: the shape comes from the entry. Per line the outcome is loaded, no-op, or an action hold,
 // quarantine or reject with its rule id (VR-023 to VR-026, VR-005, VR-006, VR-008, VR-008b, VR-019). The parser never reads truth, the raw quirk key or the run bookkeeping.
 

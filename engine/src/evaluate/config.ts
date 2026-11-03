@@ -1,7 +1,7 @@
 import { checkParams, param } from "../profiles.ts";
 import type { Contrast } from "./effects.ts";
 
-// Settings of the evaluation, as data with ledger refs (scenarios/evaluation/*.json). The engine reads no file: the caller passes the parsed JSON.
+// Settings of the evaluation, as data with ledger refs (data/scenarios/evaluation/*.json). The engine reads no file: the caller passes the parsed JSON.
 
 /** The clock windows the roster staffs (A201, read by the assembly from the scenario): a weekday from `start_s` to `end_weekday_s`, a weekend day from `start_s` to `end_weekend_s`. */
 export interface StaffedRoster {

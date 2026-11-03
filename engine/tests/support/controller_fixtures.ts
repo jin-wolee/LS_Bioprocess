@@ -16,7 +16,7 @@ import { ROOT, readJson } from "./paths.ts";
 export const ANCHOR = "2030-01-07";
 export const CONTROLLER_FAMILIES = ["ctrl_neutral", "ctrl_bench"] as const;
 export const CONTROLLER_FIXTURES = join(ROOT, "tests", "fixtures", "raw");
-export const profileOf = (id: string): ControllerProfile => readJson<ControllerProfile>("scenarios", "profiles", "controller", `${id}.json`);
+export const profileOf = (id: string): ControllerProfile => readJson<ControllerProfile>("data", "scenarios", "profiles", "controller", `${id}.json`);
 
 export interface ControllerCase {
   name: string;

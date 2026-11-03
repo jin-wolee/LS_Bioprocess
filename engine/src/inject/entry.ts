@@ -3,7 +3,7 @@ import { entryDraw, physicalOf } from "../raw/quirks.ts";
 import type { PhysicalIds, RawOpportunity } from "../raw/quirks.ts";
 import type { CaptureProvenance } from "../record/types.ts";
 
-// The transcription step of manual_transcription (spec section 5, "Capture path", rules 3 to 5; prompts/20 Step 6): a person reads the instrument screen or printout and
+// The transcription step of manual_transcription (spec section 5, "Capture path", rules 3 to 5; docs/prompts/20 Step 6): a person reads the instrument screen or printout and
 // types the result. The typed value is the observable result after the entry-error opportunities have materialised; no emitter or adapter is involved. The opportunities
 // (purpose `error:result_entry`) are drawn for every result row on both paths; only this path lets them materialise. A production run has no ledger rate for a typed value,
 // a unit slip or a dilution slip (spec 2.4.8: A047 and A061 are labelling entries, A048 has no rate), so it materialises none and reports the class as not modelled; forced

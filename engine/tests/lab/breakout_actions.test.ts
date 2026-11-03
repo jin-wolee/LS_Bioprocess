@@ -32,7 +32,7 @@ describe("no actions: the answer is the answer of the code before P5c, byte for 
 describe("with actions they are applied to the scenario of the case", () => {
   it("Given a maintenance window of AN-1 Then the answer is not the answer without it, and equals the answer for the case with the window written in by hand, deep", async () => {
     const withAction = await ask({ actions: [DOWN] });
-    const handData = { ...data, breakout: { ...data.breakout!, scenarios: { ...data.breakout!.scenarios, sc12_medium_lot: patched(readJson<Json>("scenarios", "sc12_medium_lot.json"), { fields: HAND }) } } };
+    const handData = { ...data, breakout: { ...data.breakout!, scenarios: { ...data.breakout!.scenarios, sc12_medium_lot: patched(readJson<Json>("data", "scenarios", "sc12_medium_lot.json"), { fields: HAND }) } } };
     const byHand = await ask({}, ARCHS, handData);
     expect(withAction).toEqual(byHand);
     expect(await digest(withAction)).not.toBe(PIN);

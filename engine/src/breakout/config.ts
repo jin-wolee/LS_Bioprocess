@@ -6,7 +6,7 @@ import type { ProfileLookup } from "../profiles.ts";
 import { loadTypeProfile } from "./profile.ts";
 import type { TestSpec, TypeProfile } from "./profile.ts";
 
-// The `breakout` block of a scenario (spec 11.4, 11.8.2; schemas/scenario.schema.json), read into seconds and checked for everything that does not need the process: the inputs that have no
+// The `breakout` block of a scenario (spec 11.4, 11.8.2; data/schemas/scenario.schema.json), read into seconds and checked for everything that does not need the process: the inputs that have no
 // default (A176, A177 and the ones the event-type profile names), the ramp inside the lag, and the names the topology uses. What needs the units (their inoculation, their end) is checked
 // by plan.ts. Every refusal names the input at fault and, where it has one, its ledger id.
 

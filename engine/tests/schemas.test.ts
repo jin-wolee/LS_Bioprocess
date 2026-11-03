@@ -22,7 +22,7 @@ const findConst = (node: unknown): boolean => {
 describe("Schemas: each compiles under draft 2020-12 and carries schema_version const 1", () => {
   for (const n of NAMES) {
     it(`${n}.schema.json compiles`, () => {
-      const schema = readJson<Json>("schemas", `${n}.schema.json`);
+      const schema = readJson<Json>("data", "schemas", `${n}.schema.json`);
       expect(schema.$schema).toBe("https://json-schema.org/draft/2020-12/schema");
       expect(findConst(schema)).toBe(true);
       expect(() => makeAjv().getSchema(`${n}.schema.json`)).not.toThrow();
@@ -106,7 +106,7 @@ describe("Schemas: profile ids are free strings and never enumerated", () => {
   const KNOWN = ["bench_manual", "micro_mini_parallel", "pilot", "allinone_atline", "split_cellcounter_metabolite", "hplc", "experienced", "trainee"];
 
   it("profile.schema.json declares profile_id as a plain string with no enum, const or pattern list", () => {
-    const schema = readJson<Json>("schemas", "profile.schema.json");
+    const schema = readJson<Json>("data", "schemas", "profile.schema.json");
     const id = (schema.properties as Json).profile_id as Json;
     expect(id.type).toBe("string");
     for (const k of ["enum", "const", "oneOf", "anyOf"]) expect(id[k], k).toBeUndefined();
@@ -114,7 +114,7 @@ describe("Schemas: profile ids are free strings and never enumerated", () => {
 
   it("neither the schemas nor the generated types mention a profile id of the design", () => {
     const files = [
-      ...readdirSync(join(ROOT, "schemas")).map((f) => join(ROOT, "schemas", f)),
+      ...readdirSync(join(ROOT, "data", "schemas")).map((f) => join(ROOT, "data", "schemas", f)),
       ...readdirSync(join(ROOT, "engine", "src", "generated")).map((f) => join(ROOT, "engine", "src", "generated", f)),
     ];
     expect(files.length).toBeGreaterThanOrEqual(10);
@@ -130,7 +130,7 @@ describe("Schemas: generated types", () => {
   afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
   it("regenerating into a temp path reproduces engine/src/generated exactly (no drift)", () => {
-    execFileSync(join(ROOT, "node_modules", ".bin", "json2ts"), ["--input", "schemas", "--output", tmp, "--cwd", "schemas"], { cwd: ROOT, stdio: "pipe" });
+    execFileSync(join(ROOT, "node_modules", ".bin", "json2ts"), ["--input", "data/schemas", "--output", tmp, "--cwd", "data/schemas"], { cwd: ROOT, stdio: "pipe" });
     const fresh = readdirSync(tmp).sort();
     const committed = readdirSync(join(ROOT, "engine", "src", "generated")).sort();
     expect(committed).toEqual(fresh);
@@ -144,7 +144,7 @@ describe("Schemas: generated types", () => {
 
 describe("Schemas: hidden fields", () => {
   it("the HIDDEN_FIELDS table of observe.ts equals the x-visibility: hidden annotations of event.schema.json", () => {
-    const schema = readJson<Json>("schemas", "event.schema.json");
+    const schema = readJson<Json>("data", "schemas", "event.schema.json");
     const defs = schema.$defs as Record<string, Json>;
     const fromSchema: Record<string, string[]> = {};
     for (const def of Object.values(defs)) {

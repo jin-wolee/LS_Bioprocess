@@ -3,7 +3,7 @@
 - **Date:** 2026-10-30
 ## Context
 
-Session S3 builds the lab UI (`prompts/00_master_build.md` section 4): presets, the N by M controls (ADR-0015), a lineage view, the challenge, end-to-end tests and a GitHub Pages workflow. Its budgets are measured, not estimated: the lab's first load at most 300 KB gzip, and the engine run of the default scenario at most 1 s in a Web Worker (ADR-0003). The page is static. It needs English and Korean (ADR-0006). Vite is already a pinned dev dependency. The infographic is a separate page in plain JavaScript (ADR-0011) and is not part of this decision. No ADR names a UI library.
+Session S3 builds the lab UI (`docs/prompts/00_master_build.md` section 4): presets, the N by M controls (ADR-0015), a lineage view, the challenge, end-to-end tests and a GitHub Pages workflow. Its budgets are measured, not estimated: the lab's first load at most 300 KB gzip, and the engine run of the default scenario at most 1 s in a Web Worker (ADR-0003). The page is static. It needs English and Korean (ADR-0006). Vite is already a pinned dev dependency. The infographic is a separate page in plain JavaScript (ADR-0011) and is not part of this decision. No ADR names a UI library.
 
 ## Options
 
@@ -38,7 +38,7 @@ Proposed: option 1.
 ## Evidence
 
 - Decisions it builds on: ADR-0003 (engine in a Web Worker), ADR-0006 (English first with a Korean toggle), ADR-0011 (the infographic, a separate page), ADR-0015 (the N by M controls), ADR-0016 (the browser check).
-- Budgets: `prompts/00_master_build.md` section 4.
+- Budgets: `docs/prompts/00_master_build.md` section 4.
 - No `S###` or `A###` applies: the choice is a tooling decision, not a domain number.
 
 ## Author statement (verbatim, if any)

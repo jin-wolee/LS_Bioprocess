@@ -82,12 +82,12 @@ describe("F5 rework: every setting has a kind", () => {
   );
 
   it("Given every bundled scenario file Then each of its settings has a kind, and its own value obeys it", () => {
-    const files = listFiles("scenarios").filter((f) => f.endsWith(".json"));
+    const files = listFiles("data", "scenarios").filter((f) => f.endsWith(".json"));
     expect(files.length).toBeGreaterThanOrEqual(10);
     const missing: string[] = [];
     const broken: string[] = [];
     for (const f of files) {
-      const settings = readJson<{ settings?: Record<string, { value: number }> }>("scenarios", f).settings ?? {};
+      const settings = readJson<{ settings?: Record<string, { value: number }> }>("data", "scenarios", f).settings ?? {};
       for (const [name, s] of Object.entries(settings)) {
         if (kindOf(name) === undefined) missing.push(`${f}: ${name}`);
         else if (settingFault(name, s.value) !== null) broken.push(`${f}: ${name}=${s.value}`);

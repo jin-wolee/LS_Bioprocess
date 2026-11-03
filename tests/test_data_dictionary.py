@@ -1,4 +1,4 @@
-"""Tests of docs/design/data_dictionary.yaml (prompts/20 Step 9; data_model.md sections 6 and 9).
+"""Tests of docs/design/data_dictionary.yaml (docs/prompts/20 Step 9; data_model.md sections 6 and 9).
 
 The dictionary is read with PyYAML (already a dependency, as for the ledgers); the engine side is the output of engine/tests/support/dictionary_cli.ts: the recorders, the validation rules,
 the review step and the export run on hand-built streams under every architecture and on the default scenario at the small size. Expected sets that are typed here are typed by hand from the
@@ -72,7 +72,7 @@ def test_every_column_has_the_attributes_of_section_9(d: dict) -> None:
 
 
 def test_hidden_columns_are_exactly_the_hidden_fields_of_the_event_schema(d: dict) -> None:
-    schema = json.loads((ROOT / "schemas" / "event.schema.json").read_text())
+    schema = json.loads((ROOT / "data" / "schemas" / "event.schema.json").read_text())
     annotated = {(event, field) for event, body in schema["$defs"].items() for field, spec in body.get("properties", {}).items() if spec.get("x-visibility") == "hidden"}
     in_dictionary = {(entity.removeprefix("truth_"), c["name"]) for entity, spec in d["entities"].items() if entity.startswith("truth_") and entity != "truth_operator" for c in spec["columns"] if c["visibility"] == "hidden"}
     assert in_dictionary == annotated

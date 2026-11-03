@@ -1,6 +1,6 @@
-"""Pure helpers of scripts/qa_plant_sweep_helpers.py (the settings sweep of the plant, docs/design/plant_ui.md section 10, "The sweep").
+"""Pure helpers of scripts/qa/qa_plant_sweep_helpers.py (the settings sweep of the plant, docs/design/plant_ui.md section 10, "The sweep").
 
-Expected values are hand arithmetic or text typed by hand, never taken from the code under test. The browser checks run through `uv run python scripts/qa_plant.py --sweep`.
+Expected values are hand arithmetic or text typed by hand, never taken from the code under test. The browser checks run through `uv run python scripts/qa/qa_plant.py --sweep`.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import pytest
 
 from helpers import REPO
 
-sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_plant_sweep_helpers as sw  # noqa: E402
 
 HASH = "a" * 64
@@ -100,14 +100,14 @@ def test_the_staff_are_two_shifts_of_the_operators_of_a_shift():
 
 def test_the_defaults_typed_in_the_helper_are_the_ones_of_the_four_scenarios_of_the_lab():
     for name in ("default", "sc02_shift_burst", "sc03_feed_in_gap", "sc05_one_analyzer_down"):
-        doc = json.loads((REPO / "scenarios" / f"{name}.json").read_text(encoding="utf-8"))
+        doc = json.loads((REPO / "data" / "scenarios" / f"{name}.json").read_text(encoding="utf-8"))
         assert {k: doc["settings"][k]["value"] for k in sw.DEFAULTS} == sw.DEFAULTS, name
         assert doc["profiles"]["analyzer"] == "allinone_atline", name
 
 
 def test_the_stages_typed_in_the_helper_are_the_stages_of_the_profile_files():
     for profile, stages in sw.STAGES.items():
-        doc = json.loads((REPO / "scenarios" / "profiles" / "analyzer" / f"{profile}.json").read_text(encoding="utf-8"))
+        doc = json.loads((REPO / "data" / "scenarios" / "profiles" / "analyzer" / f"{profile}.json").read_text(encoding="utf-8"))
         assert len(doc["route"]) == stages, profile
     assert sw.STAGES == {"allinone_atline": 1, "hplc": 1, "split_cellcounter_metabolite": 2}
 

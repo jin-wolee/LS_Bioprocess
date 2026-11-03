@@ -23,7 +23,7 @@ import { SMALL, lookup, patched, rawScenario } from "../support/scenarios.ts";
 //   U04-D01-2  drawn 125634, run starts 126451 (hold 817 s), pH result at 126721 on AN-1, technique draw 0.245: open. It is the next draw after U01-D01-2 in the stream.
 // The production rule of a label error takes the next draw as the id the label reads, so the plant is U01-D01-2 labelled as U04-D01-2.
 
-const EVAL = evaluationSettings(readJson("scenarios", "evaluation", "default.json"));
+const EVAL = evaluationSettings(readJson("data", "scenarios", "evaluation", "default.json"));
 const A = ALL_ARCHS[0]!;
 const C_MINUS = ALL_ARCHS[3]!; // c_context_minus_system_issued_id: the other nine flags on
 const scenario = loadScenario(patched(rawScenario("sc08_ph_restandardisation"), { settings: { ...SMALL, technique_error_probability: 0.5 } }), lookup);

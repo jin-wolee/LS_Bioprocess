@@ -11,9 +11,9 @@ import type { Json } from "../support/schemas.ts";
 // labels are vendor-neutral, every description says that the format is synthetic and modeled on public documentation, and the raw quirk key is hidden.
 
 const ajv = makeAjv();
-for (const n of ["dialect", "controller_profile", "raw_quirk_key", "canonical_record"]) ajv.addSchema(readJson<Json>("schemas", `${n}.schema.json`));
-const DIALECTS = listFiles("scenarios", "profiles", "dialect");
-const CONTROLLERS = listFiles("scenarios", "profiles", "controller");
+for (const n of ["dialect", "controller_profile", "raw_quirk_key", "canonical_record"]) ajv.addSchema(readJson<Json>("data", "schemas", `${n}.schema.json`));
+const DIALECTS = listFiles("data", "scenarios", "profiles", "dialect");
+const CONTROLLERS = listFiles("data", "scenarios", "profiles", "controller");
 const sources = (): Set<string> => new Set([...ledgerIds()].filter((i) => i.startsWith("S")));
 const BANNER = "synthetic, modeled on public documentation; not a real instrument file";
 
@@ -23,7 +23,7 @@ describe("dialect and controller profile files", () => {
     expect(CONTROLLERS.map((f) => f.replace(".json", ""))).toEqual(["ctrl_bench", "ctrl_neutral"]);
   });
   it.each(DIALECTS)("dialect %s: valid, its file name is its id, every ref is a ledger id and every modeled_on id is a source", (f) => {
-    const doc = readJson<Json>("scenarios", "profiles", "dialect", f);
+    const doc = readJson<Json>("data", "scenarios", "profiles", "dialect", f);
     expect(isValid(ajv, "dialect", doc)).toBe(true);
     expect(doc.dialect_id).toBe(f.replace(".json", ""));
     const ids = ledgerIds();
@@ -32,7 +32,7 @@ describe("dialect and controller profile files", () => {
     expect(doc.banner).toBe(BANNER);
   });
   it.each(CONTROLLERS)("controller family %s: valid, its file name is its id, every ref is a ledger id and every modeled_on id is a source", (f) => {
-    const doc = readJson<Json>("scenarios", "profiles", "controller", f);
+    const doc = readJson<Json>("data", "scenarios", "profiles", "controller", f);
     expect(isValid(ajv, "controller_profile", doc)).toBe(true);
     expect(doc.profile_id).toBe(f.replace(".json", ""));
     const ids = ledgerIds();
@@ -40,7 +40,7 @@ describe("dialect and controller profile files", () => {
     for (const s of doc.modeled_on as string[]) expect(sources().has(s), s).toBe(true);
   });
   it("Given a dialect with no banner, a wrong banner, a bare number, a ref that is no ledger id shape or a modeled_on that is not S followed by 3 digits Then the schema refuses it", () => {
-    const base = readJson<Json>("scenarios", "profiles", "dialect", "allinone_csv.json");
+    const base = readJson<Json>("data", "scenarios", "profiles", "dialect", "allinone_csv.json");
     const noBanner: Json = { ...base };
     delete noBanner.banner;
     expect(isValid(ajv, "dialect", noBanner)).toBe(false);
@@ -51,11 +51,11 @@ describe("dialect and controller profile files", () => {
     expect(isValid(ajv, "dialect", { ...base, extra: 1 })).toBe(false);
   });
   it("Given an analyzer profile Then every stage of its route names a dialect that exists, and the dialect has a value column for each analyte of the stage", () => {
-    for (const f of listFiles("scenarios", "profiles", "analyzer")) {
-      const doc = readJson<{ route: { dialect?: string; analytes: { id: string }[] }[] }>("scenarios", "profiles", "analyzer", f);
+    for (const f of listFiles("data", "scenarios", "profiles", "analyzer")) {
+      const doc = readJson<{ route: { dialect?: string; analytes: { id: string }[] }[] }>("data", "scenarios", "profiles", "analyzer", f);
       for (const st of doc.route) {
         expect(st.dialect, `${f} stage`).toBeDefined();
-        const d = readJson<{ columns: { analyte?: string }[] }>("scenarios", "profiles", "dialect", `${st.dialect}.json`);
+        const d = readJson<{ columns: { analyte?: string }[] }>("data", "scenarios", "profiles", "dialect", `${st.dialect}.json`);
         for (const a of st.analytes) expect(d.columns.some((c) => c.analyte === a.id), `${f} ${a.id}`).toBe(true);
       }
     }
@@ -64,7 +64,7 @@ describe("dialect and controller profile files", () => {
 
 describe("the raw quirk key and the canonical record", () => {
   it("Given the raw quirk key schema Then it is annotated hidden: the evaluator is its only reader", () => {
-    expect(readJson<Json>("schemas", "raw_quirk_key.schema.json")["x-visibility"]).toBe("hidden");
+    expect(readJson<Json>("data", "schemas", "raw_quirk_key.schema.json")["x-visibility"]).toBe("hidden");
   });
   it("Given a key document Then the schema accepts it and refuses an unknown property", () => {
     const doc = { schema_version: "1", engine_version: "0.1.0", scenario_id: "s", seed: 1, architecture: "c_context", capture_path: "adapter_ingest", files: [{ file_name: "f.csv", instrument: "AN-1", dialect_id: "allinone_csv", replay_of: null, rows: [{ line: 3, sample_id: "S1", intended_s: 33000, resolution_s: 1, ambiguous: false, repeat: false, quirks: [], unreadable: false }] }], entry_errors: [], opportunities: [{ purpose: "raw:RQ4", id: "S1/1/1", u: 0.5 }], not_modelled: [] };
@@ -93,16 +93,16 @@ describe("the raw quirk key and the canonical record", () => {
 describe("ADR-0014 rules R1 to R3 (Step 8)", () => {
   const dirs = [["dialect", DIALECTS], ["controller", CONTROLLERS]] as const;
   it("R2: the dialect ids, controller ids and file-name prefixes are the vendor-neutral ones, and every label is a short field name", () => {
-    expect(DIALECTS.map((f) => readJson<{ file: { name_prefix: string } }>("scenarios", "profiles", "dialect", f).file.name_prefix)).toEqual(["analysis_export", "cds_export", "counter_export"]);
-    expect(CONTROLLERS.flatMap((f) => readJson<{ logs: { file_prefix: string }[] }>("scenarios", "profiles", "controller", f).logs.map((l) => l.file_prefix))).toEqual(["bench_process", "bench_user", "bench_alarms", "bench_steps", "bench_errors", "ctrl_tags", "ctrl_alarms", "ctrl_phases"]);
+    expect(DIALECTS.map((f) => readJson<{ file: { name_prefix: string } }>("data", "scenarios", "profiles", "dialect", f).file.name_prefix)).toEqual(["analysis_export", "cds_export", "counter_export"]);
+    expect(CONTROLLERS.flatMap((f) => readJson<{ logs: { file_prefix: string }[] }>("data", "scenarios", "profiles", "controller", f).logs.map((l) => l.file_prefix))).toEqual(["bench_process", "bench_user", "bench_alarms", "bench_steps", "bench_errors", "ctrl_tags", "ctrl_alarms", "ctrl_phases"]);
     for (const f of DIALECTS) {
-      for (const c of readJson<{ columns: { label: string }[] }>("scenarios", "profiles", "dialect", f).columns) expect(c.label.length <= 24 && c.label.split(" ").length <= 3, c.label).toBe(true);
+      for (const c of readJson<{ columns: { label: string }[] }>("data", "scenarios", "profiles", "dialect", f).columns) expect(c.label.length <= 24 && c.label.split(" ").length <= 3, c.label).toBe(true);
     }
   });
   it("R3: every description says that the format is synthetic and modeled on public documentation, and none claims support, compatibility or certification", () => {
     for (const [kind, files] of dirs) {
       for (const f of files) {
-        const d = readJson<{ description: string }>("scenarios", "profiles", kind, f).description;
+        const d = readJson<{ description: string }>("data", "scenarios", "profiles", kind, f).description;
         expect(d).toMatch(/^Synthetic format modeled on public documentation, not a real instrument file/);
         expect(d).not.toMatch(/compatible with|supports (the |an |any )?(real |actual )?(instrument|analy[sz]er|controller|device)|certified|conformant|validated against|reads real/i);
       }

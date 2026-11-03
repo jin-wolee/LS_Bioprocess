@@ -12,7 +12,7 @@ import { SMALL } from "../support/scenarios.ts";
 // engine/tests/support/contrast_cli.ts over the 30 seeds of the config. S2e1 rework W2: the report has blocks, each naming its export schedule (A216) in the config before any run;
 // the first block, per_run, holds the timing fixed so that only the path changes, and the window_end block is a labelled timing sensitivity.
 
-const doc = readJson("scenarios", "experiments", "capture_contrast.json") as { seeds: number[]; blocks: unknown[]; bay_controllers: string[] };
+const doc = readJson("data", "scenarios", "experiments", "capture_contrast.json") as { seeds: number[]; blocks: unknown[]; bay_controllers: string[] };
 
 describe("the contrast config", () => {
   it("Given the config file Then its seed list has at least the 20 seeds of A103, is written in the file, and holds neutral integers: no repeat, none date-shaped", () => {

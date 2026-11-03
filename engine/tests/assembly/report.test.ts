@@ -197,7 +197,7 @@ describe("Stochastic report: two real seeds of the small default scenario (struc
     report = buildReport(await runOpenLoop(openLoopInput([11, 12])), { experiment_id: "experiment1", min_seeds: 20, ablations_of: "c_context" });
   });
 
-  it("Then the report validates against schemas/experiment_report.schema.json", () => {
+  it("Then the report validates against data/schemas/experiment_report.schema.json", () => {
     const ajv = makeEvalAjv();
     expect(validates(ajv, "experiment_report", report), JSON.stringify(ajv.errors)).toBe(true);
   });
