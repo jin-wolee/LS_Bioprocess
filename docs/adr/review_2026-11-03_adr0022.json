@@ -1,0 +1,7 @@
+{
+  "0022": {
+    "status": "Accepted",
+    "chosen_option": "AI가 작성, 클린룸 + 명시 (Recommended)",
+    "decider_note": "Decided by the author in chat on 2026-11-03: chose \"AI가 작성, 클린룸 + 명시 (Recommended)\", then \"응 그렇게 하도록 해\" to accepting this record and removing the five files from .claude/user_owned.txt."
+  }
+}
