@@ -12,9 +12,10 @@ from pathlib import Path
 from qa_lab_browser import go, set_lang, start_challenge
 from qa_lab_conditions import load_average, of_page
 from qa_plant_act_browser import ROUND_TRIP_JS, RUN_TIMEOUT, act_state, apply, bring_bar_into_view, fill_form, list_items, open_form, ready_of, refusal, runs_sent, undo, wait_epoch, wait_refusal
-from qa_plant_act_helpers import clock_text, fields_of, refusal_problems, round_trip_problems
+from qa_plant_act_helpers import clock_text, fields_of, refusal_problems, round_trip_missing, round_trip_over
 from qa_plant_browser import RECORD_PLANT_JS, open_plant, pause, plant_messages, seek, settle, wait_scene
 from qa_plant_helpers import PLANT_VIEWPORTS, ROUND_TRIP_MEASURED, plan_from_messages
+from qa_timing import over_limit
 
 DAY = 86400
 AT = 8 * DAY + 9 * 3600  # day 8 09:00 of the default run, a Tuesday, inside the first shift
@@ -109,8 +110,9 @@ def the_eight_actions(browser, url, problems: list[str]) -> None:
         problems += [f"console: {e[:140]}" for e in errors]
 
 
-def round_trip(browser, url, problems: list[str]) -> tuple[list[float], dict]:
-    """Five accepted actions one after another, timed in the page from the click to the first frame of the new plan, with the conditions of the machine they were timed under."""
+def round_trip(browser, url, problems: list[str], notes: list[str] | None = None) -> tuple[list[float], dict]:
+    """Five accepted actions one after another, timed in the page from the click to the first frame of the new plan, with the conditions of the machine they were timed under. `notes` takes the
+    lines that the timing mode `report` turns a time over a limit into."""
     load = load_average()
     five = [{"kind": "add_feed", "at": AT, "unit_id": "U10"}, {"kind": "add_feed", "at": AT, "unit_id": "U11"}, {"kind": "raise_alarm", "at": AT, "unit_id": "U12"},
             {"kind": "set_capture_path", "at": AT, "path": "adapter_ingest"}, {"kind": "analyzer_down", "at": AT, "analyzer": "AN-1", "from": AT + 5 * 3600, "length_min": 60}]
@@ -123,7 +125,10 @@ def round_trip(browser, url, problems: list[str]) -> tuple[list[float], dict]:
             wait_epoch(page, i + 2)
         page.wait_for_function("() => window.__rt.length >= 5", timeout=30_000)
         samples = page.evaluate("window.__rt")
-        problems += round_trip_problems(samples)
+        late, found = over_limit(round_trip_over(samples))  # P9: the timing mode `report` prints a round trip over its limit and does not fail on it
+        problems += round_trip_missing(samples) + late
+        if notes is not None:
+            notes.extend(found)
         if len(samples) != 5:
             problems.append(f"the round trip was timed {len(samples)} times, expected 5")
         problems += [f"console: {e[:140]}" for e in errors]

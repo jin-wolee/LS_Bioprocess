@@ -9,11 +9,12 @@ import json
 from pathlib import Path
 
 from qa_checks import VIEWPORTS, Result
-from qa_lab_browser import open_lab, wait_final
+from qa_lab_browser import go, open_lab, set_lang, wait_final
 from qa_lab_conditions import load_average, of_page, problems as conditions_problems, summary as conditions_summary
 from qa_lab_helpers import (
-    PASSED_ONLY_WORDS, SIZE_LIMIT, TIME_LIMIT_MS, TIME_MEASURED, alter_reference, cross_origin, found_words, request_gzip_total, served_path, size_verdict, time_verdict,
+    PASSED_ONLY_WORDS, SIZE_LIMIT, TIME_LIMIT_MS, TIME_MEASURED, alter_reference, cross_origin, found_words, request_gzip_total, scope_problems, served_path, size_verdict, time_verdict,
 )
+from qa_timing import over_limit
 
 
 def check_load(browser, url) -> Result:
@@ -41,14 +42,33 @@ def check_time(browser, url) -> Result:
         conditions = of_page(browser, page, load, VIEWPORTS["1440"], TIME_MEASURED)
     m, ok = time_verdict(runs)
     shown = "no runs" if m is None else f"median {m:.0f} ms of {len(runs)} runs ({', '.join(f'{r:.0f}' for r in runs)})"
-    missing = conditions_problems(conditions)
-    return Result("time", ok and not missing, f"{shown}, limit {TIME_LIMIT_MS} ms; {conditions_summary(conditions)}" + (f" | {missing[0]}" if missing else ""), {"runs_ms": runs, "conditions": conditions})
+    late, notes = over_limit([f"median {m:.0f} ms is over {TIME_LIMIT_MS} ms"] if m is not None and not ok else [])  # P9: the timing mode `report` prints it and does not fail on it
+    missing = conditions_problems(conditions) + late
+    passed = m is not None and not missing
+    return Result("time", passed, f"{shown}, limit {TIME_LIMIT_MS} ms; {conditions_summary(conditions)}" + (f" | {missing[0]}" if missing else "") + "".join(f" [{n}]" for n in notes),
+                  {"runs_ms": runs, "conditions": conditions})
+
+
+def scope_problems_on(page) -> list[str]:
+    """P9 (audit item 20): the chip on Home is described by a note of what the check covers, and the Notes screen says the same, in both languages."""
+    problems: list[str] = []
+    if page.get_attribute("#check-chip", "aria-describedby") != "check-scope":
+        problems.append("the chip of the check is not described by the note #check-scope")
+    for lang in ("en", "ko"):
+        set_lang(page, lang)
+        problems += scope_problems(page.inner_text("#check-scope") if page.query_selector("#check-scope") else "", lang, "Home")
+        go(page, "notes")
+        problems += scope_problems(page.inner_text("#check-reach"), lang, "Notes")
+        go(page, "home")
+    set_lang(page, "en")
+    return problems
 
 
 def check_check(browser, url, root: Path) -> Result:
     problems: list[str] = []
     with open_lab(browser, url) as (page, _, _):
         real = wait_final(page)
+        problems += scope_problems_on(page)
     if real["state"] != "identical":
         problems.append(f"real reference: state {real['state']} (expected identical)")
     if "byte for byte" not in real["banner"]:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Headless QA for the plant (`dist/lab`): the end-to-end checks of docs/design/plant_ui.md section 10, exit 1 if any fails.
 
-    uv run python scripts/qa_plant.py [--root dist/lab] [--out qa_out/plant] [--no-build] [--sweep]
+    uv run python scripts/qa_plant.py [--root dist/lab] [--out qa_out/plant] [--no-build] [--sweep] [--timing judge|report]
 
 Runs `npm run build:lab` first unless --no-build, serves --root over http.server on a free localhost port, and drives headless Chromium through Python Playwright with software WebGL (ANGLE over
 SwiftShader, the launch arguments of the spike); the check `plant_fallback` launches a second Chromium with 3D off. Every browser is closed. Writes results.json, summary.md and the screenshots
@@ -13,6 +13,9 @@ Checks: plant_load, plant_frames, plant_clock, plant_shots, plant_halls, plant_r
 flows of qa_plant_act.py), plant_equal and plant_prefix (P6a, in qa_plant_equal.py), sc12 (P7c, in qa_plant_sc12.py: the five break-out cases, and the public build's refusal in qa_plant_sc12_public.py), size, matrix, plant_fallback, plant_a11y (P8a, in qa_plant_a11y.py: the keyboard, reduced motion, the
 hum, the room the chrome leaves, the phone, contrast and WebGL off), plant_tour (P8b, in qa_plant_tour.py: the guided scene, from a fresh page). `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
 engine/tests/support/plant_reference_cli.ts under the engine's Node flags into --out (the screenshots of the actions go to act/).
+
+`--timing report` (P9, scripts/qa_timing.py; the Pages workflow runs it so) prints the checks that measure time (`plant_frames`, the round trip of `plant_action`, the times of a spec of the sweep) with their conditions and does not
+fail them on a limit: a CI runner is not the machine of the budgets. A time that was not measured, too few frames and every other check still fail.
 
 `plant_sweep` (P6c, in qa_plant_sweep.py) opens the plant under settings other than the default run's, each spec of tests/fixtures/plant/sweep/specs.json in a page of its own. The regular run holds the two
 specs marked `gate` (report in sweep_gate/); `--sweep` runs the whole list instead of the regular checks, by hand before a release and after a batch that changes the plan, the layout or the scene (report in
@@ -45,6 +48,7 @@ from qa_plant_sweep import check_plant_sweep, sweep_report
 from qa_plant_sweep_helpers import load_specs
 from qa_plant_tour import check_plant_tour
 from qa_plant_truth import check_plant_truth
+from qa_timing import set_mode
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -79,8 +83,10 @@ def main(argv=None) -> int:
     ap.add_argument("--root", type=Path, default=REPO / "dist" / "lab", help="directory served; the build output")
     ap.add_argument("--out", type=Path, default=REPO / "qa_out" / "plant")
     ap.add_argument("--no-build", action="store_true", help="serve --root as it is")
+    ap.add_argument("--timing", choices=("judge", "report"), default="judge", help="report: a time over its limit is printed with its conditions and does not fail (the Pages workflow; scripts/qa_timing.py)")
     ap.add_argument("--sweep", action="store_true", help="run the whole settings sweep (ten specs) instead of the regular checks; the report goes to <out>/sweep/")
     args = ap.parse_args(argv)
+    set_mode(args.timing)
     if not args.no_build and build() != 0:
         print("npm run build:lab failed", file=sys.stderr)
         return 1

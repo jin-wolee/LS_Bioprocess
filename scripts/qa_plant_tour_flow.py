@@ -12,7 +12,7 @@ from qa_lab_browser import apply_state
 from qa_lab_helpers import number_offenders
 from qa_plant_a11y_helpers import contrast_problems, cover_problems, inside
 from qa_plant_a11y_layout import RECT_JS
-from qa_plant_browser import plant_messages, settle, wait_scene
+from qa_plant_browser import NUMBERS_IN_JS, plant_messages, settle, wait_scene
 from qa_plant_helpers import clock_reading, plan_from_messages
 from qa_plant_tour_helpers import ON_TARGET, STEP_IDS, TRACE, card_cells, centre_problems, expected_steps, step_problems, tour_sample, trace_problems, truth_request_problems, verdict_problems
 
@@ -22,16 +22,8 @@ SENT_JS = "window.__plantSent.filter((m) => m.type === 'plant_truth').map((m) =>
 # The sentence of the overlay's label in each language (plant_ui.md section 3.3), typed from the dictionaries.
 LABEL = {"en": "Simulation's own view, not available to any record", "ko": "시뮬레이션 자체의 시점이며 어떤 기록에도 없는 정보"}
 THEMES = [("light", "light", "light"), ("dark", "dark", "light")]
-# The numbers of the offer and of the box, as the lab's rule reads them (a digit sits inside a ref, a result or a label); the full record panel the last step opens has its own figures and is not swept here.
-TOUR_NUMBERS_JS = """() => {
-  const out = [], root = document.querySelector('.plant-tour'), walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-    const el = n.parentElement;
-    if (!el || !/\\d/.test(n.textContent)) continue;
-    out.push({text: n.textContent.trim(), marked: !!el.closest('[data-ref],[data-result],[data-label]'), where: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.split(/\\s+/)[0] : '')});
-  }
-  return out;
-}"""
+# The numbers of the offer and of the box, and of the record panel while one is open (the head of a column of the card table and the truth step open it; P9).
+TOUR_SCOPE = ".plant-tour, [data-plant-record]"
 PANELS = {"reactor": "[data-plant-panel=reactor]", "sample": "[data-plant-panel=sample]", "record": "[data-plant-record=ready]"}
 
 
@@ -82,9 +74,14 @@ def shoot(page, out: Path, name: str) -> None:
     page.screenshot(path=str(out / "tour" / name))
 
 
+def number_problems(page, where: str) -> list[str]:
+    """The figures of the box and the offer, and of the record panel when one is open: each sits inside a data-ref, data-result or data-label."""
+    return [f"{where}: a number outside a data-ref, data-result or data-label: '{o['text']}' in {o['where']}" for o in number_offenders(page.evaluate(NUMBERS_IN_JS, TOUR_SCOPE))]
+
+
 def sweep_problems(page, lang: str, where: str) -> list[str]:
-    """The text on the page now, in light and in dark: no colour below AA, and no number outside a label."""
-    problems = [f"{where}: a number outside a data-ref, data-result or data-label: '{o['text']}' in {o['where']}" for o in number_offenders(page.evaluate(TOUR_NUMBERS_JS))]
+    """The text on the page now, in light and in dark: no colour below AA, and no number outside a label (the box, the offer and the record panel when one is open)."""
+    problems = number_problems(page, where)
     cells = []
     for label, theme, scheme in THEMES:
         page.emulate_media(color_scheme=scheme)
@@ -179,7 +176,7 @@ def open_record_problems(page, where: str) -> list[str]:
         page.wait_for_selector("[data-plant-record=ready][data-record-architecture=c_context]", timeout=15_000)
     except Exception as e:  # noqa: BLE001 - the timeout is the finding
         return [f"{where}: the head of the column of c_context did not open its record ({first_line(e)})"]
-    problems = []
+    problems = number_problems(page, f"{where}, the record opened from the card table")
     if page.get_attribute("[data-plant-record]", "data-record-sample") != TRACE["sample"]:
         problems.append(f"{where}: the record that opened is of {page.get_attribute('[data-plant-record]', 'data-record-sample')}, not of {TRACE['sample']}")
     if page.get_attribute("[data-lens-option=c_context]", "aria-pressed") != "true":

@@ -8,8 +8,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from qa_checks import Result, first_line
-from qa_lab_helpers import LANGS
-from qa_plant_browser import RECORD_PLANT_JS, blank_page, fold_place_card, hud_click, open_plant, pause, pixel_diff, pixel_stats, plant_messages, seek, settle, settle_camera, state, wait_scene
+from qa_lab_helpers import LANGS, number_offenders
+from qa_plant_browser import NUMBERS_IN_JS, RECORD_PLANT_JS, blank_page, fold_place_card, hud_click, open_plant, pause, pixel_diff, pixel_stats, plant_messages, seek, settle, settle_camera, state, wait_scene
 from qa_plant_helpers import (
     CLOSEUP_INSTANT_S, DEFAULT_HALLS, HALL_CARDS_END, HALL_INSTANTS, PLANT_VIEWPORTS, cards_expected, cards_problems, clock_reading, halls_arrival_problems, not_blank, plan_from_messages,
     repro_problems,
@@ -95,6 +95,25 @@ def panel_problems(page, architecture: str, sample: str, words: dict, label: str
     return problems
 
 
+def record_figure_problems(page, label: str) -> list[str]:
+    """P9 (plant_ui.md section 12, item 20): with a record panel open, every figure in it (the keys, stamps and values of the drawing, the truth block and the answers beside it when the overlay is on) sits
+    inside a data-ref, data-result or data-label, as the numbers sweep of the lab reads the Lineage screen. The panel is waited for to be complete: with the overlay on, its truth block and answers have arrived."""
+    page.wait_for_selector("[data-plant-record=ready] [data-lineage-column]", timeout=30_000)
+    if page.get_attribute("[data-plant-record]", "data-record-truth") == "on":
+        page.wait_for_selector("[data-plant-record] [data-lineage-truth]", timeout=30_000)
+        page.wait_for_selector("[data-plant-record] [data-answer]", timeout=30_000)
+    nodes = page.evaluate(NUMBERS_IN_JS, "[data-plant-record]")
+    swept = [f"{label}: a number outside a data-ref, data-result or data-label in the record panel: '{o['text']}' in {o['where']}" for o in number_offenders(nodes)]
+    return swept + ([] if len(nodes) >= 8 else [f"{label}: the record panel holds {len(nodes)} text nodes with a digit; the sweep expected a drawing with at least 8"])
+
+
+def open_first_card(page) -> None:
+    """Open the record of the first card of the list of the lens hall (Tab reaches it, Enter opens it), as the keyboard reader does."""
+    page.focus("[data-card-sample]")
+    page.keyboard.press("Enter")
+    page.wait_for_selector("[data-plant-record=ready]", timeout=30_000)
+
+
 def record_cell(browser, url, out: Path, lang: str, words: dict, vp: str = "1280") -> list[str]:
     """The record panel opened by the keyboard at one viewport in one language (and, at 1280 by 720, the lens and the click); its screenshot is saved."""
     problems: list[str] = []
@@ -105,7 +124,7 @@ def record_cell(browser, url, out: Path, lang: str, words: dict, vp: str = "1280
         settle(page)
         opened = open_by_keyboard(page, problems, words, lang)
         if opened:
-            problems += panel_problems(page, *opened, words, lang)
+            problems += panel_problems(page, *opened, words, lang) + record_figure_problems(page, lang)
             page.wait_for_timeout(400)
             page.screenshot(path=str(out / "halls" / f"plant_record_{PLANT_VIEWPORTS[vp][0]}x{PLANT_VIEWPORTS[vp][1]}_{lang}.png"))
             page.keyboard.press("Escape")

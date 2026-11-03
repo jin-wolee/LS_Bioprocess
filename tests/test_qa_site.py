@@ -68,3 +68,56 @@ def test_the_fonts_a_page_names_are_the_urls_of_its_font_face_rules_and_nothing_
 def test_a_font_the_page_names_and_the_folder_lacks_is_a_problem():
     assert qs.font_problems(GOOD, PAGE) == ["the page names fonts/ibm-plex-mono-400-latin.woff2, which the folder does not hold"]
     assert qs.font_problems([*GOOD, "fonts/ibm-plex-mono-400-latin.woff2"], PAGE) == []
+
+
+# ---- the plant route on the assembled site (P9, docs/design/plant_ui.md section 11): scripts/qa_site_plant.py ----
+import qa_site_plant as qp  # noqa: E402
+
+PLANT_CHUNK = "assets/plant_scene-Bq3x9Z.js"
+LOADER_CHUNK = "assets/plant-loader-Cr7t2A.js"
+
+
+def test_home_without_the_plant_chunk_and_an_entry_that_asks_for_it_once_have_no_problem():
+    home = {"plant": [], "loader": [LOADER_CHUNK]}
+    entered = {"plant": [PLANT_CHUNK], "loader": [LOADER_CHUNK]}
+    assert qp.chunk_problems(home, entered) == []
+
+
+def test_each_way_the_plant_chunk_can_be_requested_wrongly_is_named():
+    home = {"plant": [], "loader": [LOADER_CHUNK]}
+    entered = {"plant": [PLANT_CHUNK], "loader": [LOADER_CHUNK]}
+    asked_on_home = qp.chunk_problems({"plant": [PLANT_CHUNK], "loader": [LOADER_CHUNK]}, entered)
+    assert len(asked_on_home) == 1 and "Home requested the plant chunk" in asked_on_home[0]
+    never = qp.chunk_problems(home, {"plant": [], "loader": [LOADER_CHUNK]})
+    assert len(never) == 1 and "requested 0 plant chunks, expected 1" in never[0]
+    twice = qp.chunk_problems(home, {"plant": [PLANT_CHUNK, "assets/plant_scene-Zz.js"], "loader": [LOADER_CHUNK]})
+    assert len(twice) == 1 and "requested 2 plant chunks, expected 1" in twice[0]
+    no_loader = qp.chunk_problems({"plant": [], "loader": []}, entered)
+    assert len(no_loader) == 1 and "loader" in no_loader[0]
+
+
+def test_the_public_site_offers_no_case_link_and_no_way_to_the_break_out_screen():
+    ordinary = ["#/home", "#/plant", "#/plant?scenario=default&t=305626", "../", "#/lineage?from=plant&sample=U03-D10-2&plant=%23%2Fplant%3Fscenario%3Ddefault%26t%3D305626", "#/notes"]
+    assert qp.offer_problems({"nav_breakout": False, "hrefs": ordinary, "drill_breakout": 0, "open_plant": False, "host_case": None}) == []
+
+
+def test_each_trace_of_a_case_or_of_the_break_out_screen_on_the_public_site_is_named():
+    clean = {"nav_breakout": False, "hrefs": ["#/plant"], "drill_breakout": 0, "open_plant": False, "host_case": None}
+    bad = [
+        ({"nav_breakout": True}, "link to the Break-out screen"),
+        ({"hrefs": ["#/plant", "#/plant?case=sc12_medium_lot&arch=a_manual&seed=1"]}, "case"),
+        ({"hrefs": ["#/lineage?from=plant&plant=%23%2Fplant%3Fcase%3Dsc12_medium_lot"]}, "case"),
+        ({"hrefs": ["#/breakout"]}, "Break-out"),
+        ({"drill_breakout": 1}, "drill-down"),
+        ({"open_plant": True}, "from the Break-out screen"),
+        ({"host_case": "sc12_medium_lot"}, "is a case"),
+    ]
+    for change, word in bad:
+        problems = qp.offer_problems({**clean, **change})
+        assert len(problems) == 1 and word in problems[0], (change, problems)
+
+
+def test_where_a_trace_was_found_is_put_before_the_problem_when_it_is_given():
+    facts = {"nav_breakout": False, "hrefs": ["#/plant?case=sc12_medium_lot"], "drill_breakout": 0, "open_plant": False, "host_case": None}
+    assert qp.offer_problems(facts, "on Home") == ["on Home: the page links to a case: #/plant?case=sc12_medium_lot"]
+    assert qp.offer_problems(facts) == ["the page links to a case: #/plant?case=sc12_medium_lot"]

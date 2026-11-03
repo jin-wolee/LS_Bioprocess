@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Headless QA for the assembled site folder (`dist/site`, written by scripts/assemble_site.py): eight checks, exit 1 if any fails.
+"""Headless QA for the assembled site folder (`dist/site`, written by scripts/assemble_site.py): eleven checks, exit 1 if any fails.
 
-    uv run python scripts/qa_site.py [--root dist/site] [--out qa_out/site]
+    uv run python scripts/qa_site.py [--root dist/site] [--out qa_out/site] [--timing judge|report]
 
 Copies --root under /LS_Bioprocess/ in a scratch folder and serves that over http.server: a project site on GitHub Pages lives under /<repository>/, and a root-absolute address would pass
 at the root of a server and fail there. Drives headless Chromium (Playwright sync API), closes it, and writes results.json and summary.md to --out.
@@ -14,6 +14,9 @@ at the root of a server and fail there. Drives headless Chromium (Playwright syn
                  Korean) is the language of the infographic after the click back: the pages are one origin and share one localStorage key, `sll.lang`
   infographic_size, lab_size, lab_time    the budgets of docs/design/lab_ui.md section 12 over the assembled pages (the lab's are the checks of qa_lab.py, served from here)
   lab_public     the lab of the folder is the public build: the Break-out screen is refused while a source of it is below main-reread (the check `breakout_public` of qa_lab.py, on this folder)
+  plant_route, plant_size, plant_text   the plant on the folder under /LS_Bioprocess/lab/ (P9; docs/design/plant_ui.md section 11): Home asks for no plant chunk and entering asks for it once, the scene is drawn,
+                 every request stays under the path of the site, and the page offers no case link and no Break-out screen (`plant_route`, in qa_site_plant.py); the first load and the plant chunk against their
+                 limits (`size` of qa_plant_checks.py); and, with WebGL off, the text alternative with no request for the plant chunk (`plant_fallback` of qa_plant_checks.py)
 """
 from __future__ import annotations
 
@@ -25,7 +28,6 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from urllib.parse import urlsplit
 
 from playwright.sync_api import sync_playwright
 from qa_checks import Result
@@ -35,7 +37,12 @@ from qa_lab_browser import open_lab, wait_final
 from qa_lab_breakout import public_build_result
 from qa_lab_checks import check_size as check_lab_size
 from qa_lab_checks import check_time
-from qa_lab_helpers import cross_origin
+from qa_lab_helpers import cross_origin, outside_base
+from qa_plant_checks import check_plant_fallback
+from qa_plant_checks import check_size as check_plant_size
+from qa_plant_helpers import SOFTWARE_GL
+from qa_site_plant import check_plant_route
+from qa_timing import set_mode
 
 REPO = Path(__file__).resolve().parents[1]
 SUBPATH = "LS_Bioprocess"
@@ -65,12 +72,6 @@ def font_urls(page_html: str) -> list[str]:
 def font_problems(files: list[str], page_html: str) -> list[str]:
     """The fonts the page names that the folder does not hold (addresses are relative to the page, which sits at the top of the folder)."""
     return [f"the page names {u}, which the folder does not hold" for u in font_urls(page_html) if u not in files]
-
-
-def outside_base(urls: list[str], base: str) -> list[str]:
-    """Requests to the origin of `base` that are not under its path: an address that only works at the root of a server."""
-    b = urlsplit(base)
-    return [u for u in urls if not u.startswith(("data:", "blob:")) and (urlsplit(u).scheme, urlsplit(u).netloc) == (b.scheme, b.netloc) and not u.startswith(base)]
 
 
 # ---- checks -------------------------------------------------------------------------------------------
@@ -222,7 +223,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", type=Path, default=REPO / "dist" / "site", help="the assembled folder")
     ap.add_argument("--out", type=Path, default=REPO / "qa_out" / "site")
+    ap.add_argument("--timing", choices=("judge", "report"), default="judge", help="report: a time over its limit is printed with its conditions and does not fail (the Pages workflow; scripts/qa_timing.py)")
     args = ap.parse_args(argv)
+    set_mode(args.timing)
     if not (args.root / "index.html").exists():
         print(f"missing {args.root / 'index.html'} (run scripts/assemble_site.py)", file=sys.stderr)
         return 1
@@ -234,6 +237,7 @@ def main(argv=None) -> int:
             base = f"{origin}{SUBPATH}/"
             lab = base + "lab/"
             browser = pw.chromium.launch(headless=True)
+            gl = pw.chromium.launch(headless=True, args=SOFTWARE_GL)  # the plant draws with WebGL two: software rendering, as the plant QA does
             try:
                 results = [guarded("folder", lambda: check_folder(args.root)),
                            guarded("infographic_origin", lambda: check_infographic_origin(browser, base)),
@@ -242,8 +246,12 @@ def main(argv=None) -> int:
                            guarded("infographic_size", lambda: renamed(check_page_size(args.root / "index.html"), "infographic_size")),
                            guarded("lab_size", lambda: renamed(check_lab_size(browser, lab, mount / "lab"), "lab_size")),
                            guarded("lab_time", lambda: renamed(check_time(browser, lab), "lab_time")),
-                           guarded("lab_public", lambda: public_build_result(browser, lab, mount / "lab", name="lab_public"))]
+                           guarded("lab_public", lambda: public_build_result(browser, lab, mount / "lab", name="lab_public")),
+                           guarded("plant_route", lambda: check_plant_route(gl, base)),
+                           guarded("plant_size", lambda: renamed(check_plant_size(gl, lab, mount / "lab"), "plant_size")),
+                           guarded("plant_text", lambda: renamed(check_plant_fallback(pw, lab, args.out), "plant_text"))]
             finally:
+                gl.close()
                 browser.close()
     print(report(results, args.out))
     return 0 if all(r.ok for r in results) else 1

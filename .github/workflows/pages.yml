@@ -1,6 +1,9 @@
 # The public site: the infographic at the root and the lab under lab/ (docs/design/lab_ui.md section 13).
 # Run by the author only, from the Actions tab or `gh workflow run`: nothing here runs on push or pull request. With `deploy` false (the default) it builds and checks, and the folder
 # stays an artifact of the run; with `deploy` true the second job publishes it to GitHub Pages. The Pages setting of the repository ("Build and deployment: GitHub Actions") is the author's.
+# The build job runs the browser QA (headless Chromium, installed through uv) before it uploads anything, and the deploy job needs the build job, so a failed check blocks the deploy. A CI runner's
+# software renderer is not the machine the time budgets were measured on, so the QA runs with `--timing report`: the times (frames, the action round trip, the engine run) are printed with their
+# conditions and do not fail; every other check fails the job. The lab QA leaves out Firefox and WebKit (`--no-engines`): only Chromium is installed.
 # Secret GUARDRAIL_TERMS: the banned-token list, one term per line (what .guardrails.local.txt holds, without its # comment lines).
 name: pages
 
@@ -18,6 +21,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,8 +46,16 @@ jobs:
         run: uv run --frozen pytest -q
       - name: Node checks (lint, types, Vitest; the Vitest workers carry the flag of ADR-0016)
         run: npm run check
-      - name: Build the public lab and assemble dist/site
+      - name: Install headless Chromium (the Playwright of uv.lock pins the build)
+        run: uv run --frozen playwright install --with-deps chromium
+      - name: Lab QA in Chromium (the times are reported, not judged; no Firefox or WebKit)
+        run: uv run --frozen python scripts/qa_lab.py --timing report --no-engines
+      - name: Plant QA in Chromium with software WebGL (the times are reported, not judged)
+        run: uv run --frozen python scripts/qa_plant.py --timing report
+      - name: Build the public lab and assemble dist/site (after the QA above, which builds the local lab into dist/lab)
         run: uv run --frozen python scripts/assemble_site.py
+      - name: Site QA over the assembled dist/site (the times are reported, not judged)
+        run: uv run --frozen python scripts/qa_site.py --timing report
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist/site

@@ -110,6 +110,7 @@ def check_plant_action(browser, url, out: Path) -> Result:
     (out / "act").mkdir(parents=True, exist_ok=True)
     problems: list[str] = []
     samples: list[float] = []
+    notes: list[str] = []
     conditions: dict = {}
     engine = ""
 
@@ -120,7 +121,7 @@ def check_plant_action(browser, url, out: Path) -> Result:
             problems.append(f"{name}: {first_line(e)}")
 
     def timed() -> None:
-        taken, under = round_trip(browser, url, problems)
+        taken, under = round_trip(browser, url, problems, notes)
         samples.extend(taken)
         conditions.update(under)
 
@@ -140,4 +141,4 @@ def check_plant_action(browser, url, out: Path) -> Result:
     detail = (f"each of the eight actions entered by the keyboard (the epoch up, the clock on resume_at, the list in words with the instant as an assumed input, the address, the undo back to the hashes before), the clock plays on after the "
               f"answer; refusals past, outside_window, limit, locked, unknown_target and closed_loop shown in both languages with the Worker's message, the action not kept; {trip}; the flags board: its matrix equals the "
               f"plan's halls, a switch from a cell (by the keyboard, and a second one on the hall the first derived) is accepted, and the click in the scene opens the form on the cell it meets")
-    return Result("plant_action", not problems, detail + (f" | {problems[0]}" if problems else ""), {"problems": problems, "round_trip_ms": samples, "json": json.dumps(samples), "conditions": conditions})
+    return Result("plant_action", not problems, detail + (f" | {problems[0]}" if problems else "") + "".join(f" [{n}]" for n in notes), {"problems": problems, "round_trip_ms": samples, "json": json.dumps(samples), "conditions": conditions})

@@ -136,6 +136,29 @@ def test_it_says_the_sql_and_simpy_track_was_written_by_ai_and_where_its_agreeme
     assert "The author writes the database schema" not in flat and "personally" not in flat  # the claim of ADR-0010 for these files is gone
 
 
+def test_it_says_what_the_plant_is_and_what_it_leaves_to_the_local_build():
+    # P9 (2026-11-03): the README says what exists. The plant, as built in P3 to P8 (docs/design/plant_ui.md); the Break-out cases in it are in the local build only (they rest on sources below main-reread)
+    plant = " ".join(section(README, "The plant in the lab").split())
+    for part in ("walk", "clock", "record hall", "lens", "truth overlay", "off until you ask", "simulation's own view", "Operator actions", "rerun the plant", "Lineage", "Results", "Notes",
+                 "same instant", "guided scene", "text version"):
+        assert part in plant, part
+    assert "Break-out case" in plant and "local build only" in plant and "public build" in plant
+
+
+def test_it_names_the_plant_where_it_describes_the_lab_and_what_is_held_back_in_the_public_build():
+    pages = section(README, "The two pages")
+    assert "plant" in pages and "walk" in pages
+    numbers = section(README, "Numbers")
+    assert "Break-out screen" in numbers and "Break-out cases" in numbers and "plant" in numbers
+
+
+def test_it_says_the_gate_has_a_plant_part_and_the_workflow_runs_the_browser_qa_before_a_deploy():
+    run = section(README, "Run it")
+    assert "--lab" in run and "--plant" in run
+    flat = " ".join(README.split())
+    assert "browser checks" in flat and "before it can deploy" in flat
+
+
 # ---- what it must not say -------------------------------------------------------------------------
 
 

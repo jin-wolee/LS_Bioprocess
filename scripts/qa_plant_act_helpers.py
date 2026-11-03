@@ -67,10 +67,15 @@ def small_link(engine: str, actions) -> str:
     return f"#/plant?scenario=default&{settings}&arch={HALLS}&seed=1{carried}&schema=1&engine={engine}"
 
 
-def round_trip_problems(samples_ms) -> list[str]:
+def round_trip_missing(samples_ms) -> list[str]:
+    """No round trip was timed: a defect of the run, not a time (it fails in every timing mode)."""
+    return [] if samples_ms else ["no round trip was measured"]
+
+
+def round_trip_over(samples_ms) -> list[str]:
     """The round trips of five accepted actions against the budget: the median at most 600 ms and the slowest (the 95th percentile of five) at most 1 s."""
     if not samples_ms:
-        return ["no round trip was measured"]
+        return []
     problems = []
     median = statistics.median(samples_ms)
     if median > ROUND_TRIP_MEDIAN_MS:
@@ -78,6 +83,10 @@ def round_trip_problems(samples_ms) -> list[str]:
     if max(samples_ms) > ROUND_TRIP_MAX_MS:
         problems.append(f"the slowest round trip is {max(samples_ms):.0f} ms, over the {ROUND_TRIP_MAX_MS} ms limit")
     return problems
+
+
+def round_trip_problems(samples_ms) -> list[str]:
+    return round_trip_missing(samples_ms) or round_trip_over(samples_ms)
 
 
 def prefix_problems(before: dict, after: dict, at: int) -> list[str]:

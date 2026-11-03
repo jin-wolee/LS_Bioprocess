@@ -5,9 +5,15 @@ In a synthetic plant, bench-scale bioreactors share a few at-line analyzers, and
 ## The two pages
 
 - [Explainer](https://jin-wolee.github.io/LS_Bioprocess/): a scroll page on the problem, with a slider that moves the measurement time and a matrix of which flag covers which error.
-- [Lab](https://jin-wolee.github.io/LS_Bioprocess/lab/): runs the synthetic plant in the browser and shows what the record of each architecture can reconstruct. It also follows one sample through each record, and sets a challenge: find the planted error in a record.
+- [Lab](https://jin-wolee.github.io/LS_Bioprocess/lab/): runs the synthetic plant in the browser and shows what the record of each architecture can reconstruct. It also lets you walk through that plant (next section), follows one sample through each record, and sets a challenge: find the planted error in a record.
 
 The site goes live when the author publishes it. Until then these addresses do not answer, and the pages can be built and served locally (see "Run it"). Both pages open in English and have a Korean toggle (ADR-0006); the language chosen on one page is kept when you follow the link to the other.
+
+## The plant in the lab
+
+The Home screen of the lab opens the plant, a three-dimensional scene of the same synthetic run (a text version stands in where the browser has no WebGL). You walk through it by click or keyboard. The clock plays, pauses, changes speed and moves to any instant of the run. Each data architecture has a record hall whose shelves hold a card for each sample that record keeps, and a lens picks the hall that the record panel reads. The truth overlay is off until you ask: it shows what the simulation knows and no record can hold, and labels it the simulation's own view. Operator actions (adding a feed, moving a draw, taking an analyzer down, switching a flag, changing the capture path, and three more) rerun the plant, and the ones that name a reactor or an analyzer carry over to Results. A card, a sample, a reactor or an analyzer links to the Lineage, Results and Notes screens, and each link brings you back to the same instant. A short guided scene follows one sample that was drawn before a feed and measured after it.
+
+The plant of a Break-out case (the lot rack, the equipment stations, the confirming tests) is in the local build only. The public build refuses the Break-out screen and the cases with it (see "Numbers").
 
 ## What is compared
 
@@ -52,7 +58,7 @@ In the Break-out screen a hold is a state of the record and stops no culture. It
 
 Every number on the pages carries the id of a ledger entry: `S###` in `docs/research/sources.yaml` for a source, `A###` in `docs/research/assumptions.yaml` for a simulator parameter. An assumption has a grade (sourced, proxy, derived or assumed) and a source has a verification level (snippet, agent-read or main-reread). Only main-reread sources back a figure on a public page. A figure that rests on a weaker source is shown with a dashed provisional chip, and `scripts/check_docs.py` fails a public file that cites one without that label. `docs/research/README.md` explains the grades.
 
-The lab's Break-out screen, a contamination walk-back, is held back. Its inputs rest on sources that have not been re-read, so the public build refuses the screen; a local build shows it marked not for publication. It stays out of the public build until those sources are re-read.
+The lab's Break-out screen, a contamination walk-back, and the Break-out cases in the plant are held back. Their inputs rest on sources that have not been re-read, so the public build refuses the screen and offers no case; a local build shows the screen marked not for publication and the cases in the plant. They stay out of the public build until those sources are re-read.
 
 The pages ship no result. The lab computes its results in your browser on each visit, from the scenario and the seeds you choose.
 
@@ -70,7 +76,7 @@ docs/                adr/ decisions, design/ specifications, research/ ledgers, 
 prompts/             the briefs and principles that the AI sessions work from
 scripts/             checks, site assembly, headless page QA, Claude Code hooks, git hooks
 tests/               pytest for the scripts, the hooks, the docs check and the Pages workflow
-.github/workflows/   the Pages workflow, started by hand
+.github/workflows/   the Pages workflow, started by hand; it checks and runs the browser QA before any deploy
 .claude/             CLAUDE.md, hook settings, skills, agents, the list of author-owned paths (empty since ADR-0022)
 ```
 
@@ -86,16 +92,18 @@ git config core.hooksPath scripts/git-hooks     # once per clone
 uv run pytest -q                                # scripts, hooks, docs check, site
 uv run --frozen python scripts/check_docs.py --all   # banned tokens, ADR format, ledgers, id references
 npm run check                                   # lint, typecheck, Vitest, then the I12 budget alone
-bash scripts/check_all.sh --manual              # the full gate; add --lab for the end-to-end checks of the lab
+bash scripts/check_all.sh --manual              # the full gate; add --lab and --plant for the end-to-end checks of the lab and the plant
 
 uv run python site/infographic/build.py         # rebuild the explainer page
 uv run python scripts/qa_infographic.py         # headless check of the explainer, output in qa_out/
 uv run python scripts/assemble_site.py          # build dist/site/: the explainer at the root, the lab under lab/
-uv run python scripts/qa_site.py                # headless check of dist/site/
+uv run python scripts/qa_site.py                # headless check of dist/site/, the plant route included
 uv run python -m http.server --directory dist/site 8000   # then open http://127.0.0.1:8000/
 ```
 
 The lab needs a web server, not a file URL, because its Worker fetches a file.
+
+The Pages workflow is started by the author by hand. It runs the checks above and the browser checks of the lab, the plant and the assembled site in headless Chromium before it can deploy, so a failed check blocks the deploy. A CI runner is not the machine the time budgets were measured on, so there the frame times, the action round trip and the engine run are printed with their conditions and not judged (`--timing report`).
 
 ## How the work is done
 
@@ -113,5 +121,5 @@ Code is under the MIT licence (`LICENSE`). Text, figures and data tables in `doc
 
 합성 데이터로 만든 시뮬레이터입니다. 바이오리액터 여러 대가 분석기 몇 대를 공유하는 가상의 플랜트를 한 번 돌려, 같은 실행을 여러 데이터 아키텍처로 기록하고 각 기록이 나중에 무엇을 복원할 수 있는지 비교합니다. 실제 설비를 예측하지 않습니다.
 비교는 기록이 무엇을 보존하는지를 보여 주는 구성적 예시이며, 실제 스프레드시트나 실험실 시스템의 품질을 재는 것이 아닙니다. 시드에 걸친 분포는 모형의 불확실성이 아닙니다.
-해설 페이지와 랩 두 곳이 있고, 저자가 공개하면 위 주소에서 열립니다. 모든 수치에는 근거 장부의 id(`S###`, `A###`)가 붙고, 오염 이벤트 역추적 화면은 근거 출처를 다시 읽을 때까지 공개 빌드에서 빠져 있습니다.
+해설 페이지와 랩 두 곳이 있고, 저자가 공개하면 위 주소에서 열립니다. 랩에서는 같은 합성 실행을 걸어 다니며 볼 수 있는 플랜트 장면도 열립니다(시계, 아키텍처별 기록 보관실, 요청하면 켜지는 시뮬레이션의 시점, 운영자 조작, 안내 장면). 모든 수치에는 근거 장부의 id(`S###`, `A###`)가 붙고, 오염 이벤트 역추적 화면과 플랜트 안의 이탈 사례는 근거 출처를 다시 읽을 때까지 공개 빌드에서 빠져 있습니다.
 DDL, SQL 쿼리 세 개, SimPy 핵심 루프는 저자가 쓴 것이 아니라 AI(Claude Code)가 명세만 보고(엔진 소스는 읽지 않고) 작성했습니다(ADR-0022). TypeScript 엔진과의 일치는 `tests/user_track/`이 측정하며, 그 테스트는 모두 통과합니다.

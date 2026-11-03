@@ -24,6 +24,7 @@ from qa_plant_helpers import FRAMES_MEASURED, PLANT_VIEWPORTS, ROUND_TRIP_MEASUR
 from qa_plant_motion import play_frames
 from qa_plant_panels import close_by_keyboard, open_by_keyboard
 from qa_plant_sweep_helpers import CHECKS, expected_objects, report_markdown, row_ok, spec_link, sweep_detail, table, time_findings, worker_hash_problems
+from qa_timing import report_only
 
 # The plant at N = 100 takes the Worker some seconds, and its message is large: the waits are long, and the frames of a large scene take longer to draw.
 SCENE_MS = 300_000
@@ -144,7 +145,7 @@ def check_spec(browser, url: str, spec: dict, entry: dict, engine: str, shots: P
             frames_of(browser, url, spec, link, row)
         if spec["phone"]:
             phone_shot(browser, url, spec, link, shots / f"{spec['name']}_390x844_en.png", problems)
-        found, row["notes"] = time_findings(spec["judged"], row["round_trip_ms"], row["frames"] if spec["frames"] else None)
+        found, row["notes"] = time_findings(spec["judged"], row["round_trip_ms"], row["frames"] if spec["frames"] else None, report_only())
         problems.extend(found)
         problems.extend(p for c in row["conditions"].values() for p in conditions_problems(c))
 

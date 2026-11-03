@@ -7,6 +7,23 @@ import { Label, T } from "./T.tsx";
 
 const ICON: Record<CheckState, string> = { pending: "…", identical: "✓", failed: "✕", error: "!" };
 
+/** What the check covers (P9; audit item 20): the default scenario's open loop only, the truth log of the seeds the Worker checks and the metric cells of seed 1, each against the reference made in Node.
+ *  The figures reach the text as labels (invariant 3). The seeds are those of `CHECK_SEEDS` of the engine's check (a unit test keeps them equal; the page imports no engine module). */
+export const CHECK_SCOPE = { seeds: "1, 2, 3", cell_seed: "1", closed_loop: "SC8" } as const;
+
+/** The sentence that says what the check covers, for the chip on Home (which it describes) and for the Notes screen. */
+export function CheckScope({ id }: { id?: string }) {
+  return (
+    <T
+      as="p"
+      k="check.scope"
+      class="check-scope"
+      {...(id && { id })}
+      parts={{ seeds: <Label>{CHECK_SCOPE.seeds}</Label>, cell_seed: <Label>{CHECK_SCOPE.cell_seed}</Label>, closed_loop: <Label>{CHECK_SCOPE.closed_loop}</Label> }}
+    />
+  );
+}
+
 export function CheckPanel({ state, detail }: { state: CheckState; detail: CheckDetail }) {
   const parts: [Key, boolean][] = [
     ["check.part.truth", detail.truth.length > 0 && detail.truth.every((t) => t.equal)],
@@ -17,7 +34,7 @@ export function CheckPanel({ state, detail }: { state: CheckState; detail: Check
     <section id="check" class={`check check-${state}`} aria-labelledby="check-heading">
       <T as="h2" k="check.label" id="check-heading" />
       <p class="check-line">
-        <span id="check-chip" class={`chip chip-${state}`} data-check-state={state} data-detail={JSON.stringify(detail)}>
+        <span id="check-chip" class={`chip chip-${state}`} data-check-state={state} data-detail={JSON.stringify(detail)} aria-describedby="check-scope">
           <span aria-hidden="true">{ICON[state]}</span> <T k={`check.chip.${state}`} />
         </span>
       </p>
@@ -32,6 +49,7 @@ export function CheckPanel({ state, detail }: { state: CheckState; detail: Check
           </>
         )}
       </p>
+      <CheckScope id="check-scope" />
       {(state === "identical" || state === "failed") && (
         <details class="check-detail">
           <T as="summary" k="check.detail.heading" />

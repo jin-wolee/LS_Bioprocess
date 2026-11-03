@@ -77,6 +77,7 @@ export const enBase = {
   "check.part.cells": "Metric cells of one seed against the reference",
   "check.part.equal": "equal",
   "check.part.differs": "differs",
+  "check.scope": "What it covers: the open loop of the default scenario, and nothing more. The truth log is compared for the seeds {seeds} and the metric cells for seed {cell_seed}, each against the reference made in Node at build time. Every other scenario is not covered, and neither is the closed loop of {closed_loop}.",
 
   "error.heading": "The engine reported a problem",
   "error.invalid_spec": "The run request was refused:",

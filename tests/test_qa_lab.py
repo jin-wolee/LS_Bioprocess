@@ -128,6 +128,35 @@ def test_the_failed_state_must_not_contain_the_words_of_the_passed_state():
     assert qc.PASSED_ONLY_WORDS == ["reproducib", "byte for byte"]
 
 
+# ---------- what the browser check says it covers (P9, audit item 20) ----------
+SCOPE_EN = ("What it covers: the open loop of the default scenario, and nothing more. The truth log is compared for the seeds 1, 2, 3 and the metric cells for seed 1, each against the reference made in Node at build time. "
+            "Every other scenario is not covered, and neither is the closed loop of SC8.")
+SCOPE_KO = ("다루는 범위: 기본 시나리오의 열린 루프뿐입니다. 실제 로그는 시드 1, 2, 3에서, 지표 셀은 시드 1에서 각각 빌드 시점에 Node로 만든 기준과 비교합니다. "
+            "다른 시나리오는 모두 다루지 않으며, SC8의 닫힌 루프도 다루지 않습니다.")
+
+
+def test_the_scope_note_of_the_check_has_no_problem_in_either_language():
+    assert qc.scope_problems(SCOPE_EN, "en", "Home") == []
+    assert qc.scope_problems(SCOPE_KO, "ko", "Home") == []
+
+
+@pytest.mark.parametrize("gone", ["open loop", "default scenario", "closed loop of SC8", "seed 1", "1, 2, 3", "Every other scenario is not covered"])
+def test_each_part_of_the_english_scope_is_named_when_it_is_missing(gone):
+    problems = qc.scope_problems(SCOPE_EN.replace(gone, "x"), "en", "Home")
+    assert len(problems) == 1 and gone in problems[0] and "Home" in problems[0], problems
+
+
+@pytest.mark.parametrize("gone", ["기본 시나리오", "열린 루프", "닫힌 루프", "SC8", "1, 2, 3", "다른 시나리오"])
+def test_each_part_of_the_korean_scope_is_named_when_it_is_missing(gone):
+    problems = qc.scope_problems(SCOPE_KO.replace(gone, "x"), "ko", "Notes")
+    assert len(problems) == 1 and gone in problems[0], problems
+
+
+def test_the_scope_note_reads_nothing_that_only_a_passed_check_may_say_and_no_empty_note_passes():
+    assert qc.found_words(SCOPE_EN, qc.PASSED_ONLY_WORDS) == []
+    assert len(qc.scope_problems("", "en", "Home")) == len(qc.SCOPE_WORDS["en"])
+
+
 # ---------- the numbers walk ----------
 def test_number_offenders_keeps_the_text_nodes_that_have_a_digit_and_no_marked_ancestor():
     nodes = [

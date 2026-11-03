@@ -1,3 +1,4 @@
+import { CheckScope } from "./CheckPanel.tsx";
 import { FlagTable } from "./Flags.tsx";
 import { Ref } from "./Ref.tsx";
 import { holdParts } from "./hold_parts.tsx";
@@ -91,6 +92,7 @@ export function Notes({ ready }: { ready: ReadyInfo | null }) {
       <section id="check-reach" aria-labelledby="check-reach-heading">
         <T as="h2" k="notes.check.heading" id="check-reach-heading" />
         <T as="p" k="notes.check.reach" />
+        <CheckScope />
         <T as="p" k="notes.check.other" />
       </section>
 

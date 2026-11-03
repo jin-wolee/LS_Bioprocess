@@ -8,6 +8,9 @@ import { LangContext } from "./T.tsx";
 // One lineage column drawn as SVG by the page (lab_ui.md section 8; ADR-0018: no chart library). The rows a record stores for one sample are boxes, the keys that join them are lines, an
 // edge whose key is null is a stub that ends in a gap, and the three questions run along the bottom with their verdicts. Shape and text carry the meaning; colour only repeats it (ADR-0011):
 // solid outline = correct; heavy outline with a cross = wrong, the truth written beside it; dashed hollow outline = a field the record does not store.
+//
+// Invariant 3 (lab_ui.md section 6): every key, stamp and value the picture writes is a label (`data-label`), wherever it is drawn. On the Lineage screen and in the challenge it also sits in a result block;
+// the plant's record panel has none, so the drawing marks its own figures (P9; plant_ui.md section 12, item 20).
 
 type Question = LineageColumn["answers"][number];
 const QUESTION_KEY = { unit: "lineage.q.unit", sampled_at: "lineage.q.sampled_at", process_context: "lineage.q.process_context" } as const satisfies Record<Question["question"], Key>;
@@ -37,8 +40,8 @@ function Answer({ a, y, truth, architecture, lang }: { a: Question; y: number; t
       <title>{text(lang, "lineage.svg.answer", { question: text(lang, QUESTION_KEY[a.question]) })}</title>
       <rect class="lg-answer-box" width={BOX_W} height={ANSWER_H} rx="6" />
       <text class="lg-muted" x="8" y="16" data-i18n={QUESTION_KEY[a.question]}>{clip(text(lang, QUESTION_KEY[a.question]), 46)}</text>
-      <text class="lg-value" x="8" y="33">{a.verdict === "unanswerable" ? "" : clip(answer ?? "", 40)}</text>
-      <text class={`lg-verdict lg-verdict-${a.verdict}`} x="8" y="47" data-i18n={a.verdict === "wrong" ? "lineage.verdict.wrong.truth" : a.verdict === "unanswerable" ? "lineage.null" : `lineage.verdict.${a.verdict}`}>{clip(body, 46)}</text>
+      <text class="lg-value" x="8" y="33" data-label>{a.verdict === "unanswerable" ? "" : clip(answer ?? "", 40)}</text>
+      <text class={`lg-verdict lg-verdict-${a.verdict}`} x="8" y="47" {...(a.verdict === "wrong" && { "data-label": "" })} data-i18n={a.verdict === "wrong" ? "lineage.verdict.wrong.truth" : a.verdict === "unanswerable" ? "lineage.null" : `lineage.verdict.${a.verdict}`}>{clip(body, 46)}</text>
       {a.verdict === "wrong" && <path class="lg-cross" d={`M${BOX_W - 28} 10 l16 16 M${BOX_W - 12} 10 l-16 16`} />}
     </g>
   );
@@ -63,17 +66,17 @@ export function RecordSvg({ column, sample, truth }: { column: SampleRecord & Pa
       ))}
       {laid.boxes.map((b) => (
         <g key={b.id} class={`lg-node lg-node-${b.table}`} data-node={b.id} data-table={b.table} transform={`translate(${b.x} ${b.y})`}>
-          <title>{`${b.table} ${b.key}`}</title>
+          <title data-label>{`${b.table} ${b.key}`}</title>
           {b.incoming !== "" && <text class="lg-muted lg-incoming" x="0" y="-7">{clip(b.incoming, 46)}</text>}
           <rect class="lg-box" width={b.w} height={b.h} rx="5" />
-          <text class="lg-head" x="8" y="15">{clip(`${b.table} · ${b.key}`, 42)}</text>
+          <text class="lg-head" x="8" y="15" data-label>{clip(`${b.table} · ${b.key}`, 42)}</text>
           {b.lines.map((l, i) => (
             <g key={l.name} data-field={l.name} {...(l.value === null && { "data-null": "" })} transform={`translate(0 ${28 + i * 15})`}>
               <text class="lg-muted" x="8" y="0">{l.name}</text>
               {l.value === null ? (
                 <text class="lg-null" x="132" y="0" data-i18n={l.no_value ? "lineage.no_value" : "lineage.null"}>{text(lang, l.no_value ? "lineage.no_value" : "lineage.null")}</text>
               ) : (
-                <text class="lg-value" x="132" y="0">{clip(l.value, 24)}</text>
+                <text class="lg-value" x="132" y="0" data-label>{clip(l.value, 24)}</text>
               )}
             </g>
           ))}

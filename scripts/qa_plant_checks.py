@@ -12,9 +12,10 @@ from pathlib import Path
 from qa_checks import Result, first_line
 from qa_lab_browser import NUMBERS_JS, open_lab, wait_final
 from qa_lab_helpers import LAB_THEMES, LANGS, cross_origin, number_offenders, request_gzip_total, served_path
-from qa_plant_browser import LIST_JS, hud_click, open_plant, wait_scene
+from qa_plant_browser import LIST_JS, hud_click, open_plant, pause, seek, settle, wait_scene
+from qa_plant_halls import open_first_card, record_figure_problems
 from qa_plant_helpers import (
-    DEFAULT_OBJECTS, DEFAULT_SPEED, DEFAULT_START_S, FIRST_LOAD_LIMIT, LOADER_LIMIT, PLANT_LIMIT, PLANT_VIEWPORTS,
+    CLOSEUP_INSTANT_S, DEFAULT_OBJECTS, DEFAULT_SPEED, DEFAULT_START_S, FIRST_LOAD_LIMIT, LOADER_LIMIT, PLANT_LIMIT, PLANT_VIEWPORTS,
     counts_problems, hash_problems, size_problems, split_requests, three_in,
 )
 
@@ -117,6 +118,12 @@ def matrix_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme
             problems += [f"a number outside a data-ref, data-result or data-label with the panel open: '{o['text']}' in {o['where']}" for o in number_offenders(page.evaluate(NUMBERS_JS))]
             if page.query_selector("[data-overlay]") is None:
                 problems.append("the truth switch pressed left no element of the overlay")
+            # P9: a record panel opened at a mid-run instant, with the overlay on (the truth block and the answers beside the drawing), is in the sweep too
+            pause(page)
+            seek(page, CLOSEUP_INSTANT_S)
+            settle(page)
+            open_first_card(page)
+            problems += record_figure_problems(page, "with the record panel and the overlay open")
             problems += [f"console: {e[:140]}" for e in errors]
     except Exception as e:  # a cell that crashed is a failed cell
         problems.append(first_line(e))

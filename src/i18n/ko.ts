@@ -77,6 +77,7 @@ const koBase: Record<keyof typeof enBase, string> = {
   "check.part.cells": "한 시드의 지표 셀을 기준과 비교",
   "check.part.equal": "일치",
   "check.part.differs": "다름",
+  "check.scope": "다루는 범위: 기본 시나리오의 열린 루프뿐입니다. 실제 로그는 시드 {seeds}에서, 지표 셀은 시드 {cell_seed}에서 각각 빌드 시점에 Node로 만든 기준과 비교합니다. 다른 시나리오는 모두 다루지 않으며, {closed_loop}의 닫힌 루프도 다루지 않습니다.",
 
   "error.heading": "엔진이 문제를 보고했습니다",
   "error.invalid_spec": "실행 요청이 거부되었습니다:",

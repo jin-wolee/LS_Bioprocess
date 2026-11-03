@@ -22,6 +22,9 @@ TIME_MEASURED = ("engine run: from the line before runScenario(cfg) in the Worke
                  "the serialisation of the sensor ticks, the canonical JSONL and the hashing are not measured")
 # the words that belong to the state `identical` alone (lab_ui.md section 7)
 PASSED_ONLY_WORDS = ["reproducib", "byte for byte"]
+# what the note of the browser check must name in each language (lab_ui.md section 7, audit item 20): the default scenario's open loop, the seeds and the cells, other scenarios and the closed loop of SC8 not covered
+SCOPE_WORDS = {"en": ["default scenario", "open loop", "1, 2, 3", "seed 1", "Every other scenario is not covered", "closed loop of SC8"],
+               "ko": ["기본 시나리오", "열린 루프", "1, 2, 3", "시드 1", "다른 시나리오", "닫힌 루프", "SC8"]}
 # (label, #theme-select value, emulated prefers-color-scheme)
 LAB_THEMES = [("light", "light", "light"), ("dark", "dark", "light"), ("auto-light", "auto", "light"), ("auto-dark", "auto", "dark")]
 LANGS = ("en", "ko")
@@ -74,6 +77,12 @@ def cross_origin(urls, base: str) -> list[str]:
     return [u for u in urls if not u.startswith(("data:", "blob:")) and served_path(u, base) is None]
 
 
+def outside_base(urls: list[str], base: str) -> list[str]:
+    """Requests to the origin of `base` that are not under its path: an address that only works at the root of a server (a project site on Pages lives under /<repository>/)."""
+    b = urlsplit(base)
+    return [u for u in urls if not u.startswith(("data:", "blob:")) and (urlsplit(u).scheme, urlsplit(u).netloc) == (b.scheme, b.netloc) and not u.startswith(base)]
+
+
 def request_gzip_total(paths, root: Path) -> int:
     """`gzip -c <file> | wc -c` summed over the distinct files a cold load read."""
     return sum(gzip_size(Path(root) / p) for p in dict.fromkeys(paths))
@@ -89,6 +98,12 @@ def alter_reference(text: str) -> str:
 def found_words(text: str, words) -> list[str]:
     low = text.lower()
     return [w for w in words if w.lower() in low]
+
+
+def scope_problems(text: str, lang: str, where: str) -> list[str]:
+    """The parts of the check's scope note (lab_ui.md section 7) that the text lacks, one problem for each; `where` names the screen it was read on."""
+    flat = " ".join(text.split())
+    return [f"{where} ({lang}): the note of what the browser check covers lacks '{w}'" for w in SCOPE_WORDS[lang] if w not in flat]
 
 
 def number_offenders(nodes) -> list[dict]:

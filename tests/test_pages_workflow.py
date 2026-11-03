@@ -131,7 +131,9 @@ def test_uv_is_the_version_of_the_lockfile_toolchain(wf):
 
 
 def test_the_build_steps_run_in_this_order(wf):
-    wanted = ["npm ci", "uv sync --frozen", "check_docs.py --all --ci", "pytest -q", "npm run check", "scripts/assemble_site.py"]
+    # P9 (audit item 21): the browser QA runs before anything is uploaded. The lab and plant QA build the lab as a local build into dist/lab, so the public build of assemble_site.py comes after them,
+    # and the site QA checks that assembled folder, which is the one the upload step takes.
+    wanted = ["npm ci", "uv sync --frozen", "check_docs.py --all --ci", "pytest -q", "npm run check", "playwright install", "scripts/qa_lab.py", "scripts/qa_plant.py", "scripts/assemble_site.py", "scripts/qa_site.py"]
     commands = runs(wf, "build")
     at = []
     for fragment in wanted:
@@ -139,6 +141,9 @@ def test_the_build_steps_run_in_this_order(wf):
         assert len(hit) == 1, f"{fragment!r} must be run by exactly one step, found {len(hit)}"
         at.append(hit[0])
     assert at == sorted(at)
+    every = steps(wf, "build")
+    uploads = [i for i, s in enumerate(every) if str(s.get("uses", "")).startswith("actions/upload-pages-artifact@")]
+    assert len(uploads) == 1 and uploads[0] > max(i for i, s in enumerate(every) if "scripts/qa_site.py" in s.get("run", ""))
 
 
 def test_the_banned_token_list_comes_from_the_secret_in_one_step_only(wf):
@@ -161,3 +166,52 @@ def test_the_upload_keeps_the_hidden_file_nojekyll(wf):
     # upload-pages-artifact leaves out every dot file unless asked (its README, `include-hidden-files`)
     upload = next(s for s in uses(wf) if s["uses"].startswith("actions/upload-pages-artifact@"))
     assert upload["with"]["include-hidden-files"] is True
+
+
+# ---------- the browser QA before a deploy (P9, audit item 21; the author's decision of 2026-11-03) ----------
+def step_running(wf: dict, fragment: str) -> dict:
+    found = [s for s in steps(wf, "build") if fragment in s.get("run", "")]
+    assert len(found) == 1, fragment
+    return found[0]
+
+
+def test_chromium_is_installed_through_uv_from_the_lockfile_and_only_chromium(wf):
+    # Playwright's own installer, run by the playwright of uv.lock: the browser build is the one that Playwright version pins. No other browser: the lab QA's `engines` check is left out of the workflow.
+    install = step_running(wf, "playwright install")["run"].split()
+    assert install[:3] == ["uv", "run", "--frozen"]
+    assert install[3:6] == ["playwright", "install", "--with-deps"]
+    assert install[6:] == ["chromium"]
+
+
+def test_playwright_is_a_dependency_of_the_lockfile():
+    lock = (REPO / "uv.lock").read_text(encoding="utf-8")
+    assert re.search(r'^name = "playwright"\nversion = "\d+\.\d+\.\d+"', lock, re.M)
+
+
+def test_each_browser_qa_runs_in_the_timing_mode_report_and_the_lab_qa_skips_the_other_engines(wf):
+    # a CI runner's software renderer is not the machine of the budgets: the times are printed with their conditions and do not fail (scripts/qa_timing.py); every other failure fails the run
+    lab = step_running(wf, "scripts/qa_lab.py")["run"]
+    plant = step_running(wf, "scripts/qa_plant.py")["run"]
+    site = step_running(wf, "scripts/qa_site.py")["run"]
+    assert lab.split() == ["uv", "run", "--frozen", "python", "scripts/qa_lab.py", "--timing", "report", "--no-engines"]
+    assert plant.split() == ["uv", "run", "--frozen", "python", "scripts/qa_plant.py", "--timing", "report"]
+    assert site.split() == ["uv", "run", "--frozen", "python", "scripts/qa_site.py", "--timing", "report"]
+
+
+def test_no_step_of_the_build_job_may_fail_without_failing_the_job(wf):
+    # the deploy job needs the build job, so a failed QA step blocks the deploy only if it fails the job: no continue-on-error, no `|| true`, no `; true`, no condition on a step
+    for step in steps(wf, "build"):
+        assert "continue-on-error" not in step, step.get("name")
+        assert "if" not in step, step.get("name")
+        assert not re.search(r"\|\|\s*(true|:|exit\s+0)|;\s*true\b|&\s*$", step.get("run", "")), step.get("name")
+    assert "continue-on-error" not in wf["jobs"]["build"] and "continue-on-error" not in wf["jobs"]["deploy"]
+
+
+def test_the_deploy_job_still_needs_the_build_job_and_the_build_job_cannot_run_for_hours(wf):
+    assert wf["jobs"]["deploy"]["needs"] == "build"
+    assert isinstance(wf["jobs"]["build"]["timeout-minutes"], int) and wf["jobs"]["build"]["timeout-minutes"] <= 60
+
+
+def test_the_qa_steps_do_not_see_the_banned_token_secret(wf):
+    for fragment in ("playwright install", "scripts/qa_lab.py", "scripts/qa_plant.py", "scripts/qa_site.py"):
+        assert "env" not in step_running(wf, fragment)

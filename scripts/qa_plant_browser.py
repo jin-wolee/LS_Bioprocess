@@ -87,6 +87,21 @@ DIFF_JS = """async ([a, b]) => {
   return {differing, total: x.w * x.h, size: [x.w, x.h, y.w, y.h]};
 }"""
 
+# The text nodes with a digit inside the elements a selector names (invariant 3, lab_ui.md section 6), each with whether an element of a ref, a result or a label is above it: the sweep of one part of the page,
+# for the parts that sit in no result block (the guided scene's box, the record panel). `qa_lab_helpers.number_offenders` reads the list.
+NUMBERS_IN_JS = """(scope) => {
+  const out = [];
+  for (const root of document.querySelectorAll(scope)) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const el = n.parentElement;
+      if (!el || !/\\d/.test(n.textContent)) continue;
+      out.push({text: (n.textContent.match(/.{0,30}\\d+.{0,30}/s) || [n.textContent])[0].trim(), marked: !!el.closest('[data-ref],[data-result],[data-label]'),
+                where: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.split(/\\s+/)[0] : '')});
+    }
+  }
+  return out;
+}"""
 STATE_JS = """() => { const h = document.querySelector('#plant');
   return h ? {scene: h.dataset.plantScene, tier: h.dataset.plantTier, t: h.dataset.plantT, speed: h.dataset.plantSpeed, playing: h.dataset.plantPlaying, epoch: h.dataset.plantEpoch,
               calls: h.dataset.plantCalls, tubes: h.dataset.plantTubes, objects: h.dataset.plantObjects, runHash: h.dataset.runHash, cellsHash: h.dataset.cellsHash,

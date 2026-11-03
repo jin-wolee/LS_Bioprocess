@@ -381,7 +381,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <p class="eyebrow" data-i18n="p.eyebrow">Technical explainer &middot; lab built</p>
 <h1 id="h-premise" class="nochip" data-i18n="p.h1" data-src="A022" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">N bioreactors, 2 shared analyzers: where does the context go?</h1>
 <div class="ruler" aria-hidden="true"></div>
-<div class="notice" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">Status: the lab is built and runs the synthetic plant in your browser; its Break-out screen is held back until the sources behind it are re-read. All data is synthetic, built from public sources and labelled assumptions. This page states no simulation result, and nothing on it predicts a real laboratory.</p></div>
+<div class="notice" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">Status: the lab is built and runs the synthetic plant in your browser. The plant is a scene to walk through, with a text version where the browser has no WebGL. The Break-out screen, and the Break-out cases in the plant, are held back in the public build until the sources behind them are re-read. All data is synthetic, built from public sources and labelled assumptions. This page states no simulation result, and nothing on it predicts a real laboratory.</p></div>
 <p class="lede" data-i18n="p.thesis">A process-development lab runs many small bioreactors but only a couple of at-line analyzers. Every sample travels from a vessel to an instrument, and on the way a bare number can lose its context: which reactor, which moment, which instrument state. The problem is context preservation, not throughput.</p>
 <figure class="fig" data-src="A102" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
 <div tabindex="0" class="fig-scroll"><svg class="wide-only" viewBox="0 0 760 130" role="img" aria-labelledby="hero-t" aria-describedby="hero-d">
@@ -888,17 +888,19 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 </ul>
 <footer class="foot">
 <p data-i18n="m.ai">Built with AI coding tools. Design decisions are recorded as ADRs and accepted by the author in the author's own commits.</p>
+<p data-i18n="m.sql">The database schema, three SQL queries and a SimPy core loop were written by AI from the specification, without reading the engine's source. The author did not write them. Tests measure how far they agree with the TypeScript engine; they are a second implementation that does not copy the engine's code, and they are not independent of the model family that wrote the specification.</p>
 <p data-i18n="m.lic">Code: MIT licence. Text and figures: CC BY 4.0.</p>
+<p data-i18n="m.plant">The plant in the lab is a scene you can walk through. The clock plays, pauses, speeds up and moves to any instant of the run. Each data architecture has a record hall whose shelves hold a card for each sample that record keeps. On request a view shows what the simulation knows and no record can hold, marked as the simulation's own view. Operator actions, such as adding a feed or taking an analyzer down, rerun the plant, and a card or a reactor links to the Lineage and Results screens. A short guided scene follows one sample that was drawn before a feed and measured after it. The Break-out cases in the plant exist in the local build only.</p>
 <p data-i18n="m.rst">Where it stands: S0 to S3 are built, S4 and S5 are not built yet.</p>
 <ol class="road" aria-label="Roadmap" data-i18n-aria="m.road">
 <li><b>S0</b> <span data-i18n="m.r0">foundations, design, this page</span></li>
 <li><b>S1</b> <span data-i18n="m.r1">engine, layers L1 to L3, profiles</span></li>
 <li><b>S2</b> <span data-i18n="m.r2">flags, recorders, metrics, experiments</span></li>
-<li><b>S3</b> <span data-i18n="m.r3">lab UI in the browser, break-out events with the investigation walk-back</span></li>
+<li><b>S3</b> <span data-i18n="m.r3">lab UI in the browser with a walkable plant, break-out events with the investigation walk-back</span></li>
 <li><b>S4</b> <span data-i18n="m.r4">downstream genealogy, HPLC contention, cell-line and operating-mode profiles</span></li>
 <li><b>S5</b> <span data-i18n="m.r5">release and write-up</span></li>
 </ol>
-<p data-i18n="m.ext">Extensions: break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3); the lab's Break-out screen is held back in the public build until the sources behind it are re-read. In that screen a hold is a state of the record and stops no culture, its containment figures are the effect of tracking and holding on the record, and its confirming tests are judged by coverage, not by a sensitivity. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed, not built yet.</p>
+<p data-i18n="m.ext">Extensions: break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3); the lab's Break-out screen and the Break-out cases in the plant are held back in the public build until the sources behind them are re-read. In that screen a hold is a state of the record and stops no culture, its containment figures are the effect of tracking and holding on the record, and its confirming tests are judged by coverage, not by a sensitivity. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed, not built yet.</p>
 <p><span class="placeholder" id="repo-link" data-i18n="m.repo">repository link: added at publication</span></p>
 </footer>
 </div>
@@ -924,7 +926,7 @@ window.I18N_KO = {
 "ui.scroll": "옆으로 스크롤 →",
 "p.eyebrow": "기술 해설 · 랩 구현됨",
 "p.h1": "바이오리액터 N대, 공유 분석기 2대: 맥락은 어디로 사라지는가?",
-"p.notice": "현재 상태: 랩이 구현되어 있어 합성 플랜트를 브라우저에서 실행합니다. 오염 이벤트 역추적 화면은 그 근거 출처를 다시 읽을 때까지 보류 중입니다. 모든 데이터는 합성 데이터이며, 공개 자료와 명시한 가정으로 만들었습니다. 이 페이지는 시뮬레이션 결과를 제시하지 않으며, 실제 실험실을 예측하지 않습니다.",
+"p.notice": "현재 상태: 랩이 구현되어 있어 합성 플랜트를 브라우저에서 실행합니다. 플랜트는 걸어 다니며 볼 수 있는 장면이고, 브라우저에 WebGL이 없으면 글로 된 판으로 보여 줍니다. 오염 이벤트 역추적 화면과 플랜트 안의 이탈 사례는 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다. 모든 데이터는 합성 데이터이며, 공개 자료와 명시한 가정으로 만들었습니다. 이 페이지는 시뮬레이션 결과를 제시하지 않으며, 실제 실험실을 예측하지 않습니다.",
 "p.thesis": "공정개발 실험실에는 소형 바이오리액터가 많지만 at-line 분석기는 두어 대뿐입니다. 시료는 용기에서 기기로 옮겨지고, 그 과정에서 숫자 하나만 남으면 맥락을 잃을 수 있습니다. 어느 리액터인지, 어느 시점인지, 기기가 어떤 상태였는지. 문제는 처리량이 아니라 맥락 보존입니다.",
 "p.f.pre": "피드 이전 상태",
 "p.f.post": "피드 이후 상태",
@@ -1224,16 +1226,18 @@ window.I18N_KO = {
 "m.v3": "엔진의 게이트는 구조적입니다. 손으로 계산한 픽스처, 해석적 대기 시간과 맞춰 보는 대기행렬 점검, 플래그마다 하나씩 있는 강제 오류 픽스처. 아키텍처 간 우열은 보고할 뿐 단언하지 않습니다.",
 "m.h3d": "잠정 표시 없이 인용한 출처",
 "m.ai": "AI 코딩 도구로 만들었습니다. 설계 결정은 ADR로 기록하고, 저자가 직접 커밋해 수락합니다.",
+"m.sql": "데이터베이스 스키마, SQL 쿼리 세 개, SimPy 핵심 루프는 엔진 소스를 읽지 않고 명세만 보고 AI가 작성했습니다. 저자가 쓴 것이 아닙니다. 테스트가 TypeScript 엔진과의 일치를 측정합니다. 엔진의 코드를 베끼지 않은 두 번째 구현이지만, 명세를 쓴 모델 계열로부터 독립적인 것은 아닙니다.",
 "m.lic": "코드: MIT 라이선스. 글과 그림: CC BY 4.0.",
 "m.road": "로드맵",
 "m.r0": "기반, 설계, 이 페이지",
 "m.r1": "엔진, L1~L3 층, 프로파일",
 "m.r2": "플래그, 기록기, 지표, 실험",
-"m.r3": "브라우저 실험실 UI, 이탈 이벤트와 조사 역추적",
+"m.r3": "걸어 다닐 수 있는 플랜트가 있는 브라우저 실험실 UI, 이탈 이벤트와 조사 역추적",
 "m.r4": "하류 계보, HPLC 경합, 세포주·운전 모드 프로파일",
 "m.r5": "릴리스와 정리 글",
+"m.plant": "랩의 플랜트는 걸어 다니며 볼 수 있는 장면입니다. 시계는 재생하고, 멈추고, 빠르게 돌리고, 실행의 어느 시점으로든 옮길 수 있습니다. 데이터 아키텍처마다 기록 보관실이 하나씩 있고, 그 선반에는 그 기록이 보관한 시료마다 카드가 하나씩 놓입니다. 요청하면 시뮬레이션은 알지만 어떤 기록에도 담길 수 없는 것을 시뮬레이션 자체의 시점으로 표시해 보여 줍니다. 피드 추가나 분석기 중단 같은 운영자 조작은 플랜트를 다시 계산하고, 카드나 리액터에서 계보 화면과 결과 화면으로 이어집니다. 짧은 안내 장면은 피드 전에 채취하고 피드 후에 측정한 시료 하나를 따라갑니다. 플랜트 안의 이탈 사례는 로컬 빌드에서만 있습니다.",
 "m.rst": "현재 상태: S0~S3 단계는 만들어져 있고, S4와 S5는 아직 만들지 않았습니다.",
-"m.ext": "확장: 오염이나 무균성 실패 같은 이탈 이벤트와, 같은 로트나 장비를 쓴 다른 배치로 거슬러 올라가는 조사 추적은 구현되어 있습니다(S3). 랩의 오염 이벤트 역추적 화면은 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다. 그 화면에서 보류는 기록의 상태일 뿐 배양을 멈추지 않고, 격리 수치는 추적과 보류가 기록에 미치는 효과이며, 확인 검사는 민감도가 아니라 포괄 범위로 판정합니다. 리액터별 세포주 프로파일과 배치·페드배치·관류 같은 운전 모드 전환(S4)은 설계만 했고 아직 구현하지 않았습니다.",
+"m.ext": "확장: 오염이나 무균성 실패 같은 이탈 이벤트와, 같은 로트나 장비를 쓴 다른 배치로 거슬러 올라가는 조사 추적은 구현되어 있습니다(S3). 랩의 오염 이벤트 역추적 화면과 플랜트 안의 이탈 사례는 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다. 그 화면에서 보류는 기록의 상태일 뿐 배양을 멈추지 않고, 격리 수치는 추적과 보류가 기록에 미치는 효과이며, 확인 검사는 민감도가 아니라 포괄 범위로 판정합니다. 리액터별 세포주 프로파일과 배치·페드배치·관류 같은 운전 모드 전환(S4)은 설계만 했고 아직 구현하지 않았습니다.",
 "m.repo": "저장소 링크: 공개 시점에 추가"
 };
 

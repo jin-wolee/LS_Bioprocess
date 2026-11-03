@@ -76,16 +76,26 @@ def frame_stats(intervals) -> dict:
     return {"n": len(intervals), "median": percentile(intervals, 50), "p95": percentile(intervals, 95)} if intervals else {"n": 0, "median": None, "p95": None}
 
 
-def frames_problems(stats, frames: int = FRAMES) -> list[str]:
-    """The budget of section 8: at least `frames` frames, median at most 50 ms, 95th percentile at most 80 ms."""
-    if stats["n"] < frames:
-        return [f"only {stats['n']} frames measured, {frames} needed"]
+def frames_short(stats, frames: int = FRAMES) -> list[str]:
+    """Fewer than `frames` frames measured: a defect of the run, not a time (it fails in every timing mode)."""
+    return [f"only {stats['n']} frames measured, {frames} needed"] if stats["n"] < frames else []
+
+
+def frames_over(stats, frames: int = FRAMES) -> list[str]:
+    """The times of section 8 over their limits: median at most 50 ms, 95th percentile at most 80 ms (nothing is said while too few frames were measured)."""
+    if frames_short(stats, frames):
+        return []
     problems = []
     if stats["median"] > MEDIAN_LIMIT_MS:
         problems.append(f"median {stats['median']:.1f} ms is over {MEDIAN_LIMIT_MS:.0f} ms")
     if stats["p95"] > P95_LIMIT_MS:
         problems.append(f"95th percentile {stats['p95']:.1f} ms is over {P95_LIMIT_MS:.0f} ms")
     return problems
+
+
+def frames_problems(stats, frames: int = FRAMES) -> list[str]:
+    """The budget of section 8: at least `frames` frames, median at most 50 ms, 95th percentile at most 80 ms."""
+    return frames_short(stats, frames) or frames_over(stats, frames)
 
 
 # ---- the files of a cold load -------------------------------------------------------------------------------------

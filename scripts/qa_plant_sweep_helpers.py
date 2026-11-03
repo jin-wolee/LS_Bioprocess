@@ -106,10 +106,11 @@ def _stands(value: float, limit: float) -> str:
     return "at" if abs(value - limit) < 0.05 else ("over" if value > limit else "within")
 
 
-def time_findings(judged: bool, round_trip_ms: float | None, frames: dict | None) -> tuple[list[str], list[str]]:
+def time_findings(judged: bool, round_trip_ms: float | None, frames: dict | None, report: bool = False) -> tuple[list[str], list[str]]:
     """(problems, notes) for the times of a spec. A judged spec has `time_problems` and no notes. A spec whose times are not judged (the large plant: the author's decision of 2026-11-02, plant_ui.md section
-    12, item 18) has a problem only where a time was not measured, and a note for each time that says how it stands against each limit; the notes fail nothing."""
-    if judged:
+    12, item 18) has a problem only where a time was not measured, and a note for each time that says how it stands against each limit; the notes fail nothing. `report` (the timing mode of
+    qa_timing.py, P9) treats every spec as one whose times are not judged."""
+    if judged and not report:
         return time_problems(round_trip_ms, frames), []
     problems = ["no round trip was measured"] if round_trip_ms is None else []
     notes = []

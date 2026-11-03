@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Headless QA for the lab page (`dist/lab`): the end-to-end checks of docs/design/lab_ui.md section 12, exit 1 if any fails.
 
-    uv run python scripts/qa_lab.py [--root dist/lab] [--out qa_out/lab] [--no-build]
+    uv run python scripts/qa_lab.py [--root dist/lab] [--out qa_out/lab] [--no-build] [--timing judge|report] [--no-engines]
 
 Runs `npm run build:lab` first unless --no-build, serves --root over http.server on a free localhost port, drives headless Chromium (Playwright sync API) for every check and, for
 `engines`, headless Firefox and WebKit as well (the standing test of ADR-0019's claim: the check reads `identical` in each). Every browser is closed. Writes results.json,
 summary.md and shots/*.png to --out. This file is the CLI, the build and the report; the checks live in qa_lab_checks.py (page as a whole), qa_lab_sweeps.py (screens by language and theme), qa_lab_flags.py, qa_lab_results.py, qa_lab_one_seed.py (lineage and challenge) and qa_lab_breakout.py (Break-out: sc12 and breakout_public),
 the browser plumbing in qa_lab_browser.py and the unit-tested helpers in qa_lab_helpers.py.
+
+The Pages workflow (P9; docs/design/lab_ui.md section 13) runs `--timing report --no-engines`: the engine run of `time` is printed with its conditions and not failed on (scripts/qa_timing.py), and Firefox and WebKit are not
+run because only Chromium is installed there.
 """
 from __future__ import annotations
 
@@ -26,6 +29,7 @@ from qa_lab_flags import check_flags
 from qa_lab_one_seed import check_challenge, check_lineage_sc3
 from qa_lab_results import check_results
 from qa_lab_sweeps import check_contrast, check_ko, check_matrix, check_numbers
+from qa_timing import set_mode
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -53,7 +57,10 @@ def main(argv=None) -> int:
     ap.add_argument("--root", type=Path, default=REPO / "dist" / "lab", help="directory served; the build output")
     ap.add_argument("--out", type=Path, default=REPO / "qa_out" / "lab")
     ap.add_argument("--no-build", action="store_true", help="serve --root as it is")
+    ap.add_argument("--timing", choices=("judge", "report"), default="judge", help="report: a time over its limit is printed with its conditions and does not fail (the Pages workflow; scripts/qa_timing.py)")
+    ap.add_argument("--no-engines", action="store_true", help="do not run the check `engines` (Firefox and WebKit): the Pages workflow installs Chromium only")
     args = ap.parse_args(argv)
+    set_mode(args.timing)
     if not args.no_build and build() != 0:
         print("npm run build:lab failed", file=sys.stderr)
         return 1
@@ -68,7 +75,7 @@ def main(argv=None) -> int:
                        guarded("size", lambda: check_size(browser, url, args.root)),
                        guarded("time", lambda: check_time(browser, url)),
                        guarded("check", lambda: check_check(browser, url, args.root)),
-                       guarded("engines", lambda: check_engines(pw, url)),
+                       guarded("engines", lambda: Result("engines", True, "not run (--no-engines): only Chromium is installed") if args.no_engines else check_engines(pw, url)),
                        guarded("results", lambda: check_results(browser, url)),
                        guarded("lineage_sc3", lambda: check_lineage_sc3(browser, url)),
                        guarded("challenge", lambda: check_challenge(browser, url)),

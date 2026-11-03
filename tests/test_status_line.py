@@ -13,12 +13,14 @@ INFOGRAPHIC = REPO / "site" / "infographic"
 
 EYEBROW_EN = "Technical explainer &middot; lab built"
 NOTICE_EN = (
-    "Status: the lab is built and runs the synthetic plant in your browser; its Break-out screen is held back until the sources behind it are re-read. "
+    "Status: the lab is built and runs the synthetic plant in your browser. The plant is a scene to walk through, with a text version where the browser has no WebGL. "
+    "The Break-out screen, and the Break-out cases in the plant, are held back in the public build until the sources behind them are re-read. "
     "All data is synthetic, built from public sources and labelled assumptions. This page states no simulation result, and nothing on it predicts a real laboratory."
 )
 EYEBROW_KO = "기술 해설 · 랩 구현됨"
 NOTICE_KO = (
-    "현재 상태: 랩이 구현되어 있어 합성 플랜트를 브라우저에서 실행합니다. 오염 이벤트 역추적 화면은 그 근거 출처를 다시 읽을 때까지 보류 중입니다. "
+    "현재 상태: 랩이 구현되어 있어 합성 플랜트를 브라우저에서 실행합니다. 플랜트는 걸어 다니며 볼 수 있는 장면이고, 브라우저에 WebGL이 없으면 글로 된 판으로 보여 줍니다. "
+    "오염 이벤트 역추적 화면과 플랜트 안의 이탈 사례는 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다. "
     "모든 데이터는 합성 데이터이며, 공개 자료와 명시한 가정으로 만들었습니다. 이 페이지는 시뮬레이션 결과를 제시하지 않으며, 실제 실험실을 예측하지 않습니다."
 )
 OLD = ("Design phase", "design phase", "design-phase", "No simulation result exists yet", "설계 단계", "아직 시뮬레이션 결과는 없고")
@@ -72,6 +74,67 @@ def test_the_status_line_keeps_the_two_promises_of_the_old_notice():
     # synthetic data, and no prediction of a real laboratory (invariants 1 and 9 of .claude/CLAUDE.md)
     assert "All data is synthetic" in NOTICE_EN and "predicts a real laboratory" in NOTICE_EN
     assert "합성 데이터" in NOTICE_KO and "실제 실험실을 예측하지 않습니다" in NOTICE_KO
+
+
+# ---- what exists, said in the footer of the explainer (P9, 2026-11-03) ----------------------------------------------------------
+
+PLANT_EN = (
+    "The plant in the lab is a scene you can walk through. The clock plays, pauses, speeds up and moves to any instant of the run. Each data architecture has a record hall whose shelves hold a card for each "
+    "sample that record keeps. On request a view shows what the simulation knows and no record can hold, marked as the simulation's own view. Operator actions, such as adding a feed or taking an analyzer down, "
+    "rerun the plant, and a card or a reactor links to the Lineage and Results screens. A short guided scene follows one sample that was drawn before a feed and measured after it. "
+    "The Break-out cases in the plant exist in the local build only."
+)
+PLANT_KO = (
+    "랩의 플랜트는 걸어 다니며 볼 수 있는 장면입니다. 시계는 재생하고, 멈추고, 빠르게 돌리고, 실행의 어느 시점으로든 옮길 수 있습니다. 데이터 아키텍처마다 기록 보관실이 하나씩 있고, "
+    "그 선반에는 그 기록이 보관한 시료마다 카드가 하나씩 놓입니다. 요청하면 시뮬레이션은 알지만 어떤 기록에도 담길 수 없는 것을 시뮬레이션 자체의 시점으로 표시해 보여 줍니다. "
+    "피드 추가나 분석기 중단 같은 운영자 조작은 플랜트를 다시 계산하고, 카드나 리액터에서 계보 화면과 결과 화면으로 이어집니다. 짧은 안내 장면은 피드 전에 채취하고 피드 후에 측정한 시료 하나를 따라갑니다. "
+    "플랜트 안의 이탈 사례는 로컬 빌드에서만 있습니다."
+)
+SQL_EN = (
+    "The database schema, three SQL queries and a SimPy core loop were written by AI from the specification, without reading the engine's source. The author did not write them. "
+    "Tests measure how far they agree with the TypeScript engine; they are a second implementation that does not copy the engine's code, and they are not independent of the model family that wrote the specification."
+)
+SQL_KO = (
+    "데이터베이스 스키마, SQL 쿼리 세 개, SimPy 핵심 루프는 엔진 소스를 읽지 않고 명세만 보고 AI가 작성했습니다. 저자가 쓴 것이 아닙니다. "
+    "테스트가 TypeScript 엔진과의 일치를 측정합니다. 엔진의 코드를 베끼지 않은 두 번째 구현이지만, 명세를 쓴 모델 계열로부터 독립적인 것은 아닙니다."
+)
+ROAD_EN = "lab UI in the browser with a walkable plant, break-out events with the investigation walk-back"
+ROAD_KO = "걸어 다닐 수 있는 플랜트가 있는 브라우저 실험실 UI, 이탈 이벤트와 조사 역추적"
+EXT_HELD_EN = "the lab's Break-out screen and the Break-out cases in the plant are held back in the public build until the sources behind them are re-read"
+EXT_HELD_KO = "랩의 오염 이벤트 역추적 화면과 플랜트 안의 이탈 사례는 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다"
+
+
+def test_the_footer_of_the_source_page_says_what_the_plant_is_and_who_wrote_the_sql_and_simpy_files():
+    body = (INFOGRAPHIC / "src" / "body.html").read_text(encoding="utf-8")
+    assert element(body, "m.plant", "p") == PLANT_EN
+    assert element(body, "m.sql", "p") == SQL_EN
+    assert element(body, "m.r3", "span") == ROAD_EN
+    assert EXT_HELD_EN in element(body, "m.ext", "p")
+
+
+def test_the_dictionary_says_the_same_in_korean():
+    ko = (INFOGRAPHIC / "src" / "i18n.js").read_text(encoding="utf-8")
+    assert korean(ko, "m.plant") == PLANT_KO
+    assert korean(ko, "m.sql") == SQL_KO
+    assert korean(ko, "m.r3") == ROAD_KO
+    assert EXT_HELD_KO in korean(ko, "m.ext")
+
+
+def test_the_committed_page_carries_the_footer_in_both_languages():
+    page = (INFOGRAPHIC / "index.html").read_text(encoding="utf-8")
+    assert element(page, "m.plant", "p") == PLANT_EN and element(page, "m.sql", "p") == SQL_EN
+    assert f'"m.plant": "{PLANT_KO}"' in page and f'"m.sql": "{SQL_KO}"' in page
+
+
+def test_the_footer_names_the_plant_and_the_ai_authorship_without_a_number_a_result_or_a_ranking():
+    # invariants 3 and 9: no digit (a figure would need its ledger id), no result, nothing that ranks; ADR-0022 requires the AI authorship to be said wherever the files are described
+    for text in (PLANT_EN, PLANT_KO, SQL_EN, SQL_KO, ROAD_EN, ROAD_KO):
+        assert not re.search(r"\d", text), text
+    for word in ("walk", "clock", "record hall", "On request", "Operator actions", "links to the Lineage and Results", "guided scene", "local build only"):
+        assert word in PLANT_EN, word
+    assert "written by AI from the specification" in SQL_EN and "The author did not write them" in SQL_EN and "not independent of the model family" in SQL_EN
+    assert "AI가 작성했습니다" in SQL_KO and "저자가 쓴 것이 아닙니다" in SQL_KO
+    assert not re.search(r"\b(better|best|worse|worst|wins?|winner|outperforms?|beats?)\b", PLANT_EN + SQL_EN, re.I)
 
 
 # ---- the status lines of the design notes (A2, 2026-11-02) --------------------------------------------

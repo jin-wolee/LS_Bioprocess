@@ -14,8 +14,9 @@ from qa_lab_helpers import LANGS
 from qa_plant_browser import FRAMES_JS, blank_page, open_plant, pause, pixel_diff, pixel_stats, seek, settle, state, wait_scene
 from qa_plant_helpers import (
     BUSY_START_S, DAY_S, DEFAULT_SPEED, DEFAULT_START_S, FIXED_INSTANT_S, FRAMES, FRAMES_DROPPED, FRAMES_MEASURED, MEDIAN_LIMIT_MS, P95_LIMIT_MS, PLANT_VIEWPORTS, SHOT_INSTANTS, SPEEDS,
-    clock_reading, frame_intervals, frame_stats, frames_problems, motion_problems, not_blank, repro_problems, shot_digest, shots_problems,
+    clock_reading, frame_intervals, frame_stats, frames_over, frames_short, motion_problems, not_blank, repro_problems, shot_digest, shots_problems,
 )
+from qa_timing import over_limit
 
 # The Korean texts the clock's controls carry, typed from the dictionary: the label of the scrubber, the play button while playing, the HUD's "day" word.
 KO_SCRUB = "실행 중의 시점"
@@ -57,7 +58,8 @@ def check_plant_frames(browser, url, out: Path) -> Result:
         wait_scene(page)
         start, end, stats, seen = play_frames(page, BUSY_START_S)
         conditions = of_page(browser, page, load, PLANT_VIEWPORTS["1280"], FRAMES_MEASURED)
-        problems += frames_problems(stats)
+        late, notes = over_limit(frames_over(stats))  # P9: the timing mode `report` prints a frame time over its limit and does not fail on it
+        problems += frames_short(stats) + late
         problems += motion_problems(int(start["t"]), int(end["t"]), end["playing"], max(seen), end["speed"])
         page.bring_to_front()
         png = page.locator("#plant").screenshot(path=str(out / "plant_frames_1280x720.png"))
@@ -69,7 +71,7 @@ def check_plant_frames(browser, url, out: Path) -> Result:
     detail = (f"{stats['n']} frames from day 8 08:30 playing at x{DEFAULT_SPEED} with the truth overlay on, median {stats['median']:.1f} ms (limit {MEDIAN_LIMIT_MS:.0f}), 95th percentile {stats['p95']:.1f} ms (limit {P95_LIMIT_MS:.0f}); "
               f"{end['calls']} draw calls, up to {max(seen)} tubes on the floor, the clock moved {int(end['t']) - int(start['t'])} s; screenshot spread {shot['std']:.0f}, {shot['colours']} colours; "
               f"{conditions_summary(conditions)}") if stats["n"] else "no frames"
-    return Result("plant_frames", not problems, detail + (f" | {problems[0]}" if problems else ""), {"stats": stats, "problems": problems, "calls": end["calls"], "tubes_max": max(seen), "conditions": conditions})
+    return Result("plant_frames", not problems, detail + (f" | {problems[0]}" if problems else "") + "".join(f" [{n}]" for n in notes), {"stats": stats, "problems": problems, "calls": end["calls"], "tubes_max": max(seen), "conditions": conditions})
 
 
 def english_controls(page, problems: list[str]) -> None:

@@ -33,7 +33,7 @@
 <p class="eyebrow" data-i18n="p.eyebrow">Technical explainer &middot; lab built</p>
 <h1 id="h-premise" class="nochip" data-i18n="p.h1" data-src="A022">N bioreactors, 2 shared analyzers: where does the context go?</h1>
 <div class="ruler" aria-hidden="true"></div>
-<div class="notice" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">Status: the lab is built and runs the synthetic plant in your browser; its Break-out screen is held back until the sources behind it are re-read. All data is synthetic, built from public sources and labelled assumptions. This page states no simulation result, and nothing on it predicts a real laboratory.</p></div>
+<div class="notice" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">Status: the lab is built and runs the synthetic plant in your browser. The plant is a scene to walk through, with a text version where the browser has no WebGL. The Break-out screen, and the Break-out cases in the plant, are held back in the public build until the sources behind them are re-read. All data is synthetic, built from public sources and labelled assumptions. This page states no simulation result, and nothing on it predicts a real laboratory.</p></div>
 <p class="lede" data-i18n="p.thesis">A process-development lab runs many small bioreactors but only a couple of at-line analyzers. Every sample travels from a vessel to an instrument, and on the way a bare number can lose its context: which reactor, which moment, which instrument state. The problem is context preservation, not throughput.</p>
 <figure class="fig" data-src="A102">
 <div tabindex="0" class="fig-scroll"><svg class="wide-only" viewBox="0 0 760 130" role="img" aria-labelledby="hero-t" aria-describedby="hero-d">
@@ -530,17 +530,19 @@
 </ul>
 <footer class="foot">
 <p data-i18n="m.ai">Built with AI coding tools. Design decisions are recorded as ADRs and accepted by the author in the author's own commits.</p>
+<p data-i18n="m.sql">The database schema, three SQL queries and a SimPy core loop were written by AI from the specification, without reading the engine's source. The author did not write them. Tests measure how far they agree with the TypeScript engine; they are a second implementation that does not copy the engine's code, and they are not independent of the model family that wrote the specification.</p>
 <p data-i18n="m.lic">Code: MIT licence. Text and figures: CC BY 4.0.</p>
+<p data-i18n="m.plant">The plant in the lab is a scene you can walk through. The clock plays, pauses, speeds up and moves to any instant of the run. Each data architecture has a record hall whose shelves hold a card for each sample that record keeps. On request a view shows what the simulation knows and no record can hold, marked as the simulation's own view. Operator actions, such as adding a feed or taking an analyzer down, rerun the plant, and a card or a reactor links to the Lineage and Results screens. A short guided scene follows one sample that was drawn before a feed and measured after it. The Break-out cases in the plant exist in the local build only.</p>
 <p data-i18n="m.rst">Where it stands: S0 to S3 are built, S4 and S5 are not built yet.</p>
 <ol class="road" aria-label="Roadmap" data-i18n-aria="m.road">
 <li><b>S0</b> <span data-i18n="m.r0">foundations, design, this page</span></li>
 <li><b>S1</b> <span data-i18n="m.r1">engine, layers L1 to L3, profiles</span></li>
 <li><b>S2</b> <span data-i18n="m.r2">flags, recorders, metrics, experiments</span></li>
-<li><b>S3</b> <span data-i18n="m.r3">lab UI in the browser, break-out events with the investigation walk-back</span></li>
+<li><b>S3</b> <span data-i18n="m.r3">lab UI in the browser with a walkable plant, break-out events with the investigation walk-back</span></li>
 <li><b>S4</b> <span data-i18n="m.r4">downstream genealogy, HPLC contention, cell-line and operating-mode profiles</span></li>
 <li><b>S5</b> <span data-i18n="m.r5">release and write-up</span></li>
 </ol>
-<p data-i18n="m.ext">Extensions: break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3); the lab's Break-out screen is held back in the public build until the sources behind it are re-read. In that screen a hold is a state of the record and stops no culture, its containment figures are the effect of tracking and holding on the record, and its confirming tests are judged by coverage, not by a sensitivity. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed, not built yet.</p>
+<p data-i18n="m.ext">Extensions: break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3); the lab's Break-out screen and the Break-out cases in the plant are held back in the public build until the sources behind them are re-read. In that screen a hold is a state of the record and stops no culture, its containment figures are the effect of tracking and holding on the record, and its confirming tests are judged by coverage, not by a sensitivity. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed, not built yet.</p>
 <p><span class="placeholder" id="repo-link" data-i18n="m.repo">repository link: added at publication</span></p>
 </footer>
 </div>

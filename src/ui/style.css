@@ -85,6 +85,7 @@ p { margin: 8px 0; max-width: 46rem; }
 .check-identical .banner { border-left-color: var(--ok-fg); background: var(--ok-bg); }
 .check-failed .banner { border-left: 8px solid var(--fail-fg); background: var(--fail-bg); font-weight: 600; }
 .check-pending .banner, .check-error .banner { border-left-color: var(--warn-fg); background: var(--warn-bg); }
+.check-scope { margin: 8px 0 0; color: var(--muted); font-size: 0.92rem; max-width: 70ch; }
 .check-detail { margin: 4px 0 0; }
 .check-detail summary { cursor: pointer; }
 .equal { color: var(--ok-fg); }
