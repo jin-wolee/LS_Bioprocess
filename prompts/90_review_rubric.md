@@ -20,7 +20,7 @@ The orchestrator reviews and orders rework; it does not build. Rails: PRINCIPLES
 
 - [ ] Every behaviour in the brief maps to a named test file that exists and ran in your run. List the mapping.
 - [ ] Red evidence was reported for hand fixtures and invariants; spot-check one by the mutations in section B.
-- [ ] No disabled tests: `git grep --untracked -nE "\.(only|skip)\(|xit\(|xdescribe|pytest\.mark\.skip\b" -- engine tests` is empty (the `user_track` skips for absent author files are the only exception).
+- [ ] No disabled tests: `git grep --untracked -nE "\.(only|skip)\(|xit\(|xdescribe|pytest\.mark\.skip\b" -- engine tests` is empty (the `user_track` skips for absent files of the second implementation are the only exception).
 - [ ] Goldens untouched since creation: the checksum test passes and `docs/progress.md` records the one creation command per set (the S1a parity traces, the S1b event logs); any later golden diff without a recorded author approval is a blocker.
 - [ ] Expected values in fixtures match the brief's tables (re-derive one by hand), not engine output.
 
@@ -95,7 +95,7 @@ The orchestrator reviews and orders rework; it does not build. Rails: PRINCIPLES
 
 ## J. Boundaries and decisions
 
-- [ ] `git diff HEAD --stat -- sql reference` is empty and `git ls-files -o --exclude-standard -- sql reference` is empty; `.claude/user_owned.txt` lists all five author paths; the live guard denial of S1a Step 0 and the `.claude/.dirty` marker after the first Write were shown.
+- [ ] Since ADR-0022 (accepted 2026-11-03) `sql/` and `reference/` are written by AI clean-room from the specification: a delivery that changes them read none of `engine/src/` and `src/` (its report lists what it read), left `tests/user_track/` as it was, and keeps every text saying the files are AI-written, not the author's; a delivery that does not touch them has `git diff HEAD --stat -- sql reference` empty. Before ADR-0022 this item read: `sql` and `reference` empty and `.claude/user_owned.txt` listing all five author paths; the live guard denial of S1a Step 0 and the `.claude/.dirty` marker after the first Write were shown.
 - [ ] ADRs: this delivery's new or modified ADR files (`git ls-files -m -o --exclude-standard -- docs/adr`) keep `- **Status:** Proposed` and the placeholder under `## Decider's note`. History: no commit carrying the AI trailer changed an ADR's status line or decider's note. Run
   ```bash
   note() { git show "$1:$2" 2>/dev/null | sed -n "/^## Decider's note/,\$p" | grep -v '^$'; }
@@ -120,7 +120,7 @@ The orchestrator reviews and orders rework; it does not build. Rails: PRINCIPLES
 - [ ] BDD: every scenario the brief lists has a Vitest `describe("SC<n> ...")` with `Given`/`When`/`Then` `it` titles (`git grep --untracked -nE 'describe\("SC[0-9]+' -- engine tests`). Give the mapping; a scenario without a test is a major. No Gherkin files or runner.
 - [ ] EDD: after your own check runs, `git status --short -uall -- tests/golden` shows no change; hand fixtures, M/M/c targets and the evaluator's answer key are unchanged since written (see A and B).
 - [ ] Budgets of `00 §4` are met where measurable in this session (I12 in S1b; gzip sizes in S3), measured not estimated.
-- [ ] YOLO did not skip a HITL gate: no `Accepted` flip or decider's note, no push or visibility change, no author-owned file written, no approval or hook bypass (`--no-verify`, `ALLOW_PUSH`, edits to `.claude/settings.json` or `scripts/hooks/`, disabled permission prompts). Any hit is a blocker.
+- [ ] YOLO did not skip a HITL gate: no `Accepted` flip or decider's note, no push or visibility change, no file listed in `.claude/user_owned.txt` written, no approval or hook bypass (`--no-verify`, `ALLOW_PUSH`, edits to `.claude/settings.json` or `scripts/hooks/`, disabled permission prompts). Any hit is a blocker.
 
 ## Output format
 

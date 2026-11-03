@@ -1,23 +1,23 @@
-# 60 — Author implementation track
+# 60 — The SQL and SimPy track (ADR-0010, superseded for these files by ADR-0022)
 
-Five pieces of this project are written by the author, by hand: the canonical DDL, three core SQL queries, and the SimPy core loop. AI roles write the specification, the fixtures, the acceptance tests and, on request, reviews. AI roles never write, patch, reformat or "fix" these files. The author can explain them line by line; that is the point.
+Five pieces of this project form a second implementation beside the TypeScript engine: the canonical DDL, three core SQL queries, and the SimPy core loop. ADR-0010 assigned them to the author, by hand. ADR-0022 (accepted 2026-11-03) has AI write them, clean-room from the specification (the design documents, the schemas, the fixtures and the acceptance tests; never `engine/src/` or `src/`), and every text that names them says that the author did not write them. The acceptance tests are written before the files and are never edited to make the files pass. The author may write their own version later and replace these files; the same tests judge it. The learning paths and the "for you" questions in the cards are for whoever writes a version by hand.
 
-Read `prompts/00_master_build.md` first. This file is for (a) the author, (b) S1a/S2 executors, who build the acceptance tests named here, and (c) any AI asked to review the author's work. Names come from `docs/design/data_model.md`; if a card and that file disagree, the design wins and the orchestrator fixes the card.
+Read `prompts/00_master_build.md` first. This file is for (a) the executor that writes the five files, or the author who replaces them, (b) S1a/S2 executors, who build the acceptance tests named here, and (c) any AI asked to review these files. Names come from `docs/design/data_model.md`; if a card and that file disagree, the design wins and the orchestrator fixes the card.
 
 ## Working principles (mandatory for AI roles; the author may adopt them)
 
 Principles: see `prompts/PRINCIPLES.md`; the author may adopt them. Stage combination: SDD + TDD + BDD + EDD + HITL; always KISS, AHA, SRP, Small Batches.
-The author's implementation track is itself a HITL gate (PRINCIPLES.md section 1): AI roles write specs, fixtures, acceptance tests and reviews, never the implementation. Rails: PRINCIPLES.md section 6.
+Since ADR-0022 the track is no longer an author-written HITL gate (PRINCIPLES.md section 1): the five files are written by AI under the clean-room rule above, and the honesty rule holds for every text: written by AI from the specification, not by the author. Rails: PRINCIPLES.md section 6.
 
 ## Ownership
 
-| Path | Owner | Acceptance test (AI writes, author's code must pass) | Gate |
+| Path | Written by | Acceptance test (written first, never edited to make the files pass) | Gate |
 |---|---|---|---|
-| `sql/schema.sql` | author | `tests/user_track/test_schema_sql.py` (S1a) | non-blocking |
-| `sql/queries/asof_join.sql`, `lineage_recursive.sql`, `bridging_offset.sql` | author | `tests/user_track/test_queries.py` (S2) | non-blocking |
-| `reference/sim_core.py` | author | `tests/user_track/test_sim_core_parity.py` (S1a) | non-blocking |
+| `sql/schema.sql` | AI, clean-room (ADR-0022) | `tests/user_track/test_schema_sql.py` (S1a) | non-blocking |
+| `sql/queries/asof_join.sql`, `lineage_recursive.sql`, `bridging_offset.sql` | AI, clean-room (ADR-0022) | `tests/user_track/test_queries.py` (S2) | non-blocking |
+| `reference/sim_core.py` | AI, clean-room (ADR-0022) | `tests/user_track/test_sim_core_parity.py` (S1a) | non-blocking |
 
-Run them with `uv run pytest -m user_track -q`. Tests skip with a message while a file is absent and fail once it exists but is wrong. The default `uv run pytest -q` excludes them, so the AI path is never blocked by the author's schedule. Each file starts with a comment block of your non-obvious decisions and what you rejected; that block is the raw material for the explanation script in S5. The author commits these files; they are never part of an AI-assisted commit.
+Run them with `uv run pytest -m user_track -q`. Tests skip with a message while a file is absent and fail once it exists but is wrong. The default `uv run pytest -q` excludes them, so the AI path is never blocked by this track. Each file starts with a comment block of its non-obvious decisions and what was rejected. The orchestrator commits these files, as every other file (the executor never commits).
 
 ## Task cards
 
@@ -66,11 +66,11 @@ Run them with `uv run pytest -m user_track -q`. Tests skip with a message while 
 
 Suggested order: C and A during or just after S1a; B2, B1, B3 during S2. Total about 15-20 h including learning. Do not wait for the AI path: the gates are separate.
 
-## Reviewer instructions (any AI asked to review the author's work)
+## Reviewer instructions (any AI asked to review these files)
 
-1. Read-only on every path in `.claude/user_owned.txt`. Do not run formatters or fixers on them (`ruff --fix`, `sqlfluff fix`, and similar). If the edit guard denies a write, stop; never bypass it with `bash`, `cp`, `sed` or a heredoc.
+1. A reviewer writes the review, not the files: read-only on `sql/` and `reference/` (the edit guard list `.claude/user_owned.txt` is empty since ADR-0022, so this is a rule of the role). Do not run formatters or fixers on them (`ruff --fix`, `sqlfluff fix`, and similar). If the edit guard denies a write, stop; never bypass it with `bash`, `cp`, `sed` or a heredoc.
 2. Run the acceptance tests and read the code against the card. Write the review to `docs/user_track/reviews/YYYY-MM-DD_<card>_<reviewer>.md` with these sections: Evidence (commands run, results), Questions, Concerns, Not reviewed.
-3. A concern has a severity (blocker, major, minor), a location (`file:line`), and a **failing scenario expressed as an input** (a fixture row or a trace), not as replacement code. Quote at most three lines of the author's code per concern.
+3. A concern has a severity (blocker, major, minor), a location (`file:line`), and a **failing scenario expressed as an input** (a fixture row or a trace), not as replacement code. Quote at most three lines of the code under review per concern.
 4. Questions come first and are real questions: "what happens to a result whose `available_at` equals the decision time?" Do not phrase suggestions as questions to smuggle in a rewrite.
-5. If the author asks for a hint, point to a documentation section or a smaller fixture; do not hand over the solution. Never edit the acceptance tests to make the author's code pass; if a test looks wrong, say so in the review and let the orchestrator decide.
+5. If the author, writing their own version, asks for a hint, point to a documentation section or a smaller fixture; do not hand over the solution. Never edit the acceptance tests to make the code pass; if a test looks wrong, say so in the review and let the orchestrator decide.
 6. Praise only what the evidence supports. Do not summarise the work as complete; the gate is the test run.

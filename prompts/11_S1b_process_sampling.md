@@ -15,7 +15,7 @@ The rest of the deterministic TypeScript engine: L1 process model, L2 sampling a
 
 ## Allowed paths
 
-Create or edit: `engine/` (new modules `process`, `sampling`, `profiles`, `scenario`; additions to `analysis`, `observe`, `trace`), `schemas/` (additive only: the L1 and L2 event types of `event.schema.json`, and the scenario and profile content; `trace.schema.json` and `trace_result.schema.json` are frozen because the author's code reads them, a change needs the orchestrator), `scenarios/` (incl. `scenarios/profiles/`), `tests/` (incl. `tests/fixtures/`, `tests/golden/`), `docs/design/` (only if a design doc needs an S1b clarification), `docs/progress.md`, Proposed ADRs. Dependencies: nothing new without a Proposed ADR.
+Create or edit: `engine/` (new modules `process`, `sampling`, `profiles`, `scenario`; additions to `analysis`, `observe`, `trace`), `schemas/` (additive only: the L1 and L2 event types of `event.schema.json`, and the scenario and profile content; `trace.schema.json` and `trace_result.schema.json` are frozen because the SimPy loop (written by AI, ADR-0022) reads them, a change needs the orchestrator), `scenarios/` (incl. `scenarios/profiles/`), `tests/` (incl. `tests/fixtures/`, `tests/golden/`), `docs/design/` (only if a design doc needs an S1b clarification), `docs/progress.md`, Proposed ADRs. Dependencies: nothing new without a Proposed ADR.
 Not expected to change: `package.json`, `eslint.config.js`, `scripts/check_all.sh`; if one is wrong, report it to the orchestrator instead of editing.
 Never create or edit: `sql/`, `reference/`, `src/` (UI, S3), `tests/user_track/`, `docs/research/*.yaml`, `docs/private/`, `site/infographic/`.
 

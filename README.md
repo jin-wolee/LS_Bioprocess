@@ -64,15 +64,17 @@ src/                 the lab page (Preact), its Web Worker, the English and Kore
 site/infographic/    the explainer: src/ -> build.py -> index.html
 scenarios/           scenarios, profiles, architectures and experiments, as data with ledger references
 schemas/             JSON schemas for the data the engine reads and writes
+sql/                 the canonical DDL and three SQL queries, written by AI from the specification (ADR-0022)
+reference/           the SimPy core loop, written by AI from the specification (ADR-0022)
 docs/                adr/ decisions, design/ specifications, research/ ledgers, reviews/, progress.md
 prompts/             the briefs and principles that the AI sessions work from
 scripts/             checks, site assembly, headless page QA, Claude Code hooks, git hooks
 tests/               pytest for the scripts, the hooks, the docs check and the Pages workflow
 .github/workflows/   the Pages workflow, started by hand
-.claude/             CLAUDE.md, hook settings, skills, agents, the list of author-owned paths
+.claude/             CLAUDE.md, hook settings, skills, agents, the list of author-owned paths (empty since ADR-0022)
 ```
 
-The root also holds the project files: `package.json` with `package-lock.json`, `pyproject.toml` with `uv.lock`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts` (the Vitest settings), `.nvmrc`, `.python-version` and `LICENSE`. `sql/` and `reference/` are reserved for the author's own implementation track (see "How the work is done") and are not in the repository yet.
+The root also holds the project files: `package.json` with `package-lock.json`, `pyproject.toml` with `uv.lock`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts` (the Vitest settings), `.nvmrc`, `.python-version` and `LICENSE`.
 
 ## Run it
 
@@ -101,7 +103,7 @@ Decisions are written as ADRs in `docs/adr/`. The AI tools write them as Propose
 
 Much of the engine, the lab and the documents were written with AI coding tools (Claude Code) working from written briefs in `prompts/`. Scripts and tests check what they produce, and the author decides at set gates: accepting an ADR, anything published, the author's own track, and release (`prompts/PRINCIPLES.md`, section 1). Pushing and publishing are the author's alone, and hooks stop the tools from doing either.
 
-The author writes the database schema, three SQL queries (an as-of join of results to process context, a recursive lineage query and a bridging correction) and a SimPy core loop personally. The tools may review those files but not write them, and an edit guard enforces that (ADR-0010). Because the files do not exist yet, the tests that would compare the SimPy loop with the TypeScript engine skip, and agreement between the two is unproven.
+The database schema (`sql/schema.sql`), three SQL queries (an as-of join of results to process context, a recursive lineage query and a bridging correction) and a SimPy core loop (`reference/sim_core.py`) were written by AI (Claude Code) under ADR-0022, clean-room from the specification: the writer read the design documents, the schemas, the fixtures and the acceptance tests, and did not read the engine's source. The author did not write them. ADR-0022 replaces ADR-0010's plan that the author writes these five files, for these five files only. Agreement with the TypeScript engine is measured by `tests/user_track/` (`uv run pytest -m user_track -q`), which runs the SimPy loop on the hand traces and the engine's golden traces and compares integer times exactly, and runs the schema and the queries against hand-typed fixtures; all of its tests pass. The files are a second implementation that does not copy the engine's code; they are not independent of the model family that wrote the specification.
 
 ## Licences
 
@@ -112,4 +114,4 @@ Code is under the MIT licence (`LICENSE`). Text, figures and data tables in `doc
 합성 데이터로 만든 시뮬레이터입니다. 바이오리액터 여러 대가 분석기 몇 대를 공유하는 가상의 플랜트를 한 번 돌려, 같은 실행을 여러 데이터 아키텍처로 기록하고 각 기록이 나중에 무엇을 복원할 수 있는지 비교합니다. 실제 설비를 예측하지 않습니다.
 비교는 기록이 무엇을 보존하는지를 보여 주는 구성적 예시이며, 실제 스프레드시트나 실험실 시스템의 품질을 재는 것이 아닙니다. 시드에 걸친 분포는 모형의 불확실성이 아닙니다.
 해설 페이지와 랩 두 곳이 있고, 저자가 공개하면 위 주소에서 열립니다. 모든 수치에는 근거 장부의 id(`S###`, `A###`)가 붙고, 오염 이벤트 역추적 화면은 근거 출처를 다시 읽을 때까지 공개 빌드에서 빠져 있습니다.
-DDL, SQL 쿼리 세 개, SimPy 핵심 루프는 저자가 직접 작성합니다(ADR-0010).
+DDL, SQL 쿼리 세 개, SimPy 핵심 루프는 저자가 쓴 것이 아니라 AI(Claude Code)가 명세만 보고(엔진 소스는 읽지 않고) 작성했습니다(ADR-0022). TypeScript 엔진과의 일치는 `tests/user_track/`이 측정하며, 그 테스트는 모두 통과합니다.

@@ -6,7 +6,7 @@
  */
 
 /**
- * What a core loop (TS engine or the author's SimPy model) returns for one trace. engine_version and seed are copied from the trace. runs are sorted by (start_s, analyzer, request_id, attempt); start_s is run_started (after any setup), end_s is run.ended_at, setup_s is the setup applied immediately before the run (0 if none), so the visit began at start_s - setup_s.
+ * What a core loop (the TS engine or the SimPy second implementation of ADR-0022) returns for one trace. engine_version and seed are copied from the trace. runs are sorted by (start_s, analyzer, request_id, attempt); start_s is run_started (after any setup), end_s is run.ended_at, setup_s is the setup applied immediately before the run (0 if none), so the visit began at start_s - setup_s.
  */
 export interface TraceResult {
   schema_version: "1";

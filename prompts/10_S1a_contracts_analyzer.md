@@ -1,17 +1,17 @@
 # 10 — S1a executor brief: contracts, hand fixtures, L3 analyzer core
 
-Read `prompts/00_master_build.md` first; its invariants and definition of done apply. Executor: Sonnet, effort xhigh. Estimated 2-3 h. First half of the engine session: S1b (`prompts/11_S1b_process_sampling.md`) starts after this gate passed and the orchestrator recorded the rubric result. The author can start Card C of `prompts/60_user_track.md` (`reference/sim_core.py`) as soon as this gate passes.
+Read `prompts/00_master_build.md` first; its invariants and definition of done apply. Executor: Sonnet, effort xhigh. Estimated 2-3 h. First half of the engine session: S1b (`prompts/11_S1b_process_sampling.md`) starts after this gate passed and the orchestrator recorded the rubric result. Card C of `prompts/60_user_track.md` (`reference/sim_core.py`) can be written as soon as this gate passes (ADR-0022: by an AI executor, clean-room from the specification).
 
 ## Working principles (mandatory)
 
 Principles: see `prompts/PRINCIPLES.md`. Stage combination (S1a): SDD + TDD + EDD + BDD + YAGNI + HITL; always KISS, AHA, SRP, Small Batches. Rails: PRINCIPLES.md section 6.
 Hand fixtures and the analytic M/M/c values are the evals (EDD). The catalogue scenarios SC2 and SC5 (BDD) are S1b.
 You never commit. Tidy First is applied by the orchestrator: report your structure-only paths and your behaviour paths as two lists.
-HITL gates touched: the author's implementation track (acceptance tests only), ADRs (`Proposed` only).
+HITL gates touched: the SQL and SimPy track of ADR-0010 and ADR-0022 (acceptance tests only), ADRs (`Proposed` only).
 
 ## Goal
 
-The contracts (reproducibility rules, JSON Schemas, the SimPy trace interface), the L3 analyzer core in TypeScript (queue, windows, setup, routing, reruns, M/M/c-only mode), and acceptance tests for the two things the author writes: the SimPy core loop and the canonical DDL. Judged only by hand-calculated fixtures, invariants I1-I9 and an M/M/c check. What L3 means is in `docs/design/simulation_spec.md` §2.3; this brief does not restate it.
+The contracts (reproducibility rules, JSON Schemas, the SimPy trace interface), the L3 analyzer core in TypeScript (queue, windows, setup, routing, reruns, M/M/c-only mode), and acceptance tests for the two things written afterwards (by AI, clean-room, ADR-0022): the SimPy core loop and the canonical DDL. Judged only by hand-calculated fixtures, invariants I1-I9 and an M/M/c check. What L3 means is in `docs/design/simulation_spec.md` §2.3; this brief does not restate it.
 
 Not in S1a (S1b): L1, L2, profiles and their loader, scenarios, instrument state series, SC2, SC5, I10-I12, the golden event logs. In S1a the L3 core takes plain input objects and reads no profile, scenario or ledger value; every number here is a fixture or test-only input.
 
@@ -28,7 +28,7 @@ The session must have been started inside the repo, so the hooks of `.claude/set
 - [ ] Read `.guardrails.local.txt`, `.claude/CLAUDE.md`, the last entry of `docs/progress.md`, `docs/design/simulation_spec.md` (§2.3, §3), `docs/design/data_model.md` (§5, §6), `docs/research/assumptions.yaml` (ids only, for the `ref` checks of Step 2; never copy values into code).
 - [ ] The SessionStart brief (last progress entry and every `Proposed` ADR) must already be printed at the top of this session. If it is not, stop and report.
 - [ ] Run `bash scripts/check_all.sh --manual`, `uv run pytest -q` and `uv run --frozen python scripts/check_docs.py --all` once before changing anything (paste the tails).
-- [ ] Replace the commented placeholder lines of `.claude/user_owned.txt` with the five author paths, one per line, no duplicates: `sql/schema.sql`, `sql/queries/asof_join.sql`, `sql/queries/lineage_recursive.sql`, `sql/queries/bridging_offset.sql`, `reference/sim_core.py`. Do not create these files. This is the first Write or Edit of the session: immediately afterwards `ls -l .claude/.dirty` must show the marker (the PostToolUse hook creates it; the Stop gate removes it at the end of the turn). Paste it.
+- [ ] Replace the commented placeholder lines of `.claude/user_owned.txt` with the five paths of the track (the author's at the time of ADR-0010; the list has been empty since ADR-0022, so this step is history), one per line, no duplicates: `sql/schema.sql`, `sql/queries/asof_join.sql`, `sql/queries/lineage_recursive.sql`, `sql/queries/bridging_offset.sql`, `reference/sim_core.py`. Do not create these files. This is the first Write or Edit of the session: immediately afterwards `ls -l .claude/.dirty` must show the marker (the PostToolUse hook creates it; the Stop gate removes it at the end of the turn). Paste it.
 - [ ] Live guard test: call the `Write` tool on `reference/sim_core.py`, which does not exist yet. Use `Write`, not `Edit`: the `Edit` tool checks that the file exists before any PreToolUse hook runs, so on a missing file it fails with file-not-found and never reaches the guard. The write must be denied by the `guard_tools` PreToolUse hook with a message naming a user-owned path. If the file is created, the guard is not live: stop and report, and delete nothing without the orchestrator. Paste the denial, then show `git status --short -uall -- sql reference` is empty.
 - [ ] Any failure above (no brief, no marker, edit not denied): stop and report to the orchestrator. Do not substitute a piped hook test and do not edit hooks or settings.
 
@@ -64,7 +64,7 @@ Write in `schemas/` (draft 2020-12), each with `schema_version` const `"1"`: `sc
 
 ## Step 3 — hand fixtures first (red before any engine code)
 
-Store as JSON in `tests/fixtures/hand/F#_*.json` with `inputs`, `expected` and a `derivation` string showing the arithmetic. Service times, setup times and clock times below are fixture-only inputs, not domain claims; analyzer configuration is inline in `inputs` (no profile is loaded in S1a, the profile names below only describe the shape). Type the expected values from this brief; never copy them from engine output. Both the TS runner and, later, the author's SimPy loop read these files.
+Store as JSON in `tests/fixtures/hand/F#_*.json` with `inputs`, `expected` and a `derivation` string showing the arithmetic. Service times, setup times and clock times below are fixture-only inputs, not domain claims; analyzer configuration is inline in `inputs` (no profile is loaded in S1a, the profile names below only describe the shape). Type the expected values from this brief; never copy them from engine output. Both the TS runner and, later, the SimPy loop (written by AI, ADR-0022) read these files.
 
 **F1 Arrival reversal** (1 analyzer, FIFO by arrival at the analyzer, service 600 s)
 
@@ -132,7 +132,7 @@ Two common discrete-event pitfalls are the regression targets of F1 (admission o
 | Vitest | 5.0.5 | |
 | pure-rand | 8.4.2 | seed width: see the RNG row of Step 1 |
 | ESLint, json-schema-to-typescript, others | latest compatible | pin exact, record in `docs/progress.md` |
-| SimPy | 4.1.2 | `uv add --dev simpy==4.1.2` so the author's loop can import it |
+| SimPy | 4.1.2 | `uv add --dev simpy==4.1.2` so the SimPy loop can import it |
 | pytest, jsonschema, duckdb | `uv add --dev` | DuckDB for the DDL acceptance test |
 
 If a planned version does not install, use the nearest compatible one and log it; never upgrade silently. Node comes from `.nvmrc`.
@@ -159,15 +159,15 @@ I1 no analyzer double occupancy. I2 request conservation: every request ends wit
 Hand-calculated target: `c = 2`, mean service 270 s, utilisation 0.8, so `lambda = 0.8 * 2 / 270 = 0.005926 /s`, offered load `a = 1.6`. Erlang C: `P(wait) = 6.4 / (2.6 + 6.4) = 32/45 = 0.7111`; `Wq = P(wait) / (c*mu - lambda) = 0.7111 / 0.0014815 = 480 s`.
 Test: 100 replications with fixed seeds 1..100, each 20,000 departures after discarding the first 2,000. Pass if the mean of the replication means of Wq is within 3 % of 480 s (465.6 s to 494.4 s); the band is about 3.4 standard errors of that mean, per the reviewer's simulation, so a correct engine does not fail by chance. Seeds and tolerance are fixed in advance and never changed to pass. **If the check fails, stop and escalate to the orchestrator** with the replication means, their standard error and the measured utilisation; do not tune the engine, the seeds or the tolerance until it passes (the fault may be in the engine, the target or the test, and the orchestrator decides). State in the test header that integer-second rounding is a known tiny bias and that real scenarios are M/D/c-like and are not validated by this test.
 
-## Step 8 — trace export and author-track acceptance tests (non-blocking gate)
+## Step 8 — trace export and SQL and SimPy track acceptance tests (non-blocking gate)
 
 - [ ] `trace` exporter: any L3 run exports `trace.json` valid against its schema. Examples: `tests/fixtures/traces/` holds F1-F7 and their variants, exported from each fixture's `inputs`, with `expected_result` converted from the hand-typed `expected` (never from engine output) and `source` = `hand`. `tests/golden/parity/` holds 20 engine-generated traces (workload seeds 1..20) with `expected_result` from the TS core and `source` = `ts-engine-golden` (parity only, not truth), created once by a recorded command with a `CHECKSUMS.txt`.
 - [ ] `tests/user_track/test_sim_core_parity.py` (marker `user_track`): skip with a clear message if `reference/sim_core.py` is absent. Otherwise run `uv run python reference/sim_core.py <trace.json> <out.json>` for each trace, validate against `trace_result.schema.json`, check `engine_version` and `seed` equal the trace's, and compare: F1-F7 against the hand expectations; the 20 traces against `expected_result`, exact equality on integer times.
 - [ ] `tests/user_track/test_schema_sql.py` (marker `user_track`): skip if `sql/schema.sql` is absent. Otherwise implement exactly the acceptance list of Card A in `prompts/60_user_track.md`, including the integrity-check queries and the good/bad fixtures under `tests/fixtures/sql/`.
-- [ ] Prove each test file collects and skips cleanly with the author files absent: paste `uv run pytest -m user_track -q`.
+- [ ] Prove each test file collects and skips cleanly with the five files absent: paste `uv run pytest -m user_track -q`.
 
 ## Gate and report
 
-Blocking (AI path): `npm run check` green; fixtures F1-F7 and variants green; invariants I1-I9 green; M/M/c green; schemas valid; `uv run pytest -q`, `check_docs --all` and `bash scripts/check_all.sh --manual` green; the Step 0 live guard denial and `.dirty` marker shown; `Math.random` grep clean; no golden file changed after creation. `sim-adversary` is not called at the end of S1a (it runs once, at the end of S1b). Non-blocking (author path): `uv run pytest -m user_track` once the author has written the files.
+Blocking (AI path): `npm run check` green; fixtures F1-F7 and variants green; invariants I1-I9 green; M/M/c green; schemas valid; `uv run pytest -q`, `check_docs --all` and `bash scripts/check_all.sh --manual` green; the Step 0 live guard denial and `.dirty` marker shown; `Math.random` grep clean; no golden file changed after creation. `sim-adversary` is not called at the end of S1a (it runs once, at the end of S1b). Non-blocking (SQL and SimPy track): `uv run pytest -m user_track` once the files are written (ADR-0022: by AI, clean-room).
 Mutation spot check to run yourself and report, in a scratch copy: sort admission by `sampled_at` and confirm F1 fails; check the window at the start time only and confirm F2 rows 2 and 3 fail; leave setup out of the pre-check and confirm F2b row 2 fails; key the RNG without `attempt` and confirm F3/I7 fail.
 Report at most 300 words (format in `prompts/README.md`). Append the `docs/progress.md` entry.

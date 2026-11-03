@@ -9,7 +9,7 @@ The one place where the working principles are defined. Every brief and rubric p
 - **FAFO** — fast, ambitious, fun, keep the options open.
   In this repo: only for throwaway UI and interaction exploration in S3. Never for engine, schema, ledger or data code that ships.
 - **HITL** — a human decides at the gate.
-  In this repo: the gates are (1) an ADR `Accepted` flip and its decider's note, (2) any publishing, push or visibility change, (3) the author's own implementation track (`.claude/user_owned.txt`), (4) release.
+  In this repo: the gates are (1) an ADR `Accepted` flip and its decider's note, (2) any publishing, push or visibility change, (3) the author-owned paths (`.claude/user_owned.txt`; empty since ADR-0022, which has AI write the SQL and SimPy track clean-room from the specification), (4) release.
 
 ## 2. The -DD methods
 

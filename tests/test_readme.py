@@ -125,10 +125,15 @@ def test_it_states_the_two_licences_and_the_files_that_hold_them():
     assert (REPO / "LICENSE").is_file() and (REPO / "docs" / "LICENSE-docs.md").is_file()
 
 
-def test_it_says_where_the_author_wrote_and_where_the_tools_did_not():
+def test_it_says_the_sql_and_simpy_track_was_written_by_ai_and_where_its_agreement_is_measured():
     how = section(README, "How the work is done")
-    assert "ADR-0002" in how and "ADR-0010" in how
-    assert "unproven" in how  # ADR-0010: until the author's files exist, parity is not claimed
+    flat = " ".join(how.split())
+    assert "ADR-0002" in how
+    # ADR-0022 (accepted 2026-11-03) supersedes ADR-0010's assignment of the five files to the author: the section names it, says who wrote them and what measures parity
+    assert "ADR-0022" in how and "ADR-0010" in how
+    assert "were written by AI" in flat and "clean-room from the specification" in flat and "The author did not write them" in flat
+    assert "tests/user_track/" in how and "measured" in flat
+    assert "The author writes the database schema" not in flat and "personally" not in flat  # the claim of ADR-0010 for these files is gone
 
 
 # ---- what it must not say -------------------------------------------------------------------------
@@ -172,9 +177,15 @@ def test_the_repository_map_names_every_folder_and_file_of_the_root():
         assert (REPO / name).exists(), name
 
 
-def test_sql_and_reference_are_not_listed_as_existing_while_they_do_not_exist():
-    assert not (REPO / "sql").exists() and not (REPO / "reference").exists()
-    assert not re.search(r"^(sql|reference)/\s", section(README, "Repository map"), re.M)
+def test_sql_and_reference_exist_and_the_map_says_ai_wrote_them_under_adr_0022():
+    # ADR-0022: the five files exist and are written by AI from the specification; the map lists both folders and says so
+    assert (REPO / "sql" / "schema.sql").is_file() and (REPO / "reference" / "sim_core.py").is_file()
+    block = re.search(r"```\n(.*?)```", section(README, "Repository map"), re.S).group(1)
+    for folder in ("sql", "reference"):
+        line = re.search(rf"^{folder}/\s{{2,}}(.*)$", block, re.M)
+        assert line, f"the map does not list {folder}/"
+        assert "written by AI" in line.group(1) and "ADR-0022" in line.group(1), line.group(1)
+    assert "reserved for the author" not in README and "are not in the repository yet" not in README
 
 
 def test_the_commands_name_scripts_and_npm_scripts_that_exist():

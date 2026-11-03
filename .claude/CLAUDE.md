@@ -7,7 +7,7 @@ honest comparison, not a prediction about any real plant.
 
 ## Repo map (directories appear as the work lands)
 - `engine/`, `src/`: TypeScript simulation engine and UI. Seeded PRNG only.
-- `reference/`, `sql/`: the author's own implementation track (see `.claude/user_owned.txt`).
+- `reference/`, `sql/`: the second implementation (the SimPy core loop, the DDL and three queries), written by AI clean-room from the specification under ADR-0022, not by the author; judged by `tests/user_track/`.
 - `tests/`: pytest for the hooks and `check_docs`; engine tests live beside the engine.
 - `scripts/`: `check_docs.py`, `check_all.sh`, `hooks/` (Claude Code guards), `git-hooks/` (pre-commit, pre-push), QA scripts.
 - `docs/`: `adr/`, `research/`, `design/`, `progress.md`.
@@ -21,7 +21,7 @@ honest comparison, not a prediction about any real plant.
 2. Determinism. Seeded integer PRNG only, no `Math.random`. Randomness is keyed by one canonical tuple `(run_seed, physical_sample_id, analyte, attempt, purpose)`.
 3. Every number in public docs or UI carries an `S###` or `A###` id from the `docs/research/` ledgers. Public numbers use only `main-reread` sources, and an `A###` is followed to its `S###` sources.
 4. ADRs: Claude writes `Proposed` only. Never fill "Decider's note", never flip a status to `Accepted`.
-5. Files listed in `.claude/user_owned.txt` are the author's implementation track. Review them, never write them (reviews go to `docs/user_track/reviews/`).
+5. Files listed in `.claude/user_owned.txt` are the author's implementation track. Review them, never write them (reviews go to `docs/user_track/reviews/`). The list is empty since ADR-0022: `sql/` and `reference/` are written by AI clean-room from the specification (never from `engine/src/` or `src/`), and every text says so.
 6. No publishing. Push, remote changes and GitHub writes belong to the author; the hooks block them. Give the author the command to run with `!`.
 7. Headless browsers only (`mcp__playwright-headless__*` or the QA scripts), and always close them.
 8. Python dependencies through `uv` only (never pip, conda or base). Node through `npm` with exact versions.

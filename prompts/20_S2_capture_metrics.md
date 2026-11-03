@@ -7,7 +7,7 @@ Read `prompts/00_master_build.md` first. Start only after the S1b blocking gate 
 Principles: see `prompts/PRINCIPLES.md`. Stage combination (S2): SDD + TDD + EDD + BDD + YAGNI + HITL; always KISS, AHA, SRP, Small Batches. Rails: PRINCIPLES.md section 6.
 Scenarios become Given-When-Then acceptance tests in the format of PRINCIPLES.md section 2, named after the scenario id. The forced-error fixtures, the evaluator's answer key and the hand fixtures are the evals (EDD); goldens are never regenerated.
 You never commit; report structure-only paths and behaviour paths as two lists.
-HITL gates touched: the author's SQL files (acceptance tests only), ADRs (new ones `Proposed` only; ADR-0014 is `Accepted` by the author and its status line and decider's note stay as the author left them).
+HITL gates touched: the SQL files of ADR-0010 and ADR-0022 (acceptance tests only), ADRs (new ones `Proposed` only; ADR-0014 is `Accepted` by the author and its status line and decider's note stay as the author left them).
 
 ## Goal
 
@@ -142,9 +142,9 @@ Ledger gate first (Step 5 preamble): the log deadband and maximum interval of ea
 - [ ] One row per (sample x analyte x released version) with the columns of data_model §10. Written as CSV plus `datapackage.json` (Frictionless Data Package: resources, table schema from the data dictionary, field types, UCUM units as a custom property, `seed`, `engine_version`, `schema_version`, data dictionary reference). No license value until the license ADR is Accepted.
 - [ ] In-house structural validator test (required keys, every resource path exists, CSV header equals schema field names, types parse). No new dependency.
 
-## Step 12 — acceptance tests for the author's SQL (non-blocking gate)
+## Step 12 — acceptance tests for the SQL (non-blocking gate)
 
-Write fixtures with answers computed by hand first, in `tests/fixtures/sql/` (tables as CSV or `.sql` inserts with explicit column lists, `expected_*.csv`, each with a comment showing the arithmetic). Tests in `tests/user_track/test_queries.py`, marker `user_track`, skip if the query file is absent, DuckDB in memory, schema loaded from the author's `sql/schema.sql` if present else from a minimal fixture schema in `tests/fixtures/sql/`. The contracts per query are cards B1-B3 in `prompts/60_user_track.md`; implement exactly those checks. Integration checks on the engine export for one scenario and seed: `asof_join` returns one row per result known at the decision time and uses no result version with `available_at` or historian row with `ingested_at` after it; `bridging_offset` on the SC4 noise-free fixture recovers the injected bias exactly.
+Write fixtures with answers computed by hand first, in `tests/fixtures/sql/` (tables as CSV or `.sql` inserts with explicit column lists, `expected_*.csv`, each with a comment showing the arithmetic). Tests in `tests/user_track/test_queries.py`, marker `user_track`, skip if the query file is absent, DuckDB in memory, schema loaded from `sql/schema.sql` if present else from a minimal fixture schema in `tests/fixtures/sql/`. The contracts per query are cards B1-B3 in `prompts/60_user_track.md`; implement exactly those checks. Integration checks on the engine export for one scenario and seed: `asof_join` returns one row per result known at the decision time and uses no result version with `available_at` or historian row with `ingested_at` after it; `bridging_offset` on the SC4 noise-free fixture recovers the injected bias exactly.
 
 ## Gate and report
 
