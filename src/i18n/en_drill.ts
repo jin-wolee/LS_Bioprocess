@@ -7,6 +7,7 @@ export const enDrill = {
   "plant.drill.results": "See this architecture over many seeds in Results",
   "plant.drill.utilisation": "See how busy the analyzers are over many seeds in Results",
   "plant.drill.notes": "Read in Notes what the qualification of a record is",
+  "plant.drill.breakout": "Open this case on the Break-out screen",
 
   "plant.origin.label": "Opened from the plant",
   "plant.origin.run": "From the plant: scenario {scenario}, seed {seed}, {actions} operator actions, left at {clock}.",
@@ -16,6 +17,7 @@ export const enDrill = {
   "plant.origin.utilisation": "Press Run: the utilisation of the analyzers is at the end of Results.",
 
   "plant.link.heading": "The link was read with changes",
+  "plant.link.case": "The case {given} is not one this build offers, or came with the keys of a scenario, so the default scenario is run and the rest of the link was not read.",
   "plant.link.scenario": "The scenario {given} is not one this build offers, so the default scenario is run.",
   "plant.link.settings": "The setting {given} is not a number and was left out.",
   "plant.link.capture": "The capture path {given} is not one of the two this build offers and was left out.",

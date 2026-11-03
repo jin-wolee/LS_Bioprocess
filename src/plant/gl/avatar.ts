@@ -30,7 +30,7 @@ export const buildAvatar = (disposables: (BufferGeometry | Material)[]): Group =
 };
 
 /** The size of the ring on the floor about a picked object, in metres. */
-export const RING = { reactor: 0.85, analyzer: 1.3, staff: 0.5, sample: 0.4 } as const;
+export const RING = { reactor: 0.85, analyzer: 1.3, staff: 0.5, sample: 0.4, lot: 0.6, equipment: 0.9, confirm: 0.4 } as const;
 
 /** The rings, hidden until the scene places them: `marker` where a click walks to, `halo` about an object the camera was brought to, `ring` about the object the panel shows (it follows the object while it moves). */
 export const buildRings = (disposables: (BufferGeometry | Material)[]): { marker: Mesh; halo: Mesh; ring: Mesh } => {

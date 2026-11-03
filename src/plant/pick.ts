@@ -1,6 +1,7 @@
 import type { ScenePlan } from "../protocol.ts";
 import { HELD, PLINTH, BENCH_TOP, analyzerShape, vesselShape } from "./dims.ts";
 import type { Layout } from "./layout.ts";
+import { itemTargets } from "./pick_items.ts";
 import type { SceneState } from "./scene_at.ts";
 import type { Picked } from "./view.ts";
 
@@ -80,5 +81,7 @@ export const targetsAt = (plan: ScenePlan, layout: Layout, state: SceneState): T
     const z = t.phase === "hand" ? t.z - HELD : t.z;
     out.push({ what: { kind: "sample", index: t.sample }, box: { min: [t.x - TUBE.half, t.y - TUBE.below, z - TUBE.half], max: [t.x + TUBE.half, t.y + TUBE.above, z + TUBE.half] } });
   }
+  // a break-out case: the crates, the stations and the confirming tubes on the shelf (P7c)
+  if (plan.lots !== undefined) out.push(...itemTargets(plan, layout, state.t));
   return out;
 };

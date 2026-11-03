@@ -2,6 +2,7 @@ import type { ScenePlan } from "../protocol.ts";
 import { boardPoint } from "./dims.ts";
 import { flagsFocus } from "./flags_board.ts";
 import type { Layout, Point } from "./layout.ts";
+import { itemPoint } from "./pick_items.ts";
 import { pickedOfKey } from "./view.ts";
 import type { Picked } from "./view.ts";
 
@@ -40,6 +41,12 @@ export const focusOf = (plan: ScenePlan, layout: Layout, key: string, where: (p:
   if (kind === "flags") {
     // the panel hangs on the north wall behind the halls: a high pitch sees over them to its lower rows
     return { at: flagsFocus(layout.width, plan.layout.architectures.length), radius: 1.8, pitch: 0.65 };
+  }
+  if (kind === "lot" || kind === "equipment" || kind === "confirm") {
+    // the break-out items of a case (P7c): where the crate, the station or the slot stands
+    const found = pickedOfKey(plan, key);
+    const at = found === null ? null : itemPoint(plan, layout, found);
+    return at ? { at, radius: kind === "lot" ? 0.9 : kind === "equipment" ? 1.2 : 0.7 } : null;
   }
   if (kind === "hall") {
     // close to the shelves and level with them: the cards are a few centimetres wide

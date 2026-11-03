@@ -10,7 +10,7 @@ This file is the CLI, the build and the report; the checks are in qa_plant_check
 qa_plant_helpers.py, the browser plumbing in qa_plant_browser.py, the checks of the record halls (halls, record, hall shots) in qa_plant_halls.py, and the checks of the truth overlay and of the panels in qa_plant_truth.py and qa_plant_panels.py (their pure helpers in qa_plant_truth_helpers.py). `bash scripts/check_all.sh --plant` appends this run; the Stop hook does not run it.
 
 Checks: plant_load, plant_frames, plant_clock, plant_shots, plant_halls, plant_record, plant_hall_shots, plant_truth, drilldown (P5c, in qa_plant_drill.py), plant_panels, plant_action (P6a, in qa_plant_action.py with the
-flows of qa_plant_act.py), plant_equal and plant_prefix (P6a, in qa_plant_equal.py), size, matrix, plant_fallback. `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
+flows of qa_plant_act.py), plant_equal and plant_prefix (P6a, in qa_plant_equal.py), sc12 (P7c, in qa_plant_sc12.py: the five break-out cases, and the public build's refusal in qa_plant_sc12_public.py), size, matrix, plant_fallback. `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
 engine/tests/support/plant_reference_cli.ts under the engine's Node flags into --out (the screenshots of the actions go to act/). The later batches add plant_a11y (plant_ui.md section 10).
 
 `plant_sweep` (P6c, in qa_plant_sweep.py) opens the plant under settings other than the default run's, each spec of tests/fixtures/plant/sweep/specs.json in a page of its own. The regular run holds the two
@@ -35,6 +35,8 @@ from qa_plant_drill import check_drilldown
 from qa_plant_equal import check_plant_equal, check_plant_prefix
 from qa_plant_halls import check_plant_hall_shots, check_plant_halls, check_plant_record
 from qa_plant_helpers import SOFTWARE_GL
+from qa_plant_sc12 import check_sc12
+from qa_plant_sc12_public import public_problems
 from qa_plant_motion import check_plant_clock, check_plant_frames, check_plant_shots
 from qa_plant_panels import check_plant_panels
 from qa_plant_sweep import check_plant_sweep, sweep_report
@@ -105,6 +107,7 @@ def main(argv=None) -> int:
                        guarded("plant_equal", lambda: check_plant_equal(browser, url, args.out, reference) if why is None else Result("plant_equal", False, f"the reference could not be made: {why}")),
                        guarded("plant_prefix", lambda: check_plant_prefix(browser, url, args.out)),
                        guarded("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs(gate=True), "sweep_gate")),
+                       guarded("sc12", lambda: check_sc12(browser, url, args.out, reference, public_problems(browser))),
                        guarded("size", lambda: check_size(browser, url, args.root)),
                        guarded("matrix", lambda: check_matrix(browser, url, args.out)),
                        guarded("plant_fallback", lambda: check_plant_fallback(pw, url, args.out))]

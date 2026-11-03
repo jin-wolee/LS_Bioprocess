@@ -8,8 +8,10 @@ import { Label, T } from "../ui/T.tsx";
 /** What the scene is doing: not asked for, being fetched, drawn, or failed with the message of the error. */
 export type SceneStatus = { kind: "none" | "loading" | "ready" } | { kind: "failed"; message: string };
 
-export function Intro({ webgl, planned, problem, scene, state, renderer }: {
+export function Intro({ webgl, planned, breakout, problem, scene, state, renderer }: {
   webgl: boolean;
+  /** The plant is a break-out case (P7c): its lead says so. */
+  breakout: boolean;
   /** Whether the Worker's first plan has arrived. */
   planned: boolean;
   problem: PlantProblem | null;
@@ -21,7 +23,7 @@ export function Intro({ webgl, planned, problem, scene, state, renderer }: {
   return (
     <section class="plant-intro" aria-labelledby="plant-heading">
       <T as="h1" k="plant.heading" id="plant-heading" />
-      <T as="p" k="plant.lead" />
+      <T as="p" k={breakout ? "plant.case.lead" : "plant.lead"} />
       {problem && <ErrorBlock problem={{ id: null, code: problem.code, message: problem.message }} />}
       {problem?.code === "refused" && <T as="p" k={refusalKey(problem)} data-note="refusal" />}
       <p id="plant-status" role="status" data-plant-status={state} class="plant-status">

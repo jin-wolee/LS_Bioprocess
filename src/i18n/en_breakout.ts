@@ -16,6 +16,7 @@ export const enBreakout = {
   "breakout.form.ablations": "C with one flag off",
   "breakout.form.none": "Choose at least one record.",
   "breakout.form.run": "Run the break-out",
+  "breakout.open_plant": "Open this case in the plant",
   "breakout.running": "Running the event and the investigations.",
   "breakout.empty": "No result yet. Choose a case and press the button.",
 

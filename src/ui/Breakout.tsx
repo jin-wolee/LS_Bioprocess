@@ -4,7 +4,7 @@ import type { Offer } from "../breakout_offer.ts";
 import type { BreakoutResult, ResultFooter } from "../protocol.ts";
 import { ArchitectureBlock } from "./BreakoutArchitecture.tsx";
 import { EventFacts, Inputs, Observed, Topology } from "./BreakoutEvent.tsx";
-import { breakoutRequest } from "./breakout_view.ts";
+import { breakoutRequest, caseLink, editBreakout } from "./breakout_view.ts";
 import type { BreakoutForm } from "./breakout_view.ts";
 import { ErrorBlock } from "./ErrorBlock.tsx";
 import { FlagName } from "./Flags.tsx";
@@ -42,13 +42,15 @@ export function FormPanel({ ready, form, setForm, onRun, busy }: { ready: ReadyI
   const seed = seedOf(form.seed);
   const presets = ready.presets.filter((p) => p.role === "preset");
   const ablations = ready.presets.filter((p) => p.role === "ablation");
-  const toggle = (id: string, on: boolean) => setForm({ ...form, archs: on ? [...form.archs, id] : form.archs.filter((a) => a !== id) });
+  const toggle = (id: string, on: boolean) => setForm(editBreakout(form, { archs: on ? [...form.archs, id] : form.archs.filter((a) => a !== id) }));
+  // P7c: the same case, seed and records in the plant (a link: it runs nothing)
+  const inPlant = caseLink(form, ready, ready.engine_version);
   const caseKey = `breakout.case.${form.case}`;
   return (
     <section id="breakout-form">
       <div class="field">
         <T as="label" k="breakout.form.case" for="breakout-case" />
-        <select id="breakout-case" data-label value={form.case} onChange={(event) => setForm({ ...form, case: event.currentTarget.value })}>
+        <select id="breakout-case" data-label value={form.case} onChange={(event) => setForm(editBreakout(form, { case: event.currentTarget.value }))}>
           {(offer?.cases ?? []).map((c) => (
             <option key={c.id} value={c.id}>
               {c.id}
@@ -59,7 +61,7 @@ export function FormPanel({ ready, form, setForm, onRun, busy }: { ready: ReadyI
       {hasKey(caseKey) && <T as="p" k={caseKey as Key} class="pick-note" />}
       <div class="field">
         <T as="label" k="breakout.form.seed" for="breakout-seed" />
-        <input id="breakout-seed" type="text" inputMode="numeric" autocomplete="off" list="breakout-seeds" value={form.seed} aria-invalid={seed === null} onInput={(event) => setForm({ ...form, seed: event.currentTarget.value })} />
+        <input id="breakout-seed" type="text" inputMode="numeric" autocomplete="off" list="breakout-seeds" value={form.seed} aria-invalid={seed === null} onInput={(event) => setForm(editBreakout(form, { seed: event.currentTarget.value }))} />
         <datalist id="breakout-seeds">
           {(offer?.seed_list ?? []).map((s) => (
             <option key={s} value={String(s)} />
@@ -95,6 +97,14 @@ export function FormPanel({ ready, form, setForm, onRun, busy }: { ready: ReadyI
         <button id="breakout-run" type="button" class="primary" disabled={busy || breakoutRequest(form, ready, 0) === null} onClick={() => onRun(form)}>
           <T k="breakout.form.run" />
         </button>
+        {inPlant && (
+          <>
+            {" "}
+            <a id="breakout-open-plant" href={inPlant} data-drill="plant">
+              <T k="breakout.open_plant" />
+            </a>
+          </>
+        )}
       </p>
     </section>
   );

@@ -4,7 +4,7 @@ import { BENCH_TOP, BOARD, PLINTH, analyzerShape, boardPoint, vesselShape } from
 import { SHELF } from "../hall_shelves.ts";
 import type { Layout } from "../layout.ts";
 import { laneLength, trayZ } from "../scene_at.ts";
-import type { ObjectKind } from "../view.ts";
+import type { ItemKind, ObjectKind } from "../view.ts";
 import { PALETTE } from "./floor.ts";
 import { placed } from "./place.ts";
 
@@ -26,7 +26,7 @@ export interface Built {
   /** The glass of each reactor, by unit: the mesh and the instance, so that the jacket can be tinted. */
   jackets: { mesh: InstancedMesh; index: number }[];
   /** What was built, by kind: the number of instances of the main mesh of each. */
-  objects: Record<Exclude<ObjectKind, "staff" | "flags">, number>;
+  objects: Record<Exclude<ObjectKind, "staff" | "flags" | ItemKind>, number>;
   /** The geometries and materials to free on dispose. */
   disposables: (BufferGeometry | Material)[];
 }

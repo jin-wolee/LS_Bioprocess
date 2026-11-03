@@ -79,8 +79,8 @@ describe("The table from event type to screen is total (section 4.3)", () => {
 
   it("Given the rows Then the types the floor draws are the ones the batch builds: every other type says why not, and the later batches are named", () => {
     const notDrawn = rows.filter((r) => r.floor.startsWith("Not drawn")).flatMap((r) => named(r).filter((n) => typesOfSchema().includes(n)));
-    // the types that wait for later batches or are not things on a floor; process_event is drawn through its other kinds; sample_planned is an entry of the sampling board since P6a
-    expect(notDrawn.sort()).toEqual(["aliquot_created", "confirm_result", "confirm_sample_drawn", "contamination_onset", "log_header", "process_event", "sensor_tick"]);
+    // the types that are not things on a floor (P7c drew the break-out rows: the additions and uses of process_event, the confirming draws and their results); sample_planned is an entry of the sampling board since P6a
+    expect(notDrawn.sort()).toEqual(["aliquot_created", "contamination_onset", "log_header", "sensor_tick"]);
   });
 });
 

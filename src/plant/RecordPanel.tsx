@@ -86,8 +86,9 @@ export function RecordPanel({ record, drill, onClose, truth }: { record: PlantRe
       {record.view && <RecordSvg column={{ ...record.view, ...(column && { answers: column.answers }) }} sample={record.sample_id} {...(overlay && column && { truth: overlay.truth })} />}
       </div>
       <DrillLinks>
-        <DrillLink name="lineage" href={drill.lineage(record.sample_id)} k="plant.drill.lineage" parts={{ sample: <Label>{record.sample_id}</Label> }} />
-        <DrillLink name="results" href={drill.results([record.architecture])} k="plant.drill.results" />
+        {drill.lineage && <DrillLink name="lineage" href={drill.lineage(record.sample_id)} k="plant.drill.lineage" parts={{ sample: <Label>{record.sample_id}</Label> }} />}
+        {drill.results && <DrillLink name="results" href={drill.results([record.architecture])} k="plant.drill.results" />}
+        {drill.breakout && <DrillLink name="breakout" href={drill.breakout()} k="plant.drill.breakout" />}
       </DrillLinks>
     </section>
   );

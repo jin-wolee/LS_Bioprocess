@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "preact/hooks";
-import type { PlantSpec, Request } from "../protocol.ts";
-import type { Known, PlantLink } from "../plant/link.ts";
-import { plantFromQuery } from "../plant/link.ts";
-import { needsRun } from "../plant/plant_state.ts";
-import { DEFAULT_PLANT } from "../plant/spec.ts";
+import type { Request } from "../protocol.ts";
+import type { AskLink, Known } from "../plant/link.ts";
+import { askFromQuery } from "../plant/link.ts";
+import { breakoutAsk, needsRun } from "../plant/plant_state.ts";
+import { DEFAULT_PLANT, isCase } from "../plant/spec.ts";
+import type { PlantAsk } from "../plant/spec.ts";
 import type { Route } from "./route.ts";
 import type { Action, State } from "./state.ts";
 
@@ -12,13 +13,13 @@ import type { Action, State } from "./state.ts";
 
 export interface PlantWiring {
   /** The link the route was opened with, read against the build; null when the address has no query. */
-  link: PlantLink | null;
+  link: AskLink | null;
   openCard(architecture: string, sample_id: string): void;
   closeCard(): void;
   openFields(architecture: string, sample_id: string): void;
   closeFields(): void;
   /** An operator action: the spec with the reader's list including it, and whether the clock was playing when they acted (plant_ui.md section 5.5). */
-  act(spec: PlantSpec, play: boolean): void;
+  act(spec: PlantAsk, play: boolean): void;
   closeRefusal(): void;
 }
 
@@ -30,7 +31,7 @@ export function usePlant(
 
   // entering the plant asks for its run when the route wants a spec the page has not asked for: the link's, or else the plant it already has, or else the default one. Back, the navigation and the same
   // link again want the spec of the newest request, so they ask for nothing (plant_ui.md section 7); a failed run is not asked for again under the same spec (no retry loop)
-  const link: PlantLink | null = route.screen === "plant" && known && route.query !== "" ? plantFromQuery(route.query, known) : null;
+  const link: AskLink | null = route.screen === "plant" && known && route.query !== "" ? askFromQuery(route.query, known) : null;
   useEffect(() => {
     if (route.screen !== "plant" || !ready) return;
     const spec = link ? link.spec : (state.plant.spec ?? DEFAULT_PLANT);
@@ -55,7 +56,7 @@ export function usePlant(
   // again when another hall arrives) and the truth of the sample the record panel shows
   const plantEpoch = state.plant.ready?.epoch;
   const hallsBuilt = state.plant.ready ? state.plant.ready.plan.records.length + state.plant.halls.length : 0;
-  const askTruth = (epoch: number, pick: { halls: true } | { sample_id: string }): void => {
+  const askTruth = (epoch: number, pick: { halls: true } | { sample_id: string } | { breakout: true }): void => {
     const id = take();
     dispatch({ type: "plant_truth_started", id, epoch, pick });
     worker.postMessage({ type: "plant_truth", id, epoch, pick } satisfies Request);
@@ -63,13 +64,19 @@ export function usePlant(
   useEffect(() => {
     if (state.plant.truth.on && plantEpoch !== undefined) askTruth(plantEpoch, { halls: true });
   }, [state.plant.truth.on, plantEpoch, hallsBuilt]);
+  // in a break-out case (P7c) the switch also asks what the simulation knows of the event: once for each plan, never before the switch
+  const inCase = state.plant.spec !== null && isCase(state.plant.spec);
+  useEffect(() => {
+    const pick = breakoutAsk(state.plant.truth.on, inCase, plantEpoch);
+    if (pick && plantEpoch !== undefined) askTruth(plantEpoch, pick);
+  }, [state.plant.truth.on, inCase, plantEpoch]);
   const cardOpen = state.plant.record?.sample_id;
   useEffect(() => {
     if (state.plant.truth.on && plantEpoch !== undefined && cardOpen !== undefined) askTruth(plantEpoch, { sample_id: cardOpen });
   }, [state.plant.truth.on, plantEpoch, cardOpen]);
 
   // an operator action is a request of its own, under a new epoch, with the whole list (section 5.5)
-  const act = (spec: PlantSpec, play: boolean): void => {
+  const act = (spec: PlantAsk, play: boolean): void => {
     const id = take();
     const epoch = ++epochs.current;
     dispatch({ type: "plant_acted", id, epoch, spec, play });

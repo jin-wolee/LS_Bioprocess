@@ -9,7 +9,9 @@ import type { PlantObject } from "./view.ts";
 // always the full list of what the floor holds. A sampling board (P6a) brings the camera to the board and opens the form that moves a draw, on its bay. The flags board (P6b) is one object whose button
 // brings the camera to it, and under it the matrix has a button for each cell: the keyboard's way to the flag form on that hall and flag.
 
-const KINDS = ["reactor", "analyzer", "staff", "hall", "board", "flags"] as const;
+const KINDS = ["reactor", "analyzer", "staff", "hall", "board", "flags", "lot", "equipment", "confirm"] as const;
+// the three kinds of a break-out case (P7c) have a group only when the plan has one of them
+const ITEMS: readonly string[] = ["lot", "equipment", "confirm"];
 
 export function ObjectsList({ objects, onLook, matrix, onCell }: { objects: readonly PlantObject[]; onLook: ((key: string) => void) | null; matrix: FlagMatrix | null; onCell: ((hall: number, flag: string) => void) | null }) {
   const lang = useContext(LangContext);
@@ -17,7 +19,7 @@ export function ObjectsList({ objects, onLook, matrix, onCell }: { objects: read
     <section id="plant-objects" class="plant-objects" aria-labelledby="plant-objects-heading">
       <T as="h2" k="plant.objects.heading" id="plant-objects-heading" />
       <T as="p" k="plant.objects.lead" />
-      {KINDS.map((kind) => (
+      {KINDS.filter((kind) => !ITEMS.includes(kind) || objects.some((o) => o.kind === kind)).map((kind) => (
         <div key={kind} class="plant-object-group">
           <T as="h3" k={`plant.kind.${kind}`} />
           <ul class="plant-object-list" data-object-list={kind}>

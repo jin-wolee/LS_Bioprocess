@@ -64,13 +64,13 @@ export interface Overlay {
 const DIM = 0.55;
 
 /** A text with {placeholders} filled by nodes: the pieces of the template in order, each name replaced by the node given for it (an identifier or a count is a label, invariant 3). */
-const fill = (template: string, nodes: Readonly<Record<string, Node>>): Node[] =>
+export const fill = (template: string, nodes: Readonly<Record<string, Node>>): Node[] =>
   template.split(/(\{\w+\})/).map((piece) => {
     const name = /^\{(\w+)\}$/.exec(piece)?.[1];
     return name !== undefined && nodes[name] ? nodes[name] : document.createTextNode(piece);
   });
 
-const label = (text: string): HTMLElement => {
+export const label = (text: string): HTMLElement => {
   const el = document.createElement("span");
   el.setAttribute("data-label", "");
   el.textContent = text;

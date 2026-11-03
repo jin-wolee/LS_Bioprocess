@@ -11,6 +11,8 @@ import { lengthOf } from "./walk.ts";
 export const LOOK = {
   /** How long a feed pulse, an alarm beacon, a signal beacon and the volume-cap tag stay lit after their instant. */
   feed_s: 1200,
+  /** P7c: how long the gantry from a lot or an equipment item to a vessel stands after the addition or the use, thinning to nothing. */
+  link_s: 1200,
   alarm_s: 1800,
   signal_s: 1800,
   cap_s: 1800,

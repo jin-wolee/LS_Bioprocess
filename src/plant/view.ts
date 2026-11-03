@@ -39,11 +39,13 @@ export interface HallRow {
 
 export const hallRowsAt = (plan: ScenePlan, t: number): HallRow[] => hallsAt(plan, t).map((h) => ({ architecture: h.architecture, flags: h.flags_on.length, cards: h.shown, knowable: h.knowable }));
 
-export type ObjectKind = "reactor" | "analyzer" | "staff" | "hall" | "board" | "flags";
+/** The objects of a break-out case (P7c) are the lots of the rack, the equipment stations and the confirming tubes on the shelf; a plan that is not a case has none. */
+export type ItemKind = "lot" | "equipment" | "confirm";
+export type ObjectKind = "reactor" | "analyzer" | "staff" | "hall" | "board" | "flags" | ItemKind;
 
 export interface PlantObject {
   kind: ObjectKind;
-  /** `reactor:U01`, `analyzer:AN-1`, `staff:OP-01`, `hall:a_manual`, `board:B1`, `flags:board`: what the scene and the list name an object by. */
+  /** `reactor:U01`, `analyzer:AN-1`, `staff:OP-01`, `hall:a_manual`, `board:B1`, `flags:board`, and in a case `lot:ML-1`, `equipment:TL-1`, `confirm:U01-CONF`: what the scene and the list name an object by. */
   key: string;
   id: string;
   /** The index into the plan's `units`, `analyzers`, `staff`, the architectures of its layout or its bays. */
@@ -58,35 +60,49 @@ export const objectsOf = (plan: ScenePlan): PlantObject[] => [
   ...plan.layout.architectures.map((architecture, index): PlantObject => ({ kind: "hall", key: `hall:${architecture}`, id: architecture, index })),
   ...plan.layout.bays.map((_, index): PlantObject => ({ kind: "board", key: `board:${boardId(index)}`, id: boardId(index), index })),
   { kind: "flags", key: "flags:board", id: "flags", index: 0 },
+  ...(plan.lots ?? []).map((l, index): PlantObject => ({ kind: "lot", key: `lot:${l.id}`, id: l.id, index })),
+  ...(plan.equipment ?? []).map((e, index): PlantObject => ({ kind: "equipment", key: `equipment:${e.id}`, id: e.id, index })),
+  ...plan.samples.flatMap((s, index): PlantObject[] => (s.kind === "confirm" && !s.skipped ? [{ kind: "confirm", key: `confirm:${s.id}`, id: s.id, index }] : [])),
 ];
 
-export const countsOf = (objects: readonly PlantObject[]): Record<ObjectKind, number> => ({
+/** How many objects of each kind: the six kinds of every plan, and the three of a case when the plan has any of them. */
+export const countsOf = (objects: readonly PlantObject[]): Record<Exclude<ObjectKind, ItemKind>, number> & Partial<Record<ItemKind, number>> => ({
   reactor: objects.filter((o) => o.kind === "reactor").length,
   analyzer: objects.filter((o) => o.kind === "analyzer").length,
   staff: objects.filter((o) => o.kind === "staff").length,
   hall: objects.filter((o) => o.kind === "hall").length,
   board: objects.filter((o) => o.kind === "board").length,
   flags: objects.filter((o) => o.kind === "flags").length,
+  ...(objects.some((o) => o.kind === "lot" || o.kind === "equipment" || o.kind === "confirm") && {
+    lot: objects.filter((o) => o.kind === "lot").length,
+    equipment: objects.filter((o) => o.kind === "equipment").length,
+    confirm: objects.filter((o) => o.kind === "confirm").length,
+  }),
 });
 
-/** What a click or a button can pick, to open a panel and to step between the events of (section 3.4): a reactor, an analyzer, an operator or a sample. The index is into the plan's `units`, `analyzers`, `staff` or `samples`. */
-export type PickKind = "reactor" | "analyzer" | "staff" | "sample";
+/** What a click or a button can pick, to open a panel and to step between the events of (section 3.4): a reactor, an analyzer, an operator or a sample, and in a case a lot, an equipment item or a confirming sample. The index is into the plan's `units`, `analyzers`, `staff`, `samples`, `lots`, `equipment` or `samples`. */
+export type PickKind = "reactor" | "analyzer" | "staff" | "sample" | "lot" | "equipment" | "confirm";
 export interface Picked {
   kind: PickKind;
   index: number;
 }
 
-const LISTS = { reactor: "units", analyzer: "analyzers", staff: "staff", sample: "samples" } as const;
+const LISTS = { reactor: "units", analyzer: "analyzers", staff: "staff", sample: "samples", lot: "lots", equipment: "equipment", confirm: "samples" } as const;
 const PICK_KINDS = Object.keys(LISTS) as PickKind[];
+const listOf = (plan: ScenePlan, kind: PickKind): { id: string }[] => plan[LISTS[kind]] ?? [];
 
 /** The key of a picked object, as `data-plant-pick` and the objects list name it: the kind and the id of the plan (`reactor:U01`, `sample:U10-D08-1`). */
-export const keyOf = (plan: ScenePlan, p: Picked): string => `${p.kind}:${(plan[LISTS[p.kind]][p.index] as { id: string }).id}`;
+export const keyOf = (plan: ScenePlan, p: Picked): string => `${p.kind}:${(listOf(plan, p.kind)[p.index] as { id: string }).id}`;
 
 /** The pick a key names, or null for a key the plan does not hold or of a kind that is not a pick (a hall opens the record panel, not an object panel). */
 export const pickedOfKey = (plan: ScenePlan, key: string): Picked | null => {
   const at = key.indexOf(":");
   const kind = key.slice(0, at) as PickKind;
   if (at < 0 || !PICK_KINDS.includes(kind)) return null;
-  const index = (plan[LISTS[kind]] as { id: string }[]).findIndex((x) => x.id === key.slice(at + 1));
-  return index < 0 ? null : { kind, index };
+  const index = listOf(plan, kind).findIndex((x) => x.id === key.slice(at + 1));
+  if (index < 0) return null;
+  // a confirming sample has no tube on the floor: whichever way it is named, it is a confirm pick, and a confirm pick names only a confirming sample
+  const confirming = plan.samples[index]?.kind === "confirm";
+  if (kind === "confirm") return confirming ? { kind, index } : null;
+  return kind === "sample" && confirming ? { kind: "confirm", index } : { kind, index };
 };

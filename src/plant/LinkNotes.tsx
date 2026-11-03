@@ -6,6 +6,7 @@ import type { LinkNote } from "./link.ts";
 // plan has arrived) and an engine version other than the build's. Nothing is said about a link that was read as it stood.
 
 const KEY: Record<LinkNote["field"], Key> = {
+  case: "plant.link.case",
   scenario: "plant.link.scenario",
   settings: "plant.link.settings",
   capture: "plant.link.capture",

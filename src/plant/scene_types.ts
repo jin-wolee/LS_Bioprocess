@@ -1,7 +1,8 @@
 import type { Layout } from "./layout.ts";
 import type { Playback } from "./playback.ts";
-import type { ObjectKind, Picked } from "./view.ts";
+import type { ItemKind, ObjectKind, Picked } from "./view.ts";
 import type { ScenePlan, TruthPlaceholder } from "../protocol.ts";
+import type { BreakoutTruth } from "./breakout_at.ts";
 
 // What the page and the scene say to each other (docs/design/plant_ui.md sections 6 and 9). Types only, so the page can name them without importing the chunk that holds `three`.
 
@@ -44,11 +45,17 @@ export interface OverlayData {
   captions: OverlayCaptions;
 }
 
+/** What the scene needs to draw the break-out overlay (P7c): the answer of `{ breakout: true }` and the texts (in the page's language) every element of it carries: the label, the templates of the origin and of a unit reached, and of a clock reading. */
+export interface BreakoutData {
+  answer: BreakoutTruth;
+  captions: { label: string; origin: string; reached: string; clock: string };
+}
+
 export interface Scene {
   /** The name the graphics driver gives its renderer, for the status line. */
   renderer: string;
   /** What the scene built, by kind: the end-to-end check compares it with the objects list. */
-  objects: Record<ObjectKind, number>;
+  objects: Record<Exclude<ObjectKind, ItemKind>, number> & Partial<Record<ItemKind, number>>;
   /** Brings the camera to an object named by its key (`reactor:U01`, `analyzer:AN-1`, `staff:OP-01`, `sample:U10-D08-1`, `hall:a_manual`, `board:B1`, `flags:board`). */
   focus(key: string): void;
   /** The object the panel shows, or none: the scene rings it, and `F` follows it when it is a sample instead of tilting the camera. */
@@ -57,6 +64,10 @@ export interface Scene {
   setFollow(sample: number | null): void;
   /** The truth overlay: the placeholders on the rails of the halls, or null for none (the switch is off). */
   setOverlay(data: OverlayData | null): void;
+  /** The truth overlay of a break-out case (P7c): the origin and the units reached from their instants, or null for none (the switch is off, or nothing is answered). */
+  setBreakout(data: BreakoutData | null): void;
+  /** The words of the two outcomes of a confirming test in the page's language, for the labels of the tubes on the shelf (P7c). */
+  setWords(words: { detected: string; not_detected: string }): void;
   /** The halls that have arrived (the plan on screen holds the first; the others come after it): the shelves are drawn again with them, and the camera, the clock and the walker are not touched. */
   setHalls(records: ScenePlan["records"]): void;
   /** Changes the hall the record panel reads. */

@@ -1,6 +1,5 @@
 import { Fragment } from "preact";
 import { useContext, useEffect, useMemo, useRef } from "preact/hooks";
-import type { ComponentChildren } from "preact";
 import { text } from "../i18n/index.ts";
 import type { Key } from "../i18n/index.ts";
 import type { ScenePlan } from "../protocol.ts";
@@ -8,12 +7,16 @@ import { ErrorBlock } from "../ui/ErrorBlock.tsx";
 import { Label, LangContext, T } from "../ui/T.tsx";
 import type { Drill } from "./drill.ts";
 import { DrillLink, DrillLinks } from "./DrillLinks.tsx";
+import { Row, Time } from "./PanelParts.tsx";
+import { ItemPanel, ReactorCase } from "./PanelsItems.tsx";
 import { panelOf } from "./panels.ts";
 import type { AnalyzerPanel, Listed, Panel, ReactorPanel, SamplePanel, StaffPanel } from "./panels.ts";
+import { reactorItemsOf } from "./panels_items.ts";
+import type { ReactorItems } from "./panels_items.ts";
 import type { PlantRecordState } from "./plant_state.ts";
 import type { Playback } from "./playback.ts";
 import { useSlowClock } from "./usePlayback.ts";
-import { clockOf, keyOf, pickedOfKey } from "./view.ts";
+import { keyOf, pickedOfKey } from "./view.ts";
 import type { Picked } from "./view.ts";
 
 // The panels of the picked object (docs/design/plant_ui.md section 3.2, "As built in P5b"): a reactor, a sample, an analyzer or a member of staff, at the clock instant. The content is `panelOf`, a pure
@@ -24,20 +27,6 @@ interface Handlers {
   onClose: () => void;
   onPick: (p: Picked) => void;
 }
-
-const Time = ({ t }: { t: number | null }) => {
-  if (t === null) return <T k="plant.panel.not_yet" />;
-  const c = clockOf(t);
-  return <T k="plant.clock.reading" parts={{ day: <Label>{c.day}</Label>, time: <Label>{c.time}</Label> }} />;
-};
-
-/** A row of a panel: the name of a figure and the figure, which `field` names for the end-to-end check. */
-const Row = ({ name, field, children }: { name: Key; field?: string; children: ComponentChildren }) => (
-  <>
-    <T as="dt" k={name} />
-    <dd {...(field && { "data-panel-field": field })}>{children}</dd>
-  </>
-);
 
 /** The newest rows of a panel, each a button that picks the sample. */
 function Newest({ rows, onPick }: { rows: Listed[]; onPick: (p: Picked) => void }) {
@@ -56,7 +45,7 @@ function Newest({ rows, onPick }: { rows: Listed[]; onPick: (p: Picked) => void 
   );
 }
 
-function Reactor({ p, drill, onPick }: { p: ReactorPanel; drill: Drill; onPick: (x: Picked) => void }) {
+function Reactor({ p, drill, items, onPick }: { p: ReactorPanel; drill: Drill; items: ReactorItems | null; onPick: (x: Picked) => void }) {
   const newest = p.newest[0];
   return (
     <>
@@ -71,7 +60,7 @@ function Reactor({ p, drill, onPick }: { p: ReactorPanel; drill: Drill; onPick: 
       <T as="dt" k="plant.panel.newest" />
       <dd><Newest rows={p.newest} onPick={onPick} /></dd>
     </dl>
-    {newest ? (
+    {drill.lineage === null ? <ReactorCase items={items} drill={drill} /> : newest ? (
       <DrillLinks>
         <DrillLink name="lineage" href={drill.lineage(newest.id)} k="plant.drill.lineage" parts={{ sample: <Label>{newest.id}</Label> }} />
       </DrillLinks>
@@ -141,9 +130,11 @@ function Analyzer({ plan, p, drill, onPick }: { plan: ScenePlan; p: AnalyzerPane
         )}
       </dd>
     </dl>
-    <DrillLinks>
-      <DrillLink name="results" href={drill.results(plan.layout.architectures, "utilisation")} k="plant.drill.utilisation" />
-    </DrillLinks>
+    {drill.results && (
+      <DrillLinks>
+        <DrillLink name="results" href={drill.results(plan.layout.architectures, "utilisation")} k="plant.drill.utilisation" />
+      </DrillLinks>
+    )}
     </>
   );
 }
@@ -209,7 +200,7 @@ function Sample({ p, drill, fields, lens, following, onFollow, onOpenRecord }: {
           <T k="plant.panel.open_record" />
         </button>
       </div>
-      {p.phase !== "planned" && p.phase !== "skipped" && (
+      {drill.lineage && p.phase !== "planned" && p.phase !== "skipped" && (
         <DrillLinks>
           <DrillLink name="lineage" href={drill.lineage(p.id)} k="plant.drill.lineage" parts={{ sample: <Label>{p.id}</Label> }} />
         </DrillLinks>
@@ -218,7 +209,9 @@ function Sample({ p, drill, fields, lens, following, onFollow, onOpenRecord }: {
   );
 }
 
-const HEADING = { reactor: "plant.panel.reactor", sample: "plant.panel.sample", analyzer: "plant.panel.analyzer", staff: "plant.panel.staff" } as const satisfies Record<Panel["kind"], Key>;
+const HEADING = {
+  reactor: "plant.panel.reactor", sample: "plant.panel.sample", analyzer: "plant.panel.analyzer", staff: "plant.panel.staff", lot: "plant.panel.lot", equipment: "plant.panel.equipment", confirm: "plant.panel.confirm",
+} as const satisfies Record<Panel["kind"], Key>;
 
 export function Panels({ plan, playback, pick, lens, fields, following, drill, onClose, onPick, onFollow, onOpenRecord, onFields, onFieldsClose }: Handlers & {
   plan: ScenePlan;
@@ -239,6 +232,7 @@ export function Panels({ plan, playback, pick, lens, fields, following, drill, o
   const at = Math.floor(useSlowClock(playback, 1).t);
   const panel = useMemo(() => panelOf(plan, pick, at, lens), [plan, pick.kind, pick.index, at, lens]);
   const key = keyOf(plan, pick);
+  const items = useMemo(() => (panel.kind === "reactor" ? reactorItemsOf(plan, pick.index, at, lens) : null), [plan, pick.index, at, lens, panel.kind]);
 
   // it opens with the focus on its heading's region; closing gives the focus back to whatever opened it
   useEffect(() => {
@@ -274,7 +268,8 @@ export function Panels({ plan, playback, pick, lens, fields, following, drill, o
           ×
         </button>
       </div>
-      {panel.kind === "reactor" && <Reactor p={panel} drill={drill} onPick={onPick} />}
+      {panel.kind === "reactor" && <Reactor p={panel} drill={drill} items={items} onPick={onPick} />}
+      {(panel.kind === "lot" || panel.kind === "equipment" || panel.kind === "confirm") && <ItemPanel p={panel} drill={drill} />}
       {panel.kind === "staff" && <Staff p={panel} drill={drill} onPick={onPick} />}
       {panel.kind === "analyzer" && <Analyzer plan={plan} p={panel} drill={drill} onPick={onPick} />}
       {panel.kind === "sample" && <Sample p={panel} drill={drill} fields={fields} lens={lens} following={following} onFollow={onFollow} onOpenRecord={() => onOpenRecord(lens, panel.id)} />}

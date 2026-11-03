@@ -4,12 +4,13 @@ import type { Lang } from "../i18n/index.ts";
 import type { Request, Response } from "../protocol.ts";
 import { OFFER } from "../breakout_offer.ts";
 import { Breakout } from "./Breakout.tsx";
-import { breakoutRequest, defaultBreakoutForm } from "./breakout_view.ts";
+import { breakoutRequest, defaultBreakoutForm, plantBreakoutForm } from "./breakout_view.ts";
 import type { BreakoutForm } from "./breakout_view.ts";
 import { Challenge } from "./Challenge.tsx";
 import { challengeStart, defaultChallengeForm } from "./challenge_form.ts";
 import type { ChallengeForm } from "./challenge_form.ts";
 import { leftOutOf } from "../plant/action_list.ts";
+import { isCase } from "../plant/spec.ts";
 import { defaultForm, fromQuery, runRequest } from "./form.ts";
 import type { Form } from "./form.ts";
 import { Home } from "./Home.tsx";
@@ -87,17 +88,32 @@ export function App({ worker }: { worker: Worker }) {
   }, [ready !== null, worker]);
 
   // what the page knows of the build, to read a link against
-  const known = useMemo(() => (ready ? { scenarios: ready.scenarios.map((x) => x.id), architectures: ready.presets.map((x) => x.id) } : null), [ready]);
+  // (the cases and the defaults of the Break-out form are in it only where the build offers the screen: P7c, plant_ui.md section 7)
+  const known = useMemo(
+    () => (ready ? { scenarios: ready.scenarios.map((x) => x.id), architectures: ready.presets.map((x) => x.id), breakout: ready.breakout && { cases: ready.breakout.cases.map((c) => c.id), seed: ready.breakout.seed_list[0] ?? 0, architectures: defaultBreakoutForm(ready).archs } } : null),
+    [ready],
+  );
   // the plant: the run the route wants, the rows of a card, the truth overlay (usePlant.ts)
   const plant = usePlant({ worker, state, dispatch, route, known, take });
 
   // a screen opened from the plant: the plant it came from (useOrigin), and the first Lineage link asks for its sample
-  const origin = useOrigin(known, route, state.results, (link, sample) => {
-    if (!ready) return;
-    const f = plantLineageForm(ready, link.spec, sample);
-    setLineageForm(f);
-    showLineage(f);
-  });
+  const origin = useOrigin(
+    known,
+    route,
+    state.results,
+    (link, sample) => {
+      if (!ready || isCase(link.spec)) return;
+      const f = plantLineageForm(ready, link.spec, sample);
+      setLineageForm(f);
+      showLineage(f);
+    },
+    (link) => {
+      if (!ready || !isCase(link.spec)) return;
+      const f = plantBreakoutForm(link.spec);
+      setBreakoutForm(f);
+      runBreakout(f);
+    },
+  );
 
   // the form starts from the defaults of the first scenario, or from the link the page was opened with; a link opened later (a hash change) fills it again
   useEffect(() => {

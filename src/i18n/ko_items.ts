@@ -1,0 +1,55 @@
+import type { enItems } from "./en_items.ts";
+
+// 공장의 오염 이벤트 장면의 한국어 텍스트 (docs/design/plant_ui.md 3.2, 3.3, 7, 9절, "As built in P7c"). 영어 사전이 원본이고, 숫자는 {자리표시자}로만 들어옵니다. 시뮬레이션이 아는 사건은 독자가 스위치를 누를 때만 보입니다.
+export const koItems: Record<keyof typeof enItems, string> = {
+  "plant.case.lead": "걸어 다닐 수 있는 오염 이벤트 사례입니다. 한 베이에 리액터 여섯 기, 로트 선반, 장비 스테이션, 그리고 확인 시료 튜브가 검사실의 결과를 기다리는 선반이 있습니다. 로트나 장비는 투입되거나 쓰일 때 리액터와 선으로 이어지고, 테이프는 선택한 기록이 쥐고 있는 것을 표시하며, 검사실의 결과는 선반에 도장으로 찍힙니다. 스위치를 누르기 전에는 어느 항목이 오염되었는지 어디에도 나오지 않습니다.",
+
+  "plant.kind.lot": "선반의 로트",
+  "plant.kind.equipment": "장비 스테이션",
+  "plant.kind.confirm": "선반 위의 확인 튜브",
+
+  "plant.panel.lot": "로트 {id}",
+  "plant.panel.equipment": "장비 {id}",
+  "plant.panel.confirm": "확인 시료 {id}",
+  "plant.panel.kind": "종류",
+  "plant.lot.kind.seed": "씨앗 로트",
+  "plant.lot.kind.medium": "배지 로트",
+  "plant.panel.used": "지금까지 사용",
+  "plant.panel.uses": "최근 사용",
+  "plant.panel.uses.none": "아직 쓰이지 않았습니다.",
+  "plant.panel.use": "리액터 {unit}, {clock}",
+  "plant.panel.tape": "테이프 (선택한 기록)",
+  "plant.tape.none": "없음",
+  "plant.tape.held": "보류, 띠 한 줄",
+  "plant.tape.quarantined": "격리, 띠 두 줄",
+  "plant.panel.tests": "검사",
+  "plant.panel.tests.none": "시료를 뽑기 전에는 주문된 검사가 없습니다.",
+  "plant.panel.test": "{test}: {outcome}, {clock}에 보고",
+  "plant.panel.test.pending": "{test}: 아직 결과 없음",
+  "plant.confirm.detected": "검출됨",
+  "plant.confirm.not_detected": "검출되지 않음",
+  "plant.panel.signals": "신호, 이탈, 정지",
+  "plant.panel.signals.none": "이 리액터에서는 아직 신호가 없었습니다.",
+  "plant.panel.signal": "신호 {item}, {clock}",
+  "plant.panel.deviation": "이탈 {item}, {clock}",
+  "plant.panel.stopped": "정지, {clock}",
+
+  "plant.log.addition": "{clock}: 로트 {item}을(를) 리액터 {unit}에 넣었습니다.",
+  "plant.log.use": "{clock}: 장비 {item}을(를) 리액터 {unit}에 썼습니다.",
+  "plant.log.confirmed": "{clock}: 검사실이 시료 {sample}의 {test}에 대해 {outcome}(으)로 보고했습니다.",
+
+  "plant.table.items": "이 시점의 로트와 장비",
+  "plant.table.confirms": "이 시점의 확인 시료",
+  "plant.col.item": "항목",
+  "plant.col.kind": "종류",
+  "plant.col.used": "지금까지 사용",
+  "plant.col.tape": "테이프",
+  "plant.col.sample": "시료",
+  "plant.col.unit": "리액터",
+  "plant.col.drawn": "채취",
+  "plant.col.results": "결과",
+  "plant.kind.equipment.one": "장비",
+
+  "plant.truth.origin": "출발점 {item}",
+  "plant.truth.reached": "{unit}에 도달, {clock}",
+};

@@ -122,3 +122,10 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-origin h2, .plant-link-notes h2 { margin: 0 0 4px; font-size: 1rem; }
 .plant-origin p, .plant-link-notes ul { margin: 4px 0; }
 .plant-link-notes ul { padding-left: 1.2em; }
+/* P7c: the break-out scene (plant_ui.md section 3.2, "As built in P7c"): the ids over the crates and the stations, the tube of the confirmation shelf with its stamps (the lines show when the camera is near), and the labels of the event the overlay draws */
+.plant-label-crate, .plant-label-station { font-size: 10px; }
+.plant-label-tube { border-radius: 8px; padding: 1px 8px; text-align: left; }
+.plant-label-tube .plant-tube-stamp { display: none; }
+.plant-label-tube[data-near="1"] .plant-tube-stamp { display: block; font-weight: 400; font-size: 10px; }
+.plant-label-truth { border-style: dashed; border-radius: 8px; padding: 1px 8px; text-align: center; font-weight: 600; }
+.plant-label-truth .plant-overlay-label { text-align: center; font-family: inherit; }

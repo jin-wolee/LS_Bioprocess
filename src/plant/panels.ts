@@ -1,6 +1,8 @@
 import type { ScenePlan } from "../protocol.ts";
 import { hallsAt } from "./halls_at.ts";
 import { sceneAt } from "./scene_at.ts";
+import { NEWEST, confirmOf, equipmentOf, lotOf } from "./panels_items.ts";
+import type { ConfirmPanel, EquipmentPanel, LotPanel } from "./panels_items.ts";
 import type { AnalyzerLamp, StaffMode, TubePhase, VesselLamp } from "./scene_at.ts";
 import type { Picked } from "./view.ts";
 
@@ -9,7 +11,7 @@ import type { Picked } from "./view.ts";
 // has no tube and no operator). Nothing here is a metric and nothing is truth: the qualification is whether the lens record keeps one, and the record's own fields come from `plant_record`.
 
 /** How many of the newest rows a panel lists: the count says the rest. */
-export const NEWEST = 5;
+export { NEWEST };
 
 type Sample = ScenePlan["samples"][number];
 
@@ -78,7 +80,8 @@ export interface StaffPanel {
   qualification: boolean | null;
 }
 
-export type Panel = ReactorPanel | SamplePanel | AnalyzerPanel | StaffPanel;
+/** P7c: and in a break-out case a lot, an equipment item or a confirming sample (panels_items.ts). */
+export type Panel = ReactorPanel | SamplePanel | AnalyzerPanel | StaffPanel | LotPanel | EquipmentPanel | ConfirmPanel;
 
 const upTo = (at: number | null, t: number): number | null => (at !== null && at <= t ? at : null);
 
@@ -154,5 +157,8 @@ export const panelOf = (plan: ScenePlan, pick: Picked, t: number, lens: string):
     case "sample": return sampleOf(plan, pick.index, t, lens);
     case "analyzer": return analyzerOf(plan, pick.index, t);
     case "staff": return staffOf(plan, pick.index, t, lens);
+    case "lot": return lotOf(plan, pick.index, t, lens);
+    case "equipment": return equipmentOf(plan, pick.index, t, lens);
+    case "confirm": return confirmOf(plan, pick.index, t);
   }
 };

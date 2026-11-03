@@ -1,4 +1,6 @@
 import type { ScenePlan } from "../protocol.ts";
+import { STORE, storeOf, storeWidth } from "./layout_store.ts";
+import type { Store } from "./layout_store.ts";
 
 // The layout of the plant (docs/design/plant_ui.md section 3.1): a pure function of the shape of the run, in metres. No three.js, no DOM, no clock: Vitest runs it without WebGL. Its input is the
 // `layout` of the scene plan (the bays with their sizes and profiles, the analyzers with their groups, the architectures of the record halls) and nothing else.
@@ -6,6 +8,8 @@ import type { ScenePlan } from "../protocol.ts";
 // The floor, north (z = 0) to south: rows of record halls (one wall of shelves per architecture), rows of bays (at most three bays to a row, each bay a plinth with its vessels in rows of at most
 // six), and the bench with the analyzers in a row and one intake lane per group. Between every two bands, and around them, runs an aisle; the walk graph is the middle line of each aisle. x runs
 // east, z south, so the entrance at the south edge looks north across the bench and the bays to the halls. Profiles change the look and never the position, so a profile is not read here.
+//
+// P7c: a plan with `items` (a break-out case) has one more band, the store, between the last row of bays and the bench: the lot rack, the confirmation shelf and the equipment stations (layout_store.ts).
 
 /** The metres of the layout. Every position below is hand arithmetic on these. */
 export const METRES = {
@@ -88,7 +92,7 @@ export interface Graph {
   edges: [number, number][];
 }
 
-export interface Layout {
+export interface Layout extends Store {
   width: number;
   depth: number;
   bays: Bay[];
@@ -122,7 +126,8 @@ export const layoutOf = (spec: Spec): Layout => {
   const rowDepth = Array.from({ length: nBayRows }, (_, r) => max(sizes.slice(r * m.baysPerRow, (r + 1) * m.baysPerRow).map(bayDepth)));
   const baysW = nBayCols === 0 ? 0 : nBayCols * cellW + (nBayCols - 1) * m.aisle;
   const benchW = spec.analyzers.length * m.analyzerPitch + 2 * m.benchPad;
-  const inner = Math.max(baysW, benchW, m.minInner);
+  const items = spec.items;
+  const inner = Math.max(baysW, benchW, m.minInner, items ? storeWidth(items) : 0);
   const width = inner + 2 * (m.edge + m.aisle);
   const innerLeft = m.edge + m.aisle;
   const hallsPerRow = Math.max(1, Math.floor((inner + (m.hallPitch - m.hallWidth)) / m.hallPitch));
@@ -131,7 +136,7 @@ export const layoutOf = (spec: Spec): Layout => {
   // the bands from the north: hall rows, bay rows, the bench; each band top sits one aisle below the bottom of the one before
   const bands: { top: number; depth: number }[] = [];
   let z = m.edge + m.aisle;
-  for (const depth of [...Array<number>(hallRows).fill(m.hallDepth), ...rowDepth, m.benchDepth]) {
+  for (const depth of [...Array<number>(hallRows).fill(m.hallDepth), ...rowDepth, ...(items ? [STORE.depth] : []), m.benchDepth]) {
     bands.push({ top: z, depth });
     z += depth + m.aisle;
   }
@@ -170,6 +175,9 @@ export const layoutOf = (spec: Spec): Layout => {
     const own = analyzers.filter((a) => a.group === group);
     return { group, x: sum(own.map((a) => a.x)) / own.length, z: front, analyzers: own.map((a) => a.index) };
   });
+
+  // the store of a break-out case: its pieces are centred as a group in the working width, in the band above the bench
+  const store: Store = items ? storeOf(items, vessels.length, innerLeft + (inner - storeWidth(items)) / 2, (bands[bands.length - 2] as { top: number }).top) : { rack: null, shelf: null, stations: [] };
 
   // the record halls, centred in rows
   const halls: Hall[] = [];
@@ -221,7 +229,8 @@ export const layoutOf = (spec: Spec): Layout => {
     analyzers,
     lanes,
     halls,
-    obstacles: [...bays.map((b) => b.footprint), bench, ...halls.map((h) => h.footprint)],
+    ...store,
+    obstacles: [...bays.map((b) => b.footprint), bench, ...halls.map((h) => h.footprint), ...(store.rack ? [store.rack.footprint] : []), ...(store.shelf ? [store.shelf.footprint] : []), ...store.stations],
     walk: { nodes, edges },
     entrance,
   };

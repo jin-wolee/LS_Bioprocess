@@ -15,7 +15,7 @@ export function DrillLinks({ children }: { children: ComponentChildren }) {
   );
 }
 
-export function DrillLink({ name, href, k, parts }: { name: "lineage" | "results" | "notes"; href: string; k: Key; parts?: Record<string, ComponentChildren> }) {
+export function DrillLink({ name, href, k, parts }: { name: "lineage" | "results" | "notes" | "breakout"; href: string; k: Key; parts?: Record<string, ComponentChildren> }) {
   return (
     <li>
       <a class="plant-drill-link" href={href} data-drill={name}>

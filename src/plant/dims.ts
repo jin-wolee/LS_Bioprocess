@@ -28,3 +28,8 @@ export const boardPoint = (footprint: { x: number; z: number }): { x: number; z:
 
 /** A tube in the hand is held this far in front of the operator, toward the vessel (north), not inside the figure. */
 export const HELD = 0.32;
+
+/** The things of the break-out store (P7c, plant_ui.md section 3.2, "As built in P7c"): a crate is a box (a medium lot) or a cylinder (a seed lot) on the rack, a station a table with a tank, and a confirming tube stands in a slot of the shelf. View constants; the places are layout_store.ts's. */
+export const CRATE = { w: 0.7, h: 0.45 } as const;
+export const STATION = { top: 0.7, tankRadius: 0.4, tankHeight: 0.8 } as const;
+export const SHELF_TUBE = { radius: 0.1, height: 0.42, cue: 0.17 } as const;

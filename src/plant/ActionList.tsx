@@ -2,11 +2,12 @@ import type { ComponentChildren } from "preact";
 import { useContext } from "preact/hooks";
 import { text } from "../i18n/index.ts";
 import { Label, LangContext, T } from "../ui/T.tsx";
-import type { PlantAction, PlantSpec } from "../protocol.ts";
+import type { PlantAction } from "../protocol.ts";
 import { Instant } from "./ActionRefs.tsx";
 import { canonicalOrder, isLabSetting, wordsOf, without } from "./action_list.ts";
 import type { Slot } from "./action_list.ts";
 import type { Playback } from "./playback.ts";
+import type { PlantAsk } from "./spec.ts";
 
 // The reader's list of actions, in the HUD (docs/design/plant_ui.md section 5.5, "As built in P6a"): each action in words with its instant, in the canonical order of the Worker, a mark on a lab setting
 // (it applies to the whole run), and an undo for each, which removes that action and sends the rest the same way. Above it the line that says the run is recomputing: a live region, announced when it
@@ -20,7 +21,7 @@ export function ActionWords({ action }: { action: PlantAction }) {
   return <T k={w.key} parts={Object.fromEntries(Object.entries(w.slots).map(([name, slot]) => [name, slotOf(slot)]))} />;
 }
 
-export function ActionList({ spec, playback, busy, onAct }: { spec: PlantSpec; playback: Playback; busy: boolean; onAct: (spec: PlantSpec, play: boolean) => void }) {
+export function ActionList({ spec, playback, busy, onAct }: { spec: PlantAsk; playback: Playback; busy: boolean; onAct: (spec: PlantAsk, play: boolean) => void }) {
   const lang = useContext(LangContext);
   const list = canonicalOrder(spec.actions);
   // the undo holds the clock where it is, and the plan that comes back resumes it at the undone action's instant

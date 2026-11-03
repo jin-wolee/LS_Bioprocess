@@ -6,7 +6,7 @@ import type { Picked } from "./view.ts";
 
 /** The dictionary suffix of a line of the log: `plant.log.<key>` is its text. */
 export type LogKey =
-  | "inoculation" | "feed" | "shift" | "alarm" | "harvest" | "stopped" | "signal" | "deviation"
+  | "inoculation" | "feed" | "shift" | "alarm" | "harvest" | "stopped" | "signal" | "deviation" | "addition" | "use" | "confirmed"
   | "drawn" | "skipped" | "arrived" | "started" | "finished" | "calibration"
   | "window.qc.start" | "window.qc.end" | "window.maintenance.start" | "window.maintenance.end" | "window.closed.start" | "window.closed.end";
 
@@ -18,8 +18,12 @@ export interface LogItem {
   sample?: string;
   operator?: string;
   analyzer?: string;
-  /** With `finished`: the outcome of the quality-control check of the run, as the plan holds it. */
+  /** With `finished`: the outcome of the quality-control check of the run, as the plan holds it; with `confirmed`: what the lab reported. */
   outcome?: string;
+  /** With `addition` and `use`: the lot or the equipment item; with `signal` and `deviation`: the signal or the deviation id (a case only, P7c). */
+  item?: string;
+  /** With `confirmed`: the test. */
+  test?: string;
 }
 
 interface Built {
@@ -30,7 +34,7 @@ interface Built {
 }
 
 const MARKS: Record<string, LogKey> = {
-  feed: "feed", temperature_shift: "shift", alarm: "alarm", harvest: "harvest", unit_stopped: "stopped", signal_observed: "signal", deviation_opened: "deviation",
+  feed: "feed", temperature_shift: "shift", alarm: "alarm", harvest: "harvest", unit_stopped: "stopped", signal_observed: "signal", deviation_opened: "deviation", medium_addition: "addition", equipment_use: "use",
 };
 
 const built = new WeakMap<ScenePlan, Built>();
@@ -46,8 +50,9 @@ const buildOf = (plan: ScenePlan): Built => {
   for (const u of plan.units) if (u.start_s !== null) items.push({ t: u.start_s, key: "inoculation", unit: u.id });
   for (const m of plan.marks) {
     const key = MARKS[m.kind];
-    if (key) items.push({ t: m.t, key, unit: unitId(m.unit) });
+    if (key) items.push({ t: m.t, key, unit: unitId(m.unit), ...(m.item !== null && { item: m.item }) });
   }
+  for (const c of plan.confirms ?? []) items.push({ t: c.result_s, key: "confirmed", sample: (plan.samples[c.sample] as { id: string }).id, test: c.test, outcome: c.outcome });
   for (const s of plan.samples) {
     if (s.drawn_s !== null) {
       if (s.skipped) items.push({ t: s.drawn_s, key: "skipped", sample: s.id, unit: unitId(s.unit) });
@@ -108,6 +113,17 @@ export const objectTimes = (plan: ScenePlan, p: Picked): number[] => {
     case "staff":
       times = draws((s) => s.operator === p.index);
       break;
+    case "lot":
+      times = (plan.lots?.[p.index]?.uses ?? []).map((u) => u.t);
+      break;
+    case "equipment":
+      times = (plan.equipment?.[p.index]?.uses ?? []).map((u) => u.t);
+      break;
+    case "confirm": {
+      const s = plan.samples[p.index] as ScenePlan["samples"][number];
+      times = [...(s.drawn_s === null ? [] : [s.drawn_s]), ...(plan.confirms ?? []).filter((c) => c.sample === p.index).map((c) => c.result_s)];
+      break;
+    }
   }
   return unique(times, plan.horizon_s);
 };

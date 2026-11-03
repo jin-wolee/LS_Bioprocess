@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { text } from "../i18n/index.ts";
-import type { CheckState, PlantSpec, ScenePlan } from "../protocol.ts";
+import type { CheckState, ScenePlan } from "../protocol.ts";
 import { LangContext, T } from "../ui/T.tsx";
 import { ActionList } from "./ActionList.tsx";
 import { BottomBar } from "./BottomBar.tsx";
@@ -19,7 +19,7 @@ import { TubeList } from "./TubeList.tsx";
 import { drillOf } from "./drill.ts";
 import { objectTimes } from "./events.ts";
 import { clockKeys } from "./keys.ts";
-import type { PlantLink } from "./link.ts";
+import type { AskLink } from "./link.ts";
 import { layoutOf } from "./layout.ts";
 import { webgl2 } from "./loader.ts";
 import { hallsOfPlan } from "./plant_state.ts";
@@ -28,7 +28,8 @@ import { openingOf } from "./opening.ts";
 import { createPlayback } from "./playback.ts";
 import { useAddress } from "./useAddress.ts";
 import { useOpening } from "./useOpening.ts";
-import { DEFAULT_PLANT } from "./spec.ts";
+import { DEFAULT_PLANT, hallsOf, isCase, scenarioOf } from "./spec.ts";
+import type { PlantAsk } from "./spec.ts";
 import { reducedMotion, tierOf, useScene } from "./useScene.ts";
 import { keyOf, objectsOf, pickedOfKey } from "./view.ts";
 import type { Picked } from "./view.ts";
@@ -52,7 +53,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
   plant: PlantState;
   check: CheckState;
   /** The link the route was opened with: its notes, its instant and the engine version it was made with; null when the address has no query. */
-  link: PlantLink | null;
+  link: AskLink | null;
   /** The engine version of the build and the record architectures the Setup screen offers (for the links to other screens). */
   engine: string;
   architectures: readonly string[];
@@ -66,7 +67,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
   onFieldsClose: () => void;
   onTruth: (on: boolean) => void;
   /** An operator action: the spec with the list including it, and whether the clock was playing when the reader acted. */
-  onAct: (spec: PlantSpec, play: boolean) => void;
+  onAct: (spec: PlantAsk, play: boolean) => void;
   onRefusalClose: () => void;
 }) {
   const lang = useContext(LangContext);
@@ -104,8 +105,9 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
   };
 
   const absences = plant.truth.on ? plant.truth.halls?.view : null;
+  const breakout = plant.truth.on ? plant.truth.breakout?.view : null;
   const { scene, renderer, mounted } = useScene({
-    host, webgl, plan, layout, playback, halls, lens, picked, following, flags, absences, lang,
+    host, webgl, plan, layout, playback, halls, lens, picked, following, flags, absences, breakout, lang,
     handlers: {
       // a click on a card opens its record, and the lens goes to the hall the card is in; a click on an object opens its panel
       card: (architecture, sample) => {
@@ -164,7 +166,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
   };
   // a cell of the flags board (a click in the scene, or its button in the objects list): the camera goes to the panel and the flag form opens on that hall's record and that flag
   const pickCell = (hall: number, flag: string): void => {
-    const architecture = spec.run.architectures[hall];
+    const architecture = hallsOf(spec)[hall];
     if (architecture === undefined) return;
     mounted.current?.focus("flags:board");
     setAsk((now) => ({ form: "set_flag", architecture, flag, nonce: (now?.nonce ?? 0) + 1 }));
@@ -184,8 +186,8 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
   const state = !webgl ? "text" : scene.kind;
   const intro = (
     <>
-      <Intro webgl={webgl} planned={plan !== null} problem={plant.problem} scene={scene} state={state} renderer={renderer} />
-      <LinkNotes notes={link?.notes ?? []} fallbackSeed={DEFAULT_PLANT.seed} outside={wanted.fault} horizon={plan?.horizon_s ?? null} engine={{ made: link?.engine ?? null, current: engine }} />
+      <Intro webgl={webgl} planned={plan !== null} breakout={isCase(spec)} problem={plant.problem} scene={scene} state={state} renderer={renderer} />
+      <LinkNotes notes={link?.notes ?? []} fallbackSeed={link?.spec.seed ?? DEFAULT_PLANT.seed} outside={wanted.fault} horizon={plan?.horizon_s ?? null} engine={{ made: link?.engine ?? null, current: engine }} />
     </>
   );
   const drill = drillOf({ spec, engine, architectures }, () => Math.floor(playback?.get().t ?? 0));
@@ -208,6 +210,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
             data-plant-tier={tierOf()}
             data-plant-epoch={answer ? answer.epoch : undefined}
             data-plant-actions={spec.actions.length}
+            data-plant-case={isCase(spec) ? spec.case : undefined}
             data-plant-recomputing={busy ? "true" : undefined}
             data-plant-truth={!plant.truth.on ? "off" : locked ? "locked" : "on"}
             data-plant-pick={plan && picked ? keyOf(plan, picked) : undefined}
@@ -220,7 +223,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
               <T k="plant.boot" />
             </p>
           )}
-          {full && playback && <Hud plan={full} playback={playback} scenario={spec.run.scenario} check={check} lens={lens} onLens={chooseLens} />}
+          {full && playback && <Hud plan={full} playback={playback} scenario={scenarioOf(spec)} check={check} lens={lens} onLens={chooseLens} />}
           {full && playback && <TruthControl truth={{ on: plant.truth.on, locked }} onTruth={onTruth} />}
           {full && playback && <ActionList spec={spec} playback={playback} busy={busy} onAct={onAct} />}
           {plant.record && <RecordPanel record={plant.record} drill={drill} onClose={onCardClose} truth={plant.truth} />}
@@ -260,7 +263,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
           <ObjectsList objects={objects} onLook={scene.kind === "ready" ? look : null} matrix={webgl ? flagMatrix(full, flags) : null} onCell={webgl && scene.kind === "ready" ? pickCell : null} />
           {webgl && <TubeList plan={full} playback={playback} onOpen={pickAndLook} />}
           {webgl && <CardList plan={full} playback={playback} lens={lens} onOpen={(architecture, sample_id) => { choose(null); onCard(architecture, sample_id); }} />}
-          <TextAlternative plan={full} playback={playback} flags={flags} />
+          <TextAlternative plan={full} playback={playback} flags={flags} lens={lens} />
         </div>
       )}
     </>

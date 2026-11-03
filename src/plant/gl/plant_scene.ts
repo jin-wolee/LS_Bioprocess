@@ -4,6 +4,7 @@ import type { View } from "../controls.ts";
 import { focusOf } from "../focus.ts";
 import type { Point } from "../layout.ts";
 import { pickNearest, targetsAt } from "../pick.ts";
+import { itemPoint } from "../pick_items.ts";
 import type { Hit } from "../pick.ts";
 import type { Scene, SceneOptions } from "../scene_types.ts";
 import { sceneAt } from "../scene_at.ts";
@@ -14,6 +15,7 @@ import { buildRoom } from "./floor.ts";
 import { listen } from "./input.ts";
 import { buildBoards } from "./boards.ts";
 import { buildFlagsBoard } from "./flags.ts";
+import { buildItems } from "./items.ts";
 import { buildLabels } from "./labels.ts";
 import { buildMotion } from "./motion.ts";
 import { buildOverlay } from "./overlay.ts";
@@ -53,6 +55,8 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
   const flagsBoard = buildFlagsBoard(layout, plan, flags, scene, labels, disposables);
   const motion = buildMotion(layout, plan, built, { scene, hemi, sun, glass }, labels, disposables);
   scene.add(motion.group);
+  // a break-out case (P7c): the rack, the stations and the shelf, the links, the tape and the confirming tubes, and the overlay of the event; null for every other run
+  const items = buildItems(host, layout, plan, scene, labels, initialLens, disposables);
   let drawn = Number.NaN; // the clock reading `motion` was last written for
   // the record halls: the cards on the shelves, the lens and the card a click meets (shelves.ts)
   const shelves = buildShelves(host, layout, plan, motion, labels, initialLens);
@@ -89,6 +93,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
       const s = state.staff[p.index];
       return s?.on_duty ? { x: s.x, z: s.z } : null;
     }
+    if (p.kind === "lot" || p.kind === "equipment" || p.kind === "confirm") return itemPoint(plan, layout, p);
     const tube = state.tubes.find((x) => x.sample === p.index);
     return tube ? { x: tube.x, z: tube.z } : null;
   };
@@ -191,6 +196,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     }
     shelves.update(t);
     overlay.update(t);
+    items?.update(t);
 
     // held keys walk the figure and cancel a click's path, a follow and the halo
     if (walker.step(dt, view.yaw) === "keys") {
@@ -230,7 +236,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     }
   };
   // what the scene built, by kind: the figures of the staff are one for each operator of the plan
-  const objects = { ...built.objects, staff: plan.staff.length, flags: 1 };
+  const objects = { ...built.objects, staff: plan.staff.length, flags: 1, ...items?.objects };
   host.dataset.plantObjects = JSON.stringify(objects);
   raf = requestAnimationFrame(frame);
 
@@ -264,13 +270,17 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
       halo.visible = false;
     },
     setOverlay: overlay.set,
+    setBreakout: (data) => items?.setBreakout(data),
+    setWords: (words) => items?.setWords(words),
     setHalls(records) {
       shelves.setHalls(records);
       flagsBoard.setHalls(records);
+      items?.setHalls(records);
     },
     setLens(architecture) {
       shelves.setLens(architecture);
       overlay.setLens(architecture);
+      items?.setLens(architecture);
     },
     dispose() {
       cancelAnimationFrame(raf);

@@ -22,7 +22,17 @@ export interface Labels {
   follow(places: readonly { x: number; z: number }[]): void;
   /** The labels of the truth overlay (P5b): one element over each place given, which the caller fills; null removes them. Returns the elements, in the order of the places. */
   overlay(places: readonly { x: number; y: number; z: number }[] | null): HTMLElement[];
+  /** Labels whose content and place change with the clock (P7c): `count` elements the caller fills; `set(at)` puts one at a place, `set(null)` hides it. */
+  items(count: number, kind: string): { el: HTMLElement; set(at: { x: number; y: number; z: number } | null): void }[];
+  /** The label of each slot of the confirmation shelf (P7c): the id of the tube and a line for each reported test, `test` and the outcome in words (a stamp is read by its shape and by its text); written again only when its content changed. */
+  tubes(count: number): TubeLabels;
   dispose(): void;
+}
+
+/** The labels of the tubes of the confirmation shelf: `set(slot, at, tube)` shows the label of a slot over a place with the tube's id and stamps, `set(slot, null)` hides it; `setWords` gives the two outcomes in the page's language. */
+export interface TubeLabels {
+  set(slot: number, at: { x: number; y: number; z: number } | null, tube?: { id: string; stamps: readonly { test: string; outcome: "detected" | "not_detected" }[] }): void;
+  setWords(words: { detected: string; not_detected: string }): void;
 }
 
 /** The labels of the plant: the range of unit ids over each bay, the id of each analyzer, the architecture of each record hall, and the id of each operator, which follows the figure. */
@@ -91,6 +101,49 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
     if (!hidden) el.style.transform = `translate(${((v.x * 0.5 + 0.5) * width).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * height).toFixed(1)}px) translate(-50%, -100%)`;
   };
   return {
+    tubes(count) {
+      let words = { detected: "detected", not_detected: "not detected" };
+      const slots = Array.from({ length: count }, () => add("", "tube", 0, 0, 0, false));
+      const written: (string | null)[] = [];
+      return {
+        setWords(next) {
+          words = next;
+          written.length = 0;
+        },
+        set(slot, at, tube) {
+          const item = slots[slot];
+          if (!item) return;
+          item.on = at !== null;
+          if (at) item.at.set(at.x, at.y, at.z);
+          const key = tube ? JSON.stringify([tube.id, tube.stamps, words]) : null;
+          if (written[slot] === key) return;
+          written[slot] = key;
+          const id = Object.assign(document.createElement("span"), { className: "plant-tube-id", textContent: tube?.id ?? "" });
+          const lines = (tube?.stamps ?? []).map((s) => {
+            const line = document.createElement("span");
+            line.className = "plant-tube-stamp";
+            line.dataset.stampOutcome = s.outcome;
+            const test = Object.assign(document.createElement("span"), { textContent: s.test });
+            test.setAttribute("data-label", "");
+            line.append(test, ` · ${words[s.outcome]}`);
+            return line;
+          });
+          item.el.replaceChildren(id, ...lines);
+        },
+      };
+    },
+    items(count, kind) {
+      return Array.from({ length: count }, () => {
+        const item = add("", kind, 0, 0, 0, false);
+        return {
+          el: item.el,
+          set(at) {
+            item.on = at !== null;
+            if (at) item.at.set(at.x, at.y, at.z);
+          },
+        };
+      });
+    },
     overlay(places) {
       for (const a of absences) a.el.remove();
       absences = (places ?? []).map((p) => {

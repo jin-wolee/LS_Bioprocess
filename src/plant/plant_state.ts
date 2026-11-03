@@ -1,6 +1,7 @@
-import type { ErrorCode, PlantSpec, RefusalReason, Response, SampleRecord, ScenePlan, TruthOverlay } from "../protocol.ts";
+import type { ErrorCode, RefusalReason, Response, SampleRecord, ScenePlan, TruthOverlay } from "../protocol.ts";
 import { sameSpec } from "./link.ts";
 import type { Resume } from "./opening.ts";
+import type { PlantAsk } from "./spec.ts";
 
 // What the page knows of the plant (docs/design/plant_ui.md sections 5.5 and 6, rule 3), folded from the Worker's messages by the reducer of ui/state.ts. The page asks for a plan under an epoch
 // that grows with every request; an answer or an error whose epoch is not the newest asked for is dropped, so a slow older run can never replace a newer one. The plan on screen stays until the
@@ -16,6 +17,8 @@ import type { Resume } from "./opening.ts";
 // and the spec before it is kept while the request is in flight (`act.pending`). The answer of that epoch replaces the plan and says where the clock resumes (`act.resume`); a refusal, or an answer
 // whose causality check is false, puts the spec back and leaves the plan on screen as it was (`act.refusal`, which the form says in words). At most one such request is alive at a time: the bar is
 // disabled while it is.
+//
+// P7c: the spec is the run form's or a break-out case (`PlantAsk`), and in a case the overlay has a third slot, `breakout`, for the pick `{ breakout: true }` (plant_ui.md section 3.3, "As built in P7c").
 //
 // P5c keeps the plant when the reader leaves it (docs/design/plant_ui.md section 7, "As built in P5c"): `spec` is the spec of the newest request, so that the plant is asked for again only when the route wants
 // another one (`needsRun`); `view` is the clock instant and the lens at the moment the reader left, which Back returns to; and a challenge started on the run empties the overlay (`plant_run_locked`).
@@ -51,6 +54,7 @@ export interface PlantTruthSlot<V> {
 }
 export type HallsTruth = Extract<TruthOverlay, { kind: "halls" }>;
 export type SampleTruth = Extract<TruthOverlay, { kind: "sample" }>;
+export type BreakoutTruth = Extract<TruthOverlay, { kind: "breakout" }>;
 export interface PlantTruthState {
   /** The switch "Show what the simulation knows". */
   on: boolean;
@@ -58,6 +62,8 @@ export interface PlantTruthState {
   halls: PlantTruthSlot<HallsTruth> | null;
   /** The truth of the sample the record panel shows. */
   sample: (PlantTruthSlot<SampleTruth> & { sample_id: string }) | null;
+  /** P7c, a case only: what the simulation knows of the event (the origin and the units it reached). Absent until it is asked for. */
+  breakout?: PlantTruthSlot<BreakoutTruth> | null;
 }
 
 /** What the form says of the last action that did not stand: the Worker's refusal, or a causality check that came back false (a defect to report, never a state to tolerate). */
@@ -65,7 +71,7 @@ export type ActRefusal = { kind: "error"; problem: PlantProblem } | { kind: "cau
 
 export interface PlantActState {
   /** The action request in flight: its epoch, the spec before it, and whether the clock was playing when the reader acted. */
-  pending: { epoch: number; prior: PlantSpec | null; play: boolean } | null;
+  pending: { epoch: number; prior: PlantAsk | null; play: boolean } | null;
   refusal: ActRefusal | null;
   /** Where the clock resumes after the accepted answer of an action. */
   resume: Resume | null;
@@ -81,7 +87,7 @@ export interface PlantState {
   /** The newest epoch asked for; 0 before the first request. */
   epoch: number;
   /** The spec of the newest request; null before the first. */
-  spec: PlantSpec | null;
+  spec: PlantAsk | null;
   view: PlantView | null;
   /** The id of the request of that epoch while it is unanswered. */
   running: number | null;
@@ -99,8 +105,8 @@ export interface PlantState {
 
 /** What the page itself says to the plant's state, besides the Worker's messages. */
 export type PlantPageAction =
-  | { type: "plant_started"; id: number; epoch: number; spec: PlantSpec }
-  | { type: "plant_acted"; id: number; epoch: number; spec: PlantSpec; play: boolean }
+  | { type: "plant_started"; id: number; epoch: number; spec: PlantAsk }
+  | { type: "plant_acted"; id: number; epoch: number; spec: PlantAsk; play: boolean }
   | { type: "plant_refusal_closed" }
   | { type: "plant_left"; t: number; lens: string | null }
   // `key`: the key a challenge answered with (`challenge_ready`); the plant's own is the one its `plant_ready` came with (lab_ui.md section 4, rule 2)
@@ -108,7 +114,7 @@ export type PlantPageAction =
   | { type: "plant_record_started"; id: number; epoch: number; architecture: string; sample_id: string; role?: "fields" }
   | { type: "plant_record_closed"; role?: "fields" }
   | { type: "plant_truth_switched"; on: boolean }
-  | { type: "plant_truth_started"; id: number; epoch: number; pick: { halls: true } | { sample_id: string } };
+  | { type: "plant_truth_started"; id: number; epoch: number; pick: { halls: true } | { sample_id: string } | { breakout: true } };
 export type PlantAction = Response | PlantPageAction;
 
 export const NO_TRUTH: PlantTruthState = { on: false, halls: null, sample: null };
@@ -124,10 +130,16 @@ export const hallsOfPlan = (plan: ScenePlan, halls: ScenePlan["records"]): Scene
 };
 
 /** The overlay with what was asked emptied: the requests stay as slots so that a late answer or error of one finds its place and is neither kept nor taken for the plant's. */
-const emptied = (t: PlantTruthState): PlantTruthState => ({ on: t.on, halls: t.halls && { ...t.halls, view: null, problem: null }, sample: t.sample && { ...t.sample, view: null, problem: null } });
+const emptied = (t: PlantTruthState): PlantTruthState => ({
+  on: t.on, halls: t.halls && { ...t.halls, view: null, problem: null }, sample: t.sample && { ...t.sample, view: null, problem: null },
+  ...(t.breakout && { breakout: { ...t.breakout, view: null, problem: null } }),
+});
 
 /** Whether the route wants a run the page has not asked for: nothing is asked again for the spec of the newest request, whether it is on its way, answered or failed (no retry loop). */
-export const needsRun = (plant: PlantState, want: PlantSpec): boolean => !sameSpec(plant.spec, want);
+export const needsRun = (plant: PlantState, want: PlantAsk): boolean => !sameSpec(plant.spec, want);
+
+/** The pick the overlay asks for in a break-out case (plant_ui.md section 3.3, "As built in P7c"): only when the switch is on, only in a case, only with a plan on screen; otherwise nothing is asked. */
+export const breakoutAsk = (on: boolean, inCase: boolean, epoch: number | undefined): { breakout: true } | null => (on && inCase && epoch !== undefined ? { breakout: true } : null);
 
 /** The overlay after a challenge was started on its run: nothing is held of what the simulation knows, each slot says `locked` as a new request would, and a late answer is not kept. */
 const closed = (t: PlantTruthState): PlantTruthState => {
@@ -138,6 +150,7 @@ const closed = (t: PlantTruthState): PlantTruthState => {
 const truthError = (t: PlantTruthState, action: Extract<Response, { type: "error" }>): PlantTruthState | null => {
   if (t.halls?.id === action.id) return { ...t, halls: { ...t.halls, problem: problemOf(action) } };
   if (t.sample?.id === action.id) return { ...t, sample: { ...t.sample, problem: problemOf(action) } };
+  if (t.breakout?.id === action.id) return { ...t, breakout: { ...t.breakout, problem: problemOf(action) } };
   return null;
 };
 
@@ -195,6 +208,7 @@ export const reducePlant = (state: PlantState, action: PlantAction): PlantState 
     case "plant_truth_started": {
       const t = state.truth;
       if ("halls" in action.pick) return { ...state, truth: { ...t, halls: { id: action.id, epoch: action.epoch, view: null, problem: null } } };
+      if ("breakout" in action.pick) return { ...state, truth: { ...t, breakout: { id: action.id, epoch: action.epoch, view: null, problem: null } } };
       return { ...state, truth: { ...t, sample: { id: action.id, epoch: action.epoch, sample_id: action.pick.sample_id, view: null, problem: null } } };
     }
     case "plant_truth_view": {
@@ -202,6 +216,7 @@ export const reducePlant = (state: PlantState, action: PlantAction): PlantState 
       if (!t.on || action.epoch !== state.epoch) return state;
       if (action.view.kind === "halls" && t.halls?.id === action.id && t.halls.epoch === action.epoch && !t.halls.closed) return { ...state, truth: { ...t, halls: { ...t.halls, view: action.view, problem: null } } };
       if (action.view.kind === "sample" && t.sample?.id === action.id && t.sample.epoch === action.epoch && !t.sample.closed) return { ...state, truth: { ...t, sample: { ...t.sample, view: action.view, problem: null } } };
+      if (action.view.kind === "breakout" && t.breakout?.id === action.id && t.breakout.epoch === action.epoch && !t.breakout.closed) return { ...state, truth: { ...t, breakout: { ...t.breakout, view: action.view, problem: null } } };
       return state;
     }
     case "error": {

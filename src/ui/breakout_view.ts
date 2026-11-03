@@ -1,5 +1,7 @@
-import type { BreakoutRow, BreakoutWalkItem, Request } from "../protocol.ts";
+import { plantQuery } from "../plant/link.ts";
+import type { BreakoutRow, BreakoutWalkItem, PlantCaseSpec, Request } from "../protocol.ts";
 import { seedOf } from "./lineage_form.ts";
+import { hashOf } from "./route.ts";
 import type { ReadyInfo } from "./state.ts";
 
 // The pure parts of the Break-out screen (docs/design/lab_ui.md sections 3 and 20; spec section 8 and 11.6): the form and its request, how a metric row is read and how the rows of an
@@ -12,6 +14,8 @@ export interface BreakoutForm {
   case: string;
   seed: string;
   archs: string[];
+  /** The case of the plant the screen was opened from (plant_ui.md section 7, "As built in P7c"): the request then carries the plant's actions. Dropped when the reader changes the run. */
+  plant?: PlantCaseSpec;
 }
 
 /** The first case, the first seed of the list, A, B and C and C with each of the flags that decide what direction 3 can read off (the ablations that show the difference). */
@@ -33,7 +37,25 @@ export const breakoutRequest = (form: BreakoutForm, ready: ReadyInfo, id: number
   const seed = seedOf(form.seed);
   const architectures = selectedArchitectures(form, ready);
   if (ready.breakout === null || seed === null || architectures.length === 0 || !ready.breakout.cases.some((c) => c.id === form.case)) return null;
-  return { type: "breakout", id, case: form.case, architectures, seed };
+  return { type: "breakout", id, case: form.case, architectures, seed, ...(form.plant && { actions: form.plant.actions }) };
+};
+
+/** The form of a screen opened from the plant: the plant's case, seed and halls, with the plant kept so that the request carries its actions (an empty list included, as Lineage's does). */
+export const plantBreakoutForm = (plant: PlantCaseSpec): BreakoutForm => ({ case: plant.case, seed: String(plant.seed), archs: plant.architectures, plant });
+
+/** A change of the form. The run the plant shows is a case, a seed and the records; change any of them and the form is the reader's own (the plant's actions are not theirs to keep). */
+export const editBreakout = (form: BreakoutForm, patch: Partial<BreakoutForm>): BreakoutForm => {
+  const next = { ...form, ...patch };
+  if (!["case", "seed", "archs"].some((k) => k in patch)) return next;
+  const own: BreakoutForm = { ...next };
+  delete own.plant;
+  return own;
+};
+
+/** The link from the screen to the plant on this case, seed and records (plant_ui.md section 7), or null while the form cannot make a request (and in a build that offers no case). It runs nothing. */
+export const caseLink = (form: BreakoutForm, ready: ReadyInfo, engine: string): string | null => {
+  const request = breakoutRequest(form, ready, 0);
+  return request?.type === "breakout" ? hashOf("plant", plantQuery({ case: request.case, architectures: request.architectures, seed: request.seed, actions: [] }, { engine })) : null;
 };
 
 export type Cell = { kind: "not_reachable" } | { kind: "undefined"; num: number | null; den: number | null } | { kind: "share"; num: number; den: number; value: number } | { kind: "time"; seconds: number };

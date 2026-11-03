@@ -3,6 +3,7 @@ import type { RefObject } from "preact";
 import { template, text } from "../i18n/index.ts";
 import type { Lang } from "../i18n/index.ts";
 import type { ScenePlan } from "../protocol.ts";
+import type { BreakoutTruth } from "./breakout_at.ts";
 import type { SceneStatus } from "./Intro.tsx";
 import type { Layout } from "./layout.ts";
 import { loadScene } from "./loader.ts";
@@ -48,11 +49,13 @@ export interface SceneInput {
   flags: readonly string[];
   /** The placeholders of the halls while the truth overlay is on and has been answered. */
   absences: HallsTruth | null | undefined;
+  /** The answer of `{ breakout: true }` while the overlay is on (P7c, a case only). */
+  breakout: BreakoutTruth | null | undefined;
   lang: Lang;
   handlers: SceneHandlers;
 }
 
-export function useScene({ host, webgl, plan, layout, playback, halls, lens, picked, following, flags, absences, lang, handlers }: SceneInput): { scene: SceneStatus; renderer: string | null; mounted: RefObject<Scene | null> } {
+export function useScene({ host, webgl, plan, layout, playback, halls, lens, picked, following, flags, absences, breakout, lang, handlers }: SceneInput): { scene: SceneStatus; renderer: string | null; mounted: RefObject<Scene | null> } {
   const mounted = useRef<Scene | null>(null);
   const [scene, setScene] = useState<SceneStatus>({ kind: webgl ? "loading" : "none" });
   const [renderer, setRenderer] = useState<string | null>(null);
@@ -119,6 +122,15 @@ export function useScene({ host, webgl, plan, layout, playback, halls, lens, pic
     if (scene.kind !== "ready") return;
     mounted.current?.setOverlay(absences ? { halls: absences.halls, captions: { label: text(lang, "plant.truth.label"), absence: template(lang, "plant.truth.absence") } } : null);
   }, [absences, lang, scene.kind]);
+  // a break-out case (P7c): what the simulation knows of the event, and the words the stamps on the shelf are read in
+  useEffect(() => {
+    if (scene.kind !== "ready") return;
+    const captions = { label: text(lang, "plant.truth.label"), origin: template(lang, "plant.truth.origin"), reached: template(lang, "plant.truth.reached"), clock: template(lang, "plant.clock.reading") };
+    mounted.current?.setBreakout(breakout ? { answer: breakout, captions } : null);
+  }, [breakout, lang, scene.kind]);
+  useEffect(() => {
+    if (scene.kind === "ready") mounted.current?.setWords({ detected: text(lang, "plant.confirm.detected"), not_detected: text(lang, "plant.confirm.not_detected") });
+  }, [lang, scene.kind]);
 
   return { scene, renderer, mounted };
 }

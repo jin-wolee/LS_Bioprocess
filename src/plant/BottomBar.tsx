@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import { text } from "../i18n/index.ts";
 import type { Key } from "../i18n/index.ts";
-import type { PlantSpec, ScenePlan } from "../protocol.ts";
+import type { ScenePlan } from "../protocol.ts";
 import { LangContext, T } from "../ui/T.tsx";
 import { ActionForm } from "./ActionForm.tsx";
 import { ActionIcon } from "./ActionIcon.tsx";
@@ -10,6 +10,8 @@ import type { ActionKind, Fields } from "./act_form.ts";
 import { plus } from "./action_list.ts";
 import type { ActRefusal } from "./plant_state.ts";
 import type { Playback } from "./playback.ts";
+import { hallsOf, isCase } from "./spec.ts";
+import type { PlantAsk } from "./spec.ts";
 import { usePlayback } from "./usePlayback.ts";
 import type { Picked } from "./view.ts";
 import "./plant_act.css";
@@ -24,7 +26,7 @@ export interface BarProps {
   plan: ScenePlan;
   playback: Playback;
   /** The spec the page asked for last: its list is the reader's list. */
-  spec: PlantSpec;
+  spec: PlantAsk;
   /** The flags of `ready`, for the flag form. */
   flags: readonly string[];
   picked: Picked | null;
@@ -34,7 +36,7 @@ export interface BarProps {
   /** What the reader asked for from the objects list or the scene, and a number that changes with each ask: the move form on a board (its bay), or the flag form on a cell of the flags board (the record the
    *  run began with and the flag; the form opens with the opposite state). */
   ask: ({ nonce: number } & ({ form: "move_draw"; bay: number } | { form: "set_flag"; architecture: string; flag: string })) | null;
-  onAct: (spec: PlantSpec, play: boolean) => void;
+  onAct: (spec: PlantAsk, play: boolean) => void;
   onRefusalClose: () => void;
 }
 
@@ -60,7 +62,7 @@ export function BottomBar(p: BarProps) {
     setMore(false);
     setBay(null);
     sent.current = false;
-    setFields(initialFields(kind, { plan: p.plan, flags: p.flags, halls: p.spec.run.architectures, picked: p.picked, at: atOf(p.playback.get().t) }));
+    setFields(initialFields(kind, { plan: p.plan, flags: p.flags, halls: hallsOf(p.spec), picked: p.picked, at: atOf(p.playback.get().t) }));
     setOpen(kind);
   };
   const close = (): void => {
@@ -89,7 +91,7 @@ export function BottomBar(p: BarProps) {
     if (p.ask.form === "set_flag") {
       const { architecture, flag } = p.ask;
       choose("set_flag", null, true);
-      setFields((f) => ({ ...f, architecture, flag, on: flagOnFor(p.plan, p.spec.run.architectures, architecture, flag) }));
+      setFields((f) => ({ ...f, architecture, flag, on: flagOnFor(p.plan, hallsOf(p.spec), architecture, flag) }));
       return;
     }
     choose("move_draw", null, true);
@@ -126,7 +128,7 @@ export function BottomBar(p: BarProps) {
     <div class="plant-bar-wrap">
       <div class="plant-bar" role="group" aria-label={text(lang, "plant.bar.label")} data-plant-bar="actions" data-busy={p.busy}>
         <div class="plant-bar-actions">
-          {CORE.map(button)}
+          {CORE.filter((kind) => kind !== "set_capture_path" || !isCase(p.spec)).map(button)}
           <button ref={moreButton} type="button" data-action="more" aria-expanded={more} aria-controls="plant-bar-more" disabled={p.busy} onClick={() => setMore(!more)}>
             <ActionIcon kind="more" /> <T k="plant.bar.more" />
           </button>
@@ -165,7 +167,7 @@ function OpenForm({ kind, bar, fields, bay, set, onSubmit, onClose }: {
   return (
     <div ref={host} class="plant-act">
       <ActionForm
-        kind={kind} plan={bar.plan} flags={bar.flags} halls={bar.spec.run.architectures} fields={fields} at={at} now={now} bay={bay} busy={bar.busy} refusal={bar.refusal}
+        kind={kind} plan={bar.plan} flags={bar.flags} halls={hallsOf(bar.spec)} fields={fields} at={at} now={now} bay={bay} busy={bar.busy} refusal={bar.refusal}
         set={set} onSubmit={() => onSubmit(atOf(bar.playback.get().t))} onClose={onClose} word={(key) => text(lang, key as Key)}
       />
     </div>

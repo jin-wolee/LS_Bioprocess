@@ -36,7 +36,9 @@ RECORD_PLANT_JS = """(() => {
       if (data && typeof data.type === 'string') window.__plantSent.push({at: performance.now(), type: data.type, epoch: data.epoch, pick: data.pick, seed: data.seed,
         actions: Array.isArray(data.actions) ? data.actions.length : null, kinds: Array.isArray(data.actions) ? data.actions.map((a) => a.kind) : null,
         seeds: data.spec && Array.isArray(data.spec.seeds) ? data.spec.seeds : null,
-        spec: data.spec && data.spec.run ? {scenario: data.spec.run.scenario, seed: data.spec.seed, actions: (data.spec.actions || []).length} : null});
+        spec: data.spec && data.spec.run ? {scenario: data.spec.run.scenario, seed: data.spec.seed, actions: (data.spec.actions || []).length} : null,
+        // P7c: the case and the records a break-out request or a plant_run of a case asks for
+        case: data.case || (data.spec && data.spec.case) || null, halls: data.architectures || (data.spec && data.spec.architectures) || null});
       return super.postMessage(data, ...rest);
     }
     constructor(...args) {

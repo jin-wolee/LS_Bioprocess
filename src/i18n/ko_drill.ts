@@ -8,6 +8,7 @@ export const koDrill: Record<keyof typeof enDrill, string> = {
   "plant.drill.results": "이 아키텍처를 여러 시드에 걸쳐 결과 화면에서 보기",
   "plant.drill.utilisation": "분석기가 여러 시드에서 얼마나 바빴는지 결과 화면에서 보기",
   "plant.drill.notes": "기록의 자격 확인이 무엇인지 노트에서 읽기",
+  "plant.drill.breakout": "이 사례를 역추적 화면에서 열기",
 
   "plant.origin.label": "공장에서 열었습니다",
   "plant.origin.run": "공장에서 가져온 실행: 시나리오 {scenario}, 시드 {seed}, 운영자 조작 {actions}개, {clock}에 떠남.",
@@ -17,6 +18,7 @@ export const koDrill: Record<keyof typeof enDrill, string> = {
   "plant.origin.utilisation": "실행을 누르세요. 분석기 가동률은 결과 화면의 맨 끝에 있습니다.",
 
   "plant.link.heading": "링크를 고쳐서 읽었습니다",
+  "plant.link.case": "사례 {given}은(는) 이 빌드에 없거나 시나리오의 키와 함께 와서 기본 시나리오로 실행하며, 링크의 나머지는 읽지 않았습니다.",
   "plant.link.scenario": "시나리오 {given}은(는) 이 빌드에 없어 기본 시나리오로 실행합니다.",
   "plant.link.settings": "설정 {given}은(는) 숫자가 아니어서 뺐습니다.",
   "plant.link.capture": "수집 경로 {given}은(는) 이 빌드의 두 경로가 아니어서 뺐습니다.",

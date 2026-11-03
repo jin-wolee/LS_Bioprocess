@@ -1,0 +1,55 @@
+// English texts of the break-out scenes of the plant (docs/design/plant_ui.md sections 3.2, 3.3, 7 and 9, "As built in P7c"). Part of the dictionary of en.ts. No digit appears in a text: an identifier or a
+// count reaches a text through a {placeholder} filled with a marked element (invariant 3). The scene shows what the plan holds and ranks nothing; what the lab reported is the lab's own result, and what the
+// simulation knows of the event is shown only on the reader's switch.
+export const enItems = {
+  "plant.case.lead": "A break-out case as a place to walk through: six reactors in one bay, the rack of lots, the equipment stations and the shelf where the confirming tubes wait for the lab. A lot or an item is linked to a reactor when it is added or used, tape marks what the lens record holds, and the lab's results are stamped on the shelf. Nothing here says which item is contaminated until you press the switch.",
+
+  "plant.kind.lot": "Lots on the rack",
+  "plant.kind.equipment": "Equipment stations",
+  "plant.kind.confirm": "Confirming tubes on the shelf",
+
+  "plant.panel.lot": "Lot {id}",
+  "plant.panel.equipment": "Equipment {id}",
+  "plant.panel.confirm": "Confirming sample {id}",
+  "plant.panel.kind": "Kind",
+  "plant.lot.kind.seed": "seed lot",
+  "plant.lot.kind.medium": "medium lot",
+  "plant.panel.used": "Uses so far",
+  "plant.panel.uses": "Newest uses",
+  "plant.panel.uses.none": "Not used yet.",
+  "plant.panel.use": "Reactor {unit}, {clock}",
+  "plant.panel.tape": "Tape (the lens record)",
+  "plant.tape.none": "none",
+  "plant.tape.held": "held, one band",
+  "plant.tape.quarantined": "quarantined, two bands",
+  "plant.panel.tests": "Tests",
+  "plant.panel.tests.none": "No test is ordered before the draw.",
+  "plant.panel.test": "{test}: {outcome}, reported {clock}",
+  "plant.panel.test.pending": "{test}: no result yet",
+  "plant.confirm.detected": "detected",
+  "plant.confirm.not_detected": "not detected",
+  "plant.panel.signals": "Signals, deviations and stops",
+  "plant.panel.signals.none": "Nothing has been signalled on this reactor.",
+  "plant.panel.signal": "Signal {item}, {clock}",
+  "plant.panel.deviation": "Deviation {item}, {clock}",
+  "plant.panel.stopped": "Stopped, {clock}",
+
+  "plant.log.addition": "{clock}: lot {item} added to reactor {unit}.",
+  "plant.log.use": "{clock}: equipment {item} used on reactor {unit}.",
+  "plant.log.confirmed": "{clock}: the lab reported {outcome} for {test} on sample {sample}.",
+
+  "plant.table.items": "Lots and equipment at this instant",
+  "plant.table.confirms": "Confirming samples at this instant",
+  "plant.col.item": "Item",
+  "plant.col.kind": "Kind",
+  "plant.col.used": "Uses so far",
+  "plant.col.tape": "Tape",
+  "plant.col.sample": "Sample",
+  "plant.col.unit": "Reactor",
+  "plant.col.drawn": "Drawn",
+  "plant.col.results": "Results",
+  "plant.kind.equipment.one": "equipment",
+
+  "plant.truth.origin": "Origin {item}",
+  "plant.truth.reached": "Reached {unit}, {clock}",
+} as const;

@@ -16,6 +16,7 @@ export const koBreakout: Record<keyof typeof enBreakout, string> = {
   "breakout.form.ablations": "플래그 하나를 끈 C",
   "breakout.form.none": "기록을 하나 이상 고르세요.",
   "breakout.form.run": "역추적 실행",
+  "breakout.open_plant": "이 사례를 공장에서 열기",
   "breakout.running": "이벤트와 조사를 실행하는 중입니다.",
   "breakout.empty": "아직 결과가 없습니다. 사례를 고르고 버튼을 누르세요.",
 
