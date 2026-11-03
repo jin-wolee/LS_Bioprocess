@@ -524,7 +524,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <div class="tl-control">
 <label for="timeline-slider" data-i18n="t.slider">Measurement time (measured_at)</label>
 <input id="timeline-slider" type="range" min="525" max="615" step="1" value="565" aria-valuetext="09:25">
-<output id="tl-out" for="timeline-slider">09:25</output>
+<output id="tl-out" for="timeline-slider" class="nochip" data-src="A102" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">09:25</output>
 </div>
 <div id="join-result" data-state="gap" data-hold="over30" aria-live="polite" data-src="A102 A097 S001" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">
 <dl class="readout">
@@ -782,7 +782,7 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <h3 data-i18n="s.h3b">Clocks and time zones are a data-integrity control</h3>
 <p data-i18n="s.clock" data-src="S029 S030" data-gl="" data-gl-ko="">UK MHRA guidance asks for access to controlled or synchronised clocks for recording timed events and for specifying the time zone (section 5.1). The WHO guidance lists restricting the ability to change any clock used for recording timed events, including clocks in process instrumentation (section 4.12). The design stores every instant in UTC with the source's own offset beside it.</p>
 <p data-i18n="s.clock2" data-src="A049" data-grade="A" data-gl=" · assumed" data-gl-ko=" · 가정">How often a clock is wrong has no source. The wrong-clock scenario (SC6) uses a +5 h offset on one analyzer as a neutral stress case.</p>
-<h3 data-i18n="s.h3c">EU Annex 11</h3>
+<h3 data-i18n="s.h3c" class="nochip" data-src="S027" data-gl="" data-gl-ko="">EU Annex 11</h3>
 <p data-i18n="s.a11" data-src="S027" data-gl="" data-gl-ko="">The European Commission lists Annex 11 on computerised systems as the January 2011 revision. That is the text this page treats as current.</p>
 <p data-i18n="s.a11b" data-src="S028" data-gl=" · provisional" data-gl-ko=" · 잠정" data-status="provisional">A revised Annex 11, a revised Chapter 4 and a new draft Annex 22 on AI went to consultation from 7 July to 7 October 2025. The revision is a draft and not final.</p>
 <p data-i18n="s.a11c">The model describes controls. It does not claim compliance with either text.</p>
@@ -947,7 +947,7 @@ window.I18N_KO = {
 "c.k.cycled": "전체 패널 기준 270초",
 "c.k.vol": "시료량",
 "c.k.vold": "전체 패널 기준",
-"c.ceiling": "유도한 상한: 60분 ÷ 4.5분 ≈ 분석기 1대당 시간당 13.3개. QC, 교정, 유지보수는 제외한 값입니다.",
+"c.ceiling": "유도한 상한: 60분 ÷ 4.5분 ≈ 분석기 한 대당 시간당 13.3개. QC, 교정, 유지보수는 제외한 값입니다.",
 "c.load": "기본 실험실은 리액터 24대 × 리액터-일당 시료 1.4~1.6개, 즉 하루 33.6~38.4개를 요구합니다. 시료당 4.5분이면 분석기 시간 151~173분입니다. 시료 수와 운영 시간대는 가정입니다.",
 "c.b1": "10시간 근무 시간대 기준",
 "c.b1s": "분석기 2대 = 1200 분석기-분",
@@ -1214,9 +1214,9 @@ window.I18N_KO = {
 "m.g.h1": "등급",
 "m.g.h2": "의미",
 "m.g.s": "S, 출처 확인",
-"m.g.sd": "바이오공정 1차 출처: 논문, 벤더 사양서 또는 사례 연구.",
+"m.g.sd": "바이오공정 일차 출처: 논문, 벤더 사양서 또는 사례 연구.",
 "m.g.p": "P, 대리지표",
-"m.g.pd": "다른 분야(임상 검사실, 혈액가스, 무세포 배지)에서 빌렸거나 1차 출처로 보기엔 약한 출처.",
+"m.g.pd": "다른 분야(임상 검사실, 혈액가스, 무세포 배지)에서 빌렸거나 일차 출처로 보기엔 약한 출처.",
 "m.g.d": "D, 유도",
 "m.g.dd": "출처가 있는 수치에 산술을 적용한 값이며, 산술 과정을 적어 둡니다.",
 "m.g.a": "A, 가정",
