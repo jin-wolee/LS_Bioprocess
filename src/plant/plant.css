@@ -1,6 +1,9 @@
-/* The plant route (docs/design/plant_ui.md sections 2, 3 and 9). The scene fills the width of the page; the HUD cards, the hint and the bottom bar sit over it with solid backgrounds from the page
-   tokens, so that they read in both themes (the canvas itself is a bright lab in both and is not in the contrast sweep). Shape and text carry meaning, colour only repeats it. Every grid wraps,
-   so nothing scrolls sideways at the narrow viewport. */
+/* The plant route (docs/design/plant_ui.md sections 2, 3 and 9). The scene fills the width of the page; the HUD cards, the side panel, the hint and the bottom bar sit over it with solid backgrounds from the
+   page tokens, so that they read in both themes (the canvas itself is a bright lab in both and is not in the contrast sweep). Shape and text carry meaning, colour only repeats it. Every grid wraps,
+   so nothing scrolls sideways at the narrow viewport.
+
+   P8a: the cards, the side panel and the bottom stack are items of ONE grid over the scene (`.plant-huds`: the left column with the place card and the list of actions, the middle that is the floor, the right
+   column with the chips and then the panel; the bottom stack under them), so a panel never covers the bars, a chip that wraps pushes the panel down, and a list that grows scrolls inside its own box. */
 main[data-screen="plant"] { max-width: none; padding-left: 0; padding-right: 0; padding-top: 0; }
 .plant-intro, .plant-after { max-width: 60rem; margin: 0 auto; padding: 0 16px; }
 .plant-intro h1 { margin-top: 16px; }
@@ -14,16 +17,32 @@ main[data-screen="plant"] { max-width: none; padding-left: 0; padding-right: 0; 
 .plant-label { position: absolute; left: 0; top: 0; visibility: hidden; will-change: transform; white-space: nowrap; font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 0 6px; border-radius: 999px; background: var(--surface); color: var(--fg); border: 1px solid var(--border); }
 .plant-boot { position: absolute; inset: 0; margin: 0; max-width: none; display: grid; place-items: center; background: var(--surface); color: var(--muted); }
 
-.plant-hud { position: absolute; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; font-size: 0.9rem; }
-.plant-hud-place { top: 12px; left: 12px; max-width: min(24rem, calc(100% - 140px)); }
-.plant-hud-check { top: 12px; right: 12px; padding: 4px 8px; }
+.plant-huds { position: absolute; inset: 12px; display: grid; grid-template-columns: minmax(0, 24rem) minmax(0, 1fr) minmax(0, 25rem); grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 12px; pointer-events: none; }
+.plant-huds .plant-hud, .plant-huds .plant-side > *, .plant-huds .plant-bottom > *, .plant-sheet-hint { pointer-events: auto; }
+.plant-hud { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; font-size: 0.9rem; }
+.plant-sheet { display: contents; }
+.plant-compact, .plant-sheet-hint { display: none; }
+.plant-hud-left { grid-column: 1; grid-row: 1 / 3; align-self: start; display: flex; flex-direction: column; gap: 8px; min-height: 0; max-height: 100%; }
+.plant-hud-place { flex: 0 0 auto; }
+.plant-hud-chips { grid-column: 3; grid-row: 1; justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 0; max-width: 100%; }
+.plant-hud-check { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
+.plant-hum { min-height: 28px; padding: 0 10px; font-size: 0.85rem; background: var(--bg); }
+.plant-hum[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+.plant-side { grid-column: 3; grid-row: 2 / 4; min-height: 0; display: flex; flex-direction: column; pointer-events: none; }
+.plant-side:empty { display: none; }
+.plant-side > * { flex: 0 1 auto; min-height: 0; max-height: 100%; overflow-y: auto; }
 .plant-place { display: block; font-size: 1rem; }
-.plant-layer { display: block; color: var(--muted); font-size: 0.8rem; }
+.plant-layer-note { display: block; color: var(--muted); font-size: 0.8rem; }
 .plant-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; margin: 6px 0 0; }
 .plant-facts dt { color: var(--muted); }
 .plant-facts dd { margin: 0; overflow-wrap: anywhere; }
-.plant-bottom { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.plant-bottom { grid-column: 1 / -1; grid-row: 3; align-self: end; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
 .plant-bottom > * { pointer-events: auto; }
+/* with a panel open the stack stops before the right column; the wide record (the truth beside the rows) takes the middle and the right and leaves the stack the left column */
+.plant-huds:has(.plant-side:not(:empty)) .plant-bottom { grid-column: 1 / 3; }
+.plant-huds:has(.plant-record[data-record-truth="on"]) .plant-side { grid-column: 2 / 4; }
+.plant-huds:has(.plant-record[data-record-truth="on"]) .plant-bottom { grid-column: 1; }
+.plant-huds:has(.plant-side:not(:empty)) .plant-hint { display: none; }
 .plant-hint { width: min(38rem, 100%); margin: 0; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px 12px; font-size: 0.85rem; }
 
 .plant-bar { width: min(44rem, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px 10px; }
@@ -43,9 +62,11 @@ main[data-screen="plant"] { max-width: none; padding-left: 0; padding-right: 0; 
 a.primary-link { display: inline-block; background: var(--accent); color: var(--bg); border: 1px solid var(--accent); border-radius: 6px; font-weight: 700; padding: 8px 24px; text-decoration: none; min-height: 36px; }
 a.primary-link:hover { text-decoration: underline; }
 
+@media (max-width: 899px) {
+  .plant-huds { grid-template-columns: minmax(0, 14rem) minmax(0, 1fr) minmax(0, 18rem); }
+}
 @media (max-width: 599px) {
-  .plant-hud-place { max-width: calc(100% - 24px); }
-  .plant-time-keys { display: none; }
+  .plant-hint { display: none; }
 }
 
 /* The controls of the clock of the run (plant_ui.md section 4.2): play and pause, the step between events, the four speeds and the scrubber with a tick at every day boundary. A pressed button
@@ -58,13 +79,15 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-scrub input[type="range"] { position: relative; width: 100%; margin: 0; }
 .plant-ticks { position: absolute; left: 8px; right: 8px; top: 0; bottom: 0; pointer-events: none; }
 .plant-tick { position: absolute; top: 8px; bottom: 8px; width: 1px; background: var(--muted); opacity: 0.6; }
-.plant-time-keys { flex: 1 0 100%; margin: 0; color: var(--muted); font-size: 0.8rem; }
+/* the keys of the clock are a line behind a summary (P8a): closed, the bottom stack is a line shorter, so the cards above it have the room */
+.plant-time-keys-wrap { flex: 1 0 100%; color: var(--muted); font-size: 0.8rem; }
+.plant-time-keys-wrap summary { cursor: pointer; }
+.plant-time-keys { margin: 0; color: var(--muted); font-size: 0.8rem; }
 .plant-log-switch { display: block; margin: 4px 0; font-size: 0.9rem; }
 
 /* The record halls (P5a, plant_ui.md section 3.3). The lens chip: one button for each hall, the pressed one is filled and is the hall the record panel reads. A hall sign in the scene carries the
    architecture id and, when the camera is near, the flags on; the lens hall wears a mark in front of its id and the other signs are dimmed. */
-.plant-hud-lens { top: 52px; right: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; max-width: min(26rem, calc(100% - 24px)); padding: 4px 8px; z-index: 1; }
-.plant-hud-place { z-index: 2; }
+.plant-hud-lens { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; max-width: 100%; padding: 4px 8px; }
 .plant-lens-label { color: var(--muted); font-size: 0.8rem; }
 .plant-hud-lens button { min-height: 28px; padding: 0 8px; font-size: 0.85rem; background: var(--bg); }
 .plant-hud-lens button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
@@ -75,8 +98,8 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-label-hall[data-near="1"] .plant-hall-flags:not(:empty) { display: block; white-space: normal; max-width: 22em; margin-top: 2px; font-weight: 400; font-size: 10px; }
 .plant-label-hall[data-near="1"]:has(.plant-hall-flags:not(:empty)) { border-radius: 8px; padding: 2px 8px; }
 
-/* The record panel: the rows of one card as the lineage screen draws a record, over the right side of the scene (a sheet over the foot of it at the narrow viewport). */
-.plant-record, .plant-panel { position: absolute; top: 150px; right: 12px; bottom: 12px; width: min(25rem, calc(100% - 24px)); overflow-y: auto; z-index: 3; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px 12px; }
+/* The record panel: the rows of one card as the lineage screen draws a record, in the right column under the chips (a sheet over the foot of the scene at the narrow viewport). */
+.plant-record, .plant-panel { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px 12px; }
 .plant-record:focus-visible, .plant-panel:focus-visible { outline: 3px solid var(--accent); }
 .plant-record-head { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
 .plant-record-head h2 { margin: 6px 0; font-size: 1.05rem; overflow-wrap: anywhere; }
@@ -85,14 +108,10 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-legend { color: var(--muted); font-size: 0.9rem; }
 .plant-cards { margin-top: 16px; }
 
-@media (max-width: 599px) {
-  .plant-record, .plant-panel { top: auto; left: 12px; right: 12px; width: auto; bottom: 12px; max-height: 58%; }
-  .plant-hud-lens { top: 52px; }
-}
 
 /* The truth overlay and the panels of the picked object (P5b, plant_ui.md sections 3.2 and 3.3). The switch sits under the lens chip; the sentence of the label is under it and on every element of the
    overlay. The label of a rail of placeholders is a dashed pill over the wall (a dashed outline is the shape of "no row"), and the panel of an object is the record panel sheet. */
-.plant-hud-truth { top: 92px; right: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; max-width: min(26rem, calc(100% - 24px)); padding: 4px 8px; z-index: 1; }
+.plant-hud-truth { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; max-width: 100%; padding: 4px 8px; }
 .plant-hud-truth button { min-height: 28px; padding: 0 10px; font-size: 0.85rem; background: var(--bg); }
 .plant-hud-truth button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
 .plant-overlay-label { display: block; color: var(--muted); font-size: 0.75rem; font-weight: 400; text-align: right; }
@@ -111,7 +130,6 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-panel-lens { margin: 0; font-size: 0.85rem; }
 .plant-visits, .plant-window-list { margin: 4px 0; padding-left: 1.2em; }
 .plant-tubes { margin-top: 16px; }
-.plant-record[data-record-truth="on"] { width: min(56rem, calc(100% - 24px)); }
 .plant-record-body[data-truth-layout="beside"] { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 4px 12px; align-items: start; }
 @media (max-width: 899px) {
   .plant-record-body[data-truth-layout="beside"] { grid-template-columns: minmax(0, 1fr); }
@@ -129,3 +147,27 @@ a.primary-link:hover { text-decoration: underline; }
 .plant-label-tube[data-near="1"] .plant-tube-stamp { display: block; font-weight: 400; font-size: 10px; }
 .plant-label-truth { border-style: dashed; border-radius: 8px; padding: 1px 8px; text-align: center; font-weight: 600; }
 .plant-label-truth .plant-overlay-label { text-align: center; font-family: inherit; }
+
+/* P8a, the phone (under 600 px): the HUD is one line (the clock and the state of the run) and a button; the place card, the list of actions, the chips and the hint are a sheet behind the button; a panel is a sheet
+   from the foot of the floor, above the bottom stack. The floor keeps most of the screen. The page's own header is one row of links that scrolls sideways inside itself, and the scene is as tall as the screen less that header, so the bottom bar is in view without scrolling. */
+@media (max-width: 599px) {
+  body:has(main[data-screen="plant"]) .top { gap: 4px 12px; padding-top: 6px; padding-bottom: 6px; }
+  body:has(main[data-screen="plant"]) .nav { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
+  .plant-wrap { height: max(460px, calc(100svh - 11.5rem)); }
+  .plant-time-keys-wrap { display: none; }
+  .plant-time { gap: 4px 8px; padding: 4px 8px; }
+  .plant-time button { min-width: 32px; padding: 2px 6px; }
+  .plant-time .plant-speeds { order: 3; flex: 1 0 100%; }
+  .plant-time .plant-scrub { flex: 1 1 7rem; min-width: 7rem; }
+  .plant-bar { padding: 4px 8px; }
+  .plant-huds { grid-template-columns: minmax(0, 1fr); }
+  .plant-compact { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; grid-column: 1; grid-row: 1; padding: 4px 10px; }
+  .plant-compact button { min-height: 32px; padding: 0 10px; background: var(--bg); }
+  .plant-compact button[aria-expanded="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+  .plant-sheet { display: flex; flex-direction: column; gap: 8px; grid-column: 1; grid-row: 2; align-self: start; max-height: 100%; overflow-y: auto; z-index: 4; pointer-events: none; }
+  .plant-sheet[data-sheet="closed"] { display: none; }
+  .plant-hud-left, .plant-hud-chips { grid-column: auto; grid-row: auto; justify-self: stretch; align-items: stretch; max-height: none; }
+  .plant-sheet-hint { display: block; margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px 10px; font-size: 0.85rem; max-width: none; }
+  .plant-side, .plant-huds:has(.plant-record[data-record-truth="on"]) .plant-side { grid-column: 1; grid-row: 2; align-self: end; max-height: 100%; z-index: 3; }
+  .plant-bottom, .plant-huds:has(.plant-side:not(:empty)) .plant-bottom, .plant-huds:has(.plant-record[data-record-truth="on"]) .plant-bottom { grid-column: 1; }
+}

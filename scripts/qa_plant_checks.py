@@ -12,7 +12,7 @@ from pathlib import Path
 from qa_checks import Result, first_line
 from qa_lab_browser import NUMBERS_JS, open_lab, wait_final
 from qa_lab_helpers import LAB_THEMES, LANGS, cross_origin, number_offenders, request_gzip_total, served_path
-from qa_plant_browser import LIST_JS, open_plant, wait_scene
+from qa_plant_browser import LIST_JS, hud_click, open_plant, wait_scene
 from qa_plant_helpers import (
     DEFAULT_OBJECTS, DEFAULT_SPEED, DEFAULT_START_S, FIRST_LOAD_LIMIT, LOADER_LIMIT, PLANT_LIMIT, PLANT_VIEWPORTS,
     counts_problems, hash_problems, size_problems, split_requests, three_in,
@@ -111,7 +111,7 @@ def matrix_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme
             # P5b: the panel of a reactor and the truth switch pressed are in the sweep of the numbers too (a figure of a panel is a label)
             page.click("[data-object-key='reactor:U10']")
             page.wait_for_selector("[data-plant-panel=reactor]", timeout=10_000)
-            page.click("[data-truth-switch]")
+            hud_click(page, "[data-truth-switch]")
             page.wait_for_function("() => !!document.querySelector('#plant').dataset.plantAbsences", timeout=30_000)
             page.wait_for_timeout(200)
             problems += [f"a number outside a data-ref, data-result or data-label with the panel open: '{o['text']}' in {o['where']}" for o in number_offenders(page.evaluate(NUMBERS_JS))]

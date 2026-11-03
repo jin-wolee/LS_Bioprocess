@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from "three";
-import { DEFAULT_VIEW, cameraAt, drag, followGoal, lifted, tilt, turn, zoom } from "../controls.ts";
+import { DEFAULT_VIEW, cameraAt, drag, followGoal, lifted, lookKey, tubeScale, zoom } from "../controls.ts";
 import type { View } from "../controls.ts";
 import { focusOf } from "../focus.ts";
 import type { Point } from "../layout.ts";
@@ -58,6 +58,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
   // a break-out case (P7c): the rack, the stations and the shelf, the links, the tape and the confirming tubes, and the overlay of the event; null for every other run
   const items = buildItems(host, layout, plan, scene, labels, initialLens, disposables);
   let drawn = Number.NaN; // the clock reading `motion` was last written for
+  let tubes = 1; // the size the tubes were last drawn at (tubeScale of the camera's distance, to a tenth)
   // the record halls: the cards on the shelves, the lens and the card a click meets (shelves.ts)
   const shelves = buildShelves(host, layout, plan, motion, labels, initialLens);
   // the truth overlay (P5b): the placeholders on the rails of the halls, built when the page hands over the Worker's answer
@@ -148,14 +149,11 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
         return true;
       }
       if (!down) return false;
-      // F follows a picked sample (the page handles the key); with none picked it tilts, as before
-      if (name === "f" && picked?.kind === "sample") return false;
-      if (["q", "e", "r", "f", "+", "=", "-", "_"].includes(name)) endFollow();
-      if (name === "q" || name === "e") view = turn(view, name === "e" ? 1 : -1);
-      else if (name === "r" || name === "f") view = tilt(view, name === "r" ? 1 : -1);
-      else if (name === "+" || name === "=") view = zoom(view, -120);
-      else if (name === "-" || name === "_") view = zoom(view, 120);
-      else return false;
+      // F is the page's (it follows a picked sample); the camera takes the keys of `lookKey`
+      const look = lookKey(name);
+      if (look === null) return false;
+      endFollow();
+      view = look(view);
       return true;
     },
   };
@@ -180,16 +178,19 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
 
-    // the clock of the run: wall seconds in, and the scene written again only when the reading changed
+    // the clock of the run: wall seconds in, and the scene written again only when the reading changed, or when the camera has moved far enough for the tubes to be drawn at another size
     playback.tick(dt);
     const t = playback.get().t;
-    if (t !== drawn) {
+    const grow = Math.round(tubeScale(view.dist) * 10) / 10;
+    if (t !== drawn || grow !== tubes) {
+      const moved = t !== drawn;
       drawn = t;
-      state = sceneAt(plan, t);
-      motion.update(state);
+      tubes = grow;
+      if (moved) state = sceneAt(plan, t);
+      motion.update(state, grow);
       boards.update(t);
-      const tubes = String(state.tubes.length);
-      if (host.dataset.plantTubes !== tubes) host.dataset.plantTubes = tubes;
+      const count = String(state.tubes.length);
+      if (host.dataset.plantTubes !== count) host.dataset.plantTubes = count;
       // the camera follows the tube it was told to: every reading of the clock while the run plays, and, under reduced motion, only when the paused clock is moved (a cut, section 9); while the tube is not on the floor the camera stays where it was
       const goal = followGoal(following === null ? undefined : state.tubes.find((x) => x.sample === following), reducedMotion, playback.get().playing);
       if (goal) lookAt = goal;

@@ -97,7 +97,7 @@ export function App({ worker }: { worker: Worker }) {
   const plant = usePlant({ worker, state, dispatch, route, known, take });
 
   // a screen opened from the plant: the plant it came from (useOrigin), and the first Lineage link asks for its sample
-  const origin = useOrigin(
+  const { origin, waiting } = useOrigin(
     known,
     route,
     state.results,
@@ -249,7 +249,7 @@ export function App({ worker }: { worker: Worker }) {
           ))}
         {route.screen === "results" && (ready ? <Results state={state} ready={ready} onCancel={cancel} /> : <T as="p" k="app.loading" />)}
         {route.screen === "lineage" &&
-          (ready && lineageNow ? <Lineage ready={ready} state={state} form={lineageNow} setForm={setLineageForm} onShow={showLineage} /> : <T as="p" k="app.loading" />)}
+          (ready && lineageNow ? <Lineage ready={ready} state={state} waiting={waiting} form={lineageNow} setForm={setLineageForm} onShow={showLineage} /> : <T as="p" k="app.loading" />)}
         {route.screen === "challenge" &&
           (ready && challengeNow ? (
             <Challenge ready={ready} state={state} form={challengeNow} setForm={setChallengeForm} actions={{ onStart: startChallenge, onOpen: openSample, onGuess: guess, onGiveUp: giveUp, onNew: () => dispatch({ type: "challenge_reset" }) }} />

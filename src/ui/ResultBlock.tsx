@@ -1,7 +1,9 @@
 import type { ComponentChildren } from "preact";
 import { ActionWords } from "../plant/ActionList.tsx";
+import { ClockReading } from "../plant/ActionRefs.tsx";
 import type { CheckState, ResultFooter, RunSummary } from "../protocol.ts";
 import { Ref } from "./Ref.tsx";
+import { instantOf } from "./results_view.ts";
 import { Label, T } from "./T.tsx";
 
 /** An output (invariant 3, lab_ui.md section 6): the label "Simulation result", then the scenario id, the seeds, the engine version, the architectures and the browser-check state it was
@@ -88,16 +90,25 @@ export function FooterInputs({ footer }: { footer: ResultFooter }) {
       <T as="h3" k="results.inputs.heading" id="inputs-printed-heading" />
       <T as="p" k="results.inputs.lead" />
       <ul class="inputs">
-        {footer.inputs.map((input) => (
-          <li key={input.name}>
-            <code class="input-name">
-              <Label>{input.name}</Label>
-            </code>
-            <Ref ids={[input.ref]}>
-              {input.value} {input.unit}
-            </Ref>
-          </li>
-        ))}
+        {footer.inputs.map((input) => {
+          const at = instantOf(input);
+          return (
+            <li key={input.name}>
+              <code class="input-name">
+                <Label>{input.name}</Label>
+              </code>
+              <Ref ids={[input.ref]}>
+                {at === null ? (
+                  <>
+                    {input.value} {input.unit}
+                  </>
+                ) : (
+                  <ClockReading t={at} />
+                )}
+              </Ref>
+            </li>
+          );
+        })}
       </ul>
       <dl class="facts">
         {list("results.inputs.bays", footer.bay_profiles)}

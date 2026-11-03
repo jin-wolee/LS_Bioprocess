@@ -4,6 +4,7 @@ import type { ResultFooter } from "../protocol.ts";
 import { ErrorBlock } from "./ErrorBlock.tsx";
 import { LineageColumns, LineageTruth } from "./LineageView.tsx";
 import { architecturesOf, editLineage, lineageRequest, seedOf } from "./lineage_form.ts";
+import { lineageShown } from "./one_seed_state.ts";
 import type { LineageForm } from "./lineage_form.ts";
 import { ResultBlock } from "./ResultBlock.tsx";
 import { displayedCheck } from "./state.ts";
@@ -14,7 +15,7 @@ import { Label, LangContext, T } from "./T.tsx";
 // sample: the one the pick rule of the single-sample trace chooses, or any sample of the run. The Worker answers with the view and the ids of the run's samples. A run that is an unrevealed
 // challenge is refused with `locked`, and the screen shows that as it shows any problem.
 
-export function Lineage({ ready, state, form, setForm, onShow }: { ready: ReadyInfo; state: State; form: LineageForm; setForm: (f: LineageForm) => void; onShow: (f: LineageForm) => void }) {
+export function Lineage({ ready, state, waiting, form, setForm, onShow }: { ready: ReadyInfo; state: State; /** A link from the plant has not asked for its sample yet (P8a). */ waiting: boolean; form: LineageForm; setForm: (f: LineageForm) => void; onShow: (f: LineageForm) => void }) {
   const lang = useContext(LangContext);
   const { lineage } = state;
   const update = (patch: Partial<LineageForm>) => setForm(editLineage(form, patch));
@@ -23,7 +24,7 @@ export function Lineage({ ready, state, form, setForm, onShow }: { ready: ReadyI
   const seed = seedOf(form.seed);
   const request = lineageRequest(form, 0);
   const toggle = (id: string, on: boolean) => update({ archs: on ? [...form.archs, id] : form.archs.filter((a) => a !== id) });
-  const answer = lineage.answer;
+  const { answer, running } = lineageShown(lineage, waiting);
   const footer: ResultFooter | null =
     answer && lineage.asked
       ? { kind: "simulation_result", scenario: lineage.asked.scenario, seeds: [lineage.asked.seed], engine_version: ready.engine_version, architectures: lineage.asked.architectures, inputs: [], check: state.check.state }
@@ -104,19 +105,19 @@ export function Lineage({ ready, state, form, setForm, onShow }: { ready: ReadyI
         </section>
 
         <p>
-          <button id="lineage-show" type="button" class="primary" disabled={request === null || lineage.running !== null} onClick={() => onShow(form)}>
+          <button id="lineage-show" type="button" class="primary" disabled={request === null || running} onClick={() => onShow(form)}>
             <T k="lineage.show" />
           </button>
         </p>
       </section>
 
-      {lineage.running !== null && (
+      {running && (
         <div class="run-status" role="status" id="lineage-status">
           <T as="p" k="lineage.running" class="run-word" />
         </div>
       )}
       {lineage.problem && <ErrorBlock problem={lineage.problem} />}
-      {!answer && !lineage.running && !lineage.problem && <T as="p" k="lineage.empty" />}
+      {!answer && !running && !lineage.problem && <T as="p" k="lineage.empty" />}
       {answer && footer && (
         <ResultBlock footer={footer} check={displayedCheck(footer.check, state.check.state)}>
           <div id="lineage-view" data-lineage-view data-sample={answer.view.sample.sample_id}>

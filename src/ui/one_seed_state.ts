@@ -103,6 +103,12 @@ export const reduceBreakout = (state: BreakoutState, action: Response | OneSeedA
   }
 };
 
+/**
+ * What the Lineage screen draws (P8a): the view and whether it is waiting. A link from the plant that has not asked for its sample yet (`waiting`: the effect that asks runs after the first frame) shows
+ * the waiting state and not the view of an earlier visit, which the request that follows would clear one frame too late.
+ */
+export const lineageShown = (state: LineageState, waiting: boolean): { answer: LineageState["answer"]; running: boolean } => ({ answer: waiting ? null : state.answer, running: waiting || state.running !== null });
+
 export const reduceLineage = (state: LineageState, action: Response | OneSeedAction): LineageState => {
   switch (action.type) {
     case "lineage_started":

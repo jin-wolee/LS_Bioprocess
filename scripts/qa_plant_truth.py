@@ -12,16 +12,18 @@ from pathlib import Path
 
 from qa_checks import Result, first_line
 from qa_lab_browser import go, set_lang, start_challenge
-from qa_plant_browser import RECORD_PLANT_JS, open_plant, pause, plant_messages, seek, settle, settle_camera, state, wait_scene
+from qa_plant_browser import RECORD_PLANT_JS, fold_place_card, hud_click, open_plant, pause, plant_messages, seek, settle, settle_camera, state, wait_scene
 from qa_plant_helpers import DEFAULT_HALLS, PLANT_VIEWPORTS, plan_from_messages
 from qa_plant_truth_helpers import absences_expected, label_problems, truth_leaks
 
 # The sentence every element of the overlay carries, in the two languages (typed from the dictionaries) and the sentence the switch says when a challenge is open.
 LABEL = {"en": "Simulation's own view, not available to any record", "ko": "시뮬레이션 자체의 시점이며 어떤 기록에도 없는 정보"}
+# The short label every marker in the scene carries (the whole sentence is said once, by the switch)
+SHORT = {"en": "Simulation's view", "ko": "시뮬레이션의 시점"}
 LOCKED = {"en": "A challenge is open on this run", "ko": "챌린지가 열려 있으므로"}
 # The placeholders on the rails at the end of the default run: A holds no card for the three samples a label error keyed to another sample (U06-D09-1, U13-D03-2, U18-D03-1), B and C hold every card.
 ABSENCES_END = {"a_manual": 3, "b_lims_lite": 0, "c_context": 0}
-ELEMENTS_JS = "() => [...document.querySelectorAll('[data-overlay]')].map((e) => ({text: e.textContent || '', hall: e.dataset.overlayHall || null}))"
+ELEMENTS_JS = "() => [...document.querySelectorAll('[data-overlay]')].map((e) => ({text: e.textContent || '', hall: e.dataset.overlayHall || null, marker: !!e.closest('.plant-labels')}))"
 VERDICTS_JS = """() => [...document.querySelectorAll('[data-plant-record] [data-question][data-verdict]')].map((e) => [e.dataset.question, e.dataset.verdict])"""
 
 
@@ -105,7 +107,7 @@ def switched_on(page, messages_of, problems: list[str]) -> dict:
         if lang == "en":
             record_beside_truth(page, messages_of, lang, problems)
         page.wait_for_timeout(300)
-        problems += [f"{lang}: {p}" for p in label_problems(page.evaluate(ELEMENTS_JS), LABEL[lang])]
+        problems += [f"{lang}: {p}" for p in label_problems(page.evaluate(ELEMENTS_JS), LABEL[lang], SHORT[lang])]
     page.keyboard.press("Escape")
     page.click("[data-truth-switch]")
     page.wait_for_function("() => document.querySelector('#plant').dataset.plantTruth === 'off' && !document.querySelector('#plant').dataset.plantAbsences", timeout=10_000)
@@ -145,12 +147,11 @@ def shot_cell(browser, url, out: Path, vp: str, lang: str, problems: list[str]) 
         pause(page)
         seek(page, plan_from_messages(plant_messages(page), 1)["horizon_s"])
         settle(page)
-        page.click("[data-truth-switch]")
+        hud_click(page, "[data-truth-switch]")
         page.wait_for_function("() => !!document.querySelector('#plant').dataset.plantAbsences", timeout=30_000)
         name = f"{PLANT_VIEWPORTS[vp][0]}x{PLANT_VIEWPORTS[vp][1]}_{lang}"
         page.add_style_tag(content=".plant-bottom{display:none}")
-        if page.get_attribute("[data-plant-hud=place]", "open") is not None:
-            page.click("[data-plant-hud=place] summary")
+        fold_place_card(page)
         page.click("[data-object-key='hall:a_manual']")
         page.evaluate("document.querySelector('.plant-wrap').scrollIntoView({block: 'start'})")
         page.wait_for_timeout(2500)

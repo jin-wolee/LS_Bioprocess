@@ -2,10 +2,9 @@ import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { text } from "../i18n/index.ts";
 import type { CheckState, ScenePlan } from "../protocol.ts";
 import { LangContext, T } from "../ui/T.tsx";
-import { ActionList } from "./ActionList.tsx";
 import { BottomBar } from "./BottomBar.tsx";
 import type { BarProps } from "./BottomBar.tsx";
-import { Hint, Hud, TruthControl } from "./Hud.tsx";
+import { Hint, Hud } from "./Hud.tsx";
 import { CardList } from "./CardList.tsx";
 import { ObjectsList } from "./ObjectsList.tsx";
 import { Panels } from "./Panels.tsx";
@@ -186,7 +185,7 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
   const state = !webgl ? "text" : scene.kind;
   const intro = (
     <>
-      <Intro webgl={webgl} planned={plan !== null} breakout={isCase(spec)} problem={plant.problem} scene={scene} state={state} renderer={renderer} />
+      <Intro webgl={webgl} planned={plan !== null} breakout={isCase(spec)} scenario={scenarioOf(spec)} problem={plant.problem} scene={scene} state={state} renderer={renderer} />
       <LinkNotes notes={link?.notes ?? []} fallbackSeed={link?.spec.seed ?? DEFAULT_PLANT.seed} outside={wanted.fault} horizon={plan?.horizon_s ?? null} engine={{ made: link?.engine ?? null, current: engine }} />
     </>
   );
@@ -223,36 +222,40 @@ export function PlantRoute({ plant, check, link, engine, architectures, flags, o
               <T k="plant.boot" />
             </p>
           )}
-          {full && playback && <Hud plan={full} playback={playback} scenario={scenarioOf(spec)} check={check} lens={lens} onLens={chooseLens} />}
-          {full && playback && <TruthControl truth={{ on: plant.truth.on, locked }} onTruth={onTruth} />}
-          {full && playback && <ActionList spec={spec} playback={playback} busy={busy} onAct={onAct} />}
-          {plant.record && <RecordPanel record={plant.record} drill={drill} onClose={onCardClose} truth={plant.truth} />}
-          {full && playback && picked && (
-            <Panels
-              plan={full}
-              playback={playback}
-              pick={picked}
-              drill={drill}
-              lens={lens}
-              fields={plant.fields}
-              following={following !== null}
-              onClose={() => choose(null)}
-              onPick={pickAndLook}
-              onFollow={() => setFollowing((now) => (now === null && picked.kind === "sample" ? picked.index : null))}
-              onOpenRecord={(architecture, sample_id) => {
-                choose(null);
-                onCard(architecture, sample_id);
-              }}
-              onFields={onFields}
-              onFieldsClose={onFieldsClose}
-            />
-          )}
-          <div class="plant-bottom">
-            <Hint />
-            {plan && playback && <TimeBar plan={plan} playback={playback} {...(times && { times })} />}
+          <div class="plant-huds">
             {full && playback && (
-              <BottomBar plan={full} playback={playback} spec={spec} flags={flags} picked={picked} busy={busy} refusal={plant.act.refusal} ask={ask} onAct={onAct} onRefusalClose={onRefusalClose} />
+              <Hud plan={full} playback={playback} scenario={scenarioOf(spec)} check={check} lens={lens} onLens={chooseLens} truth={{ on: plant.truth.on, locked }} onTruth={onTruth} spec={spec} busy={busy} onAct={onAct} />
             )}
+            <div class="plant-side">
+              {plant.record && <RecordPanel record={plant.record} drill={drill} onClose={onCardClose} truth={plant.truth} />}
+              {full && playback && picked && (
+                <Panels
+                  plan={full}
+                  playback={playback}
+                  pick={picked}
+                  drill={drill}
+                  lens={lens}
+                  fields={plant.fields}
+                  following={following !== null}
+                  onClose={() => choose(null)}
+                  onPick={pickAndLook}
+                  onFollow={() => setFollowing((now) => (now === null && picked.kind === "sample" ? picked.index : null))}
+                  onOpenRecord={(architecture, sample_id) => {
+                    choose(null);
+                    onCard(architecture, sample_id);
+                  }}
+                  onFields={onFields}
+                  onFieldsClose={onFieldsClose}
+                />
+              )}
+            </div>
+            <div class="plant-bottom">
+              <Hint />
+              {plan && playback && <TimeBar plan={plan} playback={playback} {...(times && { times })} />}
+              {full && playback && (
+                <BottomBar plan={full} playback={playback} spec={spec} flags={flags} picked={picked} busy={busy} refusal={plant.act.refusal} ask={ask} onAct={onAct} onRefusalClose={onRefusalClose} />
+              )}
+            </div>
           </div>
         </div>
       )}

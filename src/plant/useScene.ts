@@ -120,12 +120,12 @@ export function useScene({ host, webgl, plan, layout, playback, halls, lens, pic
   }, [following, scene.kind]);
   useEffect(() => {
     if (scene.kind !== "ready") return;
-    mounted.current?.setOverlay(absences ? { halls: absences.halls, captions: { label: text(lang, "plant.truth.label"), absence: template(lang, "plant.truth.absence") } } : null);
+    mounted.current?.setOverlay(absences ? { halls: absences.halls, captions: { label: text(lang, "plant.truth.label.short"), absence: template(lang, "plant.truth.absence") } } : null);
   }, [absences, lang, scene.kind]);
   // a break-out case (P7c): what the simulation knows of the event, and the words the stamps on the shelf are read in
   useEffect(() => {
     if (scene.kind !== "ready") return;
-    const captions = { label: text(lang, "plant.truth.label"), origin: template(lang, "plant.truth.origin"), reached: template(lang, "plant.truth.reached"), clock: template(lang, "plant.clock.reading") };
+    const captions = { label: text(lang, "plant.truth.label.short"), origin: template(lang, "plant.truth.origin"), reached: template(lang, "plant.truth.reached"), clock: template(lang, "plant.clock.reading") };
     mounted.current?.setBreakout(breakout ? { answer: breakout, captions } : null);
   }, [breakout, lang, scene.kind]);
   useEffect(() => {

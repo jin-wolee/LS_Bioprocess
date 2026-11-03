@@ -80,10 +80,11 @@ void main() {
       vec2 d = abs(p - vec2(0.0, h - ${f(SHELF.gap)} * h - 0.5 * s - float(k) * (s + ${f(SHELF.gap)} * h)));
       if (d.x <= 0.5 * side && d.y <= 0.5 * side) {
         if (((stored >> k) & 1) == 1) col = SOLID;
-        else if (d.x > 0.5 * side - 0.16 * side || d.y > 0.5 * side - 0.16 * side) {
-          // not stored: a hollow square drawn with a dashed line (the position along the edge it is on picks a dash or a gap)
+        else if (d.x > 0.5 * side - 0.26 * side || d.y > 0.5 * side - 0.26 * side) {
+          // not stored: a hollow square drawn with a dashed line (the position along the edge it is on picks a dash or a gap); P8a: a thicker line with longer dashes, so that at the distance of a close
+          // look the paper of its middle shows and the square does not read as a solid one
           float along = d.x > d.y ? p.x : p.y;
-          if (fract(along / (0.28 * side) + 0.5) < 0.55) col = DASH;
+          if (fract(along / (0.5 * side) + 0.5) < 0.65) col = DASH;
         }
       }
     }

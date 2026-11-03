@@ -20,17 +20,17 @@ const halls = [
 ];
 
 describe("the metres of a tag", () => {
-  it("Given a hall 5 m wide and 2.4 m tall at (10, 3) with three tags Then the pitch is 0.18 m, a tag is 0.14 m wide and 0.25 m tall on the wall's upper edge, in the plane of the cards", () => {
-    // pitch min(0.18, (5 - 2 * 0.2) / 3) = 0.18; width min(0.14, 0.8 * 0.18 = 0.144) = 0.14; z = 3 + 1.2 - 0.12 = 4.08; foot = 2.4 + 0.05
+  it("Given a hall 5 m wide and 2.4 m tall at (10, 3) with three tags Then the pitch is 0.38 m, a tag is 0.3 m wide and 0.5 m tall on the wall's upper edge, in the plane of the cards", () => {
+    // pitch min(0.38, (5 - 2 * 0.2) / 3 = 1.53) = 0.38; width min(0.3, 0.8 * 0.38 = 0.304) = 0.3; z = 3 + 1.2 - 0.12 = 4.08; foot = 2.4 + 0.05; x = 10.2 + (k + 0.5) * 0.38
     const b = [0, 1, 2].map((k) => tagBox(hall, 3, k));
-    expect(b.map((x) => x.x)).toEqual([10.29, 10.47, 10.65].map((x) => expect.closeTo(x, 9)));
+    expect(b.map((x) => x.x)).toEqual([10.39, 10.77, 11.15].map((x) => expect.closeTo(x, 9)));
     for (const x of b) {
-      expect(x.w).toBeCloseTo(0.14, 9);
+      expect(x.w).toBeCloseTo(0.3, 9);
       expect(x.h).toBe(RAIL.height);
       expect(x.y).toBeCloseTo(2.45, 9);
       expect(x.z).toBeCloseTo(4.08, 9);
     }
-    expect(RAIL.height).toBe(0.25);
+    expect(RAIL.height).toBe(0.5);
   });
 
   it("Given a hundred tags Then they shrink to fit the 4.6 m between the margins: a pitch of 0.046 m and a width of 0.8 of it", () => {
@@ -42,8 +42,8 @@ describe("the metres of a tag", () => {
     expect(last.x + last.w / 2).toBeLessThan(hall.x + hall.w - RAIL.margin);
   });
 
-  it("Given one tag Then it stands 0.09 m from the margin (half a pitch of 0.18 m)", () => {
-    expect(tagBox(hall, 1, 0).x).toBeCloseTo(10.29, 9);
+  it("Given one tag Then it stands 0.19 m from the margin (half a pitch of 0.38 m)", () => {
+    expect(tagBox(hall, 1, 0).x).toBeCloseTo(10.39, 9);
   });
 });
 

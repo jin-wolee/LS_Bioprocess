@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LinkNotes } from "./LinkNotes.tsx";
 import { OriginBar } from "./OriginBar.tsx";
+import { waitsForSample } from "../ui/useOrigin.ts";
 
 // The bar of a screen opened from the plant and the notes on the plant link, as elements (no DOM; docs/design/plant_ui.md section 7, "As built in P5c"). A function component that uses no hook can be
 // called and its output walked.
@@ -67,5 +68,26 @@ describe("the notes on the plant link", () => {
 
   it("Given an instant outside the run before the plan has arrived Then nothing is said about it yet", () => {
     expect(notes({ outside: "10000000", horizon: null })).toEqual([]);
+  });
+});
+
+describe("a Lineage link from the plant that has not asked for its sample yet (P8a)", () => {
+  const KNOWN = { scenarios: ["default"], architectures: ["a_manual", "b_lims_lite", "c_context"] };
+  const plant = "scenario=default&arch=a_manual,c_context&seed=1&t=305626&schema=1&engine=9.9.9";
+  const query = `from=plant&sample=U03-D03-1&plant=${encodeURIComponent(plant)}`;
+
+  it("Given a link that names a sample and was not handled Then the screen waits for it", () => {
+    expect(waitsForSample(query, null, KNOWN)).toBe(true);
+    expect(waitsForSample(query, "from=plant&sample=U01-D01-1", KNOWN)).toBe(true);
+  });
+
+  it("Given the link was handled, has no sample, did not come from the plant, or names a case Then there is nothing to wait for", () => {
+    expect(waitsForSample(query, query, KNOWN)).toBe(false);
+    expect(waitsForSample(`from=plant&plant=${encodeURIComponent(plant)}`, null, KNOWN)).toBe(false);
+    expect(waitsForSample("", null, KNOWN)).toBe(false);
+    expect(waitsForSample("sample=U03-D03-1", null, KNOWN)).toBe(false);
+    expect(waitsForSample(query, null, null)).toBe(false);
+    const caseQuery = `from=plant&sample=U01-D01-1&plant=${encodeURIComponent("case=sc12_medium_lot&arch=a_manual&seed=9013&schema=1&engine=9.9.9")}`;
+    expect(waitsForSample(caseQuery, null, { ...KNOWN, breakout: { cases: ["sc12_medium_lot"], seed: 9013, architectures: ["a_manual"] } })).toBe(false);
   });
 });

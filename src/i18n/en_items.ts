@@ -28,6 +28,8 @@ export const enItems = {
   "plant.panel.test.pending": "{test}: no result yet",
   "plant.confirm.detected": "detected",
   "plant.confirm.not_detected": "not detected",
+  "plant.confirm.detected.to": "detected",
+  "plant.confirm.not_detected.to": "not detected",
   "plant.panel.signals": "Signals, deviations and stops",
   "plant.panel.signals.none": "Nothing has been signalled on this reactor.",
   "plant.panel.signal": "Signal {item}, {clock}",

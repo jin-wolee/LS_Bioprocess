@@ -26,7 +26,7 @@ const lineOf = (item: LogItem): ComponentChildren => {
     ...(item.key === "finished" && { outcome: <T k={`plant.log.outcome.${outcomeOf(item.outcome)}`} /> }),
     // a break-out case (P7c): the lot or the item, and what the lab reported for a test
     ...(item.item !== undefined && { item: <Label>{item.item}</Label> }),
-    ...(item.key === "confirmed" && { test: <Label>{item.test ?? ""}</Label>, outcome: <T k={item.outcome === "detected" ? "plant.confirm.detected" : "plant.confirm.not_detected"} /> }),
+    ...(item.key === "confirmed" && { test: <Label>{item.test ?? ""}</Label>, outcome: <T k={item.outcome === "detected" ? "plant.confirm.detected.to" : "plant.confirm.not_detected.to"} /> }),
   };
   // a draw with no operator in the log (it cannot happen for a drawn tube) reads as an unnamed one
   if (item.key === "drawn" && item.operator === undefined) parts.operator = <T k="plant.batch.none" />;

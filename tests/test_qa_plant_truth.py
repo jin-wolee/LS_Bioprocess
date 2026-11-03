@@ -59,12 +59,25 @@ def test_the_placeholders_at_an_instant_are_the_drawn_samples_with_no_card_in_th
     assert qp.absences_expected(plan, 0) == {"a": 0, "b": 0}
 
 
-def test_the_overlay_elements_must_each_carry_the_label():
+def test_the_overlay_elements_must_each_say_that_they_are_the_simulations_view():
     label = "Simulation's own view, not available to any record"
-    assert qp.label_problems([{"text": f"a holds none of 3 samples\n{label}"}, {"text": label}], label) == []
-    out = qp.label_problems([{"text": label}, {"text": "a holds none of 3 samples"}], label)
-    assert len(out) == 1 and "2nd" in out[0]
-    assert qp.label_problems([], label) == ["no element of the overlay is marked data-overlay"]
+    short = "Simulation's view"
+    # the switch says the whole sentence; each marker in the scene says the short label (P8a)
+    assert qp.label_problems([{"text": label}, {"text": f"a holds none of 3 samples\n{short}", "marker": True}], label, short) == []
+    out = qp.label_problems([{"text": label}, {"text": "a holds none of 3 samples", "marker": True}], label, short)
+    assert len(out) == 1 and "2nd" in out[0] and "short label" in out[0]
+    out = qp.label_problems([{"text": label}, {"text": "a holds none of 3 samples"}], label, short)
+    assert len(out) == 1 and "2nd" in out[0] and "lacks the label" in out[0]
+    assert qp.label_problems([], label, short) == ["no element of the overlay is marked data-overlay"]
+
+
+def test_a_marker_that_repeats_the_whole_sentence_is_one_caption_too_many_and_the_page_must_say_it_once():
+    label = "Simulation's own view, not available to any record"
+    short = "Simulation's view"
+    out = qp.label_problems([{"text": label}, {"text": f"Origin ML-3\n{label}\n{short}", "marker": True}], label, short)
+    assert len(out) == 1 and "repeats the whole sentence" in out[0]
+    out = qp.label_problems([{"text": f"a holds none\n{short}", "marker": True}], label, short)
+    assert out == ["no element of the page says the whole sentence of the label"]
 
 
 def test_the_numbers_of_a_panel_are_counts_of_the_rows_of_the_plan_up_to_the_instant():

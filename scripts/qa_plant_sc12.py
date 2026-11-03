@@ -25,7 +25,7 @@ from qa_plant_sc12_helpers import (
     ARCHS, CASES, LABEL, ask_problems, breakout_problems, case_href, event_problems, hash_problems, hashes_of_messages, instants_of, items_problems, objects_problems, reference_entry, sent_picks,
 )
 from qa_plant_sc12_panels import crate_and_drill, with_an_action
-from qa_plant_truth import ELEMENTS_JS
+from qa_plant_truth import ELEMENTS_JS, SHORT
 from qa_plant_truth_helpers import label_problems, truth_leaks
 
 INIT = RECORD_PLANT_JS + FRAMES_JS
@@ -68,7 +68,7 @@ def overlay(page, plan, case: str, problems: list[str], lang: str, first: bool) 
         seek(page, t)
         settle(page, 4)
         problems += [f"{tag}: {p}" for p in breakout_problems(page.get_attribute("#plant", "data-plant-breakout"), plan, view, int(state(page)["t"]))]
-    problems += [f"{tag}: {p}" for p in label_problems(page.evaluate(ELEMENTS_JS), LABEL[lang])]
+    problems += [f"{tag}: {p}" for p in label_problems(page.evaluate(ELEMENTS_JS), LABEL[lang], SHORT[lang])]
     page.click("[data-truth-switch]")
     page.wait_for_function("() => document.querySelector('#plant').dataset.plantBreakout === undefined", timeout=10_000)
     if page.evaluate(ELEMENTS_JS) and len(page.evaluate(ELEMENTS_JS)) != 1:

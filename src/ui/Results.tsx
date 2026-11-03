@@ -90,6 +90,15 @@ export function Architecture({ block, blocks, ready }: { block: Block; blocks: B
   );
 }
 
+/** What lo and hi of every range are, in the language of the page (P8a: the engine's own text is English data and is not printed). */
+export function Interval() {
+  return (
+    <p class="interval">
+      <T k="results.interval.label" />: <T k="results.interval.text" />
+    </p>
+  );
+}
+
 export function Report({ state, ready }: { state: State; ready: ReadyInfo }) {
   const result = state.results;
   if (!result?.report) return null;
@@ -106,9 +115,7 @@ export function Report({ state, ready }: { state: State; ready: ReadyInfo }) {
           parts={{ min: <Ref ids={[minimum?.ref ?? "A103"]}>{minimum ? `${minimum.value} ${minimum.unit}` : report.min_seeds}</Ref> }}
         />
       )}
-      <p class="interval">
-        <T k="results.interval.label" />: <Label engine>{report.interval}</Label>
-      </p>
+      <Interval />
       <FooterInputs footer={footer} />
       {report.architectures.map((block) => (
         <Architecture key={block.id} block={block} blocks={report.architectures} ready={ready} />

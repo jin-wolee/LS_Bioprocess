@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ScenePlan } from "../protocol.ts";
-import { DEFAULT_VIEW, LIMITS, cameraAt, drag, followGoal, heading, keyDirection, lifted, tilt, turn, zoom } from "./controls.ts";
+import { DEFAULT_VIEW, LIMITS, cameraAt, drag, followGoal, heading, keyDirection, lifted, lookKey, tilt, turn, zoom } from "./controls.ts";
 import { layoutOf } from "./layout.ts";
 
 // docs/design/plant_ui.md section 3.4: drag to look, wheel to zoom, the keys of the table, a camera limited in zoom (4 to 40 m) and pitch that never goes below the floor or inside a vessel.
@@ -42,6 +42,22 @@ describe("the view", () => {
     expect(turn(view, -1).yaw).toBeLessThan(0);
     expect(tilt(view, 1).pitch).toBeGreaterThan(0.5);
     expect(tilt({ ...view, pitch: LIMITS.pitch[1] }, 1).pitch).toBe(LIMITS.pitch[1]);
+  });
+});
+
+describe("the keys of the look (P8a: one key, one meaning)", () => {
+  it("Given R and T Then R tilts the camera up by a step and T tilts it down; Q and E turn; plus and minus zoom", () => {
+    expect(lookKey("r")?.(view).pitch).toBeCloseTo(0.5 + 0.12, 9);
+    expect(lookKey("t")?.(view).pitch).toBeCloseTo(0.5 - 0.12, 9);
+    expect(lookKey("q")?.(view).yaw).toBeCloseTo(-0.12, 9);
+    expect(lookKey("e")?.(view).yaw).toBeCloseTo(0.12, 9);
+    expect(lookKey("+")?.(view).dist).toBeLessThan(12);
+    expect(lookKey("-")?.(view).dist).toBeGreaterThan(12);
+  });
+
+  it("Given F Then the camera's look has no use for it: F follows a picked sample and nothing else (it tilted the camera down until P8a)", () => {
+    expect(lookKey("f")).toBeNull();
+    expect(lookKey("F")).toBeNull();
   });
 });
 

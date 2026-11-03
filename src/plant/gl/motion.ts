@@ -27,7 +27,8 @@ export interface Lights {
 
 export interface Motion {
   group: Group;
-  update(state: SceneState): void;
+  /** `tubeScale`: how much bigger than life the tubes are drawn (the camera's distance, P8a). */
+  update(state: SceneState, tubeScale?: number): void;
   /** The cards on the shelves (`hallsAt`), with the hall the lens reads; the other halls are dimmed. */
   halls(views: readonly HallView[], lens: string): void;
 }
@@ -51,10 +52,10 @@ export const buildMotion = (layout: Layout, plan: ScenePlan, built: Built, light
   return {
     group,
     halls: cards.draw,
-    update(state) {
+    update(state, tubeScale = 1) {
       vessels(state);
       analyzers(state);
-      tubes(state);
+      tubes(state, tubeScale);
       labels.follow(staff(state));
       const d = state.daylight;
       lights.hemi.intensity = mix(HEMI.dim, HEMI.lit, d);

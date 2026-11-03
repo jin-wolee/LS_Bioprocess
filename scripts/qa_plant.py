@@ -10,8 +10,9 @@ This file is the CLI, the build and the report; the checks are in qa_plant_check
 qa_plant_helpers.py, the browser plumbing in qa_plant_browser.py, the checks of the record halls (halls, record, hall shots) in qa_plant_halls.py, and the checks of the truth overlay and of the panels in qa_plant_truth.py and qa_plant_panels.py (their pure helpers in qa_plant_truth_helpers.py). `bash scripts/check_all.sh --plant` appends this run; the Stop hook does not run it.
 
 Checks: plant_load, plant_frames, plant_clock, plant_shots, plant_halls, plant_record, plant_hall_shots, plant_truth, drilldown (P5c, in qa_plant_drill.py), plant_panels, plant_action (P6a, in qa_plant_action.py with the
-flows of qa_plant_act.py), plant_equal and plant_prefix (P6a, in qa_plant_equal.py), sc12 (P7c, in qa_plant_sc12.py: the five break-out cases, and the public build's refusal in qa_plant_sc12_public.py), size, matrix, plant_fallback. `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
-engine/tests/support/plant_reference_cli.ts under the engine's Node flags into --out (the screenshots of the actions go to act/). The later batches add plant_a11y (plant_ui.md section 10).
+flows of qa_plant_act.py), plant_equal and plant_prefix (P6a, in qa_plant_equal.py), sc12 (P7c, in qa_plant_sc12.py: the five break-out cases, and the public build's refusal in qa_plant_sc12_public.py), size, matrix, plant_fallback, plant_a11y (P8a, in qa_plant_a11y.py: the keyboard, reduced motion, the
+hum, the room the chrome leaves, the phone, contrast and WebGL off). `plant_equal` compares the page with `plant_reference.json`, which this script makes first by running
+engine/tests/support/plant_reference_cli.ts under the engine's Node flags into --out (the screenshots of the actions go to act/).
 
 `plant_sweep` (P6c, in qa_plant_sweep.py) opens the plant under settings other than the default run's, each spec of tests/fixtures/plant/sweep/specs.json in a page of its own. The regular run holds the two
 specs marked `gate` (report in sweep_gate/); `--sweep` runs the whole list instead of the regular checks, by hand before a release and after a batch that changes the plan, the layout or the scene (report in
@@ -29,6 +30,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 from qa_checks import Result
 from qa_infographic import guarded, serve
+from qa_plant_a11y import check_plant_a11y
 from qa_plant_action import check_plant_action
 from qa_plant_checks import check_matrix, check_plant_fallback, check_plant_load, check_size
 from qa_plant_drill import check_drilldown
@@ -110,7 +112,8 @@ def main(argv=None) -> int:
                        guarded("sc12", lambda: check_sc12(browser, url, args.out, reference, public_problems(browser))),
                        guarded("size", lambda: check_size(browser, url, args.root)),
                        guarded("matrix", lambda: check_matrix(browser, url, args.out)),
-                       guarded("plant_fallback", lambda: check_plant_fallback(pw, url, args.out))]
+                       guarded("plant_fallback", lambda: check_plant_fallback(pw, url, args.out)),
+                       guarded("plant_a11y", lambda: check_plant_a11y(pw, browser, url, args.out))]
         finally:
             browser.close()
     print(report(results, args.out))

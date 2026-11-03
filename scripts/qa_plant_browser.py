@@ -118,6 +118,25 @@ def state(page) -> dict:
     return page.evaluate(STATE_JS)
 
 
+def hud_click(page, selector: str) -> None:
+    """Click a control of the HUD. On a phone (P8a) the lens, the truth switch and the sound toggle are in the sheet behind the button of the one-line HUD: the sheet is opened for the click and closed again, as
+    a reader does it; where the control is on the screen already, it is clicked."""
+    toggle = page.query_selector("[data-sheet-toggle]")
+    behind = toggle is not None and toggle.is_visible() and not page.is_visible(selector)
+    if behind:
+        page.click("[data-sheet-toggle]")
+        page.wait_for_selector(selector, state="visible", timeout=5_000)
+    page.click(selector)
+    if behind:
+        page.click("[data-sheet-toggle]")
+
+
+def fold_place_card(page) -> None:
+    """Fold the place card of the HUD so that the scene is the picture; on a phone it is in the closed sheet and out of the picture already."""
+    if page.is_visible("[data-plant-hud=place]") and page.get_attribute("[data-plant-hud=place]", "open") is not None:
+        page.click("[data-plant-hud=place] summary")
+
+
 def pause(page) -> None:
     """Pause the clock with its own control (the key Space does the same) and wait until the attribute says so."""
     if page.get_attribute("#plant", "data-plant-playing") == "true":

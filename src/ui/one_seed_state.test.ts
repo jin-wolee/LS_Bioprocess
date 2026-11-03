@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LineageView, RecordView, Response, Reveal } from "../protocol.ts";
+import { lineageShown } from "./one_seed_state.ts";
 import { initial, reduce } from "./state.ts";
 import type { State } from "./state.ts";
 
@@ -124,5 +125,19 @@ describe("breakout (S3g)", () => {
   it("Given a message for the other screens Then the break-out state does not move", () => {
     const s = apply(initial, { type: "breakout_started", id: 3, asked }, { type: "lineage", id: 9, view, sample_ids: [], key: "k" });
     expect(s.breakout.running).toBe(3);
+  });
+});
+
+describe("the Lineage screen opened from the plant (P8a)", () => {
+  const earlier = { view, sample_ids: ["S1"], key: "k" };
+  const shown = { running: null, asked: null, answer: earlier, problem: null };
+
+  it("Given the link has not asked for its sample yet Then the screen shows the waiting state and not the view of an earlier visit", () => {
+    expect(lineageShown(shown, true)).toEqual({ answer: null, running: true });
+  });
+
+  it("Given the link has asked Then the screen is the state's own: the view of an answer, the running word while it is in flight", () => {
+    expect(lineageShown(shown, false)).toEqual({ answer: earlier, running: false });
+    expect(lineageShown({ ...shown, answer: null, running: 8 }, false)).toEqual({ answer: null, running: true });
   });
 });

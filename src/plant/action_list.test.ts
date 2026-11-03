@@ -94,10 +94,10 @@ describe("an action in words", () => {
     });
     expect(wordsOf(flag)).toEqual({
       key: "plant.act.words.set_flag",
-      slots: { at: { instant: 100 }, flag: { label: "audit_trail" }, architecture: { label: "c_context" }, state: { word: "plant.act.state.off" } },
+      slots: { at: { instant: 100 }, flag: { label: "audit_trail" }, architecture: { label: "c_context" }, state: { word: "plant.act.state.off.to" } },
     });
-    expect(wordsOf({ kind: "set_flag", at: 100, architecture: "b_lims_lite", flag: "available_at", on: true }).slots.state).toEqual({ word: "plant.act.state.on" });
-    expect(wordsOf({ kind: "set_capture_path", at: 60, path: "adapter_ingest" })).toEqual({ key: "plant.act.words.set_capture_path", slots: { at: { instant: 60 }, path: { word: "plant.act.path.adapter_ingest" } } });
-    expect(wordsOf({ kind: "set_labelling", at: 60, method: "preprinted_barcode" })).toEqual({ key: "plant.act.words.set_labelling", slots: { at: { instant: 60 }, method: { word: "plant.act.method.preprinted_barcode" } } });
+    expect(wordsOf({ kind: "set_flag", at: 100, architecture: "b_lims_lite", flag: "available_at", on: true }).slots.state).toEqual({ word: "plant.act.state.on.to" });
+    expect(wordsOf({ kind: "set_capture_path", at: 60, path: "adapter_ingest" })).toEqual({ key: "plant.act.words.set_capture_path", slots: { at: { instant: 60 }, path: { word: "plant.act.path.adapter_ingest.to" } } });
+    expect(wordsOf({ kind: "set_labelling", at: 60, method: "preprinted_barcode" })).toEqual({ key: "plant.act.words.set_labelling", slots: { at: { instant: 60 }, method: { word: "plant.act.method.preprinted_barcode.to" } } });
   });
 });

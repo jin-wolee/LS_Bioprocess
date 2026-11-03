@@ -12,7 +12,7 @@ const TUBE = { radius: 0.1, height: 0.42 };
 const CUE_Y = TUBE.height + 0.17; // above the tube's base
 const CARRIER = 0.42;
 
-export const buildTubeMotion = (capacity: number, group: Group, disposables: (BufferGeometry | Material)[]): ((state: SceneState) => void) => {
+export const buildTubeMotion = (capacity: number, group: Group, disposables: (BufferGeometry | Material)[]): ((state: SceneState, scale?: number) => void) => {
   const geometry = <G extends BufferGeometry>(g: G): G => {
     disposables.push(g);
     return g;
@@ -43,18 +43,19 @@ export const buildTubeMotion = (capacity: number, group: Group, disposables: (Bu
   const cue = { hand: travel, transport: travel, wait: waiting, enter: inside, setup: inside, run: inside, leave: done } satisfies Record<TubePhase, ReturnType<typeof makePool>>;
   const glyph = { handwritten, preprinted_barcode: barcode, issued_at_draw: issued } as const;
 
-  return (state) => {
+  return (state, scale = 1) => {
     for (const p of pools) p.begin();
     for (const t of state.tubes) {
       // in the hand the tube is held out toward the vessel (north of the operator), not inside the figure
       const z = t.phase === "hand" ? t.z - HELD : t.z;
-      bodies.put(t.x, t.y + TUBE.height / 2, z);
-      if (t.phase === "transport") carriers.put(t.x, t.y - 0.03, z, 1, 1, 1, -t.heading);
+      // `scale` makes the tube and what it wears bigger than life (tubeScale), on the same foot
+      bodies.put(t.x, t.y + (TUBE.height * scale) / 2, z, scale, scale, scale);
+      if (t.phase === "transport") carriers.put(t.x, t.y - 0.03, z, scale, 1, scale, -t.heading);
       const mark = t.label ? glyph[t.label as keyof typeof glyph] : undefined;
-      mark?.put(t.x, t.y + TUBE.height * 0.5, z + TUBE.radius + 0.005);
-      cue[t.phase].put(t.x, t.y + CUE_Y, z, 1, 1, 1, t.phase === "transport" ? -t.heading : 0);
-      if (t.rerun) rerun.put(t.x, t.y + TUBE.height * 0.72, z);
-      if (t.diluted) diluted.put(t.x, t.y + TUBE.height * 0.2, z);
+      mark?.put(t.x, t.y + TUBE.height * 0.5 * scale, z + (TUBE.radius + 0.005) * scale, scale, scale, scale);
+      cue[t.phase].put(t.x, t.y + CUE_Y * scale, z, scale, scale, scale, t.phase === "transport" ? -t.heading : 0);
+      if (t.rerun) rerun.put(t.x, t.y + TUBE.height * 0.72 * scale, z, scale, scale, scale);
+      if (t.diluted) diluted.put(t.x, t.y + TUBE.height * 0.2 * scale, z, scale, scale, scale);
     }
     for (const p of pools) p.end();
   };

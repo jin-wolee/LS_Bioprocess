@@ -35,7 +35,7 @@ export interface SceneOptions {
 
 /** What the scene needs to draw the truth overlay (section 3.3): the placeholders of the halls, and the two texts (already in the page's language) that every element of it carries. */
 export interface OverlayCaptions {
-  /** "Simulation's own view, not available to any record". */
+  /** The short label every marker of the overlay carries ("Simulation's view"); the whole sentence of the label is said once, by the switch (P8a). */
   label: string;
   /** The template of the label of a rail, with {architecture} and {count}. */
   absence: string;

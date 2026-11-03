@@ -1,3 +1,4 @@
+import { ClockReading } from "../plant/ActionRefs.tsx";
 import type { LineageView as View } from "../protocol.ts";
 import { FlagLegend } from "./Flags.tsx";
 import { RecordSvg } from "./RecordSvg.tsx";
@@ -25,7 +26,7 @@ export function LineageTruth({ view }: { view: Pick<View, "truth" | "sample"> })
         </dd>
         <T as="dt" k="lineage.truth.sampled_at" />
         <dd data-truth="sampled_at">
-          <Label>{truth.sampled_at}</Label>
+          <ClockReading t={truth.sampled_at} />
         </dd>
         <T as="dt" k="lineage.truth.context" />
         <dd data-truth="process_context">

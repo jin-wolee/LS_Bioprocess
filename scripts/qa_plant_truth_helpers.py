@@ -48,12 +48,26 @@ def absences_expected(plan, t: int) -> dict:
     return out
 
 
-def label_problems(elements, label: str) -> list[str]:
-    """Every element of the overlay (marked `data-overlay`) carries the sentence of the label as text, in the language of the page."""
+def label_problems(elements, label: str, short: str) -> list[str]:
+    """Every element of the overlay (marked `data-overlay`) says that it is the simulation's own view, in the language of the page (P8a): the elements of the page (the switch, the truth block of a panel) carry the
+    whole sentence of the label, once each; a marker in the scene (`marker`: it is in the layer of the labels) carries the short label and never repeats the whole sentence, so the scene has one caption
+    for the overlay and each marker is short; and at least one element carries the whole sentence."""
     if not elements:
         return ["no element of the overlay is marked data-overlay"]
     ordinal = {1: "1st", 2: "2nd", 3: "3rd"}
-    return [f"the {ordinal.get(i, f'{i}th')} element of the overlay lacks the label: '{e['text'][:60]}'" for i, e in enumerate(elements, 1) if label not in e["text"]]
+    problems = []
+    for i, e in enumerate(elements, 1):
+        name = f"the {ordinal.get(i, f'{i}th')} element of the overlay"
+        if e.get("marker"):
+            if short not in e["text"]:
+                problems.append(f"{name} (a marker in the scene) lacks the short label: '{e['text'][:60]}'")
+            if label in e["text"]:
+                problems.append(f"{name} (a marker in the scene) repeats the whole sentence of the label: '{e['text'][:60]}'")
+        elif label not in e["text"]:
+            problems.append(f"{name} lacks the label: '{e['text'][:60]}'")
+    if not any(label in e["text"] for e in elements if not e.get("marker")):
+        problems.append("no element of the page says the whole sentence of the label")
+    return problems
 
 
 def panel_numbers(plan, kind: str, index: int, t: int) -> dict:

@@ -8,6 +8,7 @@ export const enResults = {
   "results.running": "A run is in progress.",
   "results.meets.warn": "The seed count is below the minimum of {min}: the report does not call this a comparison. Read each spread as that of a small sample of seeds.",
   "results.interval.label": "What the range is",
+  "results.interval.text": "spread across seeds: the fifth to the ninety-fifth percentile, each an observed value; not a confidence interval",
   "results.actions.heading": "Operator actions applied to every seed",
   "results.actions.lead": "This result applied these actions from the plant in every seed. Each instant is an assumed input, listed again with the other inputs below.",
   "results.inputs.heading": "Inputs of this result",

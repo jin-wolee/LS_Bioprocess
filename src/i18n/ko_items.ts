@@ -28,6 +28,8 @@ export const koItems: Record<keyof typeof enItems, string> = {
   "plant.panel.test.pending": "{test}: 아직 결과 없음",
   "plant.confirm.detected": "검출됨",
   "plant.confirm.not_detected": "검출되지 않음",
+  "plant.confirm.detected.to": "검출됨으로",
+  "plant.confirm.not_detected.to": "검출되지 않음으로",
   "plant.panel.signals": "신호, 이탈, 정지",
   "plant.panel.signals.none": "이 리액터에서는 아직 신호가 없었습니다.",
   "plant.panel.signal": "신호 {item}, {clock}",
@@ -36,7 +38,7 @@ export const koItems: Record<keyof typeof enItems, string> = {
 
   "plant.log.addition": "{clock}: 로트 {item}을(를) 리액터 {unit}에 넣었습니다.",
   "plant.log.use": "{clock}: 장비 {item}을(를) 리액터 {unit}에 썼습니다.",
-  "plant.log.confirmed": "{clock}: 검사실이 시료 {sample}의 {test}에 대해 {outcome}(으)로 보고했습니다.",
+  "plant.log.confirmed": "{clock}: 검사실이 시료 {sample}의 {test}에 대해 {outcome} 보고했습니다.",
 
   "plant.table.items": "이 시점의 로트와 장비",
   "plant.table.confirms": "이 시점의 확인 시료",

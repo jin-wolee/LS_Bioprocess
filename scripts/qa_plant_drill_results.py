@@ -11,7 +11,7 @@ from pathlib import Path
 
 from qa_lab_browser import set_lang
 from qa_plant_browser import settle, state, wait_scene
-from qa_plant_drill_helpers import late_sample, plant_hash, results_inputs_problems, run_problems, setup_lists_problems
+from qa_plant_drill_helpers import clock_problems, late_sample, plant_hash, results_inputs_problems, run_problems, setup_lists_problems
 from qa_plant_helpers import BUSY_START_S
 
 DAY = 86400
@@ -22,7 +22,7 @@ LEFT = ["move_draw", "set_capture_path"]
 PRINTED = [("act-1 add_feed U10 at", True), ("act-2 analyzer_down AN-1 from", True), ("act-2 analyzer_down AN-1 length", False)]
 LISTS_JS = ("() => ({kept: [...document.querySelectorAll('[data-run-action]')].map((e) => e.dataset.runAction), left: [...document.querySelectorAll('[data-left-out]')].map((e) => e.dataset.leftOut), "
             "why: [...document.querySelectorAll('[data-left-out]')].map((e) => e.querySelector('[data-i18n^=\"setup.actions.why.\"]').dataset.i18n)})")
-INPUTS_JS = "() => [...document.querySelectorAll('.inputs-printed .inputs li')].map((e) => ({name: e.querySelector('.input-name').innerText, ref: e.querySelector('.ref-id').innerText}))"
+INPUTS_JS = "() => [...document.querySelectorAll('.inputs-printed .inputs li')].map((e) => ({name: e.querySelector('.input-name').innerText, ref: e.querySelector('.ref-id').innerText, value: e.querySelector('.ref-value').innerText}))"
 
 
 def actions_of(plan: dict) -> list[dict] | None:
@@ -100,6 +100,7 @@ def results_actions(browser, url: str, out: Path, engine: str, plan: dict, probl
         if shown != KEPT:
             problems.append(f"Results lists the actions {shown} above its inputs, expected {KEPT}")
         problems += [f"Results: {p}" for p in results_inputs_problems(page.evaluate(INPUTS_JS), [(name, instant_ref if instant else None) for name, instant in PRINTED])]
+        problems += [f"Results: {p}" for p in clock_problems(page.evaluate(INPUTS_JS), [name for name, instant in PRINTED if instant])]
         if page.query_selector("[data-note=origin-results]") is None:
             problems.append("Results from the plant does not say which actions it carries")
         pictures(page, out, "results_actions", "[data-results-actions]")

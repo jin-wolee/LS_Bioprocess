@@ -25,6 +25,28 @@ export const zoom = (v: View, delta: number): View => ({ ...v, dist: clamp(v.dis
 export const turn = (v: View, direction: 1 | -1): View => ({ ...v, yaw: v.yaw + direction * STEP });
 export const tilt = (v: View, direction: 1 | -1): View => ({ ...v, pitch: clamp(v.pitch + direction * STEP, LIMITS.pitch) });
 
+/**
+ * What a key does to the view, as a function of the view, or null for a key that is not a look key: Q and E turn, R tilts up and T tilts down, plus and minus zoom. One key has one meaning (P8a):
+ * `F` is the follow of a picked sample (keys.ts) and is no tilt, so the look never claims it.
+ */
+export const lookKey = (name: string): ((v: View) => View) | null => {
+  switch (name) {
+    case "q": return (v) => turn(v, -1);
+    case "e": return (v) => turn(v, 1);
+    case "r": return (v) => tilt(v, 1);
+    case "t": return (v) => tilt(v, -1);
+    case "+": case "=": return (v) => zoom(v, -120);
+    case "-": case "_": return (v) => zoom(v, 120);
+    default: return null;
+  }
+};
+
+/**
+ * How much bigger than life a tube is drawn with the camera `dist` metres from the walker (P8a): its own size from 9 m in, and then in proportion to the distance, up to twice, so that a tube of 0.2 m
+ * by 0.42 m is not a few pixels at the default camera (14 m: 14/9 of its size) and is true to size where the reader looks closely, where the slots of a lane are 0.2 m apart.
+ */
+export const tubeScale = (dist: number): number => Math.min(2, Math.max(1, dist / 9));
+
 export interface Camera {
   position: { x: number; y: number; z: number };
   target: { x: number; y: number; z: number };

@@ -33,7 +33,7 @@ export function FlagCells({ matrix, onCell, lang }: { matrix: FlagMatrix; onCell
               </th>
               {matrix.halls.map((hall, col) => {
                 const state = stateOf(matrix.cells[row]?.[col] ?? null);
-                const next = text(lang, state === "on" ? STATE.off : STATE.on);
+                const next = text(lang, state === "on" ? "plant.flags.state.off.to" : "plant.flags.state.on.to");
                 return (
                   <td key={hall}>
                     <button

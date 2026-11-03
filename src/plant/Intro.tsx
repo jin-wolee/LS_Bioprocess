@@ -8,10 +8,12 @@ import { Label, T } from "../ui/T.tsx";
 /** What the scene is doing: not asked for, being fetched, drawn, or failed with the message of the error. */
 export type SceneStatus = { kind: "none" | "loading" | "ready" } | { kind: "failed"; message: string };
 
-export function Intro({ webgl, planned, breakout, problem, scene, state, renderer }: {
+export function Intro({ webgl, planned, breakout, scenario, problem, scene, state, renderer }: {
   webgl: boolean;
   /** The plant is a break-out case (P7c): its lead says so. */
   breakout: boolean;
+  /** The scenario of the run the page asked for (the lead names it, P8a); for a case the lead is the case's. */
+  scenario: string;
   /** Whether the Worker's first plan has arrived. */
   planned: boolean;
   problem: PlantProblem | null;
@@ -23,7 +25,7 @@ export function Intro({ webgl, planned, breakout, problem, scene, state, rendere
   return (
     <section class="plant-intro" aria-labelledby="plant-heading">
       <T as="h1" k="plant.heading" id="plant-heading" />
-      <T as="p" k={breakout ? "plant.case.lead" : "plant.lead"} />
+      <T as="p" k={breakout ? "plant.case.lead" : "plant.lead"} {...(!breakout && { parts: { scenario: <Label>{scenario}</Label> } })} />
       {problem && <ErrorBlock problem={{ id: null, code: problem.code, message: problem.message }} />}
       {problem?.code === "refused" && <T as="p" k={refusalKey(problem)} data-note="refusal" />}
       <p id="plant-status" role="status" data-plant-status={state} class="plant-status">

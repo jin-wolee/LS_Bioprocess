@@ -94,3 +94,12 @@ def test_back_to_the_plant_lands_on_the_same_instant_and_lens_paused_and_asks_fo
 def test_a_bad_link_is_expected_to_say_which_keys_it_fell_back_on():
     assert qd.BAD_LINK_NOTES == ["scenario", "seed", "t_range", "engine"]
     assert qd.bad_link("0.0.0") == "#/plant?scenario=nonesuch&seed=abc&t=99999999&schema=1&engine=0.0.0"
+
+
+def test_an_instant_among_the_inputs_of_results_is_a_clock_reading_and_not_minutes_of_the_run():
+    printed = [{"name": "act-1 add_feed U10 at", "ref": "A228", "value": "day 8 08:40"}, {"name": "act-2 analyzer_down AN-1 from", "ref": "A228", "value": "12220 min"},
+               {"name": "act-2 analyzer_down AN-1 length", "ref": "A096", "value": "2 h"}]
+    out = qd.clock_problems(printed, ["act-1 add_feed U10 at", "act-2 analyzer_down AN-1 from"])
+    assert out == ["the input act-2 analyzer_down AN-1 from is printed as '12220 min', not as a clock reading"]
+    assert qd.clock_problems(printed, ["act-2 analyzer_down AN-1 length"]) != []  # a length is no clock reading: the caller names only the instants
+    assert qd.clock_problems(printed, ["act-1 add_feed U10 at", "no such input"]) == []

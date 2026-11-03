@@ -88,8 +88,8 @@ export const wordsOf = (a: PlantAction): Words => {
     case "move_draw": return { key: "plant.act.words.move_draw", slots: { at: instant(a.at), sample: label(a.sample_id), to: instant(a.to) } };
     case "analyzer_down": return { key: "plant.act.words.analyzer_down", slots: { at: instant(a.at), analyzer: label(a.analyzer), from: instant(a.from), length: label(String(a.length_min)) } };
     case "change_lot": return { key: "plant.act.words.change_lot", slots: { at: instant(a.at), analyzer: label(a.analyzer), effective: instant(a.effective) } };
-    case "set_flag": return { key: "plant.act.words.set_flag", slots: { at: instant(a.at), flag: label(a.flag), architecture: label(a.architecture), state: { word: a.on ? "plant.act.state.on" : "plant.act.state.off" } } };
-    case "set_capture_path": return { key: "plant.act.words.set_capture_path", slots: { at: instant(a.at), path: { word: `plant.act.path.${a.path}` } } };
-    case "set_labelling": return { key: "plant.act.words.set_labelling", slots: { at: instant(a.at), method: { word: `plant.act.method.${a.method}` } } };
+    case "set_flag": return { key: "plant.act.words.set_flag", slots: { at: instant(a.at), flag: label(a.flag), architecture: label(a.architecture), state: { word: a.on ? "plant.act.state.on.to" : "plant.act.state.off.to" } } };
+    case "set_capture_path": return { key: "plant.act.words.set_capture_path", slots: { at: instant(a.at), path: { word: `plant.act.path.${a.path}.to` } } };
+    case "set_labelling": return { key: "plant.act.words.set_labelling", slots: { at: instant(a.at), method: { word: `plant.act.method.${a.method}.to` } } };
   }
 };

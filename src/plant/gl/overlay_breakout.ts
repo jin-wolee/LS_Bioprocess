@@ -14,12 +14,13 @@ import { makePool } from "./pool.ts";
 
 // The truth overlay of a break-out case (docs/design/plant_ui.md section 3.3, "As built in P7c"): what the simulation knows of the event, drawn only when the reader's switch is on and the Worker has answered
 // `{ breakout: true }`. The origin is a downward cone over the item the scenario names (a crate, a station, or a vessel), and each unit the event reached is a flat ring on the floor round its vessel with a
-// cone over it, each from its instant (`breakoutAt`). Every element carries a DOM label with the sentence "Simulation's own view, not available to any record" and is marked `data-overlay`; `set(null)`
-// takes it all away, the labels' marks and text included. Shape carries the meaning (a cone and a ring, which no other object has) and colour only repeats it.
+// cone over it, each from its instant (`breakoutAt`). Every element carries a DOM label with the short label "Simulation's view" (the whole sentence "Simulation's own view, not available to any record" is
+// said once, by the switch: P8a) and is marked `data-overlay`; `set(null)` takes it all away, the labels' marks and text included. Shape carries the meaning (a cone and a ring, which no other object has) and colour only repeats it.
 
 const INK = 0xa8326b;
 const CONE = { radius: 0.28, height: 0.55, rise: 0.8 };
 const RING = { pad: 0.4, tube: 0.05 };
+const STAGGER = 0.6; // metres: how much higher every other unit's marker stands
 
 export interface BreakoutOverlay {
   set(data: BreakoutData | null): void;
@@ -101,7 +102,8 @@ export const buildBreakoutOverlay = (host: HTMLElement, layout: Layout, plan: Sc
       const { radius, height } = vesselShape((layout.bays[v.bay] as { profile: string }).profile);
       rings.put(v.x, 0.06, v.z, radius + RING.pad, 1, radius + RING.pad);
       cones.put(v.x, PLINTH + height + 0.3 + CONE.height / 2, v.z);
-      show(1 + k, fill(data.captions.reached, { unit: label((plan.units[k] as ScenePlan["units"][number]).id), clock: clockNode(hit.onset_s) }), { x: v.x, y: PLINTH + height + 0.3 + CONE.height + 0.15, z: v.z });
+      // the markers of neighbouring vessels stand at two heights, so that two short labels side by side do not cover each other
+      show(1 + k, fill(data.captions.reached, { unit: label((plan.units[k] as ScenePlan["units"][number]).id), clock: clockNode(hit.onset_s) }), { x: v.x, y: PLINTH + height + 0.3 + CONE.height + 0.15 + (k % 2) * STAGGER, z: v.z });
     }
     cones.end();
     rings.end();

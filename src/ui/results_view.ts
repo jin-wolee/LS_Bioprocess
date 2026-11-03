@@ -5,6 +5,13 @@ import type { ExperimentReport } from "../../engine/src/generated/experiment_rep
 
 export type ReportRow = ExperimentReport["architectures"][number]["rows"][number];
 
+/**
+ * The instant, in seconds of the run, that a printed input of an action is, or null for any other input (P8a). The engine names an action's inputs `act-<n> <kind> <target> <field>` and gives an
+ * instant in minutes of the run (docs/design/lab_ui.md section 22); the page prints it as a clock reading, as the list of actions does, and a length (in hours) or a threshold stays as given.
+ */
+export const instantOf = (input: { name: string; value: number | string; unit: string }): number | null =>
+  /^act-\d+ \S+ \S+ (at|from|effective)$/.test(input.name) && input.unit === "min" && typeof input.value === "number" ? input.value * 60 : null;
+
 /** A figure for the eye: whole numbers as they are, three significant digits otherwise (a figure of a thousand or more is rounded to a whole number). */
 export const fmt = (value: number): string => {
   if (Number.isInteger(value)) return String(value);

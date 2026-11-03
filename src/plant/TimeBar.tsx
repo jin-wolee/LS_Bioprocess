@@ -58,7 +58,10 @@ export function TimeBar({ plan, playback, times }: { plan: ScenePlan; playback: 
           onInput={(e) => playback.seek(Number((e.currentTarget as HTMLInputElement).value))}
         />
       </div>
-      <T as="p" k="plant.time.keys" class="plant-time-keys" />
+      <details class="plant-time-keys-wrap">
+        <T as="summary" k="plant.time.keys.label" />
+        <T as="p" k="plant.time.keys" class="plant-time-keys" />
+      </details>
     </div>
   );
 }

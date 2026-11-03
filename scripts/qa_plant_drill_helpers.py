@@ -128,6 +128,16 @@ def results_inputs_problems(printed: list[dict], want: list[tuple[str, str | Non
     return problems
 
 
+def clock_problems(printed: list[dict], names: list[str]) -> list[str]:
+    """The inputs of Results that are an action's instant are printed as a clock reading (`day 8 08:40`), as the list of actions prints them, and not as minutes of the run (P8a)."""
+    problems = []
+    for name in names:
+        found = next((p for p in printed if p["name"] == name), None)
+        if found is not None and not re.fullmatch(r"day \d+ \d\d:\d\d", found.get("value", "").strip()):
+            problems.append(f"the input {name} is printed as {found.get('value')!r}, not as a clock reading")
+    return problems
+
+
 def setup_lists_problems(kept: list[str], left: list[str], want_kept: list[str], want_left: list[str]) -> list[str]:
     """What Setup opened from the plant holds: the kinds it carries and the kinds it left out, each in the order of the plant's list."""
     problems = []

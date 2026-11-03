@@ -14,7 +14,9 @@
 .plant-act { width: min(44rem, 100%); box-sizing: border-box; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px 10px; }
 .plant-act-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .plant-act-body { max-height: min(36vh, 15rem); overflow-y: auto; }
-.plant-bottom:has(.plant-act) .plant-hint, .plant-bottom:has(.plant-act) .plant-time-keys { display: none; }
+.plant-bottom:has(.plant-act) .plant-hint { display: none; }
+/* with a form open the stack is tall: the place card folds to its name so that the list of actions keeps its room (P8a) */
+.plant-huds:has(.plant-act) :is(.plant-facts, .plant-layer-note) { display: none; }
 .plant-act-form legend { font-weight: 700; padding: 0; }
 .plant-act-about, .plant-act-note { margin: 2px 0 6px; color: var(--muted); font-size: 0.85rem; }
 .plant-act-grid { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: flex-end; }
@@ -31,7 +33,7 @@
 .plant-refusal { margin: 8px 0 0; }
 .plant-refusal p { margin: 4px 0; }
 
-.plant-hud-actions { left: 12px; top: 336px; width: min(16.5rem, calc(100% - 24px)); box-sizing: border-box; max-height: 30%; overflow-y: auto; z-index: 1; }
+.plant-hud-actions { box-sizing: border-box; flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .plant-hud-actions h2 { margin: 0 0 2px; font-size: 0.95rem; }
 .plant-act-list { margin: 2px 0 0; padding-left: 1.4em; }
 .plant-act-list li { margin: 2px 0; font-size: 0.85rem; }
@@ -45,17 +47,19 @@
 @keyframes plant-spin { to { transform: rotate(360deg); } }
 
 /* The sign of a sampling board in the scene: its id, and, when the camera is near, the first rows of the day's plan. */
-.plant-label-board { border-radius: 8px; padding: 1px 8px; }
+/* the sign of a board is a square note on the face of the plate, not a round label over it (P8a) */
+.plant-label.plant-label-board { border-radius: 2px; padding: 2px 8px; text-align: left; }
 .plant-board-lines { display: none; }
 .plant-label-board[data-near="1"] .plant-board-lines:not(:empty) { display: flex; flex-direction: column; margin-top: 2px; font-weight: 400; font-size: 10px; text-align: left; }
 
 /* The flags board (P6b, plant_ui.md section 3.2): the names of the flags down its left show when the camera is near; the id of each hall stands over its column. */
 .plant-label.plant-label-flagname, .plant-label.plant-label-flaghall { padding: 0 3px; border: 0; border-radius: 3px; background: transparent; color: var(--fg); font-size: 9px; line-height: 1.1; text-shadow: 0 0 3px var(--surface), 0 0 3px var(--surface); }
 .plant-label.plant-label-flagname[data-near="0"] { display: none; }
-.plant-label.plant-label-flaghall { max-width: 7em; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+.plant-label.plant-label-flaghall { font-weight: 700; }
+.plant-flaghall-text { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg); }
+.plant-label.plant-label-flaghall[data-near="0"] { display: none; }
 
 @media (max-width: 599px) {
-  .plant-hud-actions { top: 168px; max-height: 20%; }
   .plant-bar-actions { flex-wrap: nowrap; overflow-x: auto; }
   .plant-bar-actions button { flex: 0 0 auto; white-space: nowrap; }
   .plant-act-body { max-height: 34vh; }

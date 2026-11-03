@@ -42,8 +42,10 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
   layer.setAttribute("aria-hidden", "true");
   host.appendChild(layer);
 
-  const items: { el: HTMLElement; at: Vector3; on: boolean }[] = [];
-  const add = (text: string, kind: string, x: number, y: number, z: number, on = true): (typeof items)[number] => {
+  // `clamp`: a label that grows upward from its place (the sign of a hall, with the flags it has on) is kept inside the layer instead of being cut at the top of the view (P8a); `h` is its height, measured when it changes
+  type Item = { el: HTMLElement; at: Vector3; on: boolean; clamp?: boolean; h?: number };
+  const items: Item[] = [];
+  const add = (text: string, kind: string, x: number, y: number, z: number, on = true): Item => {
     const el = document.createElement("span");
     el.className = `plant-label plant-label-${kind}`;
     el.setAttribute("data-label", "");
@@ -69,13 +71,15 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
     const flags = document.createElement("span");
     flags.className = "plant-hall-flags";
     item.el.append(id, flags);
+    item.clamp = true;
     return { architecture: h.architecture, item, id, flags };
   });
 
   // the sign of a sampling board has two parts: its id (always) and its first rows (when the camera is near)
   const boardSigns = layout.bays.map((b, i) => {
     const at = boardPoint(b.footprint);
-    const item = add("", "board", at.x, PLINTH + BOARD.bottom + BOARD.h + 0.12, at.z);
+    // the sign stands on the face of the board, its foot on the lower edge of the plate, and grows up over it (P8a)
+    const item = add("", "board", at.x, PLINTH + BOARD.bottom + 0.04, at.z + BOARD.thick);
     const id = document.createElement("span");
     id.className = "plant-board-id";
     id.textContent = boardId(i);
@@ -87,18 +91,25 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
 
   const staff = plan.staff.map((s) => add(s.id, "staff", 0, STAFF_HEAD, 0, false));
   // the labels of the truth overlay: made when the overlay is switched on, removed when it is switched off
-  let absences: { el: HTMLElement; at: Vector3; on: boolean }[] = [];
+  let absences: Item[] = [];
 
   const v = new Vector3();
-  const place = (camera: PerspectiveCamera, width: number, height: number, { el, at, on }: { el: HTMLElement; at: Vector3; on: boolean }): void => {
+  const place = (camera: PerspectiveCamera, width: number, height: number, item: Item): void => {
+    const { el, at, on } = item;
     v.copy(at).project(camera);
     const distance = camera.position.distanceTo(at);
     const far = distance > 45;
     const near = distance < 16 ? "1" : "0";
-    if (el.dataset.near !== near) el.dataset.near = near;
+    if (el.dataset.near !== near) {
+      el.dataset.near = near;
+      delete item.h;
+    }
     const hidden = !on || v.z > 1 || far || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1;
     el.style.visibility = hidden ? "hidden" : "visible";
-    if (!hidden) el.style.transform = `translate(${((v.x * 0.5 + 0.5) * width).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * height).toFixed(1)}px) translate(-50%, -100%)`;
+    if (hidden) return;
+    let y = (-v.y * 0.5 + 0.5) * height;
+    if (item.clamp) y = Math.max(y, (item.h ??= el.offsetHeight) + 4);
+    el.style.transform = `translate(${((v.x * 0.5 + 0.5) * width).toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
   };
   return {
     tubes(count) {
@@ -159,10 +170,15 @@ export const buildLabels = (host: HTMLElement, layout: Layout, plan: ScenePlan):
         const record = records.find((r) => r.architecture === sign.architecture);
         sign.flags.textContent = record ? (record.flags_on.length === 0 ? "–" : record.flags_on.join(" · ")) : "";
         sign.item.el.dataset.lens = sign.architecture === lens ? "1" : "0";
+        delete sign.item.h;
       }
     },
     fixed(list) {
-      for (const i of list) add(i.text, i.kind, i.x, i.y, i.z);
+      for (const i of list) {
+        const { el } = add(i.text, i.kind, i.x, i.y, i.z);
+        // the id of a hall over a column of the flags board stands up, reading from the cells upward (P8a), so that the ids of neighbouring columns do not run into one another, a derived hall's long id included; the text of the label stays the id
+        if (i.kind === "flaghall") el.replaceChildren(Object.assign(document.createElement("span"), { className: "plant-flaghall-text", textContent: i.text }));
+      }
     },
     boards(boards) {
       for (const [i, rows] of boardSigns.entries()) {

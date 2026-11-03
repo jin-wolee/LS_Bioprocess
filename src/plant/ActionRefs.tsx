@@ -18,13 +18,18 @@ const WHAT: Partial<Record<ActionKind, Key>> = {
   change_lot: "plant.act.what.change_lot", set_capture_path: "plant.act.what.set_capture_path", set_labelling: "plant.act.what.set_labelling",
 };
 
+/** An instant of the run as a clock reading (`day 8 08:31`), the one form every screen prints it in. */
+export function ClockReading({ t }: { t: number }) {
+  const c = clockOf(t);
+  return <T k="plant.clock.reading" parts={{ day: <Label>{c.day}</Label>, time: <Label>{c.time}</Label> }} />;
+}
+
 /** An instant as a clock reading with the ledger entry of an instant an operator chooses. */
 export function Instant({ t }: { t: number }) {
   const lang = useContext(LangContext);
-  const c = clockOf(t);
   return (
     <Ref ids={text(lang, "plant.act.ids.instant").split(" ")}>
-      <T k="plant.clock.reading" parts={{ day: <Label>{c.day}</Label>, time: <Label>{c.time}</Label> }} />
+      <ClockReading t={t} />
     </Ref>
   );
 }

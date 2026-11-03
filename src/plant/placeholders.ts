@@ -8,13 +8,13 @@ import type { Footprint } from "./hall_shelves.ts";
 // a tag never moves when another appears. Pure: no three.js, no clock. Metres are view constants, not domain numbers.
 
 export const RAIL = {
-  /** The height of a tag, and the gap between the top of the wall and its foot. */
-  height: 0.25,
+  /** The height of a tag, and the gap between the top of the wall and its foot. P8a: twice what P5b drew, since the tags were a few pixels at the distance the camera takes at a hall. */
+  height: 0.5,
   gap: 0.05,
-  /** A tag is 0.8 of its pitch wide, at most 0.14 m, and the pitch is at most 0.18 m. */
+  /** A tag is 0.8 of its pitch wide, at most 0.3 m, and the pitch is at most 0.38 m. */
   fill: 0.8,
-  maxWidth: 0.14,
-  maxPitch: 0.18,
+  maxWidth: 0.3,
+  maxPitch: 0.38,
   /** The margin at each end of the rail, as the shelves have. */
   margin: SHELF.margin,
 } as const;

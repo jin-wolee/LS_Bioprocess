@@ -9,7 +9,7 @@ from pathlib import Path
 
 from qa_checks import Result, first_line
 from qa_lab_helpers import LANGS
-from qa_plant_browser import RECORD_PLANT_JS, blank_page, open_plant, pause, pixel_diff, pixel_stats, plant_messages, seek, settle, settle_camera, state, wait_scene
+from qa_plant_browser import RECORD_PLANT_JS, blank_page, fold_place_card, hud_click, open_plant, pause, pixel_diff, pixel_stats, plant_messages, seek, settle, settle_camera, state, wait_scene
 from qa_plant_helpers import (
     CLOSEUP_INSTANT_S, DEFAULT_HALLS, HALL_CARDS_END, HALL_INSTANTS, PLANT_VIEWPORTS, cards_expected, cards_problems, clock_reading, halls_arrival_problems, not_blank, plan_from_messages,
     repro_problems,
@@ -171,9 +171,8 @@ def check_plant_record(browser, url, out: Path) -> Result:
 def closeup(page, hall: str, zoom: int = 3) -> bytes:
     """The hall in view from close to its shelves: the place card folded and the bottom bar hidden (the scene is the picture), the camera brought to the hall and zoomed in `zoom` steps, the lens on it."""
     page.add_style_tag(content=".plant-bottom{display:none}")
-    if page.get_attribute("[data-plant-hud=place]", "open") is not None:
-        page.click("[data-plant-hud=place] summary")
-    page.click(f"[data-lens-option={hall}]")
+    fold_place_card(page)
+    hud_click(page, f"[data-lens-option={hall}]")
     page.click(f"[data-object-key='hall:{hall}']")
     for _ in range(zoom):
         page.keyboard.press("+")

@@ -214,7 +214,7 @@ def shots_of(browser, url, out: Path, vp: str, lang: str) -> dict:
 
 
 def fixed_shot(browser, url) -> tuple[bytes, list[str]]:
-    """One fresh run to the fixed instant: the check chip settled, the clock paused and set, the viewport screenshot of the scene."""
+    """One fresh run to the fixed instant: the check chip settled, the clock paused and set, the viewport screenshot of the scene with the DOM layer over it left out."""
     problems: list[str] = []
     with open_plant(browser, url, PLANT_VIEWPORTS["1280"]) as (page, errors, _):
         wait_scene(page)
@@ -224,6 +224,9 @@ def fixed_shot(browser, url) -> tuple[bytes, list[str]]:
         settle(page, 5)
         page.bring_to_front()
         page.evaluate("document.querySelector('.plant-wrap').scrollIntoView({block: 'start'})")
+        # P8a: the picture is the canvas, which is what the scene decides. The DOM over it (the cards, the bars, the labels) is rasterised a little differently from one run to the next when the machine is busy (the
+        # edge of the thumb of the scrubber, the glyphs of a button: 44 pixels of 921,600 that are the same to the eye), as the hall signs are in the close-up of the halls, and is left out here as it is there
+        page.add_style_tag(content=".plant-huds, .plant-labels { display: none !important; }")
         png = page.screenshot()
         problems += [f"console: {e[:140]}" for e in errors]
     return png, problems
