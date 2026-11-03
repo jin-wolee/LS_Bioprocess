@@ -1,6 +1,3 @@
 # Author-owned implementation track (Claude must not write these). Patterns are relative to the repo root.
-sql/schema.sql
-sql/queries/asof_join.sql
-sql/queries/lineage_recursive.sql
-sql/queries/bridging_offset.sql
-reference/sim_core.py
+# Empty since ADR-0022 (accepted 2026-11-03): the five files of ADR-0010's track (sql/schema.sql, the three queries
+# under sql/queries/ and reference/sim_core.py) are written by AI, clean-room from the specification, and say so.
