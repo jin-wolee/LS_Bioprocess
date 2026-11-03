@@ -1,5 +1,5 @@
 # ADR-0022: The author's implementation track written by AI, clean-room from the specification
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-03
 ## Context
 
@@ -45,4 +45,4 @@ Proposed: option 2, chosen by the author in chat on 2026-11-03.
 > "시간이 없어서 그런데 SQL·SimPy 도 너가 작성해줘." (chat, 2026-11-03); chose "AI가 작성, 클린룸 + 명시 (Recommended)" (chat, 2026-11-03)
 
 ## Decider's note
-_(author only — Claude never writes here)_
+Decided by the author in chat on 2026-11-03: chose "AI가 작성, 클린룸 + 명시 (Recommended)", then "응 그렇게 하도록 해" to accepting this record and removing the five files from .claude/user_owned.txt.

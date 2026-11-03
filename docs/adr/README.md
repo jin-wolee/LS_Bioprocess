@@ -34,6 +34,6 @@ Each record states a context, at least two real options, a proposed decision, it
 | [0019](0019-deterministic-math-across-js-engines.md) | Deterministic maths across JavaScript engines | Accepted |
 | [0020](0020-tenth-flag-equipment-links.md) | Tenth flag: equipment links (amends ADR-0005) | Accepted |
 | [0021](0021-interactive-3d-virtual-plant.md) | The lab centres on an interactive 3D virtual plant | Accepted |
-| [0022](0022-author-track-written-by-ai-clean-room.md) | The author's track written by AI, clean-room from the specification (supersedes ADR-0010's assignment of five files) | Proposed |
+| [0022](0022-author-track-written-by-ai-clean-room.md) | The author's track written by AI, clean-room from the specification (supersedes ADR-0010's assignment of five files) | Accepted |
 
 Keep this table in step with the files. A status other than `Proposed` appears here only after the author's own commit.
