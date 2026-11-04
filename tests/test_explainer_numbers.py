@@ -10,7 +10,8 @@
    that neither a digit nor such a word of the English accounts for. No other normalisation: an idiom such as "1대당" or "1차" in the Korean fails, and the Korean is reworded ("한 대당", "일차").
 
 What the check leaves out of 1, and why:
-- text inside `<code>`, `<script>` and `<style>`, and every attribute value (coordinates, `value="565"`, class names): names and markup, not prose.
+- text inside `<code>`, `<script>` and `<style>`, and every attribute value (coordinates, `value="565"`, class names) but one: names and markup, not prose. The one is the `alt` of a picture, which is
+  prose that a reader hears (P10): it counts as a text node, and the Korean of its `data-i18n-alt` key is held to the same digits as the English.
 - a token made of letters and digits that starts with a capital letter, or `v` and a digit (U03, SMP-0412, B-2603-03, SC2, S2, L1, CO2, VR-010, ADR-0011, A022, v1): a name or an id the page uses for
   something, not a quantity. A token that starts with a digit (7, 4.5, 08:30, 10h, 2x) is never a name, and neither is a lowercase name such as x3.
 - the version of the licence in "CC BY 4.0": the name of a licence, not a figure.
@@ -66,14 +67,25 @@ class Walk(HTMLParser):
         self.close()
         assert not self.open, f"elements left open: {[t[0] for t in self.open]}"
 
+    def alt_of(self, tag, a):
+        """The alt text of a picture is prose: it is a text node of its own, under the data-src of the picture or of an ancestor, and the English of its data-i18n-alt key."""
+        if tag != "img" or a.get("alt") is None:
+            return
+        if a.get("data-i18n-alt"):
+            self.english.setdefault(a["data-i18n-alt"], []).append(a["alt"])
+        self.nodes.append(Node(self.getpos()[0], a["alt"], False, bool((a.get("data-src") or "").split()) or any(t[1] for t in self.open),
+                               (a["data-i18n-alt"],) if a.get("data-i18n-alt") else ()))
+
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
+        self.alt_of(tag, a)
         if a.get("data-i18n-aria"):  # the English of this key is the aria-label
             self.english.setdefault(a["data-i18n-aria"], []).append(a.get("aria-label") or "")
         if tag not in VOID:
             self.open.append((tag, bool((a.get("data-src") or "").split()), [a["data-i18n"], ""] if a.get("data-i18n") else None))
 
     def handle_startendtag(self, tag, attrs):  # <path .../> opens nothing
+        self.alt_of(tag, dict(attrs))
         if dict(attrs).get("data-i18n-aria"):
             self.english.setdefault(dict(attrs)["data-i18n-aria"], []).append(dict(attrs).get("aria-label") or "")
 
@@ -175,6 +187,11 @@ JS = (SRC / "i18n.js").read_text(encoding="utf-8")
     ("<p>Sample SMP-0412 of U03, batch B-2603-03, run RUN-3318 v1, SC2 in S2, L1, CO2, A022, S001, VR-010 and ADR-0011.</p>", []),
     ("<p>Text and figures: CC BY 4.0.</p>", []),
     ("<p>Text and figures: CC BY 4.0 for 7 years.</p>", ["7"]),
+    ('<img src="a.jpg" alt="A plant of 24 reactors">', ["24"]),  # the alt of a picture is prose
+    ('<img src="a.jpg" alt="A plant of 24 reactors" />', ["24"]),
+    ('<div data-src="A001"><img src="a.jpg" alt="A plant of 24 reactors"></div>', []),
+    ('<img src="a.jpg" alt="A plant of rows of reactors">', []),
+    ('<img src="a.jpg" width="1024" height="518" alt="">', []),  # the size attributes are markup
 ])
 def test_the_finder_reads_a_number_without_a_source(fragment, expected):
     assert [q for _, q in unsourced(fragment)] == expected
@@ -188,6 +205,11 @@ def test_the_finder_keeps_the_ancestor_chain_across_elements_without_an_end_tag(
 def test_the_finder_names_the_line_and_the_key():
     found = describe(unsourced('<p>\n<span data-i18n="c.lead">about 7 min</span></p>'))
     assert found == ["line 2: '7' in 'about 7 min' (c.lead)"]
+
+
+def test_the_finder_reads_the_english_of_a_picture_from_its_alt_text():
+    fragment = '<img src="a.jpg" alt="The plant" data-i18n-alt="pic"><p data-i18n="a">x</p><img src="b.jpg" alt="Racks" data-i18n-alt="pic2" />'
+    assert Walk(fragment).english == {"pic": ["The plant"], "a": ["x"], "pic2": ["Racks"]}
 
 
 @pytest.mark.parametrize("fragment, expected", [

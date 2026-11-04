@@ -6,8 +6,9 @@
 Copies --root under /LS_Bioprocess/ in a scratch folder and serves that over http.server: a project site on GitHub Pages lives under /<repository>/, and a root-absolute address would pass
 at the root of a server and fail there. Drives headless Chromium (Playwright sync API), closes it, and writes results.json and summary.md to --out.
 
-  folder         the files of the folder: the page, the fonts it names with their two licences (fonts/), the lab, an empty .nojekyll, and nothing of site/infographic/ besides index.html and fonts/
-  infographic_origin   a cold load of the page asks no other origin for anything and nothing outside /LS_Bioprocess/, and Archivo and IBM Plex Mono load from the folder's own fonts/
+  folder         the files of the folder: the page, the fonts it names with their two licences (fonts/), the pictures it names (media/), the lab, an empty .nojekyll, and nothing of site/infographic/
+                 besides index.html, fonts/ and media/
+  infographic_origin   a cold load of the page asks no other origin for anything and nothing outside /LS_Bioprocess/, Archivo and IBM Plex Mono load from the folder's own fonts/ and every picture loads
   links          the infographic opens, its link opens the lab, the browser check of the lab reads `identical`, the lab's link opens the infographic again; both link texts in English and Korean;
                  no request of the lab leaves the path of the site or the origin
   language       nothing chosen: both pages open in English (ADR-0006); Korean chosen on the infographic is the language of the lab after the click, and a choice made in the lab (English, then
@@ -46,8 +47,8 @@ from qa_timing import set_mode
 
 REPO = Path(__file__).resolve().parents[2]
 SUBPATH = "LS_Bioprocess"
-REQUIRED = (".nojekyll", "index.html", "lab/index.html", "lab/reference.json", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt")  # the OFL asks for the licence texts beside the fonts
-TOP = {".nojekyll", "index.html", "lab", "fonts"}  # what the folder may hold at its top: the page, its fonts, the lab and the marker file
+REQUIRED = (".nojekyll", "index.html", "lab/index.html", "lab/reference.json", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt", "media/plant.jpg")  # the OFL asks for the licence texts beside the fonts
+TOP = {".nojekyll", "index.html", "lab", "fonts", "media"}  # what the folder may hold at its top: the page, its fonts, its pictures, the lab and the marker file
 LAB_TEXTS = {"en": "Open the lab", "ko": "랩 열기"}  # the link of the infographic (site/infographic/src)
 BACK_TEXTS = {"en": "Explainer page", "ko": "해설 페이지"}  # the link of the lab (src/i18n)
 
@@ -58,7 +59,7 @@ BACK_TEXTS = {"en": "Explainer page", "ko": "해설 페이지"}  # the link of t
 def folder_problems(files: list[str], nojekyll_bytes: int) -> list[str]:
     """What is wrong with the list of files of the folder (paths relative to it)."""
     problems = [f"missing {name}" for name in REQUIRED if name not in files]
-    problems += [f"{name}: not part of the site (only index.html, fonts/, lab/ and .nojekyll belong at the top)" for name in files if name.split("/")[0] not in TOP]
+    problems += [f"{name}: not part of the site (only index.html, fonts/, media/, lab/ and .nojekyll belong at the top)" for name in files if name.split("/")[0] not in TOP]
     if ".nojekyll" in files and nojekyll_bytes != 0:
         problems.append(f".nojekyll holds {nojekyll_bytes} bytes (it must be empty)")
     return problems
@@ -74,6 +75,16 @@ def font_problems(files: list[str], page_html: str) -> list[str]:
     return [f"the page names {u}, which the folder does not hold" for u in font_urls(page_html) if u not in files]
 
 
+def picture_urls(page_html: str) -> list[str]:
+    """The addresses in the `src` of the page's `img` elements, in order."""
+    return re.findall(r"<img\b[^>]*?\bsrc=\"([^\"]+)\"", page_html)
+
+
+def picture_problems(files: list[str], page_html: str) -> list[str]:
+    """The pictures the page names (a data address names none) that the folder does not hold (addresses are relative to the page, which sits at the top of the folder)."""
+    return [f"the page names {u}, which the folder does not hold" for u in picture_urls(page_html) if not u.startswith("data:") and u not in files]
+
+
 # ---- checks -------------------------------------------------------------------------------------------
 
 
@@ -82,17 +93,19 @@ def check_folder(root: Path) -> Result:
     nojekyll = root / ".nojekyll"
     problems = folder_problems(files, nojekyll.stat().st_size if nojekyll.exists() else 0)
     if "index.html" in files:
-        problems += font_problems(files, (root / "index.html").read_text(encoding="utf-8"))
+        page = (root / "index.html").read_text(encoding="utf-8")
+        problems += font_problems(files, page) + picture_problems(files, page)
     detail = f"{len(files)} files, {len([f for f in files if f.startswith('lab/')])} of them in lab/"
     return Result("folder", not problems, detail + (f" | {problems[0]}" if problems else ""), {"files": files, "problems": problems})
 
 
 def check_infographic_origin(browser, base: str) -> Result:
-    """A cold load of the page under /<repository>/: no other origin, no address outside the path of the site (a root-absolute font address), and both families loaded."""
-    requests, loaded = cold_load(browser, base)
-    problems = origin_problems(requests, loaded, base) + [f"asked for {u}, outside {base}" for u in outside_base(requests, base)]
-    detail = f"{len(requests)} requests, all under /{SUBPATH}/; loaded from the folder's fonts/: {', '.join(loaded) or 'none'}"
-    return Result("infographic_origin", not problems, detail if not problems else "; ".join(problems[:3]), {"requests": requests, "loaded": loaded, "problems": problems})
+    """A cold load of the page under /<repository>/: no other origin, no address outside the path of the site (a root-absolute font or picture address), both families loaded and every picture loaded."""
+    requests, loaded, unloaded = cold_load(browser, base)
+    problems = origin_problems(requests, loaded, base, unloaded) + [f"asked for {u}, outside {base}" for u in outside_base(requests, base)]
+    pictures = len([u for u in requests if u.endswith(".jpg")])
+    detail = f"{len(requests)} requests, all under /{SUBPATH}/; loaded from the folder's fonts/: {', '.join(loaded) or 'none'}; {pictures} picture{'s' if pictures != 1 else ''} loaded"
+    return Result("infographic_origin", not problems, detail if not problems else "; ".join(problems[:3]), {"requests": requests, "loaded": loaded, "unloaded": unloaded, "problems": problems})
 
 
 def lang_of(page) -> str:

@@ -6,7 +6,7 @@
   site/infographic/index.html         full standalone document (GitHub Pages)
   site/infographic/dist/artifact.html body-only fragment for the Artifact viewer (gitignored)
 
-The page names its fonts by relative address (fonts/, which scripts/assemble_site.py copies to the published site). The fragment cannot reach local files, so it carries the same files as data addresses.
+The page names its fonts and its pictures by relative address (fonts/ and media/, which scripts/assemble_site.py copies to the published site). The fragment cannot reach local files, so it carries the same files as data addresses.
 
 While assembling, the ledgers are read so that every `data-src` element gets its grade chip and any
 citation of a source below `main-reread` without `data-status="provisional"` fails the build.
@@ -27,6 +27,8 @@ SRC = HERE / "src"
 MARK_FILE = REPO / "docs" / "media" / "mark.svg"  # B1: the one drawing of the mark; the header inlines it and the icon is the file itself
 MARK_PALETTE = re.compile(r"<style>[\s\S]*?</style>\s*")
 FONT_DIR = HERE / "fonts"  # the woff2 files and their licences (fonts/README.md); the page asks no other origin for anything
+MEDIA_DIR = HERE / "media"  # the hero picture of the plant (scripts/media/make_media.py --only hero), shipped beside the page
+MEDIA_SRC = re.compile(r'src="media/([^"/]+\.jpg)"')
 # Google Fonts splits a family by script; the page keeps latin and latin-ext with the unicode-range of Google's own stylesheet, so the same characters come from the same files as before
 SUBSETS = {
     "latin": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
@@ -35,7 +37,7 @@ SUBSETS = {
 # (family, font-weight, font-stretch or "", file name stem): Archivo is one variable file per subset (width and weight axes), IBM Plex Mono has one file per weight
 FACES = (("Archivo", "400 800", "62% 125%", "archivo"),
          *(("IBM Plex Mono", str(w), "", f"ibm-plex-mono-{w}") for w in (400, 500, 600, 700)))
-DESCRIPTION = ("An explainer of how results lose their process context when N bioreactors send samples to two shared analyzers, "
+DESCRIPTION = ("An explainer of how a result can lose the reactor and the moment it belongs to when reactors share analyzers, "
                "with a link to the lab that runs the synthetic plant. Synthetic data; this page states no simulation result.")
 RANK = {g: i for i, g in enumerate("SPDA")}
 LABELS = {"S": ("sourced", "출처 확인"), "P": ("proxy", "대리지표"), "D": ("derived", "유도"), "A": ("assumed", "가정")}
@@ -68,6 +70,11 @@ def mark_icon() -> str:
 
 def data_address(name: str) -> str:
     return "data:font/woff2;base64," + base64.b64encode((FONT_DIR / name).read_bytes()).decode("ascii")
+
+
+def inline_media(body: str) -> str:
+    """The body with each `src="media/x.jpg"` as a data address: the fragment cannot reach local files."""
+    return MEDIA_SRC.sub(lambda m: 'src="data:image/jpeg;base64,' + base64.b64encode((MEDIA_DIR / m.group(1)).read_bytes()).decode("ascii") + '"', body)
 
 
 def unquote(v: str) -> str:
@@ -140,7 +147,7 @@ def source_list(sources: dict) -> str:
 
 
 def check_i18n(body: str, i18n: str, errors: list[str]) -> None:
-    keys = set(re.findall(r'data-i18n(?:-aria)?="([^"]+)"', body))
+    keys = set(re.findall(r'data-i18n(?:-aria|-alt)?="([^"]+)"', body))
     have = set(re.findall(r'^"([^"]+)":', i18n, re.M))
     for k in sorted(keys - have):
         errors.append(f"i18n.js: missing Korean for {k}")
@@ -171,7 +178,7 @@ def render() -> tuple[str, str, list[str]]:
     )
     fragment = (
         "<title>Sample Lineage Lab</title>\n<meta name=\"claude:viewport-fit-sides\" content=\"cover\">\n"
-        f"<style>\n{font_faces(data_address)}{css}</style>\n{body}{script}\n"
+        f"<style>\n{font_faces(data_address)}{css}</style>\n{inline_media(body)}{script}\n"
     )
     return page, fragment, []
 

@@ -28,6 +28,13 @@ SHOT_SIZE = (1280, 720)
 FPS = 10
 COLOURS = 96
 
+# The hero picture of the explainer (P10): the plant of plant_en.png as one JPEG that ships beside the page (site/infographic/media/, copied to the site's media/). The page names its width and height,
+# so the file must have exactly those; the encoder is ffmpeg's `mjpeg` (this ffmpeg has no WebP encoder), tried from the finest quality down until the file fits.
+HERO_NAME = "plant.jpg"
+HERO_MAX_BYTES = 100 * KB
+HERO_WIDTH = 1024
+HERO_QUALITIES = range(2, 13)  # ffmpeg -q:v for mjpeg: 2 is the finest of these
+
 
 def require_ffmpeg() -> str:
     """The path of ffmpeg, or a SystemExit that says what is missing (the GIFs need ffmpeg on the PATH)."""
@@ -65,6 +72,62 @@ def render_gif(src: Path, dst: Path, start: float, end: float, cuts: list[tuple[
     done = subprocess.run(gif_command(require_ffmpeg(), src, dst, start, end, cuts, crop), capture_output=True, text=True)
     if done.returncode != 0:
         raise RuntimeError(f"ffmpeg failed for {dst.name}: {done.stderr.strip()[-400:]}")
+
+
+def jpeg_command(ffmpeg: str, src: Path, dst: Path, quality: int, width: int = HERO_WIDTH) -> list[str]:
+    """ffmpeg arguments for one still: the picture scaled to `width` (the height keeps the proportions, to an even number), one MJPEG frame at `quality`."""
+    return [ffmpeg, "-y", "-v", "error", "-i", str(src), "-vf", f"scale={width}:-2:flags=lanczos", "-frames:v", "1", "-update", "1", "-c:v", "mjpeg", "-q:v", str(quality), "-pix_fmt", "yuvj420p", str(dst)]
+
+
+def render_jpeg(src: Path, dst: Path, limit: int = HERO_MAX_BYTES, width: int = HERO_WIDTH) -> int:
+    """Make `dst` from the picture `src` at the finest quality whose file is at most `limit` bytes; return that quality. Raises RuntimeError when ffmpeg fails or no quality fits."""
+    ffmpeg = require_ffmpeg()
+    for quality in HERO_QUALITIES:
+        done = subprocess.run(jpeg_command(ffmpeg, src, dst, quality, width), capture_output=True, text=True)
+        if done.returncode != 0:
+            raise RuntimeError(f"ffmpeg failed for {dst.name}: {done.stderr.strip()[-400:]}")
+        if dst.stat().st_size <= limit:
+            return quality
+    raise RuntimeError(f"{dst.name} is still {dst.stat().st_size} bytes at the coarsest quality tried; the limit is {limit}")
+
+
+def jpeg_size(data: bytes) -> tuple[int, int]:
+    """The width and the height of a JPEG, read from its first start-of-frame marker (no image library). Raises ValueError for anything that is not a JPEG with a frame."""
+    if data[:2] != b"\xff\xd8":
+        raise ValueError("not a JPEG")
+    i = 2
+    while i + 4 <= len(data):
+        if data[i] != 0xFF:
+            raise ValueError(f"expected a marker at {i}")
+        marker = data[i + 1]
+        if marker == 0xFF:  # fill byte
+            i += 1
+            continue
+        if marker in (0x01, *range(0xD0, 0xDA)):  # markers with no length
+            i += 2
+            continue
+        length = int.from_bytes(data[i + 2:i + 4], "big")
+        if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):  # start of frame: precision, height, width
+            return int.from_bytes(data[i + 7:i + 9], "big"), int.from_bytes(data[i + 5:i + 7], "big")
+        i += 2 + length
+    raise ValueError("no start-of-frame marker")
+
+
+def hero_problems(path: Path, size: tuple[int, int] | None = None) -> list[str]:
+    """What is wrong with the hero picture: a missing file, a file over its limit, a file that is not a JPEG, or (when the page's width and height are given) a size the page does not name."""
+    if not path.is_file():
+        return [f"{path.name}: missing"]
+    problems = []
+    data = path.read_bytes()
+    if len(data) > HERO_MAX_BYTES:
+        problems.append(f"{path.name}: {len(data)} bytes, the limit is {HERO_MAX_BYTES}")
+    try:
+        found = jpeg_size(data)
+    except ValueError as e:
+        return problems + [f"{path.name}: {e}"]
+    if size is not None and found != size:
+        problems.append(f"{path.name}: {found[0]} by {found[1]}, the page names {size[0]} by {size[1]}")
+    return problems
 
 
 def gif_info(data: bytes) -> dict:

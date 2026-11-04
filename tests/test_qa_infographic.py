@@ -167,6 +167,12 @@ def test_every_request_to_another_origin_is_named():
     ]
 
 
+def test_a_picture_that_did_not_load_is_a_problem_and_a_page_without_one_has_none():
+    ok = [BASE, BASE + "media/plant.jpg"]
+    assert qa.origin_problems(ok, ["Archivo", "IBM Plex Mono"], BASE, []) == []
+    assert qa.origin_problems(ok, ["Archivo", "IBM Plex Mono"], BASE, ["media/plant.jpg"]) == ["the picture media/plant.jpg did not load"]
+
+
 def test_a_family_that_did_not_load_is_a_problem_even_when_no_origin_was_asked():
     assert qa.origin_problems([BASE], ["Archivo"], BASE) == ["IBM Plex Mono did not load from the page's own files"]
     assert qa.origin_problems([BASE], [], BASE) == ["Archivo did not load from the page's own files", "IBM Plex Mono did not load from the page's own files"]

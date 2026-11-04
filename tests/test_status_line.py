@@ -1,7 +1,9 @@
-"""The infographic's status line says what exists now (S3h3): the lab is built, the Break-out screen is held back (docs/design/lab_ui.md sections 6 and 20; ADR-0013).
+"""The infographic's status line says what holds now (S3h3, reworded in P10): all data is synthetic, the page states no simulation result and predicts no real laboratory, and the Break-out screen is held
+back in the public build (docs/design/lab_ui.md sections 6 and 20; ADR-0013).
 
-The texts are typed by hand from that state and compared with the page's sources and with the committed page. The Korean text introduces no number, claim or source that the English lacks (ADR-0006).
-The headless page QA (scripts/qa/qa_infographic.py) reads the built page in both languages.
+P10 moved the line from a large notice that opened the page to a quiet note under the lede and the picture of the plant, and cut it to those promises: what the lab is and what it runs is said by the
+lede, the call to action and the picture (tests/test_explainer_first_screen.py). The texts are typed by hand from that state and compared with the page's sources and with the committed page. The Korean
+text introduces no number, claim or source that the English lacks (ADR-0006). The headless page QA (scripts/qa/qa_infographic.py) reads the built page in both languages.
 """
 from __future__ import annotations
 
@@ -11,17 +13,15 @@ from helpers import REPO
 
 INFOGRAPHIC = REPO / "site" / "infographic"
 
-EYEBROW_EN = "Technical explainer &middot; lab built"
+EYEBROW_EN = "Interactive explainer"
 NOTICE_EN = (
-    "Status: the lab is built and runs the synthetic plant in your browser. The plant is a scene to walk through, with a text version where the browser has no WebGL. "
-    "The Break-out screen, and the Break-out cases in the plant, are held back in the public build until the sources behind them are re-read. "
-    "All data is synthetic, built from public sources and labelled assumptions. This page states no simulation result, and nothing on it predicts a real laboratory."
+    "All data is synthetic, and nothing on this page predicts a real laboratory or states a simulation result. "
+    "The Break-out screen and the plant's Break-out cases are held back in the public build until the sources behind them are re-read."
 )
-EYEBROW_KO = "기술 해설 · 랩 구현됨"
+EYEBROW_KO = "인터랙티브 해설"
 NOTICE_KO = (
-    "현재 상태: 랩이 구현되어 있어 합성 플랜트를 브라우저에서 실행합니다. 플랜트는 걸어 다니며 볼 수 있는 장면이고, 브라우저에 WebGL이 없으면 글로 된 판으로 보여 줍니다. "
-    "오염 이벤트 역추적 화면과 플랜트 안의 이탈 사례는 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다. "
-    "모든 데이터는 합성 데이터이며, 공개 자료와 명시한 가정으로 만들었습니다. 이 페이지는 시뮬레이션 결과를 제시하지 않으며, 실제 실험실을 예측하지 않습니다."
+    "모든 데이터는 합성 데이터이고, 이 페이지는 시뮬레이션 결과를 제시하지 않으며 실제 실험실을 예측하지 않습니다. "
+    "오염 이벤트 역추적 화면과 플랜트 안의 이탈 사례는 그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다."
 )
 OLD = ("Design phase", "design phase", "design-phase", "No simulation result exists yet", "설계 단계", "아직 시뮬레이션 결과는 없고")
 
@@ -74,6 +74,19 @@ def test_the_status_line_keeps_the_two_promises_of_the_old_notice():
     # synthetic data, and no prediction of a real laboratory (invariants 1 and 9 of .claude/CLAUDE.md)
     assert "All data is synthetic" in NOTICE_EN and "predicts a real laboratory" in NOTICE_EN
     assert "합성 데이터" in NOTICE_KO and "실제 실험실을 예측하지 않습니다" in NOTICE_KO
+
+
+def test_the_status_line_still_says_no_simulation_result_and_that_the_break_out_screen_is_held_back_in_both_languages():
+    # the old notice said both; P10 cut it to two sentences and kept them
+    assert "states a simulation result" in NOTICE_EN and "시뮬레이션 결과를 제시하지 않으며" in NOTICE_KO
+    assert "The Break-out screen" in NOTICE_EN and "held back in the public build until the sources behind them are re-read" in NOTICE_EN
+    assert "오염 이벤트 역추적 화면" in NOTICE_KO and "그 근거 출처를 다시 읽을 때까지 공개 빌드에서 보류 중입니다" in NOTICE_KO
+
+
+def test_the_status_line_is_one_or_two_short_sentences_and_the_eyebrow_names_no_build_state():
+    assert len(re.findall(r"[.] |[.]$", NOTICE_EN)) == 2 and len(re.findall(r"[.] |[.]$", NOTICE_KO)) == 2
+    for text in (EYEBROW_EN, EYEBROW_KO):
+        assert "built" not in text.lower() and "구현" not in text, text
 
 
 # ---- what exists, said in the footer of the explainer (P9, 2026-11-03) ----------------------------------------------------------

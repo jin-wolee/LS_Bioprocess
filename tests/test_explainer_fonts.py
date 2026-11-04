@@ -223,10 +223,11 @@ def browser():
 
 
 def copy_page(dst):
-    """The committed page with its fonts, as the assembled folder holds them."""
+    """The committed page with its fonts and its pictures, as the assembled folder holds them."""
     dst.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(PAGE, dst / "index.html")
     shutil.copytree(FONTS, dst / "fonts")
+    shutil.copytree(INFOGRAPHIC / "media", dst / "media")
     return dst / "index.html"
 
 

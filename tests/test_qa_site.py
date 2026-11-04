@@ -1,7 +1,8 @@
 """Pure helper of scripts/qa/qa_site.py (the headless QA of the assembled site folder, docs/design/lab_ui.md section 13).
 
-The expected problems are typed by hand from the rule of the design: the folder holds the infographic page at its root, the fonts the page names under fonts/ with their two licences, the lab under
-lab/ and an empty .nojekyll, and nothing of site/infographic/ besides its index.html and fonts/. The browser checks run through `uv run python scripts/qa/qa_site.py`.
+The expected problems are typed by hand from the rule of the design: the folder holds the infographic page at its root, the fonts the page names under fonts/ with their two licences, the pictures it
+names under media/ (P10), the lab under lab/ and an empty .nojekyll, and nothing of site/infographic/ besides its index.html, fonts/ and media/. The browser checks run through
+`uv run python scripts/qa/qa_site.py`.
 """
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ from helpers import REPO
 sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_site as qs  # noqa: E402
 
-GOOD = [".nojekyll", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt", "fonts/README.md", "fonts/archivo-latin.woff2", "index.html", "lab/assets/main-1a2b.js", "lab/index.html", "lab/reference.json"]
+GOOD = [".nojekyll", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt", "fonts/README.md", "fonts/archivo-latin.woff2", "index.html", "lab/assets/main-1a2b.js", "lab/index.html", "lab/reference.json", "media/plant.jpg"]
 PAGE = """<style>
 @font-face { font-family: "Archivo"; src: url(fonts/archivo-latin.woff2) format("woff2"); }
 @font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url(fonts/ibm-plex-mono-400-latin.woff2) format("woff2"); }
@@ -25,7 +26,7 @@ def test_the_folder_the_design_describes_has_no_problem():
 
 
 def test_each_required_file_is_named_when_it_is_missing():
-    for gone in (".nojekyll", "index.html", "lab/index.html", "lab/reference.json", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt"):
+    for gone in (".nojekyll", "index.html", "lab/index.html", "lab/reference.json", "fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt", "media/plant.jpg"):
         problems = qs.folder_problems([f for f in GOOD if f != gone], nojekyll_bytes=0)
         assert len(problems) == 1 and gone in problems[0], (gone, problems)
 
@@ -39,6 +40,19 @@ def test_anything_at_the_top_besides_the_page_the_lab_and_nojekyll_is_a_problem(
 def test_nojekyll_must_be_empty():
     problems = qs.folder_problems(GOOD, nojekyll_bytes=3)
     assert len(problems) == 1 and ".nojekyll" in problems[0]
+
+
+def test_the_pictures_a_page_names_are_the_src_of_its_img_elements_and_a_data_address_names_none():
+    page = '<img src="media/plant.jpg" width="1024" height="518" alt="x"><img alt="y" src="media/other.jpg" /><img src="data:image/jpeg;base64,AAAA" alt=""><a href="lab/">lab</a>'
+    assert qs.picture_urls(page) == ["media/plant.jpg", "media/other.jpg", "data:image/jpeg;base64,AAAA"]
+    assert qs.picture_urls('<p>no picture</p><a href="media/x.jpg">link</a>') == []
+
+
+def test_a_picture_the_page_names_and_the_folder_lacks_is_a_problem():
+    page = '<img src="media/plant.jpg" alt="x"><img src="media/other.jpg" alt="y"><img src="data:image/jpeg;base64,AAAA" alt="">'
+    assert qs.picture_problems(GOOD, page) == ["the page names media/other.jpg, which the folder does not hold"]
+    assert qs.picture_problems([*GOOD, "media/other.jpg"], page) == []
+    assert qs.picture_problems([f for f in GOOD if f != "media/plant.jpg"], page) == ["the page names media/plant.jpg, which the folder does not hold", "the page names media/other.jpg, which the folder does not hold"]
 
 
 def test_the_stand_in_project_path_is_the_name_of_the_repository_of_the_pages_addresses():

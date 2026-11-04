@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Makes the media of the two READMEs into docs/media/: two GIFs and the screenshots, headless and repeatable (R2).
 
-    uv run python scripts/media/make_media.py [--out docs/media] [--no-build] [--only tour,action,shots] [--keep-video DIR] [--timeline]
+    uv run python scripts/media/make_media.py [--out docs/media] [--no-build] [--only tour,action,shots,hero] [--keep-video DIR] [--timeline] [--hero-out site/infographic/media]
 
 The media are the lab's own pictures of its synthetic run: the default scenario and the scenario of the guided scene, fixed seeds and fixed instants, the light theme, English for README.md and Korean
 for the plant, the table of the tour and Lineage in README.ko.md. The script builds the lab as a local build (`VITE_LAB_LOCAL=1 npm run build:lab`, the build the plant QA serves: the plant of a Break-out
@@ -12,6 +12,8 @@ so and stops if it is not. At the end it checks every file against the limits of
     tour.gif            the guided scene from the entry of the plant through its five steps
     action.gif          one operator action: a feed added from the bar, the run recomputed, the clock playing again, the list showing it
     *_en.png, *_ko.png  the plant, the card table of the tour, Lineage (both languages), Results and the plant of a Break-out case (English)
+    plant.jpg           the hero picture of the explainer (P10): the scene of plant_en.png as one JPEG of at most 100 KB, written to --hero-out (site/infographic/media/), not to docs/media/;
+                        scripts/assemble_site.py copies it to the site's media/. `--only hero` makes it alone and leaves docs/media/ as it is
 
 The script states no simulation result: a picture shows what the lab computed in the headless browser on that visit.
 """
@@ -29,13 +31,13 @@ REPO = HERE.parents[1]
 sys.path[:0] = [str(HERE), str(REPO / "scripts" / "qa")]
 
 from media_clips import record_action, record_tour  # noqa: E402
-from media_files import SHOTS_EN, SHOTS_KO, inspect, kept_seconds, render_gif, require_ffmpeg, size_problems  # noqa: E402
+from media_files import HERO_NAME, SHOTS_EN, SHOTS_KO, hero_problems, inspect, kept_seconds, render_gif, render_jpeg, require_ffmpeg, size_problems  # noqa: E402
 from media_shots import breakout_shot, lineage_shot, plant_shot, results_shot, tour_table_shot  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
 from qa_infographic import serve  # noqa: E402
 from qa_plant_helpers import SOFTWARE_GL  # noqa: E402
 
-PARTS = ("tour", "action", "shots")
+PARTS = ("tour", "action", "shots", "hero")
 
 
 def build() -> int:
@@ -63,11 +65,21 @@ def make_shots(browser, url: str, out: Path) -> None:
     breakout_shot(browser, url, out / "breakout_en.png")
 
 
+def make_hero(browser, url: str, out: Path, work: Path) -> None:
+    """The hero picture: the plant screenshot of the README (English, the same instant and camera), scaled and encoded as the JPEG the explainer shows."""
+    work.mkdir(parents=True, exist_ok=True)
+    plant_shot(browser, url, work / "plant_hero.png", "en")
+    out.mkdir(parents=True, exist_ok=True)
+    quality = render_jpeg(work / "plant_hero.png", out / HERO_NAME)
+    print(f"{HERO_NAME}: JPEG quality {quality}, {(out / HERO_NAME).stat().st_size} bytes")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, default=REPO / "docs" / "media", help="the folder the media go to")
     ap.add_argument("--no-build", action="store_true", help="serve dist/lab as it is")
-    ap.add_argument("--only", default=",".join(PARTS), help="which parts to make: tour, action, shots (comma separated)")
+    ap.add_argument("--only", default=",".join(PARTS), help="which parts to make: tour, action, shots, hero (comma separated)")
+    ap.add_argument("--hero-out", type=Path, default=REPO / "site" / "infographic" / "media", help="the folder the hero picture of the explainer goes to")
     ap.add_argument("--keep-video", type=Path, default=None, help="also keep each recording (webm) in this folder")
     ap.add_argument("--timeline", action="store_true", help="print where the steps of each GIF fall, in seconds into the GIF (for tuning the holds)")
     args = ap.parse_args(argv)
@@ -94,18 +106,24 @@ def main(argv=None) -> int:
                         make_gif(record_tour, browser, url, args.out, "tour.gif", Path(tmp) / "tour", args.keep_video, args.timeline)
                     elif part == "action":
                         make_gif(record_action, browser, url, args.out, "action.gif", Path(tmp) / "action", args.keep_video, args.timeline)
+                    elif part == "hero":
+                        make_hero(browser, url, args.hero_out, Path(tmp) / "hero")
                     else:
                         make_shots(browser, url, args.out)
                 except Exception as e:  # noqa: BLE001 - one part failing must not leave the browser open or hide the others
                     failures.append(f"{part}: {type(e).__name__}: {str(e).splitlines()[0] if str(e) else ''}")
         finally:
             browser.close()
-    wanted = [n for n, p in (("tour.gif", "tour"), ("action.gif", "action")) if p in parts] + ([*SHOTS_EN, *SHOTS_KO] if "shots" in parts else [])
-    found = inspect(args.out)
-    for f in found:
-        print(f"{f.name:<20} {f.bytes:>9} bytes" + (f"  {f.width}x{f.height}" if f.width else "") + (f"  {f.seconds:.1f} s" if f.seconds else ""))
-    print(f"{'total':<20} {sum(f.bytes for f in found):>9} bytes")
-    problems = failures + size_problems(found, wanted)
+    problems = list(failures)
+    if any(p != "hero" for p in parts):
+        wanted = [n for n, p in (("tour.gif", "tour"), ("action.gif", "action")) if p in parts] + ([*SHOTS_EN, *SHOTS_KO] if "shots" in parts else [])
+        found = inspect(args.out)
+        for f in found:
+            print(f"{f.name:<20} {f.bytes:>9} bytes" + (f"  {f.width}x{f.height}" if f.width else "") + (f"  {f.seconds:.1f} s" if f.seconds else ""))
+        print(f"{'total':<20} {sum(f.bytes for f in found):>9} bytes")
+        problems += size_problems(found, wanted)
+    if "hero" in parts and not any(f.startswith("hero:") for f in failures):
+        problems += hero_problems(args.hero_out / HERO_NAME)
     for p in problems:
         print(f"FAIL  make_media {p}")
     return 1 if problems else 0

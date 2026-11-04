@@ -5,8 +5,8 @@
 
 Serves --root over http.server on a free localhost port, drives headless Chromium (Playwright sync API),
 writes results.json, summary.md and shots/*.png to --out. This file is the CLI, the server, the checks that sweep
-the theme matrix (1 matrix, 5 contrast), the origin check (9: a cold load asks no other origin for anything, and the
-page's two font families load from its own files) and the report; the other checks and the unit-tested pure helpers
+the theme matrix (1 matrix, 5 contrast), the origin check (9: a cold load asks no other origin for anything, the
+page's two font families load from its own files and every picture it names loads) and the report; the other checks and the unit-tested pure helpers
 live in qa_checks.py. The element contract is in the S0b brief.
 """
 from __future__ import annotations
@@ -152,25 +152,30 @@ def check_contrast(browser, url) -> Result:
 # ---- the origin check ------------------------------------------------------------------------------------
 
 
-def origin_problems(requests: list[str], loaded: list[str], base: str) -> list[str]:
-    """What is wrong with a cold load: a request to another origin (data: and blob: never leave the page), and a family of the page that the browser did not load from the page's own files."""
-    return [f"asked another origin for {u}" for u in cross_origin(requests, base)] + [f"{f} did not load from the page's own files" for f in FAMILIES if f not in loaded]
+def origin_problems(requests: list[str], loaded: list[str], base: str, unloaded: list[str] = ()) -> list[str]:
+    """What is wrong with a cold load: a request to another origin (data: and blob: never leave the page), a family of the page that the browser did not load from the page's own files, and a picture
+    of the page (an `img` that has no width once the page has loaded) that did not load."""
+    return ([f"asked another origin for {u}" for u in cross_origin(requests, base)] + [f"{f} did not load from the page's own files" for f in FAMILIES if f not in loaded]
+            + [f"the picture {src} did not load" for src in unloaded])
 
 
-def cold_load(browser, url) -> tuple[list[str], list[str]]:
-    """(the URLs the page requested, the font families whose faces the browser loaded) after a cold load, fonts settled."""
+def cold_load(browser, url) -> tuple[list[str], list[str], list[str]]:
+    """(the URLs the page requested, the font families whose faces the browser loaded, the `src` of each picture that did not load) after a cold load, fonts settled."""
     with open_lab(browser, url) as (page, _, requests):
         page.evaluate("document.fonts.ready.then(() => true)")
         page.wait_for_timeout(300)
         loaded = page.evaluate("[...new Set([...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replace(/[\"']/g, '')))]")
-        return list(requests), loaded
+        unloaded = page.evaluate("[...document.images].filter(i => !i.complete || i.naturalWidth === 0).map(i => i.getAttribute('src'))")
+        return list(requests), loaded, unloaded
 
 
 def check_origin(browser, url) -> Result:
-    requests, loaded = cold_load(browser, url)
-    problems = origin_problems(requests, loaded, url)
-    detail = f"{len(requests)} requests, all to the page's origin; loaded from its own files: {', '.join(f for f in FAMILIES if f in loaded) or 'none'}"
-    return Result("origin", not problems, detail if not problems else "; ".join(problems[:3]), {"requests": requests, "loaded": loaded, "problems": problems})
+    requests, loaded, unloaded = cold_load(browser, url)
+    problems = origin_problems(requests, loaded, url, unloaded)
+    pictures = len([u for u in requests if u.endswith(".jpg")])
+    detail = (f"{len(requests)} requests, all to the page's origin; loaded from its own files: {', '.join(f for f in FAMILIES if f in loaded) or 'none'}; "
+              f"{pictures} picture{'s' if pictures != 1 else ''} loaded")
+    return Result("origin", not problems, detail if not problems else "; ".join(problems[:3]), {"requests": requests, "loaded": loaded, "unloaded": unloaded, "problems": problems})
 
 
 # ---- driver ---------------------------------------------------------------------------------------------

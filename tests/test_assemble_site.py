@@ -1,7 +1,8 @@
 """scripts/assemble_site.py: the folder the Pages workflow uploads (docs/design/lab_ui.md section 13).
 
-The expected file lists are typed by hand from the rule of the design: the infographic page at the root, its fonts under fonts/ (with their licences), the built lab under lab/, an empty .nojekyll, and
-nothing else (S3h1 review: site/infographic/ also holds the build script and the sources of the page, which must not be published; FONT1: the fonts are published, the page asks no other origin).
+The expected file lists are typed by hand from the rule of the design: the infographic page at the root, its fonts under fonts/ (with their licences), its pictures under media/ (P10: the hero
+picture of the plant), the built lab under lab/, an empty .nojekyll, and nothing else (S3h1 review: site/infographic/ also holds the build script and the sources of the page, which must not be
+published; FONT1: the fonts are published, the page asks no other origin).
 """
 from __future__ import annotations
 
@@ -34,7 +35,10 @@ FONT_FILES = {
 }
 
 
-def tree(root, lab=True, page=True, fonts=True):
+MEDIA_FILES = {"site/infographic/media/plant.jpg": b"\xff\xd8 a picture"}
+
+
+def tree(root, lab=True, page=True, fonts=True, media=True):
     files = {
         "site/infographic/build.py": "# build script\n",
         "site/infographic/src/body.html": "<p>source</p>",
@@ -47,6 +51,8 @@ def tree(root, lab=True, page=True, fonts=True):
         files.update(LAB_FILES)
     if fonts:
         files.update(FONT_FILES)
+    if media:
+        files.update(MEDIA_FILES)
     for rel, content in files.items():
         p = root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -58,11 +64,11 @@ def listing(folder):
     return sorted(p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file())
 
 
-def test_the_folder_holds_the_page_its_fonts_the_lab_and_nojekyll_and_nothing_else(tmp_path):
+def test_the_folder_holds_the_page_its_fonts_and_pictures_the_lab_and_nojekyll_and_nothing_else(tmp_path):
     root = tree(tmp_path)
     files = asm.assemble(root)
     expected = [".nojekyll", "fonts/OFL-Archivo.txt", "fonts/README.md", "fonts/archivo-latin.woff2", "fonts/ibm-plex-mono-400-latin.woff2", "index.html",
-                "lab/assets/main-1a2b.js", "lab/assets/worker-3c4d.js", "lab/index.html", "lab/reference.json"]
+                "lab/assets/main-1a2b.js", "lab/assets/worker-3c4d.js", "lab/index.html", "lab/reference.json", "media/plant.jpg"]
     assert listing(root / "dist" / "site") == expected
     assert files == expected
 
@@ -97,6 +103,27 @@ def test_every_font_the_real_page_names_is_in_the_assembled_folder_beside_its_li
     assert {"fonts/OFL-Archivo.txt", "fonts/OFL-IBM-Plex-Mono.txt"} <= set(listing(site))
 
 
+def test_the_pictures_are_copied_byte_for_byte_to_media(tmp_path):
+    root = tree(tmp_path)
+    asm.assemble(root)
+    for rel, content in MEDIA_FILES.items():
+        assert (root / "dist" / "site" / "media" / rel.rsplit("/", 1)[1]).read_bytes() == content
+
+
+def test_every_picture_the_real_page_names_is_in_the_assembled_folder_as_the_jpeg_of_the_hero(tmp_path):
+    root = tree(tmp_path, fonts=False, media=False)
+    shutil.copyfile(REPO / "site/infographic/index.html", root / "site/infographic/index.html")
+    shutil.copytree(REPO / "site/infographic/fonts", root / "site/infographic/fonts")
+    shutil.copytree(REPO / "site/infographic/media", root / "site/infographic/media")
+    asm.assemble(root)
+    site = root / "dist" / "site"
+    names = qa_site.picture_urls((site / "index.html").read_text(encoding="utf-8"))
+    assert names == ["media/plant.jpg"]
+    for name in names:
+        assert (site / name).read_bytes()[:2] == b"\xff\xd8" and 0 < (site / name).stat().st_size <= 100 * 1024, name
+    assert qa_site.picture_problems(listing(site), (site / "index.html").read_text(encoding="utf-8")) == []
+
+
 def test_nojekyll_is_an_empty_file(tmp_path):
     root = tree(tmp_path)
     asm.assemble(root)
@@ -119,7 +146,7 @@ def test_a_stale_file_of_an_earlier_run_is_removed(tmp_path):
     assert not (root / "dist" / "site" / "old").exists()
 
 
-@pytest.mark.parametrize("missing", ["dist/lab/index.html", "dist/lab/reference.json", "site/infographic/index.html", "site/infographic/fonts"])
+@pytest.mark.parametrize("missing", ["dist/lab/index.html", "dist/lab/reference.json", "site/infographic/index.html", "site/infographic/fonts", "site/infographic/media"])
 def test_a_missing_input_is_refused_and_no_folder_is_left(tmp_path, missing):
     root = tree(tmp_path)
     if (root / missing).is_dir():
@@ -175,7 +202,7 @@ def test_main_builds_first_then_assembles_and_reports_failure_as_exit_1(tmp_path
     monkeypatch.setattr(asm, "assemble", lambda root: (order.append("assemble"), real(root))[1])
     assert asm.main([]) == 0
     assert order == ["build", "assemble"]
-    assert "10 files" in capsys.readouterr().out
+    assert "11 files" in capsys.readouterr().out
     (tmp_path / "dist/lab/index.html").unlink()
     assert asm.main([]) == 1
     assert "dist/lab/index.html" in capsys.readouterr().err

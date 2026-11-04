@@ -17,7 +17,8 @@ from helpers import REPO
 sys.path.insert(0, str(REPO / "scripts" / "media"))
 
 import media_files  # noqa: E402
-from media_files import Found, gif_command, gif_filter, gif_info, keep_expression, kept_seconds, png_size, require_ffmpeg, size_problems  # noqa: E402
+from media_files import (Found, gif_command, gif_filter, gif_info, hero_problems, jpeg_command, jpeg_size, keep_expression, kept_seconds, png_size, render_jpeg,  # noqa: E402
+                         require_ffmpeg, size_problems)
 
 KB = 1024
 MB = 1024 * 1024
@@ -148,7 +149,7 @@ def test_the_script_says_so_and_stops_when_ffmpeg_is_not_on_the_path(monkeypatch
 
 def test_the_script_refuses_a_part_it_does_not_know_before_it_starts_a_browser():
     done = subprocess.run([sys.executable, str(REPO / "scripts" / "media" / "make_media.py"), "--only", "movie"], capture_output=True, text=True, cwd=REPO)
-    assert done.returncode == 2 and "--only takes tour, action, shots" in done.stderr
+    assert done.returncode == 2 and "--only takes tour, action, shots, hero" in done.stderr
 
 
 def test_the_script_is_in_the_scripts_readme_and_names_no_ledger_id():
@@ -168,3 +169,69 @@ def test_ffmpeg_turns_a_recording_into_a_gif_of_the_window_less_the_cuts(tmp_pat
     info = gif_info(out.read_bytes())
     assert (info["width"], info["height"]) == (960, 486)
     assert abs(info["seconds"] - 4.0) <= 0.2, info  # five seconds of window less one second cut
+
+
+# ---- the hero picture of the explainer (P10): site/infographic/media/plant.jpg -----------------------------------------------------
+
+
+def fake_jpeg(width: int, height: int, filler: int = 0) -> bytes:
+    """A JPEG that is only its markers: SOI, an APP0 segment, a DQT segment, SOF0 with the size, EOI (enough for the size reader; no decoder is asked to show it)."""
+    app0 = b"\xff\xe0" + (16).to_bytes(2, "big") + b"JFIF\x00" + bytes(9)
+    dqt = b"\xff\xdb" + (5).to_bytes(2, "big") + bytes(3)
+    sof = b"\xff\xc0" + (11).to_bytes(2, "big") + bytes([8]) + height.to_bytes(2, "big") + width.to_bytes(2, "big") + bytes([1, 1, 0x11, 0])
+    return b"\xff\xd8" + app0 + dqt + sof + bytes(filler) + b"\xff\xd9"
+
+
+def test_the_jpeg_size_is_read_from_the_start_of_frame_after_other_segments():
+    assert jpeg_size(fake_jpeg(1024, 518)) == (1024, 518)
+    with pytest.raises(ValueError, match="not a JPEG"):
+        jpeg_size(b"\x89PNG....")
+    with pytest.raises(ValueError, match="no start-of-frame"):
+        jpeg_size(b"\xff\xd8" + b"\xff\xe0" + (4).to_bytes(2, "big") + b"\x00\x00")
+
+
+def test_the_hero_check_names_a_missing_file_a_file_over_100_kb_a_non_jpeg_and_a_size_the_page_does_not_name(tmp_path):
+    hero = tmp_path / "plant.jpg"
+    assert hero_problems(hero) == ["plant.jpg: missing"]
+    hero.write_bytes(fake_jpeg(1024, 518))
+    assert hero_problems(hero, (1024, 518)) == []
+    assert hero_problems(hero, (1280, 648)) == ["plant.jpg: 1024 by 518, the page names 1280 by 648"]
+    hero.write_bytes(fake_jpeg(1024, 518, filler=100 * KB))
+    assert hero_problems(hero) == [f"plant.jpg: {hero.stat().st_size} bytes, the limit is {100 * KB}"]
+    hero.write_bytes(b"\x89PNG\r\n\x1a\n" + bytes(40))
+    assert hero_problems(hero) == ["plant.jpg: not a JPEG"]
+
+
+def test_the_hero_limits_are_the_ones_of_the_brief():
+    # a JPEG of about 100 KB, shipped as plant.jpg; ffmpeg's MJPEG encoder (this machine's ffmpeg has no WebP encoder)
+    assert media_files.HERO_NAME == "plant.jpg" and media_files.HERO_MAX_BYTES == 100 * KB
+    cmd = jpeg_command("/usr/bin/ffmpeg", REPO / "a.png", REPO / "b.jpg", 4)
+    assert cmd[0] == "/usr/bin/ffmpeg" and cmd[cmd.index("-c:v") + 1] == "mjpeg" and cmd[cmd.index("-q:v") + 1] == "4" and cmd[cmd.index("-vf") + 1] == "scale=1024:-2:flags=lanczos"
+    assert cmd[cmd.index("-frames:v") + 1] == "1" and cmd[-1] == str(REPO / "b.jpg")
+
+
+HERO = REPO / "site" / "infographic" / "media" / "plant.jpg"
+
+
+def test_the_committed_hero_is_a_jpeg_under_100_kb_that_has_the_proportions_of_the_readme_plant_picture():
+    assert hero_problems(HERO) == []
+    w, h = jpeg_size(HERO.read_bytes())
+    pw, ph = png_size(MEDIA / "plant_en.png")
+    assert w == 1024 and abs(h - w * ph / pw) <= 2, (w, h, pw, ph)  # the same scene, scaled
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is not on the PATH (the script itself says so and stops)")
+def test_ffmpeg_makes_the_hero_jpeg_from_a_png_at_the_finest_quality_that_fits(tmp_path):
+    src, out = tmp_path / "in.png", tmp_path / "plant.jpg"
+    made = subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=1280x648:rate=1:duration=1", "-frames:v", "1", str(src)], capture_output=True, text=True)
+    assert made.returncode == 0, made.stderr
+    quality = render_jpeg(src, out, limit=100 * KB)
+    assert jpeg_size(out.read_bytes()) == (1024, 518) and out.stat().st_size <= 100 * KB and quality in media_files.HERO_QUALITIES
+    with pytest.raises(RuntimeError, match="coarsest quality"):
+        render_jpeg(src, out, limit=100)  # no quality makes a 1024 px picture of test bars 100 bytes
+
+
+def test_the_script_has_the_hero_part_and_writes_it_to_the_explainers_media_folder_not_to_docs_media():
+    text = (REPO / "scripts" / "media" / "make_media.py").read_text(encoding="utf-8")
+    assert 'PARTS = ("tour", "action", "shots", "hero")' in text and 'REPO / "site" / "infographic" / "media"' in text
+    assert "plant.jpg" not in {p.name for p in MEDIA.iterdir()}
