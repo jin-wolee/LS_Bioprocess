@@ -126,7 +126,7 @@ describe("move_draw: the scenario schema", () => {
 });
 
 describe("move_draw: with none, every output stays what it was (spec section 11.1 regression rule)", () => {
-  // Taken at the base commit be98442 with the engine as it was before P2, by a script kept outside the repository; never regenerated.
+  // Taken at the base commit 26e1580 with the engine as it was before P2, by a script kept outside the repository; never regenerated.
   const BEFORE: Record<string, string> = {
     default_seed_1: "9692942bf38f16b7826732e379dec3c721210c4a2c35839fd6f6e2cc5856c46d",
     default_seed_2: "b6bdf8aa6614eb54d29452abd44da2f6791fcceeafc011fe0990a67a473ee7eb",

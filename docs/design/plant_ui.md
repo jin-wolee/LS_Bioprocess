@@ -1,6 +1,6 @@
 # Plant UI design note
 
-Status: S3p1 deliverable (design note and a throwaway spike), written for the build batches of section 11; section 12 records the author's settlement of 2026-11-01 and the orchestrator's rulings as resolved. The author accepted ADR-0021 on 2026-11-01 (commit 24b415e). Synthetic data only. The plant is built from this note up to P9, the release batch (section 11; the guided scene is section 3.5; the 2D plan is not built, the author, 2026-11-03), and this note states no simulation result: the plant computes its figures in the browser, from the scenario. It builds on ADR-0021 (the lab centres on an interactive 3D virtual plant: option 3, the author's choices of 2026-10-31, and the author's reference of 2026-11-01), on the lab design note (`docs/design/lab_ui.md`: the Worker protocol, the numbers rule, the texts, the budgets, the end-to-end tests) and on ADR-0003, ADR-0005, ADR-0009, ADR-0013, ADR-0015, ADR-0016, ADR-0018 and ADR-0019, which it does not reopen. Where this note and `lab_ui.md` differ, section 6 names the amendment (ruled by the orchestrator, section 12, item 6; `lab_ui.md` section 4, rule 1, carries it).
+Status: S3p1 deliverable (design note and a throwaway spike), written for the build batches of section 11; section 12 records the author's settlement of 2026-11-01 and the orchestrator's rulings as resolved. The author accepted ADR-0021 on 2026-11-01 (commit 19c2306). Synthetic data only. The plant is built from this note up to P9, the release batch (section 11; the guided scene is section 3.5; the 2D plan is not built, the author, 2026-11-03), and this note states no simulation result: the plant computes its figures in the browser, from the scenario. It builds on ADR-0021 (the lab centres on an interactive 3D virtual plant: option 3, the author's choices of 2026-10-31, and the author's reference of 2026-11-01), on the lab design note (`docs/design/lab_ui.md`: the Worker protocol, the numbers rule, the texts, the budgets, the end-to-end tests) and on ADR-0003, ADR-0005, ADR-0009, ADR-0013, ADR-0015, ADR-0016, ADR-0018 and ADR-0019, which it does not reopen. Where this note and `lab_ui.md` differ, section 6 names the amendment (ruled by the orchestrator, section 12, item 6; `lab_ui.md` section 4, rule 1, carries it).
 
 Numbers in this note: domain numbers carry the `A###` or `S###` id of the ledgers; budgets are those of `docs/prompts/00_master_build.md` section 4 and the proposals of section 8; the measurements of section 8 come from a throwaway spike of 2026-11-01 and are the project's own measurements of its tooling and runtime, so they carry no ledger id (the precedent is section 12 of `lab_ui.md` and the Evidence section of ADR-0016).
 
@@ -671,7 +671,7 @@ HITL gates in this plan: the author accepts ADR-0021 (the budgets, the asset pol
 
 ## 12. Open, and resolved
 
-The author settled the items below in chat on 2026-11-01 after the spike (the verbatim choices are in ADR-0021); the two rulings are the orchestrator's, at the S3p1 review. The author accepted ADR-0021 on 2026-11-01 (commit 24b415e).
+The author settled the items below in chat on 2026-11-01 after the spike (the verbatim choices are in ADR-0021); the two rulings are the orchestrator's, at the S3p1 review. The author accepted ADR-0021 on 2026-11-01 (commit 19c2306).
 
 Resolved:
 

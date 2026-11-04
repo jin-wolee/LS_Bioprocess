@@ -13,7 +13,7 @@ import { SMALL, patched, rawScenario } from "../support/scenarios.ts";
 import type { Json } from "../support/schemas.ts";
 
 // P5c (docs/design/plant_ui.md section 6, rule 9): the `actions` field of the `lineage` request. With none, or an empty list, the answer is byte for byte the answer of the code before P5c (the pins below
-// were taken from HEAD 48c8402 with a script kept outside the repository: the SHA-256 of the canonical JSON of the whole answer). With actions, the lineage view of a sample is made from the run the
+// were taken from HEAD a32d9a7 with a script kept outside the repository: the SHA-256 of the canonical JSON of the whole answer). With actions, the lineage view of a sample is made from the run the
 // plant shows: it equals the truth overlay of the same sample for the same plant run, and it equals the lab's own lineage path on a scenario with the action written in by hand (the fixture
 // tests/fixtures/plant/add_feed.json: a feed on U03 on day 3 at 09:00, 291,600 s, which the sample U03-D03-1 drawn at 305,626 s sees as one feed more in its true context). Expected values are typed.
 

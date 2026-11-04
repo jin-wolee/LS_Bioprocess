@@ -47,7 +47,7 @@ const ask = async (actions: readonly Action[], previous?: PlantKept) => {
   return out;
 };
 
-// Taken at the base commit be98442, before any engine code changed (the script is kept outside the repository): the small default scenario, seed 1, under A, B and C. The three cell hashes
+// Taken at the base commit 26e1580, before any engine code changed (the script is kept outside the repository): the small default scenario, seed 1, under A, B and C. The three cell hashes
 // were taken again in A2 (2026-11-02, approved in advance; audit F4): the utilisation per staffed window follows the roster, and nothing else in a cell moved. The truth hash is the base commit's.
 const BASE = {
   truth: "9692942bf38f16b7826732e379dec3c721210c4a2c35839fd6f6e2cc5856c46d",

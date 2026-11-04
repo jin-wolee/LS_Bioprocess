@@ -17,7 +17,7 @@ import { ROOT, listFiles } from "../support/paths.ts";
 // checks it against the list's names typed by hand, the BASE of the small plant, and what runPlant answers for every spec.
 // P6a (docs/design/plant_ui.md section 5.7, item 3): engine/tests/support/plant_reference_cli.ts runs the hand scenario of every fixture of tests/fixtures/plant/ under the engine's flags and writes
 // plant_reference.json, which the end-to-end check `plant_equal` compares with the hashes the page shows. This test runs the CLI, checks that the file holds every fixture, and checks its hashes
-// against what engine/tests/plant/proof.test.ts already proves: the truth hash of the base run (taken at the base commit be98442, typed here again) is what a lab setting leaves, a flag switched in
+// against what engine/tests/plant/proof.test.ts already proves: the truth hash of the base run (taken at the base commit 26e1580, typed here again) is what a lab setting leaves, a flag switched in
 // one hall changes the cells of that hall only, and the Worker's answer for each fixture's actions is the reference's entry.
 
 const CLI = join(ROOT, "engine", "tests", "support", "plant_reference_cli.ts");

@@ -821,7 +821,7 @@ Recall is always shown with precision, and detection with the false-alarm rate. 
 
 ### 11.8 What S3 builds (design of the S3f batches)
 
-Written for `docs/prompts/30` Step 5 on base commit b7abfb4 and revised in S3f part 2 to the author's rulings of 2026-10-30 (11.8.7). It states the scope, the modelling rules the earlier text left open, the numbers with their ledger standing, the forced-error fixtures typed by hand, the build plan and the decisions. It states no simulation result. Every figure rests on sources below `main-reread` (header of section 11), so none of it may appear on a public page. Grades are those of `docs/research/assumptions.yaml` and verification levels those of `docs/research/sources.yaml` on 2026-10-30. Where this text needs a ledger entry that does not exist, it names it `N1`, `N2`, and so on (a proposal, ids assigned by the orchestrator; 11.8.3).
+Written for `docs/prompts/30` Step 5 on base commit 5035c0d and revised in S3f part 2 to the author's rulings of 2026-10-30 (11.8.7). It states the scope, the modelling rules the earlier text left open, the numbers with their ledger standing, the forced-error fixtures typed by hand, the build plan and the decisions. It states no simulation result. Every figure rests on sources below `main-reread` (header of section 11), so none of it may appear on a public page. Grades are those of `docs/research/assumptions.yaml` and verification levels those of `docs/research/sources.yaml` on 2026-10-30. Where this text needs a ledger entry that does not exist, it names it `N1`, `N2`, and so on (a proposal, ids assigned by the orchestrator; 11.8.3).
 
 #### 11.8.1 Scope: built in S3, or not
 
@@ -1046,7 +1046,7 @@ Lab changes by batch (the other executor works in `src/` now; nothing here is in
 | `docs/design/lab_ui.md` | section 11 already says that further flags appear from `ready.flags`; no change. |
 | `src/i18n/{en,ko}_notes.ts`, `src/ui/fixture.ts`, `scripts/qa/qa_lab_*.py` | the lab batch after batch 1 (dictionary entries, the fixture list, the check). |
 | `README.md`, `docs/prompts/00_master_build.md` (invariant 7), `docs/prompts/90_review_rubric.md` | "eight" becomes "ten"; the orchestrator owns the prompts. |
-| ADR-0017, ADR-0020 | the two flags (lot links, Accepted; equipment links, accepted by the author in chat with B on, commit 3b8b809); neither needs a text change for this design. ADR-0005 is not edited (Accepted). |
+| ADR-0017, ADR-0020 | the two flags (lot links, Accepted; equipment links, accepted by the author in chat with B on, commit 07056e1); neither needs a text change for this design. ADR-0005 is not edited (Accepted). |
 | `site/infographic/` | unchanged (11.8.1). |
 
 #### 11.8.7 Decisions, as ruled

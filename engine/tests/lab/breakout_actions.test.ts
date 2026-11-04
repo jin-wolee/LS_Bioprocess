@@ -8,7 +8,7 @@ import type { Json } from "../support/schemas.ts";
 import { breakoutData } from "./breakout_data.ts";
 
 // P5c (docs/design/plant_ui.md section 6, rule 9): the `actions` field of the `breakout` request. With none, or an empty list, the answer is byte for byte the answer of the code before P5c (the pin was taken
-// from HEAD 48c8402 with a script kept outside the repository: the SHA-256 of the canonical JSON of the whole answer). With actions, they are applied to the scenario document of the case, so the answer
+// from HEAD a32d9a7 with a script kept outside the repository: the SHA-256 of the canonical JSON of the whole answer). With actions, they are applied to the scenario document of the case, so the answer
 // equals the answer for the case with the action written in by hand (a maintenance window of AN-1, typed from the mapping of plant_ui.md section 5.2), and the same checks as `plant_run` refuse a bad list.
 
 const data = breakoutData();
