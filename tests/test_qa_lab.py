@@ -157,10 +157,10 @@ def test_the_scope_note_reads_nothing_that_only_a_passed_check_may_say_and_no_em
     assert len(qc.scope_problems("", "en", "Home")) == len(qc.SCOPE_WORDS["en"])
 
 
-# ---------- Home's fold (P11) ----------
+# ---------- the fold of Home (P11) and the card of the one-flag experiment above it (A3) ----------
 def _home(open_=False, **over):
-    shown = {"#enter-plant": True, "#check-chip": True, "#check-banner": True, "#check-scope": open_, "#versions": open_, "#inputs": open_}
-    facts = {"fold": {"open": open_}, "role": "status", "visible": shown, "top": {"#enter-plant": 180.0, "#check-chip": 330.0, "#about-run": 900.0}}
+    shown = {"#enter-plant": True, "#check-chip": True, "#check-banner": True, "#one-flag": True, "#run": open_, "#check-scope": open_, "#versions": open_, "#inputs": open_}
+    facts = {"fold": {"open": open_}, "role": "status", "visible": shown, "top": {"#enter-plant": 180.0, "#check-chip": 330.0, "#one-flag": 420.0, "#about-run": 900.0}}
     return {**facts, **over}
 
 
@@ -178,15 +178,15 @@ def test_the_fold_open_on_arrival_is_named():
     assert any("open on arrival" in p for p in problems) and any("hides nothing" in p for p in problems), problems
 
 
-@pytest.mark.parametrize("hidden", ["#check-chip", "#check-banner", "#enter-plant"])
-def test_a_status_line_or_a_plant_entry_that_the_closed_fold_hides_is_named(hidden):
+@pytest.mark.parametrize("hidden", ["#check-chip", "#check-banner", "#enter-plant", "#one-flag"])
+def test_a_status_line_a_plant_entry_or_a_card_that_the_closed_fold_hides_is_named(hidden):
     closed = _home()
     closed["visible"][hidden] = False
     problems = qc.fold_problems(closed)
     assert len(problems) == 1 and hidden in problems[0], problems
 
 
-@pytest.mark.parametrize("shown", ["#check-scope", "#versions", "#inputs"])
+@pytest.mark.parametrize("shown", ["#run", "#check-scope", "#versions", "#inputs"])
 def test_what_the_fold_holds_but_the_closed_page_shows_is_named(shown):
     closed = _home()
     closed["visible"][shown] = True
@@ -199,7 +199,8 @@ def test_a_banner_that_is_not_a_live_region_is_named():
     assert len(problems) == 1 and "'status'" in problems[0], problems
 
 
-@pytest.mark.parametrize("tops", [{"#enter-plant": 330.0, "#check-chip": 180.0, "#about-run": 900.0}, {"#enter-plant": 180.0, "#check-chip": 330.0, "#about-run": 300.0}, {"#enter-plant": 180.0, "#check-chip": 330.0}])
+@pytest.mark.parametrize("tops", [{"#enter-plant": 330.0, "#check-chip": 180.0, "#one-flag": 420.0, "#about-run": 900.0}, {"#enter-plant": 180.0, "#check-chip": 330.0, "#one-flag": 420.0, "#about-run": 300.0},
+                                  {"#enter-plant": 180.0, "#check-chip": 330.0, "#one-flag": 200.0, "#about-run": 900.0}, {"#enter-plant": 180.0, "#check-chip": 330.0, "#about-run": 900.0}, {"#enter-plant": 180.0, "#check-chip": 330.0}])
 def test_a_home_out_of_order_or_missing_a_block_is_named(tops):
     problems = qc.fold_problems(_home(top=tops))
     assert len(problems) == 1 and "order" in problems[0], problems
@@ -208,7 +209,7 @@ def test_a_home_out_of_order_or_missing_a_block_is_named(tops):
 def test_a_fold_that_a_click_does_not_open_or_that_shows_nothing_once_open_is_named():
     still_closed = _home()
     problems = qc.fold_problems(_home(), still_closed)
-    assert any("did not open" in p for p in problems) and any("#inputs is not visible once the fold is open" in p for p in problems), problems
+    assert any("did not open" in p for p in problems) and any("#inputs is not visible once the fold is open" in p for p in problems) and any("#run is not visible once the fold is open" in p for p in problems), problems
 
 
 # ---------- the numbers walk ----------

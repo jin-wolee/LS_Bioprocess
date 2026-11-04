@@ -106,15 +106,17 @@ def scope_problems(text: str, lang: str, where: str) -> list[str]:
     return [f"{where} ({lang}): the note of what the browser check covers lacks '{w}'" for w in SCOPE_WORDS[lang] if w not in flat]
 
 
-# Home (P11): the plant's card first, the status line of the browser check visible with the fold closed, and the check's details, the versions and the inputs inside the closed fold.
-HOME_ALWAYS = ["#enter-plant", "#check-chip", "#check-banner"]
-HOME_IN_FOLD = ["#check-scope", "#versions", "#inputs"]
+# Home (P11, A3): the plant's card first, the status line of the browser check and the card of the one-flag experiment visible with the fold closed, and the run of the default scenario, the check's
+# details, the versions and the inputs inside the closed fold.
+HOME_ALWAYS = ["#enter-plant", "#check-chip", "#check-banner", "#one-flag"]
+HOME_IN_FOLD = ["#run", "#check-scope", "#versions", "#inputs"]
+HOME_ORDER = ("#enter-plant", "#check-chip", "#one-flag", "#about-run")
 
 
 def fold_problems(closed: dict, opened: dict | None = None) -> list[str]:
     """What is wrong with Home's fold as a reader meets it. `closed` and `opened` are the facts of `HOME_FACTS_JS` (qa_lab_browser.py) before and after a click on the summary of `#about-run`:
-    {fold: {open} or None, role: the role of the banner, visible: {selector: bool}, top: {selector: y}}. Closed: the fold is there and shut, the plant's entry, the chip and the banner (a live region) are
-    shown above it in that order, and what it holds is not shown. Opened: what it holds is shown."""
+    {fold: {open} or None, role: the role of the banner, visible: {selector: bool}, top: {selector: y}}. Closed: the fold is there and shut, the plant's entry, the chip and the banner (a live region)
+    and the card of the one-flag experiment are shown above it in that order, and what it holds (the run of the default scenario among it) is not shown. Opened: what it holds is shown."""
     if closed["fold"] is None:
         return ["Home has no fold #about-run"]
     problems = []
@@ -124,9 +126,9 @@ def fold_problems(closed: dict, opened: dict | None = None) -> list[str]:
     problems += [f"{s} is visible with the fold closed, so the fold hides nothing of it" for s in HOME_IN_FOLD if closed["visible"].get(s)]
     if closed["role"] != "status":
         problems.append(f"the banner of the check has the role {closed['role']!r}, not 'status' (it is announced)")
-    order = [closed["top"].get(s) for s in ("#enter-plant", "#check-chip", "#about-run")]
-    if None in order or order != sorted(order) or len(set(order)) < 3:
-        problems.append(f"Home is not in the order plant entry, status line, fold (tops {order})")
+    order = [closed["top"].get(s) for s in HOME_ORDER]
+    if None in order or order != sorted(order) or len(set(order)) < len(HOME_ORDER):
+        problems.append(f"Home is not in the order plant entry, status line, card of the experiment, fold (tops {order})")
     if opened is not None:
         problems += [f"{s} is not visible once the fold is open" for s in HOME_ALWAYS + HOME_IN_FOLD if not opened["visible"].get(s)]
         if not (opened["fold"] or {}).get("open"):

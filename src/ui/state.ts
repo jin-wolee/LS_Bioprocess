@@ -1,6 +1,8 @@
 import type { CheckDetail, CheckState, FleetProblem, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
 import { initialPlant, reducePlant } from "../plant/plant_state.ts";
 import type { PlantPageAction, PlantState } from "../plant/plant_state.ts";
+import { initialOneFlag, isAboutOneFlag, reduceOneFlag } from "./one_flag_state.ts";
+import type { OneFlagAction, OneFlagState } from "./one_flag_state.ts";
 import { initialBreakout, initialChallenge, initialLineage, problemOf, reduceBreakout, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
 import type { BreakoutState, ChallengeState, LineageState, OneSeedAction, Problem } from "./one_seed_state.ts";
 
@@ -61,9 +63,11 @@ export interface State {
   plant: PlantState;
   /** U2: the check of the analyzer list of Setup. */
   fleet: FleetState;
+  /** A3: the run of the card on Home, with a state of its own (one_flag_state.ts). */
+  oneFlag: OneFlagState;
 }
 
-export type Action = Response | OneSeedAction | PlantPageAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number } | { type: "fleet_asked"; id: number; key: string };
+export type Action = Response | OneSeedAction | PlantPageAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number } | { type: "fleet_asked"; id: number; key: string } | OneFlagAction;
 
 export const initial: State = {
   ready: null,
@@ -78,6 +82,7 @@ export const initial: State = {
   breakout: initialBreakout,
   plant: initialPlant,
   fleet: initialFleet,
+  oneFlag: initialOneFlag,
 };
 
 /** The run in flight is over when a message about it ends it. */
@@ -90,6 +95,8 @@ const forOneSeed = (state: State, id: number | null): boolean =>
 
 export const reduce = (state: State, action: Action): State => {
   const withOneSeed = (next: State): State => ({ ...next, lineage: reduceLineage(state.lineage, action as Response | OneSeedAction), challenge: reduceChallenge(state.challenge, action as Response | OneSeedAction), breakout: reduceBreakout(state.breakout, action as Response | OneSeedAction) });
+  // A3: the card on Home has a run of its own: what is about its id is folded into its state and touches nothing else, and nothing about another request touches it
+  if (action.type === "one_flag_started" || isAboutOneFlag(state.oneFlag, action)) return { ...state, oneFlag: reduceOneFlag(state.oneFlag, action as Parameters<typeof reduceOneFlag>[1]) };
   switch (action.type) {
     case "challenge_ready":
       // the lineage view and the truth overlay of a run with the key the challenge answered with go (lab_ui.md section 4, rule 2)
@@ -144,7 +151,7 @@ export const reduce = (state: State, action: Action): State => {
       if (forOneSeed(state, action.id)) return withOneSeed(state);
       return { ...state, problem: problemOf(action), ...over(state, action.id) };
     case "worker_error":
-      return { ...state, problem: { id: null, code: "worker", message: action.message }, running: null, progress: null };
+      return { ...state, problem: { id: null, code: "worker", message: action.message }, running: null, progress: null, oneFlag: reduceOneFlag(state.oneFlag, action) };
   }
 };
 

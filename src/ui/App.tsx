@@ -19,6 +19,7 @@ import { Mark } from "./Mark.tsx";
 import { defaultLineageForm, lineageRequest, plantLineageForm } from "./lineage_form.ts";
 import type { LineageForm } from "./lineage_form.ts";
 import { Notes } from "./Notes.tsx";
+import { oneFlagCancel, oneFlagRequest } from "./one_flag.ts";
 import { PlantOrigin } from "./PlantOrigin.tsx";
 import { PlantRoute } from "../plant/PlantRoute.tsx";
 import { Results } from "./Results.tsx";
@@ -159,6 +160,18 @@ export function App({ worker }: { worker: Worker }) {
   const cancel = () => {
     if (state.running !== null) worker.postMessage({ type: "cancel", id: state.running } satisfies Request);
   };
+  // A3 (lab_ui.md section 26): the card on Home asks for its run when the reader presses its button, and nowhere else (no effect names it). The page stays where it is; the run has its own state.
+  const runOneFlag = () => {
+    const id = take();
+    const request = ready ? oneFlagRequest(ready, id) : null;
+    if (!request) return;
+    dispatch({ type: "one_flag_started", id });
+    worker.postMessage(request satisfies Request);
+  };
+  const cancelOneFlag = () => {
+    const request = oneFlagCancel(state.oneFlag);
+    if (request) worker.postMessage(request satisfies Request);
+  };
 
   const showLineage = (f: LineageForm) => {
     const id = take();
@@ -232,7 +245,7 @@ export function App({ worker }: { worker: Worker }) {
         </div>
       </header>
       <main id="main" data-ready={ready ? "true" : "false"} data-screen={route.screen} {...(ready && { "data-flags": ready.flags.join(",") })}>
-        {route.screen === "home" && <Home state={state} />}
+        {route.screen === "home" && <Home state={state} onRunOneFlag={runOneFlag} onCancelOneFlag={cancelOneFlag} />}
         {origin && ready && <PlantOrigin origin={origin} plant={state.plant} engine={ready.engine_version} screen={route.screen} />}
         {route.screen === "plant" &&
           (ready ? (

@@ -5,7 +5,7 @@
 
 Runs `npm run build:lab` first unless --no-build, serves --root over http.server on a free localhost port, drives headless Chromium (Playwright sync API) for every check and, for
 `engines`, headless Firefox and WebKit as well (the standing test of ADR-0019's claim: the check reads `identical` in each). Every browser is closed. Writes results.json,
-summary.md and shots/*.png to --out. This file is the CLI, the build and the report; the checks live in qa_lab_checks.py (page as a whole), qa_lab_sweeps.py (screens by language and theme), qa_lab_flags.py, qa_lab_results.py, qa_lab_one_seed.py (lineage and challenge) and qa_lab_breakout.py (Break-out: sc12 and breakout_public),
+summary.md and shots/*.png to --out. This file is the CLI, the build and the report; the checks live in qa_lab_checks.py (page as a whole), qa_lab_sweeps.py (screens by language and theme), qa_lab_flags.py, qa_lab_results.py, qa_lab_oneflag.py (the card of the one-flag experiment on Home: one_flag), qa_lab_one_seed.py (lineage and challenge) and qa_lab_breakout.py (Break-out: sc12 and breakout_public),
 the browser plumbing in qa_lab_browser.py and the unit-tested helpers in qa_lab_helpers.py.
 
 The Pages workflow (P9; docs/design/lab_ui.md section 13) runs `--timing report --no-engines`: the engine run of `time` is printed with its conditions and not failed on (scripts/qa/qa_timing.py), and Firefox and WebKit are not
@@ -27,6 +27,7 @@ from qa_lab_breakout import check_breakout_public, check_sc12
 from qa_lab_checks import check_check, check_engines, check_load, check_size, check_time
 from qa_lab_flags import check_flags
 from qa_lab_one_seed import check_challenge, check_lineage_sc3
+from qa_lab_oneflag import check_one_flag
 from qa_lab_results import check_results
 from qa_lab_sweeps import check_contrast, check_ko, check_matrix, check_numbers
 from qa_timing import set_mode
@@ -77,6 +78,7 @@ def main(argv=None) -> int:
                        guarded("check", lambda: check_check(browser, url, args.root)),
                        guarded("engines", lambda: Result("engines", True, "not run (--no-engines): only Chromium is installed") if args.no_engines else check_engines(pw, url)),
                        guarded("results", lambda: check_results(browser, url)),
+                       guarded("one_flag", lambda: check_one_flag(browser, url)),
                        guarded("lineage_sc3", lambda: check_lineage_sc3(browser, url)),
                        guarded("challenge", lambda: check_challenge(browser, url)),
                        guarded("sc12", lambda: check_sc12(browser, url)),

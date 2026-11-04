@@ -45,7 +45,7 @@ def wait_final(page, timeout=FINAL_MS) -> dict:
     """Wait until the Worker has answered ready and the check has left `pending`; return its state, detail, banner text and the whole body text. Home must be the screen shown."""
     page.wait_for_selector("#main[data-ready=true]", timeout=timeout)
     page.wait_for_function("() => { const c = document.querySelector('#check-chip'); return !!c && c.dataset.checkState !== 'pending'; }", timeout=timeout)
-    page.wait_for_selector("[data-result]", timeout=timeout)
+    page.wait_for_selector("[data-result]", state="attached", timeout=timeout)  # A3: the result block of Home's run is in the closed fold, which lays nothing out, so it is not "visible" until the fold is open
     return page.evaluate("""() => { const c = document.querySelector('#check-chip');
         return {state: c.dataset.checkState, detail: JSON.parse(c.dataset.detail),
                 banner: document.querySelector('#check-banner').innerText.trim(), body: document.body.innerText}; }""")
@@ -177,14 +177,14 @@ def apply_state(page, theme: str, lang: str) -> list[str]:
     return problems
 
 
-# Home's fold (P11): what is shown with it closed and open. `checkVisibility` knows that the contents of a closed `details` are not rendered.
+# Home's fold (P11, A3): what is shown with it closed and open. `checkVisibility` knows that the contents of a closed `details` are not rendered.
 HOME_FACTS_JS = """() => {
   const q = s => document.querySelector(s), top = s => { const e = q(s); return e ? e.getBoundingClientRect().top + scrollY : null; };
   const shown = s => { const e = q(s); return !!e && e.checkVisibility() && e.getBoundingClientRect().height > 0; };
   const fold = q('#about-run'), banner = q('#check-banner');
   return {fold: fold ? {open: fold.open} : null, role: banner ? banner.getAttribute('role') : null,
-          visible: Object.fromEntries(['#enter-plant', '#check-chip', '#check-banner', '#check-scope', '#versions', '#inputs'].map(s => [s, shown(s)])),
-          top: Object.fromEntries(['#enter-plant', '#check-chip', '#about-run'].map(s => [s, top(s)]))};
+          visible: Object.fromEntries(['#enter-plant', '#check-chip', '#check-banner', '#one-flag', '#run', '#check-scope', '#versions', '#inputs'].map(s => [s, shown(s)])),
+          top: Object.fromEntries(['#enter-plant', '#check-chip', '#one-flag', '#about-run'].map(s => [s, top(s)]))};
 }"""
 
 
