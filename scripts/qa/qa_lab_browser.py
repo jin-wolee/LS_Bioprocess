@@ -74,6 +74,21 @@ def set_architectures(page, wanted) -> None:
         page.set_checked(f"#arch-{arch}", arch in wanted)
 
 
+def make_clash(page) -> None:
+    """The author's report of 2026-11-04 in one step (docs/design/lab_ui.md section 4, rule 6): on Setup, analyzer 2 takes the split pair while analyzer 1 keeps the all-in-one, and both measure the same
+    analytes. Waits for the message under the analyzer list, which the engine's own check, asked of the Worker, produces."""
+    go(page, "setup")
+    page.select_option("#analyzer-2", "split_cellcounter_metabolite")
+    page.wait_for_selector("[data-fleet-note]", timeout=10_000)
+
+
+def clear_clash(page) -> None:
+    """Analyzer 2 back to the all-in-one (the default of the scenario): the message goes and Run is on again."""
+    page.select_option("#analyzer-2", "allinone_atline")
+    page.wait_for_selector("[data-fleet-note]", state="detached", timeout=10_000)
+    page.wait_for_selector("#run:not([disabled])", timeout=10_000)
+
+
 def run_small(page) -> str:
     """The small run of the end-to-end path, started from Setup like a reader does it; returns the seeds as the form held them. The page ends on Results with the result shown."""
     go(page, "setup")

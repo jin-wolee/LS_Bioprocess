@@ -53,7 +53,72 @@ export const loadBays = (scenario: string, listed: readonly string[], shape: { r
   });
 };
 
-const analytesOf = (profile: Profile): string[] => (profile.route ?? []).flatMap((stage) => stage.analytes.map((a) => a.id));
+/** What the check of the two lists reads of an analyzer profile: its id and the stages of its route (the group of a stage and the analytes it measures). The profile catalogue of the page has this shape too. */
+export interface FleetEntry {
+  id: string;
+  stages: { group: string; analytes: string[] }[];
+}
+
+/** One analyzer by its place in the list: the profile it lists and the position of its first appearance, analyzer 1 first. */
+export interface FleetSeat {
+  profile: string;
+  analyzer: number;
+}
+
+/** A refusal of the two lists, as data (`fleetProblems`); `loadFleet` words the first one as a message. */
+export type FleetProblem =
+  | { kind: "shared_group"; group: string; first: FleetSeat; second: FleetSeat }
+  | { kind: "shared_analyte"; analyte: string; first: FleetSeat; second: FleetSeat }
+  | { kind: "unmeasured"; analyte: string; menu: string };
+
+const entryOf = (profile: Profile): FleetEntry => ({
+  id: profile.profile_id,
+  stages: (profile.route ?? []).map((stage) => ({ group: stage.group, analytes: stage.analytes.map((a) => a.id) })),
+});
+
+const analytesOf = (entry: FleetEntry): string[] => [...new Set(entry.stages.flatMap((stage) => stage.analytes))];
+
+/**
+ * The problems of an analyzer list, in the order the loader meets them: a group name that belongs to two profiles, an analyte that two profiles measure (rule B), then the analytes of the menu
+ * (the route of `profiles.analyzer`) that no profile measures. `analyzers` is the profile of each analyzer, analyzer 1 first; a profile listed twice is one pool and never clashes with itself.
+ * Pure: it reads the entries and nothing else, so the loader below and the Setup page of the lab give the same verdict.
+ */
+export const fleetProblems = (analyzers: readonly FleetEntry[], menu: FleetEntry): FleetProblem[] => {
+  const distinct = new Map<string, { entry: FleetEntry; analyzer: number }>();
+  analyzers.forEach((entry, i) => {
+    if (!distinct.has(entry.id)) distinct.set(entry.id, { entry, analyzer: i + 1 });
+  });
+  const problems: FleetProblem[] = [];
+  const groupOf = new Map<string, FleetSeat>();
+  for (const { entry, analyzer } of distinct.values()) {
+    for (const stage of entry.stages) {
+      const held = groupOf.get(stage.group);
+      if (held !== undefined && held.profile !== entry.id) problems.push({ kind: "shared_group", group: stage.group, first: held, second: { profile: entry.id, analyzer } });
+      groupOf.set(stage.group, { profile: entry.id, analyzer });
+    }
+  }
+  const owner = new Map<string, FleetSeat>();
+  for (const { entry, analyzer } of distinct.values()) {
+    for (const a of analytesOf(entry)) {
+      const held = owner.get(a);
+      if (held === undefined) owner.set(a, { profile: entry.id, analyzer });
+      else if (held.profile !== entry.id) problems.push({ kind: "shared_analyte", analyte: a, first: held, second: { profile: entry.id, analyzer } });
+    }
+  }
+  for (const a of analytesOf(menu)) if (!owner.has(a)) problems.push({ kind: "unmeasured", analyte: a, menu: menu.id });
+  return problems;
+};
+
+const messageOf = (problem: FleetProblem): string => {
+  switch (problem.kind) {
+    case "shared_group":
+      return `analyzer profiles ${problem.first.profile} and ${problem.second.profile} both name the group ${problem.group}; a group is the pool of one stage of one profile, so the names must differ`;
+    case "shared_analyte":
+      return `the analyte ${problem.analyte} is measured by both ${problem.first.profile} (analyzer ${problem.first.analyzer}) and ${problem.second.profile} (analyzer ${problem.second.analyzer}); in this build an analyte has one profile (spec section 4.5, routing rule B)`;
+    case "unmeasured":
+      return `the analyte ${problem.analyte} is requested (it is in the route of profiles.analyzer, ${problem.menu}) but no analyzer profile in analyzer_profiles measures it; list an analyzer with a profile that does, or change profiles.analyzer (spec section 4.5)`;
+  }
+};
 
 const fleetOf = <S>(analyzers: string[], distinct: readonly Profile[], routeOf: (profile: Profile) => S[]): Fleet<S> => {
   const plan: S[] = [];
@@ -84,36 +149,13 @@ export const loadFleet = <S>(scenario: string, listed: readonly string[] | undef
   if (listed.length !== count) {
     throw new Error(`scenario ${scenario}: analyzer_profiles names ${plural(listed.length, "analyzer profile")} but analyzer_count is ${count}; name one analyzer profile per analyzer, analyzer 1 first (spec section 4.5)`);
   }
-  const loaded = new Map<string, { profile: Profile; analyzer: number }>();
-  const analyzers = listed.map((id, i) => {
+  const loaded = new Map<string, Profile>();
+  const parsed = listed.map((id, i) => {
     const profile = named(scenario, "analyzer_profiles", i, "analyzer", id, lookup);
-    if (!loaded.has(profile.profile_id)) loaded.set(profile.profile_id, { profile, analyzer: i + 1 });
-    return profile.profile_id;
+    if (!loaded.has(profile.profile_id)) loaded.set(profile.profile_id, profile);
+    return profile;
   });
-  const distinct = [...loaded.values()];
-  const groupOf = new Map<string, string>();
-  for (const { profile } of distinct) {
-    for (const stage of profile.route ?? []) {
-      const other = groupOf.get(stage.group);
-      if (other !== undefined && other !== profile.profile_id) {
-        throw new Error(`scenario ${scenario}: analyzer profiles ${other} and ${profile.profile_id} both name the group ${stage.group}; a group is the pool of one stage of one profile, so the names must differ`);
-      }
-      groupOf.set(stage.group, profile.profile_id);
-    }
-  }
-  const owner = new Map<string, { profile: string; analyzer: number }>();
-  for (const { profile, analyzer } of distinct) {
-    for (const a of analytesOf(profile)) {
-      const held = owner.get(a);
-      if (held !== undefined && held.profile !== profile.profile_id) {
-        throw new Error(`scenario ${scenario}: the analyte ${a} is measured by both ${held.profile} (analyzer ${held.analyzer}) and ${profile.profile_id} (analyzer ${analyzer}); in this build an analyte has one profile (spec section 4.5, routing rule B)`);
-      }
-      owner.set(a, { profile: profile.profile_id, analyzer });
-    }
-  }
-  const unmeasured = analytesOf(menu).find((a) => !owner.has(a));
-  if (unmeasured !== undefined) {
-    throw new Error(`scenario ${scenario}: the analyte ${unmeasured} is requested (it is in the route of profiles.analyzer, ${menu.profile_id}) but no analyzer profile in analyzer_profiles measures it; list an analyzer with a profile that does, or change profiles.analyzer (spec section 4.5)`);
-  }
-  return fleetOf(analyzers, distinct.map((d) => d.profile), routeOf);
+  const [problem] = fleetProblems(parsed.map(entryOf), entryOf(menu));
+  if (problem !== undefined) throw new Error(`scenario ${scenario}: ${messageOf(problem)}`);
+  return fleetOf(parsed.map((p) => p.profile_id), [...loaded.values()], routeOf);
 };

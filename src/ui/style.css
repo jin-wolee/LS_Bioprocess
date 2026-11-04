@@ -110,6 +110,8 @@ p { margin: 8px 0; max-width: 46rem; }
 .counts tfoot th, .counts tfoot td { font-weight: 700; }
 
 .problem { border-left: 6px solid var(--fail-fg); background: var(--fail-bg); padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+.problem ul { margin: 4px 0 0; padding-left: 1.2rem; }
+.problem li + li { margin-top: 6px; }
 .engine-message { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .inputs { list-style: none; padding: 0; margin: 12px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 8px; }

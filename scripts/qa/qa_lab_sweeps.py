@@ -8,7 +8,7 @@ from pathlib import Path
 
 from qa_checks import KO_LIMIT, VIEWPORTS, Result, first_line, fmt_ratio, unchanged_keys
 from qa_infographic import CONTRAST_JS, contrast_rows
-from qa_lab_browser import NUMBERS_JS, apply_state, go, open_lab, prepare_page, set_lang, shown_screens, wait_final
+from qa_lab_browser import NUMBERS_JS, apply_state, clear_clash, go, make_clash, open_lab, prepare_page, set_lang, shown_screens, wait_final
 from qa_lab_helpers import LAB_THEMES, LANGS, SCREENS, alter_reference, number_offenders
 
 
@@ -16,7 +16,7 @@ def check_numbers(browser, url) -> Result:
     """Every text node with a digit sits under a data-ref (an input with its ledger id), a data-result (an output) or a data-label (an identifier or count): invariant 3. All four screens,
     in both languages; the screens that need something to show (Results, Lineage, Challenge) after the small run, a lineage view and a started challenge."""
     offenders: list[dict] = []
-    seen = refs = 0
+    seen = refs = clash_labels = 0
     bad_ids: list[str] = []
     with open_lab(browser, url) as (page, _, _):
         wait_final(page)
@@ -30,8 +30,17 @@ def check_numbers(browser, url) -> Result:
                 offenders += [{**o, "lang": lang, "screen": screen} for o in number_offenders(nodes)]
                 bad_ids += page.evaluate("[...document.querySelectorAll('[data-ref]')].map(e => e.dataset.ref).filter(r => !/^([AS]\\d{3})( [AS]\\d{3})*$/.test(r))")
                 refs += page.evaluate("document.querySelectorAll('[data-ref]').length")
-    problems = [f"{o['lang']} {o['screen']} {o['where']}: '{o['text']}'" for o in offenders] + [f"malformed data-ref '{r}'" for r in bad_ids]
-    return Result("numbers", not problems and refs > 0, f"{seen} text nodes with a digit on {len(SCREENS)} screens in two languages, {len(offenders)} outside a data-ref, data-result or data-label; {refs} inputs with a ledger id"
+        # U2: the message under the analyzer list names analyzers by position and analytes by identifier; with the clash on Setup, in both languages, every digit of it must still sit under a label
+        for lang in LANGS:
+            set_lang(page, lang)
+            make_clash(page)
+            nodes = page.evaluate(NUMBERS_JS)
+            seen += len(nodes)
+            offenders += [{**o, "lang": lang, "screen": "setup (clash)"} for o in number_offenders(nodes)]
+            clash_labels += page.evaluate("document.querySelectorAll('[data-fleet-note] [data-label]').length")
+            clear_clash(page)
+    problems = [f"{o['lang']} {o['screen']} {o['where']}: '{o['text']}'" for o in offenders] + [f"malformed data-ref '{r}'" for r in bad_ids] + ([] if clash_labels > 0 else ["the clash message of Setup was never seen"])
+    return Result("numbers", not problems and refs > 0, f"{seen} text nodes with a digit on {len(SCREENS)} screens in two languages, {len(offenders)} outside a data-ref, data-result or data-label; {refs} inputs with a ledger id; {clash_labels} labels in the clash message of Setup"
                   + (f" | {problems[0]}" if problems else ""), {"offenders": offenders})
 
 
@@ -78,6 +87,14 @@ def run_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme: s
                 bg = m["bg"]
                 if m["sw"] > m["iw"]:
                     problems.append(f"{screen}: horizontal scroll: scrollWidth {m['sw']} > innerWidth {m['iw']}")
+                if screen == "setup":  # U2: the clash message of the analyzer list at every width, theme and language: no horizontal scroll, and its picture
+                    make_clash(page)
+                    m2 = page.evaluate("({sw: document.documentElement.scrollWidth, iw: window.innerWidth})")
+                    if m2["sw"] > m2["iw"]:
+                        problems.append(f"setup with the clash message: horizontal scroll: scrollWidth {m2['sw']} > innerWidth {m2['iw']}")
+                    page.bring_to_front()
+                    page.screenshot(path=str(out / "shots" / f"{name}_setup_clash.png"), full_page=True)
+                    clear_clash(page)
                 page.bring_to_front()  # a new context can hang the screenshot without it
                 # the pages of Results, Lineage, Challenge and Break-out are tens of thousands of pixels tall at the narrow viewport: their picture is the first screen of each
                 page.screenshot(path=str(out / "shots" / f"{name}_{screen}.png"), full_page=screen not in ("results", "lineage", "challenge", "breakout"))
@@ -118,6 +135,10 @@ def check_contrast(browser, url, root: Path) -> Result:
                     for screen in shown_screens(page)[1:]:
                         go(page, screen)
                         swept[screen] = page.evaluate(CONTRAST_JS)
+                        if screen == "setup":  # U2: the message under the analyzer list is text on colours of its own
+                            make_clash(page)
+                            swept["setup_clash"] = page.evaluate(CONTRAST_JS)
+                            clear_clash(page)
             for screen, data in swept.items():
                 token_ratio, _, rows = contrast_rows(data)
                 low = sorted((r for r in rows if r["ratio"] < r["need"]), key=lambda r: r["ratio"])

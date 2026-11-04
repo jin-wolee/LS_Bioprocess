@@ -11,7 +11,7 @@ import { challengeStart, defaultChallengeForm } from "./challenge_form.ts";
 import type { ChallengeForm } from "./challenge_form.ts";
 import { leftOutOf } from "../plant/action_list.ts";
 import { isCase } from "../plant/spec.ts";
-import { defaultForm, fromQuery, runRequest } from "./form.ts";
+import { defaultForm, fleetKey, fleetRequest, fromQuery, runRequest } from "./form.ts";
 import type { Form } from "./form.ts";
 import { Home } from "./Home.tsx";
 import { Lineage } from "./Lineage.tsx";
@@ -127,6 +127,16 @@ export function App({ worker }: { worker: Worker }) {
       setForm(defaultForm(ready, ready.scenarios[0]?.id ?? "default"));
     }
   }, [ready !== null, route.screen, route.query]);
+
+  // U2: the engine own check of the analyzer list, asked of the Worker whenever the scenario or a pick changes (the verdict depends on nothing else); each request has its own id, and state.fleet keeps only
+  // the answer to the newest, so Run is never let through on an answer to picks that are gone
+  const pickKey = form ? fleetKey(form) : null;
+  useEffect(() => {
+    if (!ready || !form) return;
+    const id = take();
+    dispatch({ type: "fleet_asked", id, key: fleetKey(form) });
+    worker.postMessage(fleetRequest(form, id) satisfies Request);
+  }, [ready !== null, pickKey, worker]);
 
   useEffect(() => {
     document.documentElement.lang = lang;

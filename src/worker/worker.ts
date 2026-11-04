@@ -4,6 +4,7 @@ import { answerBreakout } from "../../engine/src/experiments/assembly/lab/breako
 import { checkError, makeDeps, runCheck } from "../../engine/src/experiments/assembly/lab/check.ts";
 import { createChallenges } from "../../engine/src/experiments/assembly/lab/challenges.ts";
 import type { Refusal } from "../../engine/src/experiments/assembly/lab/challenges.ts";
+import { checkFleet } from "../../engine/src/experiments/assembly/lab/fleet_check.ts";
 import { homeRun } from "../../engine/src/experiments/assembly/lab/home.ts";
 import { answerLineage } from "../../engine/src/experiments/assembly/lab/lineage_request.ts";
 import type { PlantKept } from "../../engine/src/experiments/assembly/lab/plant.ts";
@@ -49,6 +50,9 @@ import { LAB_DATA } from "./data.ts";
 //
 // P6b adds `actions` to `run` (docs/design/lab_ui.md section 22): the plant's actions that name a unit or an analyzer, applied to every seed. The list is checked before the run is queued (the shape, the kind, a kind
 // Results does not carry, the bounds), so a refusal arrives at once with its reason and index; the footer of the result repeats the list. With none, or an empty list, the run is what it was.
+//
+// U2 adds `fleet_check` (docs/design/lab_ui.md section 4, rule 6): the analyzer list as Setup holds it, answered at once with the problems that the engine's own check of the two lists finds
+// (fleet_check.ts), as data. It runs nothing and keeps nothing; the page keeps only the answer to the newest id.
 //
 // createWorker holds the whole protocol and touches no global, so the unit tests drive it directly. The entry at the bottom wires it to postMessage when this file runs as a Worker.
 
@@ -146,6 +150,17 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     const mine = idle ? answer(id, checked.spec, actions) : last.then(() => answer(id, checked.spec, actions));
     last = mine;
     return mine;
+  };
+
+  /** `fleet_check`: the problems of an analyzer list, answered at once; a request that names no bundled scenario or analyzer profile is `invalid_spec`. */
+  const fleetCheck = (id: number, request: Record<string, unknown>): void => {
+    try {
+      const out = checkFleet(env.data, request.scenario, request.analyzers);
+      if (out.ok) post({ type: "fleet_checked", id, problems: out.problems });
+      else fail(id, "invalid_spec", out.message);
+    } catch (e) {
+      fail(id, "engine_error", e instanceof Error ? e.message : String(e));
+    }
   };
 
   /** A refusal of a one-seed request: `refused` (an action a rule refuses, P5c) carries its reason and the index of the action, as it does for `plant_run`; the others are a code and a message. */
@@ -273,6 +288,7 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       return;
     }
     if (type === "cancel") return fail(null, "invalid_spec", "a cancel request needs a numeric id");
+    if (type === "fleet_check") return requestId === null ? fail(null, "invalid_spec", "a fleet_check request needs a numeric id") : fleetCheck(requestId, message as Record<string, unknown>);
     if (type === "lineage" || type === "challenge_start" || type === "challenge_open" || type === "challenge_guess" || type === "challenge_giveup") {
       if (requestId === null) return fail(null, "invalid_spec", `a ${type} request needs a numeric id`);
       return oneSeed(requestId, message as Record<string, unknown>);

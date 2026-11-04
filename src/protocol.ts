@@ -27,6 +27,8 @@ export type Request =
   // `actions` (P6b, lab_ui.md section 22): the plant's actions that name a unit or an analyzer, applied to every seed; absent or empty, the run is as before
   | { type: "run"; id: number; spec: RunSpec; actions?: PlantAction[] }
   | { type: "cancel"; id: number }
+  // U2 (lab_ui.md section 4): the analyzer list as Setup holds it, checked by the engine's own check of the two lists (engine/src/fleet.ts); it runs nothing and is answered at once
+  | { type: "fleet_check"; id: number; scenario: string; analyzers: string[] }
   // `actions` (P5c, plant_ui.md section 6, rule 9): the operator actions of the plant the view was opened from; absent or empty, the answer is as before
   | { type: "lineage"; id: number; spec: RunSpec; seed: number; pick: { rule: "sc3" } | { sample_id: string }; actions?: PlantAction[] }
   | { type: "challenge_start"; id: number; variant: ChallengeVariant; spec: RunSpec; seed: number; shown: string }
@@ -41,6 +43,17 @@ export type Request =
   | { type: "plant_truth"; id: number; epoch: number; pick: { sample_id: string } | { halls: true } | { breakout: true } };
 
 export type ChallengeVariant = "sample" | "decision";
+
+// The problems of an analyzer list (U2): the shape of `fleetProblems` in engine/src/fleet.ts, declared here because the page imports no engine module; engine/tests/lab/fleet_check.test.ts compares them.
+// A seat is an analyzer by its place in the list (the position of the first appearance of its profile, analyzer 1 first); `unmeasured` names the profile that is the menu of the scenario.
+export interface FleetSeat {
+  profile: string;
+  analyzer: number;
+}
+export type FleetProblem =
+  | { kind: "shared_group"; group: string; first: FleetSeat; second: FleetSeat }
+  | { kind: "shared_analyte"; analyte: string; first: FleetSeat; second: FleetSeat }
+  | { kind: "unmeasured"; analyte: string; menu: string };
 
 // The plant (docs/design/plant_ui.md sections 4.1, 5 and 6). `PlantSpec.run.architectures` is the set of record halls; `run.seeds` is ignored (a plant run is one seed). An action is plain data that
 // says what the reader did and when, in the units of the run; the page of P3 sends none, the action bar (P6) sends them. The shapes below are the Worker's plain data (engine/src/experiments/
@@ -417,6 +430,8 @@ export type Response =
     }
   | { type: "check"; state: CheckState; detail: CheckDetail }
   | { type: "progress"; id: number; done: number; total: number }
+  // U2: the answer to `fleet_check`, the id echoed; empty `problems` means the engine would load this list
+  | { type: "fleet_checked"; id: number; problems: FleetProblem[] }
   | { type: "result"; id: number; summary?: RunSummary; report?: ExperimentReport; utilisation?: UtilisationView; footer: ResultFooter }
   // `key` (audit A1, F7; lab_ui.md section 4, rule 2): the key of the truth of the run, its actions stripped; the page empties what it holds of a run whose key a challenge answers with
   | { type: "lineage"; id: number; view: LineageView; sample_ids: string[]; key: string }

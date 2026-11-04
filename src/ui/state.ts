@@ -1,4 +1,4 @@
-import type { CheckDetail, CheckState, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
+import type { CheckDetail, CheckState, FleetProblem, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
 import { initialPlant, reducePlant } from "../plant/plant_state.ts";
 import type { PlantPageAction, PlantState } from "../plant/plant_state.ts";
 import { initialBreakout, initialChallenge, initialLineage, problemOf, reduceBreakout, reduceChallenge, reduceLineage } from "./one_seed_state.ts";
@@ -29,6 +29,18 @@ export interface Progress {
   total: number;
 }
 
+/**
+ * The check of the analyzer list (U2; lab_ui.md section 4, rule 6). `asked` is the newest request and what it asked about (`key`: the scenario and the picks, form.ts `fleetKey`); `verdict` is the answer
+ * to that request, with the key it answers. An answer to an older request is dropped, so a slow answer to an old pick can never replace the one the reader is waiting for; Setup lets a run through only
+ * when `verdict.key` is the key of the form in front of it and `verdict.problems` is empty (fleet_view.ts).
+ */
+export interface FleetState {
+  asked: { id: number; key: string } | null;
+  verdict: { key: string; problems: FleetProblem[] } | null;
+}
+
+export const initialFleet: FleetState = { asked: null, verdict: null };
+
 export interface State {
   ready: ReadyInfo | null;
   check: { state: CheckState; detail: CheckDetail };
@@ -47,9 +59,11 @@ export interface State {
   breakout: BreakoutState;
   /** P3: the plant: the newest epoch asked for and the plan of the newest answer (plant/plant_state.ts). */
   plant: PlantState;
+  /** U2: the check of the analyzer list of Setup. */
+  fleet: FleetState;
 }
 
-export type Action = Response | OneSeedAction | PlantPageAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number };
+export type Action = Response | OneSeedAction | PlantPageAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number } | { type: "fleet_asked"; id: number; key: string };
 
 export const initial: State = {
   ready: null,
@@ -63,6 +77,7 @@ export const initial: State = {
   challenge: initialChallenge,
   breakout: initialBreakout,
   plant: initialPlant,
+  fleet: initialFleet,
 };
 
 /** The run in flight is over when a message about it ends it. */
@@ -109,6 +124,11 @@ export const reduce = (state: State, action: Action): State => {
     }
     case "check":
       return { ...state, check: { state: action.state, detail: action.detail } };
+    case "fleet_asked":
+      return { ...state, fleet: { ...state.fleet, asked: { id: action.id, key: action.key } } };
+    case "fleet_checked":
+      // only the answer to the newest request is kept: an older one that arrives last must not replace it
+      return state.fleet.asked !== null && action.id === state.fleet.asked.id ? { ...state, fleet: { ...state.fleet, verdict: { key: state.fleet.asked.key, problems: action.problems } } } : state;
     case "run_started":
       return { ...state, results: null, running: action.id, progress: null, problem: null };
     case "progress":
@@ -118,6 +138,8 @@ export const reduce = (state: State, action: Action): State => {
       return { ...state, ...(action.report ? { results: info } : { home: info }), ...over(state, action.id), problem: null };
     }
     case "error":
+      // a check the Worker refused is no verdict about the picks (the page sends bundled ids, so this is a fault): the reader is not shut out of Run, the fault is shown, and the run says its own
+      if (action.epoch === undefined && action.id !== null && state.fleet.asked !== null && action.id === state.fleet.asked.id) return { ...state, fleet: { ...state.fleet, verdict: { key: state.fleet.asked.key, problems: [] } }, problem: problemOf(action) };
       if (action.epoch !== undefined) return { ...state, plant: reducePlant(state.plant, action) }; // an error of a plant request: the plant's problem, or dropped when its epoch is not the newest
       if (forOneSeed(state, action.id)) return withOneSeed(state);
       return { ...state, problem: problemOf(action), ...over(state, action.id) };

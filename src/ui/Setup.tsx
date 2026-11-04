@@ -1,6 +1,7 @@
 import type { LeftOutWhy } from "../plant/action_list.ts";
 import type { PlantAction, ScenarioInfo } from "../protocol.ts";
 import { ErrorBlock } from "./ErrorBlock.tsx";
+import { fleetView } from "./fleet_view.ts";
 import { FlagMatrix } from "./Flags.tsx";
 import { defaultForm, parseSeeds, rangeWarning, specOf, toQuery, whole, withCounts } from "./form.ts";
 import type { Form } from "./form.ts";
@@ -9,19 +10,21 @@ import { RunStatus } from "./RunStatus.tsx";
 import { ScenarioInputs } from "./ScenarioInputs.tsx";
 import { Architectures, Capture } from "./SetupChoices.tsx";
 import { SetupActions } from "./SetupActions.tsx";
+import { FleetProblems } from "./SetupFleet.tsx";
 import { ProfileList } from "./SetupLists.tsx";
 import { HOME_ID } from "./state.ts";
 import type { ReadyInfo, State } from "./state.ts";
 import { Label, T } from "./T.tsx";
 
 // Setup (lab_ui.md section 3): what the reader chooses to run. Every input carries its ledger id (the scenario's default beside it) and a warning when a typed value lies outside the ledger
-// range of its id; a warning does not stop the run. The form is a RunSpec in waiting (form.ts); the link holds it and never a result.
+// range of its id; a warning does not stop the run. The form is a RunSpec in waiting (form.ts); the link holds it and never a result. U2: an analyzer list that the engine would refuse is said right under the
+// list, in words, and Run is off until the engine's own check (the Worker's `fleet_checked`, state.fleet) finds nothing for the picks on screen.
 
 type CountField = "n" | "baySize" | "m";
-const COUNTS: { field: CountField; id: string; label: "setup.n.label" | "setup.baysize.label" | "setup.m.label"; setting: string }[] = [
-  { field: "n", id: "n", label: "setup.n.label", setting: "reactor_count" },
-  { field: "baySize", id: "bay-size", label: "setup.baysize.label", setting: "bay_size" },
-  { field: "m", id: "m", label: "setup.m.label", setting: "analyzer_count" },
+const COUNTS: { field: CountField; id: string; label: "setup.n.label" | "setup.baysize.label" | "setup.m.label"; chip: "setup.n.default" | "setup.baysize.default" | "setup.m.default"; setting: string }[] = [
+  { field: "n", id: "n", label: "setup.n.label", chip: "setup.n.default", setting: "reactor_count" },
+  { field: "baySize", id: "bay-size", label: "setup.baysize.label", chip: "setup.baysize.default", setting: "bay_size" },
+  { field: "m", id: "m", label: "setup.m.label", chip: "setup.m.default", setting: "analyzer_count" },
 ];
 
 function Count({ spec, scenario, form, onChange }: { spec: (typeof COUNTS)[number]; scenario: ScenarioInfo | undefined; form: Form; onChange: (value: string) => void }) {
@@ -34,7 +37,7 @@ function Count({ spec, scenario, form, onChange }: { spec: (typeof COUNTS)[numbe
       <input id={spec.id} type="text" inputMode="numeric" autocomplete="off" value={form[spec.field]} aria-invalid={typed === null} onInput={(event) => onChange(event.currentTarget.value)} />
       {setting && (
         <Ref ids={[setting.ref]}>
-          {setting.value} {setting.unit}
+          <T k={spec.chip} parts={{ value: <Label>{setting.value}</Label> }} />
         </Ref>
       )}
       {typed === null && <T as="p" k="setup.warn.integer" class="warn" data-warn="integer" />}
@@ -106,6 +109,7 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, leftOut, 
   const spec = specOf(form, ready);
   const problem = state.problem && state.problem.id !== HOME_ID ? state.problem : null;
   const running = state.running !== null;
+  const fleet = fleetView(form, state.fleet);
   const setScenario = (id: string) => setForm(defaultForm(ready, id, form));
   return (
     <>
@@ -149,6 +153,7 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, leftOut, 
         <T as="h3" k="setup.analyzers.heading" />
         <T as="p" k="setup.analyzers.lead" parts={{ first: <Label>1</Label> }} />
         <ProfileList kind="analyzer" picks={form.analyzers} profiles={ready.profiles} onPick={(i, profile) => update({ analyzers: form.analyzers.map((a, j) => (j === i ? profile : a)) })} />
+        <FleetProblems problems={fleet.problems} />
         <T as="p" k="setup.lists.note" />
       </section>
 
@@ -173,7 +178,8 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, leftOut, 
         <T as="h2" k="setup.run.heading" id="run-heading" />
         <T as="p" k="setup.run.lead" />
         {problem && <ErrorBlock problem={problem} />}
-        <button id="run" type="button" class="primary" disabled={!spec.ok || running} onClick={() => onRun(form)}>
+        {fleet.problems.length > 0 && <T as="p" k="setup.fleet.run" id="run-blocked" class="warn" data-warn="fleet-run" />}
+        <button id="run" type="button" class="primary" disabled={!spec.ok || running || fleet.blocked} {...(fleet.problems.length > 0 && { "aria-describedby": "run-blocked" })} onClick={() => onRun(form)}>
           <T k={running ? "setup.run.running" : "setup.run.button"} />
         </button>
         {running && <RunStatus progress={state.progress} onCancel={onCancel} />}

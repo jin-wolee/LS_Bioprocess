@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bayCount, defaultForm, fromQuery, rangeWarning, resizeList, specOf, toQuery, withCounts } from "./form.ts";
+import { bayCount, defaultForm, fromQuery, growAnalyzers, rangeWarning, resizeList, specOf, toQuery, withCounts } from "./form.ts";
 import type { Form } from "./form.ts";
 import { READY } from "./fixture.ts";
 
@@ -66,9 +66,45 @@ describe("withCounts: both lists are rebuilt when N, the bay size or M change", 
     expect(withCounts({ ...fresh(), bays: ["pilot", "bench_manual"] }, READY, { baySize: "24" }).bays).toEqual(["pilot"]);
   });
 
-  it("Given M raised from 2 to 3 Then the analyzer list gains the default at position 3 and keeps the picks of 1 and 2", () => {
+  it("Given M raised from 2 to 3 with the default on analyzer 2 Then the new analyzer 3 takes the profile of analyzer 2, which is also the default, and the picks of 1 and 2 are kept", () => {
     const form = { ...fresh(), analyzers: ["hplc", "allinone_atline"] };
     expect(withCounts(form, READY, { m: "3" }).analyzers).toEqual(["hplc", "allinone_atline", "allinone_atline"]);
+  });
+
+  it("Given M raised from 2 to 3 with a profile that is not the default on analyzer 2 Then the new analyzer takes that profile, not the default of the scenario", () => {
+    const form = { ...fresh(), analyzers: ["allinone_atline", "hplc"] };
+    expect(withCounts(form, READY, { m: "3" }).analyzers).toEqual(["allinone_atline", "hplc", "hplc"]);
+  });
+
+  it("Given M raised by two Then each new analyzer copies the one before it, so the profile of the last pick runs on to the end", () => {
+    const form = { ...fresh(), analyzers: ["allinone_atline", "hplc"] };
+    expect(withCounts(form, READY, { m: "5" }).analyzers).toEqual(["allinone_atline", "hplc", "hplc", "hplc", "hplc"]);
+  });
+
+  it("Given M lowered and raised again Then the picks that were cut are not remembered: the new positions copy the one before", () => {
+    const three = { ...fresh(), m: "3", analyzers: ["allinone_atline", "hplc", "allinone_atline"] };
+    const two = withCounts(three, READY, { m: "2" });
+    expect(two.analyzers).toEqual(["allinone_atline", "hplc"]);
+    expect(withCounts(two, READY, { m: "3" }).analyzers).toEqual(["allinone_atline", "hplc", "hplc"]);
+  });
+
+  it("Given the scenario default on every analyzer Then raising M gives the default on every analyzer, and the spec still has no list", () => {
+    const form = withCounts(fresh(), READY, { m: "4" });
+    expect(form.analyzers).toEqual(Array(4).fill("allinone_atline"));
+    expect(ok(form)).not.toHaveProperty("analyzer_profiles");
+  });
+
+  it("Given growAnalyzers Then it copies the one before, takes the fallback only at position 1, and cuts without remembering", () => {
+    expect(growAnalyzers([], 3, "d")).toEqual(["d", "d", "d"]);
+    expect(growAnalyzers(["a"], 3, "d")).toEqual(["a", "a", "a"]);
+    expect(growAnalyzers(["a", "b", "c"], 2, "d")).toEqual(["a", "b"]);
+    expect(growAnalyzers(["a", "b"], 2, "d")).toEqual(["a", "b"]);
+  });
+
+  it("Given the bay size or N raised Then the new bays take the default of the scenario, not the bay before (the rule of the bays is unchanged)", () => {
+    const form = { ...fresh(), bays: ["pilot", "pilot"] };
+    expect(withCounts(form, READY, { n: "36" }).bays).toEqual(["pilot", "pilot", "bench_manual"]);
+    expect(withCounts({ ...form, baySize: "6", n: "12" }, READY, { baySize: "4" }).bays).toEqual(["pilot", "pilot", "bench_manual"]);
   });
 
   it("Given a count that is not a whole number of one or more Then it is kept as typed and the lists are left alone", () => {

@@ -52,10 +52,47 @@ def read_results(page) -> dict:
     return page.evaluate(RESULTS_JS)
 
 
+# Setup with a refused analyzer list (U2): whether Run is off, the id that describes it and whether that element exists, the live region of the message and the first sentence in it.
+FLEET_GATE_JS = """() => {
+  const run = document.querySelector('#run'), region = document.querySelector('#fleet-problems');
+  const described = run.getAttribute('aria-describedby');
+  return {disabled: run.disabled, described, reason: !!(described && document.getElementById(described)), role: region && region.getAttribute('role'), live: region && region.getAttribute('aria-live'),
+          note: (document.querySelector('[data-fleet-note]') || {innerText: ''}).innerText};
+}"""
+
+# A page whose check of the analyzer list finds nothing: the request names the all-in-one alone. What the engine refuses and the check does not know reaches the run, so the Results page can be seen to show
+# an engine_error as it always did (docs/design/lab_ui.md section 4, rule 4).
+BLIND_JS = """(() => {
+  const post = Worker.prototype.postMessage;
+  Worker.prototype.postMessage = function (message, ...rest) {
+    if (message && message.type === 'fleet_check') message = {...message, analyzers: ['allinone_atline']};
+    return post.call(this, message, ...rest);
+  };
+})();"""
+
+
+def engine_error_problems(browser, url) -> list[str]:
+    """Given an analyzer list that the engine refuses and that the page's check did not see, When Run is pressed, Then Results shows the engine's own message verbatim in a lang=en block."""
+    problems: list[str] = []
+    with open_lab(browser, url, init_script=BLIND_JS) as (page, _, _):
+        wait_final(page)
+        go(page, "setup")
+        page.select_option("#analyzer-1", "hplc")
+        page.select_option("#analyzer-2", "hplc")
+        page.wait_for_selector("#run:not([disabled])", timeout=30_000)
+        page.click("#run")
+        wait_run(page)
+        page.wait_for_selector("[data-problem=engine_error]", timeout=10_000)
+        message = page.inner_text("[data-problem=engine_error] pre")
+        if "requested" not in message or page.get_attribute("[data-problem=engine_error] pre", "lang") != "en":
+            problems.append(f"engine_error message not shown verbatim in lang=en: '{message[:80]}'")
+    return problems
+
+
 def check_results(browser, url) -> Result:
     """Given the default scenario, two seeds and A and C, When the reader presses Run on Setup, Then the report reaches the page with every figure in a result block (a number in a marker),
     a range bar for each figure with a value, recall beside precision and the false-alarm rate, the seed-count warning, utilisation once with its profile and no text that orders the
-    architectures. Then C with one flag off shows the label-error sentence once, a mixed fleet shows per-profile utilisation, a list the engine refuses is shown verbatim, a cancel stops
+    architectures. Then C with one flag off shows the label-error sentence once, a mixed fleet shows per-profile utilisation, a list the engine would refuse is refused by Setup in words with Run off (U2), an engine_error that the check did not see is shown verbatim, a cancel stops
     the run between seeds, and the link of the setup opens the same setup."""
     problems: list[str] = []
     notes: list[str] = []
@@ -118,15 +155,16 @@ def check_results(browser, url) -> Result:
         if r["profiles"] != ["allinone_atline", "hplc"] or not r["routing"]:
             problems.append(f"mixed fleet: profiles {r['profiles']}, routing note {r['routing']}")
 
-        # a list the engine refuses arrives as its own message, verbatim
+        # a list the engine would refuse is refused by Setup before any run (U2): the message names what is missing in words, Run is off with its reason beside it, and nothing was sent as a run
         go(page, "setup")
-        page.select_option("#analyzer-1", "hplc")
-        page.click("#run")
-        wait_run(page)
-        page.wait_for_selector("[data-problem=engine_error]", timeout=10_000)
-        message = page.inner_text("[data-problem=engine_error] pre")
-        if "requested" not in message or page.get_attribute("[data-problem=engine_error] pre", "lang") != "en":
-            problems.append(f"engine_error message not shown verbatim in lang=en: '{message[:80]}'")
+        page.select_option("#analyzer-1", "hplc")  # [hplc, hplc]: no analyzer measures the analytes of the default scenario
+        page.wait_for_selector("[data-fleet-note=unmeasured]", timeout=10_000)
+        gate = page.evaluate(FLEET_GATE_JS)
+        if not (gate["disabled"] and gate["described"] == "run-blocked" and gate["reason"] and gate["role"] == "status" and gate["live"] == "polite"):
+            problems.append(f"Setup refuses [hplc, hplc] but Run is not off with its reason for assistive technology: {gate}")
+        if "No analyzer measures" not in gate["note"]:
+            problems.append(f"the message of Setup does not say which analytes nobody measures: '{gate['note'][:100]}'")
+        page.select_option("#analyzer-1", "allinone_atline")
 
         # a cancel is read between seeds: thirty seeds of a small plant, cancelled after the first progress
         go(page, "setup")
@@ -153,6 +191,7 @@ def check_results(browser, url) -> Result:
         if "schema=1" not in link or "engine=" not in link or re.search(r"result|report|median", link):
             problems.append(f"the link does not hold the spec only: {link[:120]}")
         problems += [f"console: {e[:100]}" for e in errors if "HTTP 4" not in e]
+    problems += engine_error_problems(browser, url)
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     try:
         opened = ctx.new_page()

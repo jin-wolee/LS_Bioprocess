@@ -38,6 +38,16 @@ export const bayCount = (reactors: number, baySize: number): number => Math.ceil
 /** A list of the given length: the picks kept by position, a new position taking the fallback. */
 export const resizeList = (picks: readonly string[], length: number, fallback: string): string[] => Array.from({ length }, (_, i) => picks[i] ?? fallback);
 
+/**
+ * The analyzer list after M changes: the picks kept by position, a new position taking the profile of the analyzer before it, and the scenario default only when no analyzer is before it. A profile
+ * listed on two analyzers is one pool (spec section 4.5), so a copy never clashes with its original; the default would, whenever the reader had picked another profile for analyzer 1.
+ */
+export const growAnalyzers = (picks: readonly string[], length: number, fallback: string): string[] => {
+  const grown: string[] = [];
+  for (let i = 0; i < length; i++) grown.push(picks[i] ?? grown[i - 1] ?? fallback);
+  return grown;
+};
+
 /** A whole number of one or more, as typed; null for anything else. */
 export const whole = (text: string): number | null => (/^\d+$/.test(text.trim()) && Number(text) > 0 ? Number(text) : null);
 
@@ -73,7 +83,7 @@ export const defaultForm = (ready: ReadyInfo, scenarioId: string, previous?: For
   };
 };
 
-/** A count changed: both lists are rebuilt, the picks kept by position. A count that is not a whole number of one or more is kept as typed and the lists are left alone. */
+/** A count changed: both lists are rebuilt, the picks kept by position. A new bay takes the scenario default; a new analyzer takes the profile of the analyzer before it (`growAnalyzers`). A count that is not a whole number of one or more is kept as typed and the lists are left alone. */
 export const withCounts = (form: Form, ready: ReadyInfo, patch: Partial<Pick<Form, Count>>): Form => {
   const next = { ...form, ...patch };
   const [n, baySize, m] = [whole(next.n), whole(next.baySize), whole(next.m)];
@@ -81,7 +91,7 @@ export const withCounts = (form: Form, ready: ReadyInfo, patch: Partial<Pick<For
   return {
     ...next,
     bays: n !== null && baySize !== null ? resizeList(form.bays, bayCount(n, baySize), d.bay) : next.bays,
-    analyzers: m !== null ? resizeList(form.analyzers, m, d.analyzer) : next.analyzers,
+    analyzers: m !== null ? growAnalyzers(form.analyzers, m, d.analyzer) : next.analyzers,
   };
 };
 
@@ -124,6 +134,14 @@ export const runRequest = (form: Form, ready: ReadyInfo, id: number): Extract<Re
   const out = specOf(form, ready);
   return out.ok ? { type: "run", id, spec: out.spec, ...(form.actions.length > 0 && { actions: form.actions }) } : null;
 };
+
+// ---- the check of the analyzer list (U2; lab_ui.md section 4, rule 6) ----
+
+/** What the check depends on: the scenario (its menu) and the analyzer picks. N, the bay size and the bays do not change the verdict, so a change of those asks nothing. */
+export const fleetKey = (form: Pick<Form, "scenario" | "analyzers">): string => JSON.stringify([form.scenario, form.analyzers]);
+
+/** The `fleet_check` request of a form: the engine's own check of the two lists, asked of the Worker, which runs nothing. */
+export const fleetRequest = (form: Pick<Form, "scenario" | "analyzers">, id: number): Extract<Request, { type: "fleet_check" }> => ({ type: "fleet_check", id, scenario: form.scenario, analyzers: [...form.analyzers] });
 
 // ---- the link: `#/setup?<query>` holds the setup and never a result (lab_ui.md section 4, rule 5) ----
 
