@@ -74,6 +74,20 @@ def timed(name: str, fn) -> Result:
     return result
 
 
+def run_checks(checks, retries: int = 0) -> list[Result]:
+    """Run each (name, fn) of `checks` once, in order. With `retries` 1, each check that failed runs once more after all of them, and its second verdict is kept with the first failure written
+    beside it. C3: on a shared CI runner a wait now and then runs out in a different check each time; a check that fails twice still fails, and the local gate keeps `retries` 0."""
+    results = [timed(name, fn) for name, fn in checks]
+    for i, (name, fn) in enumerate(checks):
+        if results[i].ok or retries < 1:
+            continue
+        first = results[i]
+        again = timed(name, fn)
+        note = "passed on the second try" if again.ok else "failed twice"
+        results[i] = Result(name, again.ok, f"{again.detail} [{note}; the first try: {first.detail[:400]}]", again.data)
+    return results
+
+
 def build() -> int:
     # the same local build as the lab's QA (VITE_LAB_LOCAL=1): the plant is in both the local and the public build, and the lab's QA serves the same directory
     return subprocess.run(["npm", "run", "build:lab"], cwd=REPO, env={**os.environ, "VITE_LAB_LOCAL": "1"}).returncode
@@ -93,6 +107,7 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path, default=REPO / "qa_out" / "plant")
     ap.add_argument("--no-build", action="store_true", help="serve --root as it is")
     ap.add_argument("--timing", choices=("judge", "report"), default="judge", help="report: a time over its limit is printed with its conditions and does not fail (the Pages workflow; scripts/qa/qa_timing.py)")
+    ap.add_argument("--retry-failed", type=int, choices=(0, 1), default=0, help="1: run each failed check once more after the others; the Pages workflow only (C3)")
     ap.add_argument("--sweep", action="store_true", help="run the whole settings sweep (ten specs) instead of the regular checks; the report goes to <out>/sweep/")
     args = ap.parse_args(argv)
     set_mode(args.timing)
@@ -111,26 +126,27 @@ def main(argv=None) -> int:
                 result = timed("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs()))
                 print(sweep_report(result, args.out / "sweep"))
                 return 0 if result.ok else 1
-            results = [timed("plant_load", lambda: check_plant_load(browser, url, args.out)),
-                       timed("plant_frames", lambda: check_plant_frames(browser, url, args.out)),
-                       timed("plant_clock", lambda: check_plant_clock(browser, url, args.out)),
-                       timed("plant_shots", lambda: check_plant_shots(browser, url, args.out)),
-                       timed("plant_halls", lambda: check_plant_halls(browser, url, args.out)),
-                       timed("plant_record", lambda: check_plant_record(browser, url, args.out)),
-                       timed("plant_hall_shots", lambda: check_plant_hall_shots(browser, url, args.out)),
-                       timed("plant_truth", lambda: check_plant_truth(browser, url, args.out)),
-                       timed("plant_panels", lambda: check_plant_panels(browser, url, args.out)),
-                       timed("drilldown", lambda: check_drilldown(browser, url, args.out)),
-                       timed("plant_action", lambda: check_plant_action(browser, url, args.out)),
-                       timed("plant_equal", lambda: check_plant_equal(browser, url, args.out, reference) if why is None else Result("plant_equal", False, f"the reference could not be made: {why}")),
-                       timed("plant_prefix", lambda: check_plant_prefix(browser, url, args.out)),
-                       timed("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs(gate=True), "sweep_gate")),
-                       timed("sc12", lambda: check_sc12(browser, url, args.out, reference, public_problems(browser))),
-                       timed("size", lambda: check_size(browser, url, args.root)),
-                       timed("matrix", lambda: check_matrix(browser, url, args.out)),
-                       timed("plant_fallback", lambda: check_plant_fallback(pw, url, args.out)),
-                       timed("plant_a11y", lambda: check_plant_a11y(pw, browser, url, args.out)),
-                       timed("plant_tour", lambda: check_plant_tour(pw, browser, url, args.out))]
+            checks = [("plant_load", lambda: check_plant_load(browser, url, args.out)),
+                       ("plant_frames", lambda: check_plant_frames(browser, url, args.out)),
+                       ("plant_clock", lambda: check_plant_clock(browser, url, args.out)),
+                       ("plant_shots", lambda: check_plant_shots(browser, url, args.out)),
+                       ("plant_halls", lambda: check_plant_halls(browser, url, args.out)),
+                       ("plant_record", lambda: check_plant_record(browser, url, args.out)),
+                       ("plant_hall_shots", lambda: check_plant_hall_shots(browser, url, args.out)),
+                       ("plant_truth", lambda: check_plant_truth(browser, url, args.out)),
+                       ("plant_panels", lambda: check_plant_panels(browser, url, args.out)),
+                       ("drilldown", lambda: check_drilldown(browser, url, args.out)),
+                       ("plant_action", lambda: check_plant_action(browser, url, args.out)),
+                       ("plant_equal", lambda: check_plant_equal(browser, url, args.out, reference) if why is None else Result("plant_equal", False, f"the reference could not be made: {why}")),
+                       ("plant_prefix", lambda: check_plant_prefix(browser, url, args.out)),
+                       ("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs(gate=True), "sweep_gate")),
+                       ("sc12", lambda: check_sc12(browser, url, args.out, reference, public_problems(browser))),
+                       ("size", lambda: check_size(browser, url, args.root)),
+                       ("matrix", lambda: check_matrix(browser, url, args.out)),
+                       ("plant_fallback", lambda: check_plant_fallback(pw, url, args.out)),
+                       ("plant_a11y", lambda: check_plant_a11y(pw, browser, url, args.out)),
+                       ("plant_tour", lambda: check_plant_tour(pw, browser, url, args.out))]
+            results = run_checks(checks, args.retry_failed)
         finally:
             browser.close()
     print(report(results, args.out))

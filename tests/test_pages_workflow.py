@@ -196,7 +196,8 @@ def test_each_browser_qa_runs_in_the_timing_mode_report_and_the_lab_qa_skips_the
     plant = step_running(wf, "scripts/qa/qa_plant.py")["run"]
     site = step_running(wf, "scripts/qa/qa_site.py")["run"]
     assert lab.split() == ["uv", "run", "--frozen", "python", "scripts/qa/qa_lab.py", "--timing", "report", "--no-engines"]
-    assert plant.split() == ["uv", "run", "--frozen", "python", "scripts/qa/qa_plant.py", "--timing", "report"]
+    # C3 (the author, 2026-11-04): on the shared runner a wait ran out in a different plant check on each of two runs; each failed check runs once more, and one that fails twice fails the run
+    assert plant.split() == ["uv", "run", "--frozen", "python", "scripts/qa/qa_plant.py", "--timing", "report", "--retry-failed", "1"]
     assert site.split() == ["uv", "run", "--frozen", "python", "scripts/qa/qa_site.py", "--timing", "report"]
 
 
