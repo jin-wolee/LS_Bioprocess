@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sample Lineage Lab</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2024%2024%22%20width=%2240%22%20height=%2240%22%20class=%22lm%22%3E%0A%3Cstyle%3E.lm%7B--ink:%231a1f24;--accent:%230a58ad%7D%40media%20(prefers-color-scheme:dark)%7B.lm%7B--ink:%23e9edf1;--accent:%237db6f5%7D%7D.lm-i%7Bstroke:var(--ink)%7D.lm-k%7Bfill:var(--ink)%7D.lm-l%7Bfill:var(--accent)%7D%3C/style%3E%0A%3Cpath%20class=%22lm-l%22%20d=%22M9.25%206.5h5.5v3a2.75%202.75%200%200%201-5.5%200z%22/%3E%0A%3Cpath%20class=%22lm-i%22%20fill=%22none%22%20stroke-width=%221.5%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20d=%22M8%202.25h8M9.25%202.25V9.5a2.75%202.75%200%200%200%205.5%200V2.25M12%2012.25v3.25M4.5%2019.7v-4.2h15v4.2M12%2015.5v4.2%22/%3E%0A%3Ccircle%20class=%22lm-k%22%20cx=%224.5%22%20cy=%2221.3%22%20r=%221.7%22/%3E%0A%3Crect%20class=%22lm-k%22%20x=%2210.4%22%20y=%2219.7%22%20width=%223.2%22%20height=%223.2%22/%3E%0A%3Cpath%20class=%22lm-k%22%20d=%22M19.5%2019.7l1.8%203.2h-3.6z%22/%3E%0A%3C/svg%3E">
 <meta name="description" content="An explainer of how results lose their process context when N bioreactors send samples to two shared analyzers, with a link to the lab that runs the synthetic plant. Synthetic data; this page states no simulation result.">
 <style>
 @font-face {
@@ -150,7 +151,11 @@ a { color: var(--pen1); text-underline-offset: .18em; }
 /* top bar and controls */
 .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding-bottom: .9rem; }
 .brand { margin: 0; font: 600 .95rem var(--font-mono); letter-spacing: .02em; display: flex; align-items: center; gap: .6rem; }
-.brand svg { width: 2.2rem; height: 1.1rem; }
+.brand svg { width: 1.5rem; height: 1.5rem; flex: none; }
+/* the mark (B1): the drawing is docs/media/mark.svg, inlined by build.py without its own palette; its three classes take the page's tokens, so every theme recolours it */
+.brand .lm-i { stroke: var(--fg); }
+.brand .lm-k { fill: var(--fg); }
+.brand .lm-l { fill: var(--pen1); }
 .controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .controls select, .controls button, .btn { font: 500 .85rem var(--font-mono); color: var(--fg); background: var(--surface); border: 1px solid var(--line-2); border-radius: 2px; padding: .42rem .7rem; min-height: 2.25rem; cursor: pointer; box-shadow: var(--glow); }
 a.btn { display: inline-flex; align-items: center; text-decoration: none; }
@@ -362,7 +367,13 @@ footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(-
 <a class="skip" href="#premise" data-i18n="ui.skip">Skip to content</a>
 <div class="page">
 <header class="top">
-<p class="brand"><svg viewBox="0 0 44 22" aria-hidden="true"><path class="ax" d="M2 20h40"/><path class="p1" d="M4 16l10-9 8 5"/><path class="p2" d="M22 12l8 2 10-9"/><circle class="p1f" cx="14" cy="7" r="2.6"/><circle class="p2f" cx="30" cy="14" r="2.6"/></svg>Sample Lineage Lab</p>
+<p class="brand"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" class="lm">
+<path class="lm-l" d="M9.25 6.5h5.5v3a2.75 2.75 0 0 1-5.5 0z"/>
+<path class="lm-i" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M8 2.25h8M9.25 2.25V9.5a2.75 2.75 0 0 0 5.5 0V2.25M12 12.25v3.25M4.5 19.7v-4.2h15v4.2M12 15.5v4.2"/>
+<circle class="lm-k" cx="4.5" cy="21.3" r="1.7"/>
+<rect class="lm-k" x="10.4" y="19.7" width="3.2" height="3.2"/>
+<path class="lm-k" d="M19.5 19.7l1.8 3.2h-3.6z"/>
+</svg>Sample Lineage Lab</p>
 <div class="controls" role="group" aria-label="Display options" data-i18n-aria="ui.opts">
 <a class="btn" id="lab-link" href="lab/" data-i18n="ui.lab">Open the lab</a>
 <label><span data-i18n="ui.theme">Theme</span> <select id="theme-select"><option value="auto" data-i18n="ui.t.auto">Auto</option><option value="light" data-i18n="ui.t.light">Light</option><option value="dark" data-i18n="ui.t.dark">Dark</option><option value="neon" data-i18n="ui.t.neon">Neon</option></select></label>

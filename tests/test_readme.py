@@ -81,7 +81,7 @@ def test_it_has_the_sections_the_author_asked_for_in_order_with_their_subsection
 def test_it_opens_with_the_title_a_tagline_the_language_row_the_tour_the_lead_and_a_table_of_contents():
     head = top(README)
     assert len(head) == 6
-    assert head[0] == "# Sample Lineage Lab"
+    assert head[0] == "# ![](docs/media/mark.svg) Sample Lineage Lab"  # B1: the mark beside the name; the alt text is empty because the name is right beside it
     assert re.fullmatch(r"[^.\n]+\.", head[1]) and "data architectures" in head[1]  # one sentence
     assert head[2] == "**English** | [한국어](README.ko.md)"  # the current language bold and not linked, the other one linked
     assert re.fullmatch(r"!\[[^\]]+\]\(docs/media/tour\.gif\)", head[3])

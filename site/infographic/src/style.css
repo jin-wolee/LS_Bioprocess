@@ -60,7 +60,11 @@ a { color: var(--pen1); text-underline-offset: .18em; }
 /* top bar and controls */
 .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding-bottom: .9rem; }
 .brand { margin: 0; font: 600 .95rem var(--font-mono); letter-spacing: .02em; display: flex; align-items: center; gap: .6rem; }
-.brand svg { width: 2.2rem; height: 1.1rem; }
+.brand svg { width: 1.5rem; height: 1.5rem; flex: none; }
+/* the mark (B1): the drawing is docs/media/mark.svg, inlined by build.py without its own palette; its three classes take the page's tokens, so every theme recolours it */
+.brand .lm-i { stroke: var(--fg); }
+.brand .lm-k { fill: var(--fg); }
+.brand .lm-l { fill: var(--pen1); }
 .controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .controls select, .controls button, .btn { font: 500 .85rem var(--font-mono); color: var(--fg); background: var(--surface); border: 1px solid var(--line-2); border-radius: 2px; padding: .42rem .7rem; min-height: 2.25rem; cursor: pointer; box-shadow: var(--glow); }
 a.btn { display: inline-flex; align-items: center; text-decoration: none; }

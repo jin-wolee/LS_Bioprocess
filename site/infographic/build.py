@@ -18,11 +18,14 @@ import gzip
 import html
 import re
 import sys
+import urllib.parse
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 SRC = HERE / "src"
+MARK_FILE = REPO / "docs" / "media" / "mark.svg"  # B1: the one drawing of the mark; the header inlines it and the icon is the file itself
+MARK_PALETTE = re.compile(r"<style>[\s\S]*?</style>\s*")
 FONT_DIR = HERE / "fonts"  # the woff2 files and their licences (fonts/README.md); the page asks no other origin for anything
 # Google Fonts splits a family by script; the page keeps latin and latin-ext with the unicode-range of Google's own stylesheet, so the same characters come from the same files as before
 SUBSETS = {
@@ -49,6 +52,18 @@ def font_faces(address) -> str:
                 + (f"  font-stretch: {stretch};\n" if stretch else "")
                 + f"  font-display: swap;\n  src: url({address(f'{stem}-{subset}.woff2')}) format(\"woff2\");\n  unicode-range: {ranges};\n}}\n")
     return "".join(rules)
+
+
+def mark_inline() -> str:
+    """The mark for the header: the drawing of docs/media/mark.svg without the palette the file carries for a tab or a README (style.css colours its three classes from the theme tokens), hidden from readers."""
+    svg = MARK_PALETTE.sub("", MARK_FILE.read_text(encoding="utf-8")).strip()
+    return svg.replace("<svg ", '<svg aria-hidden="true" ', 1)
+
+
+def mark_icon() -> str:
+    """The icon of the page: the file itself as a data address (a tab cannot restyle it, so it keeps its own palette, light and dark)."""
+    svg = MARK_FILE.read_text(encoding="utf-8").strip()
+    return f'<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,{urllib.parse.quote(svg, safe="/:=;,()-._~")}">'
 
 
 def data_address(name: str) -> str:
@@ -143,6 +158,7 @@ def render() -> tuple[str, str, list[str]]:
     errors: list[str] = []
     body = annotate(body, assumptions, sources, errors)
     body = body.replace("<!--SOURCES-->", source_list(sources))
+    body = body.replace("<!--MARK-->", mark_inline())
     check_i18n(body, i18n, errors)
     if errors:
         return "", "", errors
@@ -150,7 +166,7 @@ def render() -> tuple[str, str, list[str]]:
     page = (
         "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
-        f"<title>Sample Lineage Lab</title>\n<meta name=\"description\" content=\"{html.escape(DESCRIPTION, quote=True)}\">\n"
+        f"<title>Sample Lineage Lab</title>\n{mark_icon()}\n<meta name=\"description\" content=\"{html.escape(DESCRIPTION, quote=True)}\">\n"
         f"<style>\n{font_faces(lambda name: f'fonts/{name}')}{css}</style>\n</head>\n<body>\n{body}{script}\n</body>\n</html>\n"
     )
     fragment = (

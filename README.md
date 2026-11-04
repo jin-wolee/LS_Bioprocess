@@ -1,4 +1,4 @@
-# Sample Lineage Lab
+# ![](docs/media/mark.svg) Sample Lineage Lab
 
 A simulator that shows what different data architectures can still tell you about a sample afterwards.
 

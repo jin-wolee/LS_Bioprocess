@@ -15,6 +15,7 @@ import { defaultForm, fromQuery, runRequest } from "./form.ts";
 import type { Form } from "./form.ts";
 import { Home } from "./Home.tsx";
 import { Lineage } from "./Lineage.tsx";
+import { Mark } from "./Mark.tsx";
 import { defaultLineageForm, lineageRequest, plantLineageForm } from "./lineage_form.ts";
 import type { LineageForm } from "./lineage_form.ts";
 import { Notes } from "./Notes.tsx";
@@ -194,7 +195,10 @@ export function App({ worker }: { worker: Worker }) {
   return (
     <LangContext.Provider value={lang}>
       <header class="top">
-        <T as="strong" k="app.title" class="brand" />
+        <div class="logo">
+          <Mark />
+          <T as="strong" k="app.title" class="brand" />
+        </div>
         <nav aria-label={text(lang, "nav.label")} class="nav">
           {NAV.map((screen) => (
             <a key={screen} id={`nav-${screen}`} href={hashOf(screen)} {...(route.screen === screen && { "aria-current": "page" })}>

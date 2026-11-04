@@ -64,7 +64,14 @@ code, pre, .ref-id, .input-name { font-family: ui-monospace, SFMono-Regular, Men
 
 .top, main, .foot { width: 100%; max-width: 60rem; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
 .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-top: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.logo { display: flex; align-items: center; gap: 8px; }
 .brand { font-size: 1.05rem; }
+/* The mark (B1, Mark.tsx): the drawing's three classes take their colour from the theme tokens, so the dark scheme and the reader's choice recolour it with the page. */
+.mark { display: inline-flex; }
+.mark svg { width: 24px; height: 24px; }
+.mark .lm-i { stroke: var(--fg); }
+.mark .lm-k { fill: var(--fg); }
+.mark .lm-l { fill: var(--accent); }
 .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 button, select { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; min-height: 36px; cursor: pointer; }
 main { padding-top: 16px; padding-bottom: 32px; }

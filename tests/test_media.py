@@ -25,6 +25,8 @@ MEDIA = REPO / "docs" / "media"
 READMES = {"README.md": (REPO / "README.md").read_text(encoding="utf-8"), "README.ko.md": (REPO / "README.ko.md").read_text(encoding="utf-8")}
 GIF_LIMITS = {"tour.gif": (15.0, 25.0, 6 * MB), "action.gif": (6.0, 10.0, 3 * MB)}
 PNG_LIMIT = 400 * KB
+MARK = "mark.svg"  # B1: the mark, one drawing written in code (not made by the script; the READMEs show it beside the title, the pages use it as their icon, tests/test_brand.py)
+MARK_LIMIT = 2 * KB
 EXPECTED_FILES = {"tour.gif", "action.gif", "plant_en.png", "tour_table_en.png", "lineage_en.png", "results_en.png", "breakout_en.png", "plant_ko.png", "tour_table_ko.png", "lineage_ko.png"}
 
 
@@ -47,6 +49,8 @@ def test_every_image_a_readme_names_exists_and_is_under_its_limit(readme):
             assert f.stat().st_size <= PNG_LIMIT, f"{path}: {f.stat().st_size} bytes"
             w, h = png_size(f)
             assert 1000 <= w <= 1280 and 500 <= h <= 720, f"{path}: {w} by {h}"
+        elif f.suffix == ".svg":
+            assert f.name == MARK and f.stat().st_size <= MARK_LIMIT, f"{path}: {f.stat().st_size} bytes"
         else:
             assert f.suffix == ".gif" and f.name in GIF_LIMITS, path
             assert f.stat().st_size <= GIF_LIMITS[f.name][2], f"{path}: {f.stat().st_size} bytes"
@@ -62,7 +66,7 @@ def test_the_gifs_run_as_long_as_the_brief_says_and_are_about_960_px_wide():
 
 def test_the_folder_holds_exactly_the_pictures_the_readmes_name_and_weighs_under_the_total():
     files = {p.name for p in MEDIA.iterdir() if p.is_file()}
-    assert files == EXPECTED_FILES
+    assert files == EXPECTED_FILES | {MARK}
     assert files == {path.split("/")[-1] for text in READMES.values() for path in named(text)}
     assert sum(p.stat().st_size for p in MEDIA.iterdir()) <= 12 * MB
 

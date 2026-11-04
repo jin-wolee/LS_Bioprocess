@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" class="lm">
+<style>.lm{--ink:#1a1f24;--accent:#0a58ad}@media (prefers-color-scheme:dark){.lm{--ink:#e9edf1;--accent:#7db6f5}}.lm-i{stroke:var(--ink)}.lm-k{fill:var(--ink)}.lm-l{fill:var(--accent)}</style>
+<path class="lm-l" d="M9.25 6.5h5.5v3a2.75 2.75 0 0 1-5.5 0z"/>
+<path class="lm-i" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M8 2.25h8M9.25 2.25V9.5a2.75 2.75 0 0 0 5.5 0V2.25M12 12.25v3.25M4.5 19.7v-4.2h15v4.2M12 15.5v4.2"/>
+<circle class="lm-k" cx="4.5" cy="21.3" r="1.7"/>
+<rect class="lm-k" x="10.4" y="19.7" width="3.2" height="3.2"/>
+<path class="lm-k" d="M19.5 19.7l1.8 3.2h-3.6z"/>
+</svg>

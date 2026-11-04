@@ -79,7 +79,7 @@ def test_the_korean_readme_has_the_same_sections_and_subsections_in_the_same_ord
 
 def test_it_opens_like_the_english_one_with_the_language_row_the_other_way_round_and_the_same_tour():
     head = top(KO)
-    assert len(head) == 6 and head[0] == "# Sample Lineage Lab"
+    assert len(head) == 6 and head[0] == "# ![](docs/media/mark.svg) Sample Lineage Lab"
     assert re.fullmatch(r"[^.\n]+\.", head[1]) or head[1].endswith("시뮬레이터입니다.")  # one sentence
     assert head[2] == "[English](README.md) | **한국어**"  # the current language bold and not linked, in the same order as the English row
     assert head[3].endswith("(docs/media/tour.gif)")
@@ -96,7 +96,7 @@ def test_the_table_of_contents_links_the_anchors_of_the_korean_headings():
 def test_it_shows_the_same_pictures_in_the_same_places_with_its_own_screenshots_of_three_of_them():
     en, ko = images(README), images(KO)
     assert [p.replace("_ko.png", "_en.png") for p in ko] == en
-    assert ko == ["docs/media/tour.gif", "docs/media/plant_ko.png", "docs/media/tour_table_ko.png", "docs/media/lineage_ko.png", "docs/media/results_en.png", "docs/media/action.gif",
+    assert ko == ["docs/media/mark.svg", "docs/media/tour.gif", "docs/media/plant_ko.png", "docs/media/tour_table_ko.png", "docs/media/lineage_ko.png", "docs/media/results_en.png", "docs/media/action.gif",
                   "docs/media/breakout_en.png"]
 
 

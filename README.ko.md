@@ -1,4 +1,4 @@
-# Sample Lineage Lab
+# ![](docs/media/mark.svg) Sample Lineage Lab
 
 서로 다른 데이터 아키텍처가 나중에 시료 하나에 대해 무엇을 알려 줄 수 있는지 보여 주는 시뮬레이터입니다.
 

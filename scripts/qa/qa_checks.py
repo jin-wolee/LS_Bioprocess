@@ -58,8 +58,12 @@ def effective_background(layers, base):
     return acc
 
 
+# B1: the product name is not translated, so the Korean text of this key is the English one on purpose (src/i18n/ko.ts says so beside it). The count of unchanged texts leaves it out.
+KEPT_IN_ENGLISH = frozenset({"app.title"})
+
+
 def unchanged_keys(en: dict, ko: dict) -> list:
-    return [k for k, text in en.items() if ko.get(k) in (None, text)]
+    return [k for k, text in en.items() if k not in KEPT_IN_ENGLISH and ko.get(k) in (None, text)]
 
 
 def cut_sides(box, clip, tol: float = CLIP_TOL) -> dict:
