@@ -18,11 +18,19 @@ from qa_plant_truth_helpers import follow_problems, panel_numbers, quiet_instant
 BUSY_S = BUSY_START_S + 25 * 60
 NIGHT_S = 8 * DAY_S + 22 * 3600
 FOLLOW_FRAMES = 100
-# Records every value of the position of the followed tube on the screen (`data-plant-follow-ndc`), one for each frame the scene draws it.
+# Records the position of the followed tube on the screen (`data-plant-follow-ndc`) once per animation frame, while a follow is on and the tube named in `window.__plantFollowTube` is still on the
+# floor, from the first frame the scene has written it. C2: the scene writes the attribute only when the value changes, and the check used to count those changes as frames; on a runner with 2 CPUs (frames of 200 to 400 ms) the tube left the floor
+# before 100 changes and the wait ran out. One sample per frame counts frames whatever the machine.
 FOLLOW_JS = """(() => {
   window.__plantFollow = [];
-  new MutationObserver((records) => { for (const r of records) window.__plantFollow.push(r.target.getAttribute('data-plant-follow-ndc')); })
-    .observe(document, { subtree: true, attributes: true, attributeFilter: ['data-plant-follow-ndc'] });
+  window.__plantFollowTube = null;
+  const tick = () => {
+    const host = document.querySelector('#plant');
+    const id = window.__plantFollowTube;
+    if (id && host && host.dataset.plantFollow && host.dataset.plantFollowNdc !== undefined && document.querySelector(`[data-tube-sample='${id}']`)) window.__plantFollow.push(host.dataset.plantFollowNdc);
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 })();"""
 INIT_JS = RECORD_PLANT_JS + FOLLOW_JS
 # The figures of a panel the check reads, by the name the panel gives them (`data-panel-field`).
@@ -213,10 +221,14 @@ def follow_and_step(browser, url, out: Path) -> list[str]:
         settle(page, 3)
         page.keyboard.press("f")
         page.wait_for_function("(id) => document.querySelector('#plant').dataset.plantFollow === id", arg=tube, timeout=5_000)
-        page.evaluate("window.__plantFollow.length = 0")
+        page.keyboard.press("1")  # C2: the slowest speed (x30), so the frames read fall within the tube's time on the floor on a slow machine too
+        page.wait_for_function("() => document.querySelector('#plant').dataset.plantSpeed === '30'", timeout=5_000)
+        page.evaluate("(id) => { window.__plantFollow.length = 0; window.__plantFollowTube = id; }", tube)
         page.click("[data-time=play]")
-        page.wait_for_function(f"window.__plantFollow.length >= {FOLLOW_FRAMES}", polling=500, timeout=120_000)
+        page.wait_for_function("([n, id]) => window.__plantFollow.length >= n || !document.querySelector(`[data-tube-sample='${id}']`)", arg=[FOLLOW_FRAMES, tube], polling=500, timeout=120_000)
         frames = page.evaluate(f"window.__plantFollow.slice(0, {FOLLOW_FRAMES})")
+        if len(frames) < FOLLOW_FRAMES:
+            problems.append(f"the tube left the floor after {len(frames)} frames of the follow, fewer than {FOLLOW_FRAMES}")
         problems += follow_problems(frames)
         pause(page)
         page.keyboard.press("q")  # the reader turns the camera
