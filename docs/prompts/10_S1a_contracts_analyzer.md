@@ -135,7 +135,7 @@ Two common discrete-event pitfalls are the regression targets of F1 (admission o
 | SimPy | 4.1.2 | `uv add --dev simpy==4.1.2` so the SimPy loop can import it |
 | pytest, jsonschema, duckdb | `uv add --dev` | DuckDB for the DDL acceptance test |
 
-If a planned version does not install, use the nearest compatible one and log it; never upgrade silently. Node comes from `.nvmrc`.
+If a planned version does not install, use the nearest compatible one and log it; never upgrade silently. Node comes from `engines.node` in `package.json` (R3).
 - [ ] `package.json` scripts: `lint`, `typecheck`, `test`, `gen:types`, `check`. `check` = lint + typecheck + test; `gen:types` is separate and not part of `check` (the drift test in `test` guards the generated types). `npm run check` must pass.
 - [ ] ESLint, scope `engine/src/**` only: ban `Math.random`, `Date.now`, `new Date` and the Node-only imports of Step 1. Show the rule failing on a planted violation in a scratch copy, then passing. Show `bash scripts/check_all.sh --manual` failing on a planted `Math.random` in a scratch copy, then passing.
 - [ ] pytest config in `pyproject.toml`: register marker `user_track`; default `addopts = -m "not user_track"` so `uv run pytest -q` stays the AI-path gate.

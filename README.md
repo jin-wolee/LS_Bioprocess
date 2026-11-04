@@ -61,7 +61,7 @@ The two pages will be at these addresses. The site goes live when the author pub
 - [Explainer](https://jin-wolee.github.io/LS_Bioprocess/): a scroll page on the problem, with a slider that moves the measurement time and a matrix of which flag covers which error.
 - [Lab](https://jin-wolee.github.io/LS_Bioprocess/lab/): runs the synthetic plant in the browser and shows what the record of each architecture can reconstruct. You can walk through that plant (see "Usage"), follow one sample through each record, and take a challenge: find the planted error in a record.
 
-To run them you need Node at the version in `.nvmrc`, Python at the version in `.python-version` (`uv` finds or fetches it), `npm` and `uv`.
+To run them you need Node at the version in `package.json` (`engines`), Python at the version in `pyproject.toml` (`requires-python`; `uv` finds or fetches it), `npm` and `uv`.
 
 ```bash
 npm ci                  # Node packages, exact versions from package-lock.json
@@ -205,7 +205,7 @@ The pages ship no result. The lab computes its results in your browser on each v
 | `src/` | the lab page (Preact), its Web Worker, the English and Korean dictionaries |
 | `tests/` | pytest for the scripts, the hooks, the docs check, the Pages workflow and the READMEs |
 
-The root also holds the project files: `package.json` with `package-lock.json`, `pyproject.toml` with `uv.lock`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts` (the Vitest settings), `.nvmrc`, `.python-version` and `LICENSE`.
+The root also holds the project files: `package.json` with `package-lock.json`, `pyproject.toml` with `uv.lock`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts` (the Vitest settings) and `LICENSE`.
 
 ## How the work is done
 

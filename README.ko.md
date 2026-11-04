@@ -61,7 +61,7 @@ flowchart LR
 - [해설 페이지](https://jin-wolee.github.io/LS_Bioprocess/): 문제를 설명하는 스크롤 페이지입니다. 측정 시각을 움직이는 슬라이더와, 어떤 플래그가 어떤 오류를 막는지 보여 주는 표가 있습니다.
 - [랩](https://jin-wolee.github.io/LS_Bioprocess/lab/): 합성 공장을 브라우저에서 돌리고 각 아키텍처의 기록이 무엇을 복원할 수 있는지 보여 줍니다. 공장 안을 걸어 다닐 수 있고("사용법" 참고), 시료 하나를 기록마다 따라가 볼 수 있고, 기록에 심어 둔 오류를 찾는 챌린지도 있습니다.
 
-실행하려면 `.nvmrc`에 적힌 버전의 Node, `.python-version`에 적힌 버전의 Python(`uv`가 찾거나 내려받습니다), `npm`, `uv`가 필요합니다.
+실행하려면 `package.json`(`engines`)에 적힌 버전의 Node, `pyproject.toml`(`requires-python`)에 적힌 버전의 Python(`uv`가 찾거나 내려받습니다), `npm`, `uv`가 필요합니다.
 
 ```bash
 npm ci                  # Node packages, exact versions from package-lock.json
@@ -205,7 +205,7 @@ A와 B는 정확한 복원이 요구하는 채취 시각과, 실행에서 장비
 | `src/` | 랩 페이지(Preact), 그 Web Worker, 영어와 한국어 사전 |
 | `tests/` | 스크립트, 훅, 문서 점검, Pages 워크플로, README에 대한 pytest |
 
-루트에는 프로젝트 파일도 있습니다: `package.json`과 `package-lock.json`, `pyproject.toml`과 `uv.lock`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts`(Vitest 설정), `.nvmrc`, `.python-version`, `LICENSE`.
+루트에는 프로젝트 파일도 있습니다: `package.json`과 `package-lock.json`, `pyproject.toml`과 `uv.lock`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts`(Vitest 설정), `LICENSE`.
 
 ## 작업 방식
 

@@ -220,7 +220,7 @@ def test_it_says_what_the_plant_is_and_what_it_leaves_to_the_local_build():
 
 def test_it_says_the_versions_the_local_build_and_the_gate_of_the_workflow():
     quick = between(KO, "## 빠른 시작", "## 사용법")
-    assert "`.nvmrc`" in quick and "`.python-version`" in quick
+    assert "`engines`" in quick and "`requires-python`" in quick and "`.nvmrc`" not in quick  # R3
     assert "`http://127.0.0.1:8000/`" in quick and "`http://127.0.0.1:8000/lab/`" in quick and "랩은 파일 주소로는 동작하지 않습니다" in quick
     assert "공개 빌드는 역추적 화면과 공장 안의 역추적 사례를 뺍니다" in quick
     assert "점검이 하나라도 실패하면 배포가 막힙니다" in quick and "판정하지 않습니다(`--timing report`)" in quick

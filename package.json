@@ -5,6 +5,9 @@
   "type": "module",
   "description": "Portfolio simulator: shared analyzers, sample lineage, several data architectures compared on one synthetic run.",
   "license": "MIT",
+  "engines": {
+    "node": "25"
+  },
   "scripts": {
     "lint": "eslint engine src",
     "typecheck": "tsc --noEmit",

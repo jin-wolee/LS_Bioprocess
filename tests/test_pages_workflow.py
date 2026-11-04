@@ -5,6 +5,7 @@ which order. They cannot run the workflow; scripts/assemble_site.py and scripts/
 """
 from __future__ import annotations
 
+import json
 import re
 from datetime import date
 
@@ -117,9 +118,10 @@ def test_each_pinned_release_was_at_least_two_weeks_old_when_it_was_read(action)
 
 
 # ---------- what is built, checked and uploaded ----------
-def test_node_comes_from_nvmrc_and_nothing_is_cached(wf):
+def test_node_comes_from_package_json_and_nothing_is_cached(wf):
     node = next(s for s in uses(wf) if s["uses"].startswith("actions/setup-node@"))
-    assert node["with"]["node-version-file"] == ".nvmrc"
+    assert node["with"]["node-version-file"] == "package.json"  # R3: setup-node reads `engines.node` there
+    assert json.loads((REPO / "package.json").read_text(encoding="utf-8"))["engines"]["node"] == "25"  # ADR-0016: Node stays at 25
     assert node["with"]["package-manager-cache"] is False
     uv = next(s for s in uses(wf) if s["uses"].startswith("astral-sh/setup-uv@"))
     assert uv["with"]["enable-cache"] is False

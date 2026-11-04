@@ -141,10 +141,11 @@ def test_usage_has_a_table_of_keys_that_the_code_binds_and_a_line_for_every_othe
         assert re.search(rf"^\| {screen} \| ", screens, re.M), screen
 
 
-def test_quick_start_gives_the_address_first_then_one_block_to_paste_and_names_the_versions_by_their_files():
+def test_quick_start_gives_the_address_first_then_one_block_to_paste_and_names_where_the_versions_are():
     run = section(README, "Quick start")
     assert run.index("jin-wolee.github.io") < run.index("```bash")  # the live address first
-    assert "`.nvmrc`" in run and "`.python-version`" in run and (REPO / ".nvmrc").is_file() and (REPO / ".python-version").is_file()
+    assert "`engines`" in run and "`requires-python`" in run and "`.nvmrc`" not in run and "`.python-version`" not in run  # R3: the versions live in package.json and pyproject.toml
+    assert not (REPO / ".nvmrc").exists() and not (REPO / ".python-version").exists()
     first = re.search(r"```bash\n(.*?)```", run, re.S).group(1)
     assert [line.split()[0:2] for line in first.splitlines()] == [["npm", "ci"], ["uv", "sync"], ["npm", "run"]]
     scripts = json.loads((REPO / "package.json").read_text(encoding="utf-8"))["scripts"]

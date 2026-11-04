@@ -34,7 +34,7 @@ class Repo:
         self.git("config", "user.email", "tester@example.com")
         self.git("config", "commit.gpgsign", "false")
         shutil.copytree(REPO / "scripts", root / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
-        for name in (".gitignore", "pyproject.toml", "uv.lock", ".python-version"):
+        for name in (".gitignore", "pyproject.toml", "uv.lock"):
             shutil.copy(REPO / name, root / name)
         self.write(".guardrails.local.txt", f"# test list\n{BANNED}\n")
 
