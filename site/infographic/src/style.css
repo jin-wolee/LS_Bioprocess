@@ -97,7 +97,9 @@ html:not([lang="ko"]) .lg-en, html[lang="ko"] .lg-ko { opacity: 1; font-weight: 
 @media (min-width: 60rem) { .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); align-items: start; } }
 .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1.4rem 0 0; }
 a.btn.cta { background: var(--pen1); color: var(--on-pen); border-color: var(--pen1); font-size: 1.02rem; font-weight: 600; padding: .6rem 1.2rem; min-height: 2.9rem; }
-.cta-note { font-size: .92rem; color: var(--fg-2); flex: 1 1 14rem; max-width: 34ch; }
+.cta-alt { font-size: .95rem; }
+.cta-note { font-size: .92rem; color: var(--fg-2); margin: .7rem 0 0; max-width: 46ch; }
+.case { font-size: 1.2rem; font-weight: 500; line-height: 1.45; max-width: 52ch; margin: 2rem 0 0; }
 .hero-pic { margin: 0; }
 .hero-pic img { display: block; width: 100%; height: auto; border: 1px solid var(--line-2); background: var(--surface-2); box-shadow: var(--glow); }
 .hero-pic figcaption { font-size: .82rem; color: var(--fg-2); margin-top: .5rem; }
@@ -262,7 +264,6 @@ ul.plain li, ol.plain li { margin-bottom: .45rem; }
 footer.foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 2px solid var(--line-2); display: grid; gap: 1rem; font-size: .93rem; }
 .road { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: 0; font: 500 .8rem var(--font-mono); }
 .road li { border: 1px solid var(--line-2); padding: .3rem .6rem; background: var(--surface); }
-.placeholder { font: 500 .85rem var(--font-mono); color: var(--fg-2); border: 1px dashed var(--line-2); padding: .2rem .5rem; }
 @media (max-width: 40rem) {
   body { font-size: 1rem; }
   .top { column-gap: .5rem; row-gap: .55rem; }

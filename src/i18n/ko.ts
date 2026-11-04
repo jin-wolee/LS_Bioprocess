@@ -45,6 +45,7 @@ const koBase: Record<keyof typeof enBase, string> = {
   "home.run.heading": "기본 시나리오 한 번 실행",
   "home.run.lead": "시드 하나로, 이 방문에서, 이 브라우저 안에서 시뮬레이션된 공장이 만든 이벤트의 개수입니다. 표시된 입력 아래의 시뮬레이션 결과이며 실제 공장에 대한 사실이 아닙니다.",
   "home.run.pending": "실행을 기다리는 중입니다.",
+  "home.about.summary": "이 실행에 대해: 검사와 입력값",
   "home.inputs.heading": "기본 시나리오의 입력",
   "home.inputs.lead": "모든 입력에는 가정 원장에서의 항목 id와 그 항목의 등급이 붙습니다. 점선 칩은 출처를 아직 다 다시 읽지 않은 입력을 뜻합니다.",
 

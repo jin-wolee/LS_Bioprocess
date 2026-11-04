@@ -157,6 +157,60 @@ def test_the_scope_note_reads_nothing_that_only_a_passed_check_may_say_and_no_em
     assert len(qc.scope_problems("", "en", "Home")) == len(qc.SCOPE_WORDS["en"])
 
 
+# ---------- Home's fold (P11) ----------
+def _home(open_=False, **over):
+    shown = {"#enter-plant": True, "#check-chip": True, "#check-banner": True, "#check-scope": open_, "#versions": open_, "#inputs": open_}
+    facts = {"fold": {"open": open_}, "role": "status", "visible": shown, "top": {"#enter-plant": 180.0, "#check-chip": 330.0, "#about-run": 900.0}}
+    return {**facts, **over}
+
+
+def test_a_home_with_the_status_line_shown_and_the_fold_closed_and_then_open_has_no_problem():
+    assert qc.fold_problems(_home(), _home(True)) == []
+    assert qc.fold_problems(_home()) == []
+
+
+def test_a_missing_fold_is_one_problem_and_nothing_else_is_read():
+    assert qc.fold_problems({"fold": None}) == ["Home has no fold #about-run"]
+
+
+def test_the_fold_open_on_arrival_is_named():
+    problems = qc.fold_problems(_home(True))
+    assert any("open on arrival" in p for p in problems) and any("hides nothing" in p for p in problems), problems
+
+
+@pytest.mark.parametrize("hidden", ["#check-chip", "#check-banner", "#enter-plant"])
+def test_a_status_line_or_a_plant_entry_that_the_closed_fold_hides_is_named(hidden):
+    closed = _home()
+    closed["visible"][hidden] = False
+    problems = qc.fold_problems(closed)
+    assert len(problems) == 1 and hidden in problems[0], problems
+
+
+@pytest.mark.parametrize("shown", ["#check-scope", "#versions", "#inputs"])
+def test_what_the_fold_holds_but_the_closed_page_shows_is_named(shown):
+    closed = _home()
+    closed["visible"][shown] = True
+    problems = qc.fold_problems(closed)
+    assert len(problems) == 1 and shown in problems[0], problems
+
+
+def test_a_banner_that_is_not_a_live_region_is_named():
+    problems = qc.fold_problems(_home(role=None))
+    assert len(problems) == 1 and "'status'" in problems[0], problems
+
+
+@pytest.mark.parametrize("tops", [{"#enter-plant": 330.0, "#check-chip": 180.0, "#about-run": 900.0}, {"#enter-plant": 180.0, "#check-chip": 330.0, "#about-run": 300.0}, {"#enter-plant": 180.0, "#check-chip": 330.0}])
+def test_a_home_out_of_order_or_missing_a_block_is_named(tops):
+    problems = qc.fold_problems(_home(top=tops))
+    assert len(problems) == 1 and "order" in problems[0], problems
+
+
+def test_a_fold_that_a_click_does_not_open_or_that_shows_nothing_once_open_is_named():
+    still_closed = _home()
+    problems = qc.fold_problems(_home(), still_closed)
+    assert any("did not open" in p for p in problems) and any("#inputs is not visible once the fold is open" in p for p in problems), problems
+
+
 # ---------- the numbers walk ----------
 def test_number_offenders_keeps_the_text_nodes_that_have_a_digit_and_no_marked_ancestor():
     nodes = [

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from qa_checks import KO_LIMIT, VIEWPORTS, Result, first_line, fmt_ratio, unchanged_keys
 from qa_infographic import CONTRAST_JS, contrast_rows
-from qa_lab_browser import NUMBERS_JS, apply_state, clear_clash, go, make_clash, open_lab, prepare_page, set_lang, shown_screens, wait_final
+from qa_lab_browser import NUMBERS_JS, apply_state, clear_clash, go, make_clash, open_about, open_lab, prepare_page, set_lang, shown_screens, wait_final
 from qa_lab_helpers import LAB_THEMES, LANGS, SCREENS, alter_reference, number_offenders
 
 
@@ -63,6 +63,8 @@ def check_ko(browser, url) -> Result:
         set_lang(page, "ko")
         for screen in shown_screens(page):
             go(page, screen)
+            if screen == "home":
+                open_about(page)  # P11: the inputs are in the fold of Home, laid out only when it is open
             wide = max(wide, page.evaluate("document.documentElement.scrollWidth - window.innerWidth"))
     en, ko = texts["en"], texts["ko"]
     same = unchanged_keys(en, ko)
@@ -95,6 +97,13 @@ def run_cell(browser, url, out: Path, vp: str, label: str, theme: str, scheme: s
                     page.bring_to_front()
                     page.screenshot(path=str(out / "shots" / f"{name}_setup_clash.png"), full_page=True)
                     clear_clash(page)
+                if screen == "home":  # P11: the first look is the closed fold; then it opens (the inputs and the details of the check laid out): no horizontal scroll, and its picture
+                    page.bring_to_front()
+                    page.screenshot(path=str(out / "shots" / f"{name}_home_closed.png"), full_page=True)
+                    open_about(page)
+                    m3 = page.evaluate("({sw: document.documentElement.scrollWidth, iw: window.innerWidth})")
+                    if m3["sw"] > m3["iw"]:
+                        problems.append(f"home with the fold open: horizontal scroll: scrollWidth {m3['sw']} > innerWidth {m3['iw']}")
                 page.bring_to_front()  # a new context can hang the screenshot without it
                 # the pages of Results, Lineage, Challenge and Break-out are tens of thousands of pixels tall at the narrow viewport: their picture is the first screen of each
                 page.screenshot(path=str(out / "shots" / f"{name}_{screen}.png"), full_page=screen not in ("results", "lineage", "challenge", "breakout"))
@@ -129,6 +138,7 @@ def check_contrast(browser, url, root: Path) -> Result:
             with open_lab(browser, url, scheme=scheme, reference=reference) as (page, _, _):
                 final = wait_final(page)
                 apply_state(page, theme, "en")
+                open_about(page)  # P11: the details of the check and the inputs are laid out only when the fold is open; the closed Home is a subset of the open one
                 swept = {"home": page.evaluate(CONTRAST_JS)}
                 if state == "identical":
                     prepare_page(page)

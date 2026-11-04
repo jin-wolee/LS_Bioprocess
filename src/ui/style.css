@@ -94,7 +94,15 @@ p { margin: 8px 0; max-width: 46rem; }
 .check-pending .banner, .check-error .banner { border-left-color: var(--warn-fg); background: var(--warn-bg); }
 .check-scope { margin: 8px 0 0; color: var(--muted); font-size: 0.92rem; max-width: 70ch; }
 .check-detail { margin: 4px 0 0; }
-.check-detail summary { cursor: pointer; }
+/* Home (P11): the status line of the check is one compact block (the name, the chip and the banner in a row where they fit); what it covers and compared, the versions and the inputs sit in a
+   closed fold below the run. */
+.check { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 16px 0; }
+.check h2 { font-size: 1rem; margin: 0; }
+.check .check-line, .check .banner { margin: 0; }
+.check .banner { flex: 1 1 22rem; }
+.home-about { margin: 24px 0 0; border: 1px solid var(--border); border-radius: 8px; padding: 4px 16px 12px; background: var(--surface); }
+.home-about > summary { cursor: pointer; font-weight: 600; font-size: 1.1rem; padding: 8px 0; min-height: 36px; }
+.home-about h3 { margin: 20px 0 4px; }
 .equal { color: var(--ok-fg); }
 .differs { color: var(--fail-fg); text-decoration: underline; }
 

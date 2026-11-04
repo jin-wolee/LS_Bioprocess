@@ -2,8 +2,8 @@ import type { Key } from "../i18n/index.ts";
 import type { CheckDetail, CheckState } from "../protocol.ts";
 import { Label, T } from "./T.tsx";
 
-// The browser check of ADR-0016 under ADR-0019 (lab_ui.md section 7): a chip and a banner. Shape and text carry the meaning, colour only repeats it. The word "reproduces" and the
-// passed chip appear only in the state `identical`.
+// The browser check of ADR-0016 under ADR-0019 (lab_ui.md section 7): a chip and a banner (the status line, `CheckStatus`), and, in the fold of Home, what it covers and what was compared
+// (`CheckDetails`). Shape and text carry the meaning, colour only repeats it. The word "reproduces" and the passed chip appear only in the state `identical`.
 
 const ICON: Record<CheckState, string> = { pending: "…", identical: "✓", failed: "✕", error: "!" };
 
@@ -24,12 +24,8 @@ export function CheckScope({ id }: { id?: string }) {
   );
 }
 
-export function CheckPanel({ state, detail }: { state: CheckState; detail: CheckDetail }) {
-  const parts: [Key, boolean][] = [
-    ["check.part.truth", detail.truth.length > 0 && detail.truth.every((t) => t.equal)],
-    ["check.part.repeats", detail.repeats_equal],
-    ["check.part.cells", detail.cells_equal],
-  ];
+/** The status line of the check on Home (P11): the chip and the banner, which stay in the page and announced whatever the state. The banner is the live region; it is not inside the fold of Home. */
+export function CheckStatus({ state, detail }: { state: CheckState; detail: CheckDetail }) {
   return (
     <section id="check" class={`check check-${state}`} aria-labelledby="check-heading">
       <T as="h2" k="check.label" id="check-heading" />
@@ -49,10 +45,23 @@ export function CheckPanel({ state, detail }: { state: CheckState; detail: Check
           </>
         )}
       </p>
+    </section>
+  );
+}
+
+/** What the status line stands on (P11: in the fold of Home, "About this run"): the sentence of what the check covers, which the chip is described by, and what was compared. */
+export function CheckDetails({ state, detail }: { state: CheckState; detail: CheckDetail }) {
+  const parts: [Key, boolean][] = [
+    ["check.part.truth", detail.truth.length > 0 && detail.truth.every((t) => t.equal)],
+    ["check.part.repeats", detail.repeats_equal],
+    ["check.part.cells", detail.cells_equal],
+  ];
+  return (
+    <div class="check-more">
       <CheckScope id="check-scope" />
       {(state === "identical" || state === "failed") && (
-        <details class="check-detail">
-          <T as="summary" k="check.detail.heading" />
+        <div class="check-detail">
+          <T as="h3" k="check.detail.heading" />
           <ul>
             {parts.map(([key, equal]) => (
               <li key={key}>
@@ -60,8 +69,8 @@ export function CheckPanel({ state, detail }: { state: CheckState; detail: Check
               </li>
             ))}
           </ul>
-        </details>
+        </div>
       )}
-    </section>
+    </div>
   );
 }

@@ -122,19 +122,13 @@ def test_the_file_the_page_names_exists_is_a_jpeg_and_is_under_the_size_limit():
     assert f.stat().st_size <= HERO_MAX_BYTES, f.stat().st_size
 
 
-def test_the_picture_sits_in_the_first_section_with_the_call_to_action_beside_it_and_before_the_status_note():
+def test_the_picture_sits_in_the_first_section_with_the_call_to_action_beside_it_and_the_status_note_after_the_figure():
+    # P11 moved the status note below the figure of the three moments and put the case sentence between the hero and that figure (tests/test_explainer_visit.py)
     body = source()
     first = body[body.index('<section id="premise"'):body.index("</section>", body.index('<section id="premise"'))]
-    hero = first[first.index('<div class="hero">'):first.index('<div class="notice quiet"')]
-    assert "<img" in hero and 'id="hero-lab"' in hero, "the picture and the call to action share the hero block"
-    assert first.index("<h1") < first.index('<div class="hero">') < first.index('<div class="notice quiet"') < first.index('<figure class="fig"')
-
-
-def test_the_call_to_action_points_to_the_lab_and_reads_open_the_lab_in_both_languages():
-    m = re.search(r'<a\b[^>]*\bid="hero-lab"[^>]*>(.*?)</a>', source(), re.S)
-    assert m and 'href="lab/"' in m.group(0) and 'data-i18n="ui.lab"' in m.group(0) and m.group(1) == "Open the lab"
-    assert korean(dictionary(), "ui.lab") == "랩 열기"
-    assert 'id="hero-lab"' in page()
+    hero = first[first.index('<div class="hero">'):first.index('<p class="case"')]
+    assert "<img" in hero and 'id="hero-follow"' in hero, "the picture and the call to action share the hero block"
+    assert first.index("<h1") < first.index('<div class="hero">') < first.index('<figure class="fig"') < first.index('<div class="notice quiet"')
 
 
 # ---- the build ---------------------------------------------------------------------------------------
@@ -176,7 +170,7 @@ GEOMETRY = """() => {
   const tops = ['.brand', '#lang-toggle', '#lab-link', '#theme-select', '#story-toggle'].map(s => document.querySelector(s).getBoundingClientRect().top).sort((a, b) => a - b);
   let rows = 1; for (let i = 1; i < tops.length; i++) if (tops[i] - tops[i - 1] > 20) rows++;
   const pic = document.querySelector('.hero-pic img');
-  return {rows, cta: box('#hero-lab'), pic: box('.hero-pic img'), h1: box('h1'), loaded: pic.complete && pic.naturalWidth > 0, alt: pic.getAttribute('alt'),
+  return {rows, cta: box('#hero-follow'), pic: box('.hero-pic img'), h1: box('h1'), loaded: pic.complete && pic.naturalWidth > 0, alt: pic.getAttribute('alt'),
           scrollW: document.documentElement.scrollWidth, innerW: window.innerWidth, innerH: window.innerHeight};
 }"""
 

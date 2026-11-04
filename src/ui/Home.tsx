@@ -1,5 +1,5 @@
 import { webgl2 } from "../plant/loader.ts";
-import { CheckPanel } from "./CheckPanel.tsx";
+import { CheckDetails, CheckStatus } from "./CheckPanel.tsx";
 import { ErrorBlock } from "./ErrorBlock.tsx";
 import { ResultBlock } from "./ResultBlock.tsx";
 import { ScenarioInputs } from "./ScenarioInputs.tsx";
@@ -9,7 +9,9 @@ import type { State } from "./state.ts";
 import { Label, T } from "./T.tsx";
 
 // Home (lab_ui.md section 3): says what the lab is, offers the plant as its primary action (plant_ui.md sections 7 and 9: "Enter the plant", or the plant as text where the browser has no WebGL version
-// two), shows the browser check, and shows one run of the default scenario so the reader sees the synthetic plant produce events.
+// two), shows the status line of the browser check, and shows one run of the default scenario so the reader sees the synthetic plant produce events. P11: what the check covers and compared, the
+// versions and the inputs are in one closed fold below the run ("About this run"), so the first screen is the plant's card and the status line, not a long list. The status line (the chip and the
+// banner, a live region) is never inside the fold.
 
 export function Home({ state }: { state: State }) {
   const solid = webgl2();
@@ -34,17 +36,7 @@ export function Home({ state }: { state: State }) {
         </p>
       </section>
 
-      <CheckPanel state={state.check.state} detail={state.check.detail} />
-
-      <section id="versions" aria-labelledby="versions-heading">
-        <T as="h2" k="home.versions.heading" id="versions-heading" />
-        <dl class="facts">
-          <T as="dt" k="home.versions.engine" />
-          <dd>{state.ready ? <Label>{state.ready.engine_version}</Label> : <T k="app.loading" />}</dd>
-          <T as="dt" k="home.versions.schema" />
-          <dd>{state.ready ? <Label>{state.ready.schema_version}</Label> : <T k="app.loading" />}</dd>
-        </dl>
-      </section>
+      <CheckStatus state={state.check.state} detail={state.check.detail} />
 
       <section id="run" aria-labelledby="run-heading">
         <T as="h2" k="home.run.heading" id="run-heading" />
@@ -57,11 +49,26 @@ export function Home({ state }: { state: State }) {
         )}
       </section>
 
-      <section id="inputs" aria-labelledby="inputs-heading">
-        <T as="h2" k="home.inputs.heading" id="inputs-heading" />
-        <T as="p" k="home.inputs.lead" />
-        <ScenarioInputs scenario={scenario} />
-      </section>
+      <details id="about-run" class="home-about">
+        <T as="summary" k="home.about.summary" />
+        <CheckDetails state={state.check.state} detail={state.check.detail} />
+
+        <section id="versions" aria-labelledby="versions-heading">
+          <T as="h3" k="home.versions.heading" id="versions-heading" />
+          <dl class="facts">
+            <T as="dt" k="home.versions.engine" />
+            <dd>{state.ready ? <Label>{state.ready.engine_version}</Label> : <T k="app.loading" />}</dd>
+            <T as="dt" k="home.versions.schema" />
+            <dd>{state.ready ? <Label>{state.ready.schema_version}</Label> : <T k="app.loading" />}</dd>
+          </dl>
+        </section>
+
+        <section id="inputs" aria-labelledby="inputs-heading">
+          <T as="h3" k="home.inputs.heading" id="inputs-heading" />
+          <T as="p" k="home.inputs.lead" />
+          <ScenarioInputs scenario={scenario} />
+        </section>
+      </details>
     </>
   );
 }

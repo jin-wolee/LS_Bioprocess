@@ -9,10 +9,10 @@ import json
 from pathlib import Path
 
 from qa_checks import VIEWPORTS, Result
-from qa_lab_browser import go, open_lab, set_lang, wait_final
+from qa_lab_browser import go, home_facts, open_about, open_lab, set_lang, wait_final
 from qa_lab_conditions import load_average, of_page, problems as conditions_problems, summary as conditions_summary
 from qa_lab_helpers import (
-    PASSED_ONLY_WORDS, SIZE_LIMIT, TIME_LIMIT_MS, TIME_MEASURED, alter_reference, cross_origin, found_words, request_gzip_total, scope_problems, served_path, size_verdict, time_verdict,
+    PASSED_ONLY_WORDS, SIZE_LIMIT, TIME_LIMIT_MS, TIME_MEASURED, alter_reference, cross_origin, fold_problems, found_words, request_gzip_total, scope_problems, served_path, size_verdict, time_verdict,
 )
 from qa_timing import over_limit
 
@@ -56,6 +56,7 @@ def scope_problems_on(page) -> list[str]:
         problems.append("the chip of the check is not described by the note #check-scope")
     for lang in ("en", "ko"):
         set_lang(page, lang)
+        open_about(page)  # P11: the note is in the fold of Home
         problems += scope_problems(page.inner_text("#check-scope") if page.query_selector("#check-scope") else "", lang, "Home")
         go(page, "notes")
         problems += scope_problems(page.inner_text("#check-reach"), lang, "Notes")
@@ -68,6 +69,9 @@ def check_check(browser, url, root: Path) -> Result:
     problems: list[str] = []
     with open_lab(browser, url) as (page, _, _):
         real = wait_final(page)
+        closed = home_facts(page)  # P11: the status line is shown with the fold closed, then the fold opens
+        open_about(page)
+        problems += [f"Home: {p}" for p in fold_problems(closed, home_facts(page))]
         problems += scope_problems_on(page)
     if real["state"] != "identical":
         problems.append(f"real reference: state {real['state']} (expected identical)")
@@ -76,6 +80,7 @@ def check_check(browser, url, root: Path) -> Result:
     altered = alter_reference((root / "reference.json").read_text(encoding="utf-8"))
     with open_lab(browser, url, reference=altered) as (page, _, _):
         bad = wait_final(page)
+        problems += [f"altered reference: Home: {p}" for p in fold_problems(home_facts(page))]
     if bad["state"] != "failed":
         problems.append(f"altered reference: state {bad['state']} (expected failed)")
     if "FAILED" not in bad["banner"]:
@@ -87,6 +92,7 @@ def check_check(browser, url, root: Path) -> Result:
         problems.append(f"altered reference: the page contains {leaked}")
     with open_lab(browser, url, reference=404) as (page, _, _):
         gone = wait_final(page)
+        problems += [f"missing reference: Home: {p}" for p in fold_problems(home_facts(page))]
     if gone["state"] != "error":
         problems.append(f"missing reference: state {gone['state']} (expected error)")
     if found_words(gone["body"], PASSED_ONLY_WORDS):

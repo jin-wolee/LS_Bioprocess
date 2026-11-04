@@ -3,7 +3,7 @@ import { CHECK_SEEDS } from "../../engine/src/experiments/assembly/lab/check.ts"
 import { en } from "../i18n/en.ts";
 import { ko } from "../i18n/ko.ts";
 import type { CheckDetail } from "../protocol.ts";
-import { CHECK_SCOPE, CheckPanel, CheckScope } from "./CheckPanel.tsx";
+import { CHECK_SCOPE, CheckDetails, CheckScope, CheckStatus } from "./CheckPanel.tsx";
 
 // P9 (audit item 20, the author's decision of 2026-11-03; lab_ui.md section 7): the chip of the browser check and the Notes screen say what the check covers: the determinism of the default scenario's open
 // loop (the seeds 1 to 3, the metric cells of seed 1) against the reference made in Node, not every scenario and not the closed loop of SC8. The figures reach the text as labels, never as a typed digit.
@@ -31,10 +31,10 @@ describe("what the check covers", () => {
     expect(CHECK_SCOPE).toEqual({ seeds: "1, 2, 3", cell_seed: "1", closed_loop: "SC8" });
   });
 
-  it("Given the Home panel in any state Then the chip is described by the scope note, which carries its three figures as labels", () => {
+  it("Given the Home panel in any state Then the chip of the status line is described by the scope note of the fold, which carries its three figures as labels", () => {
     for (const state of ["pending", "identical", "failed", "error"] as const) {
-      const nodes = walk(CheckPanel({ state, detail }));
-      expect(nodes.find((n) => n.props.id === "check-chip")?.props["aria-describedby"], state).toBe("check-scope");
+      expect(walk(CheckStatus({ state, detail })).find((n) => n.props.id === "check-chip")?.props["aria-describedby"], state).toBe("check-scope");
+      const nodes = walk(CheckDetails({ state, detail }));
       const scope = nodes.find((n) => n.type === CheckScope);
       expect(scope?.props.id, state).toBe("check-scope");
       const note = walk(CheckScope(scope?.props as { id?: string }))[0];

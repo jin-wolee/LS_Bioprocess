@@ -44,6 +44,7 @@ export const enBase = {
   "home.run.heading": "One run of the default scenario",
   "home.run.lead": "These are counts of the events that the simulated plant produced in this browser, on this visit, for one seed. They are a simulation result under the inputs shown, not a fact about a real plant.",
   "home.run.pending": "Waiting for the run.",
+  "home.about.summary": "About this run: checks and inputs",
   "home.inputs.heading": "Inputs of the default scenario",
   "home.inputs.lead": "Every input carries the id of its entry in the assumption ledger and the grade of that entry. A dashed chip marks an input whose sources have not all been re-read.",
 

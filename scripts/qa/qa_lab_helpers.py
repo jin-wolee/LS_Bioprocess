@@ -106,6 +106,34 @@ def scope_problems(text: str, lang: str, where: str) -> list[str]:
     return [f"{where} ({lang}): the note of what the browser check covers lacks '{w}'" for w in SCOPE_WORDS[lang] if w not in flat]
 
 
+# Home (P11): the plant's card first, the status line of the browser check visible with the fold closed, and the check's details, the versions and the inputs inside the closed fold.
+HOME_ALWAYS = ["#enter-plant", "#check-chip", "#check-banner"]
+HOME_IN_FOLD = ["#check-scope", "#versions", "#inputs"]
+
+
+def fold_problems(closed: dict, opened: dict | None = None) -> list[str]:
+    """What is wrong with Home's fold as a reader meets it. `closed` and `opened` are the facts of `HOME_FACTS_JS` (qa_lab_browser.py) before and after a click on the summary of `#about-run`:
+    {fold: {open} or None, role: the role of the banner, visible: {selector: bool}, top: {selector: y}}. Closed: the fold is there and shut, the plant's entry, the chip and the banner (a live region) are
+    shown above it in that order, and what it holds is not shown. Opened: what it holds is shown."""
+    if closed["fold"] is None:
+        return ["Home has no fold #about-run"]
+    problems = []
+    if closed["fold"]["open"]:
+        problems.append("the fold #about-run is open on arrival")
+    problems += [f"{s} is not visible with the fold closed" for s in HOME_ALWAYS if not closed["visible"].get(s)]
+    problems += [f"{s} is visible with the fold closed, so the fold hides nothing of it" for s in HOME_IN_FOLD if closed["visible"].get(s)]
+    if closed["role"] != "status":
+        problems.append(f"the banner of the check has the role {closed['role']!r}, not 'status' (it is announced)")
+    order = [closed["top"].get(s) for s in ("#enter-plant", "#check-chip", "#about-run")]
+    if None in order or order != sorted(order) or len(set(order)) < 3:
+        problems.append(f"Home is not in the order plant entry, status line, fold (tops {order})")
+    if opened is not None:
+        problems += [f"{s} is not visible once the fold is open" for s in HOME_ALWAYS + HOME_IN_FOLD if not opened["visible"].get(s)]
+        if not (opened["fold"] or {}).get("open"):
+            problems.append("a click on the summary did not open the fold")
+    return problems
+
+
 def number_offenders(nodes) -> list[dict]:
     """Text nodes that hold a digit and sit under no data-ref, data-result or data-label element (invariant 3, lab_ui.md section 6)."""
     return [{"text": n["text"], "where": n["where"]} for n in nodes if re.search(r"\d", n["text"]) and not n["marked"]]

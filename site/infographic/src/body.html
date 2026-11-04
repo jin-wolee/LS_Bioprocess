@@ -36,14 +36,15 @@
 <div class="hero">
 <div class="hero-text">
 <p class="lede" data-i18n="p.thesis">A process-development lab runs many small bioreactors but only a couple of at-line analyzers. Every sample travels from a vessel to an instrument, and the problem is the context a bare number can lose on the way: which reactor, which moment, which instrument state.</p>
-<p class="cta-row"><a class="btn cta" id="hero-lab" href="lab/" data-i18n="ui.lab">Open the lab</a><span class="cta-note" data-i18n="p.cta">Walk through the synthetic plant in your browser. Without WebGL, a text version takes its place.</span></p>
+<p class="cta-row"><a class="btn cta" id="hero-follow" href="lab/#/plant" data-i18n="p.cta.follow">Follow one sample</a><a class="cta-alt" id="hero-lab" href="lab/" data-i18n="p.cta.lab">or open the lab</a></p>
+<p class="cta-note" data-i18n="p.cta">Walk through the synthetic plant in your browser. Without WebGL, a text version takes its place.</p>
 </div>
 <figure class="hero-pic">
 <img src="media/plant.jpg" width="1024" height="518" alt="The lab's synthetic plant seen from the front: rows of small reactors, the analyzers on their bench, the staff on the floor and the record halls along the back wall." data-i18n-alt="p.hero.alt" fetchpriority="high" decoding="async">
 <figcaption data-i18n="p.hero.cap">A screenshot of the lab's plant, drawn from a synthetic run.</figcaption>
 </figure>
 </div>
-<div class="notice quiet" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">All data is synthetic, and nothing on this page predicts a real laboratory or states a simulation result. The Break-out screen and the plant's Break-out cases are held back in the public build until the sources behind them are re-read.</p></div>
+<p class="case" data-i18n="p.case">Join a result to the process by the time it was measured, and a sample drawn before a feed lands on the post-feed state it never saw.</p>
 <figure class="fig" data-src="A102">
 <div tabindex="0" class="fig-scroll"><svg class="wide-only" viewBox="0 0 760 130" role="img" aria-labelledby="hero-t" aria-describedby="hero-d">
 <title id="hero-t">One sample, three moments</title>
@@ -95,6 +96,7 @@
 </div>
 <figcaption data-i18n="p.f.cap">A result measured at 09:25 describes a sample drawn at 08:40, before the 09:00 feed. The times are invented for illustration.</figcaption>
 </figure>
+<div class="notice quiet" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">All data is synthetic, and nothing on this page predicts a real laboratory or states a simulation result. The Break-out screen and the plant's Break-out cases are held back in the public build until the sources behind them are re-read.</p></div>
 <div data-src="A001 A022"><dl class="facts">
 <div><dt data-i18n="p.k.def">Reactors</dt><dd>24 <small data-i18n="p.k.defd">in two bays of 12</small></dd></div>
 <div><dt data-i18n="p.k.an">Analyzers</dt><dd>2 <small data-i18n="p.k.and">shared at-line instruments</small></dd></div>
@@ -552,7 +554,7 @@
 <li><b>S5</b> <span data-i18n="m.r5">release and write-up</span></li>
 </ol>
 <p data-i18n="m.ext">Break-out events such as a contamination or sterility failure, with the investigation walk-back to the batches that shared a lot or an equipment item, are built (S3). The lab's Break-out screen and the Break-out cases in the plant are held back in the public build until the sources behind them are re-read. In that screen a hold is a state of the record and stops no culture. Its containment figures show the effect of tracking and holding on the record, and its confirming tests are judged by coverage, not by a sensitivity. Per-reactor cell-line profiles and operating-mode changes such as batch, fed-batch and perfusion (S4) are designed but not built yet.</p>
-<p><span class="placeholder" id="repo-link" data-i18n="m.repo">repository link: added at publication</span></p>
+<p><a id="repo-link" href="https://github.com/jin-wolee/LS_Bioprocess" rel="noopener" data-i18n="m.repo">Source code on GitHub</a></p>
 </footer>
 </div>
 </section>

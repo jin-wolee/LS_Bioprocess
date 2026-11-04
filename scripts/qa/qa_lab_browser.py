@@ -177,6 +177,29 @@ def apply_state(page, theme: str, lang: str) -> list[str]:
     return problems
 
 
+# Home's fold (P11): what is shown with it closed and open. `checkVisibility` knows that the contents of a closed `details` are not rendered.
+HOME_FACTS_JS = """() => {
+  const q = s => document.querySelector(s), top = s => { const e = q(s); return e ? e.getBoundingClientRect().top + scrollY : null; };
+  const shown = s => { const e = q(s); return !!e && e.checkVisibility() && e.getBoundingClientRect().height > 0; };
+  const fold = q('#about-run'), banner = q('#check-banner');
+  return {fold: fold ? {open: fold.open} : null, role: banner ? banner.getAttribute('role') : null,
+          visible: Object.fromEntries(['#enter-plant', '#check-chip', '#check-banner', '#check-scope', '#versions', '#inputs'].map(s => [s, shown(s)])),
+          top: Object.fromEntries(['#enter-plant', '#check-chip', '#about-run'].map(s => [s, top(s)]))};
+}"""
+
+
+def home_facts(page) -> dict:
+    return page.evaluate(HOME_FACTS_JS)
+
+
+def open_about(page) -> None:
+    """Open Home's fold "About this run" with a click on its summary, as a reader does: the details of the check, the versions and the inputs are not laid out until it is open, so a sweep that reads
+    their size or colour (`contrast`, the overflow of `matrix` and `ko`) opens it first."""
+    if not page.evaluate("document.querySelector('#about-run').open"):
+        page.click("#about-run > summary")
+    page.wait_for_selector("#about-run[open]", timeout=3000)
+
+
 NUMBERS_JS = """() => {
   const out = [], walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
