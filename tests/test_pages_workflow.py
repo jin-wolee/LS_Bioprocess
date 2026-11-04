@@ -211,7 +211,8 @@ def test_no_step_of_the_build_job_may_fail_without_failing_the_job(wf):
 
 def test_the_deploy_job_still_needs_the_build_job_and_the_build_job_cannot_run_for_hours(wf):
     assert wf["jobs"]["deploy"]["needs"] == "build"
-    assert isinstance(wf["jobs"]["build"]["timeout-minutes"], int) and wf["jobs"]["build"]["timeout-minutes"] <= 60
+    # C1 (the author, 2026-11-04): 90, not 60. On a private repository the runner has 2 CPUs, and the first run was cut off at 45 minutes inside the plant QA (13 min 16 s on 8 local CPUs).
+    assert isinstance(wf["jobs"]["build"]["timeout-minutes"], int) and wf["jobs"]["build"]["timeout-minutes"] <= 90
 
 
 def test_the_qa_steps_do_not_see_the_banned_token_secret(wf):

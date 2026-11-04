@@ -28,6 +28,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -65,6 +66,14 @@ def report(results: list[Result], out: Path) -> str:
     return table + failures
 
 
+def timed(name: str, fn) -> Result:
+    """`guarded`, and one line on stderr as the check ends (its name, its verdict, its seconds), flushed: a CI log shows where the time goes even if the job is cut off before the report."""
+    start = time.monotonic()
+    result = guarded(name, fn)
+    print(f"qa_plant: {name} {'PASS' if result.ok else 'FAIL'} in {time.monotonic() - start:.0f} s", file=sys.stderr, flush=True)
+    return result
+
+
 def build() -> int:
     # the same local build as the lab's QA (VITE_LAB_LOCAL=1): the plant is in both the local and the public build, and the lab's QA serves the same directory
     return subprocess.run(["npm", "run", "build:lab"], cwd=REPO, env={**os.environ, "VITE_LAB_LOCAL": "1"}).returncode
@@ -99,29 +108,29 @@ def main(argv=None) -> int:
         browser = pw.chromium.launch(headless=True, args=SOFTWARE_GL)
         try:
             if args.sweep:
-                result = guarded("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs()))
+                result = timed("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs()))
                 print(sweep_report(result, args.out / "sweep"))
                 return 0 if result.ok else 1
-            results = [guarded("plant_load", lambda: check_plant_load(browser, url, args.out)),
-                       guarded("plant_frames", lambda: check_plant_frames(browser, url, args.out)),
-                       guarded("plant_clock", lambda: check_plant_clock(browser, url, args.out)),
-                       guarded("plant_shots", lambda: check_plant_shots(browser, url, args.out)),
-                       guarded("plant_halls", lambda: check_plant_halls(browser, url, args.out)),
-                       guarded("plant_record", lambda: check_plant_record(browser, url, args.out)),
-                       guarded("plant_hall_shots", lambda: check_plant_hall_shots(browser, url, args.out)),
-                       guarded("plant_truth", lambda: check_plant_truth(browser, url, args.out)),
-                       guarded("plant_panels", lambda: check_plant_panels(browser, url, args.out)),
-                       guarded("drilldown", lambda: check_drilldown(browser, url, args.out)),
-                       guarded("plant_action", lambda: check_plant_action(browser, url, args.out)),
-                       guarded("plant_equal", lambda: check_plant_equal(browser, url, args.out, reference) if why is None else Result("plant_equal", False, f"the reference could not be made: {why}")),
-                       guarded("plant_prefix", lambda: check_plant_prefix(browser, url, args.out)),
-                       guarded("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs(gate=True), "sweep_gate")),
-                       guarded("sc12", lambda: check_sc12(browser, url, args.out, reference, public_problems(browser))),
-                       guarded("size", lambda: check_size(browser, url, args.root)),
-                       guarded("matrix", lambda: check_matrix(browser, url, args.out)),
-                       guarded("plant_fallback", lambda: check_plant_fallback(pw, url, args.out)),
-                       guarded("plant_a11y", lambda: check_plant_a11y(pw, browser, url, args.out)),
-                       guarded("plant_tour", lambda: check_plant_tour(pw, browser, url, args.out))]
+            results = [timed("plant_load", lambda: check_plant_load(browser, url, args.out)),
+                       timed("plant_frames", lambda: check_plant_frames(browser, url, args.out)),
+                       timed("plant_clock", lambda: check_plant_clock(browser, url, args.out)),
+                       timed("plant_shots", lambda: check_plant_shots(browser, url, args.out)),
+                       timed("plant_halls", lambda: check_plant_halls(browser, url, args.out)),
+                       timed("plant_record", lambda: check_plant_record(browser, url, args.out)),
+                       timed("plant_hall_shots", lambda: check_plant_hall_shots(browser, url, args.out)),
+                       timed("plant_truth", lambda: check_plant_truth(browser, url, args.out)),
+                       timed("plant_panels", lambda: check_plant_panels(browser, url, args.out)),
+                       timed("drilldown", lambda: check_drilldown(browser, url, args.out)),
+                       timed("plant_action", lambda: check_plant_action(browser, url, args.out)),
+                       timed("plant_equal", lambda: check_plant_equal(browser, url, args.out, reference) if why is None else Result("plant_equal", False, f"the reference could not be made: {why}")),
+                       timed("plant_prefix", lambda: check_plant_prefix(browser, url, args.out)),
+                       timed("plant_sweep", lambda: check_plant_sweep(browser, url, args.out, reference, load_specs(gate=True), "sweep_gate")),
+                       timed("sc12", lambda: check_sc12(browser, url, args.out, reference, public_problems(browser))),
+                       timed("size", lambda: check_size(browser, url, args.root)),
+                       timed("matrix", lambda: check_matrix(browser, url, args.out)),
+                       timed("plant_fallback", lambda: check_plant_fallback(pw, url, args.out)),
+                       timed("plant_a11y", lambda: check_plant_a11y(pw, browser, url, args.out)),
+                       timed("plant_tour", lambda: check_plant_tour(pw, browser, url, args.out))]
         finally:
             browser.close()
     print(report(results, args.out))
