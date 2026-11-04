@@ -158,10 +158,11 @@ def test_quick_start_gives_the_address_first_then_one_block_to_paste_and_names_w
 # ---- what it says ---------------------------------------------------------------------------------
 
 
-def test_it_names_the_two_pages_at_the_new_address_and_says_the_site_is_not_live_yet():
+def test_it_names_the_two_pages_at_their_address_and_says_the_site_is_online():
     assert f"]({SITE})" in README
     assert f"]({SITE}lab/)" in README
-    assert "goes live when the author publishes it" in README
+    assert "The two pages are online at these addresses" in README  # since the first deploy (2026-11-04)
+    assert "goes live when the author publishes it" not in README
 
 
 def test_it_says_the_language_choice_is_kept_between_the_pages_and_english_is_the_default():

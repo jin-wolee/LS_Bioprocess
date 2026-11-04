@@ -56,7 +56,7 @@ The engine runs in a Web Worker. The page sends it a request and draws the answe
 
 ## Quick start
 
-The two pages will be at these addresses. The site goes live when the author publishes it, and until then the addresses do not answer, so run the pages locally.
+The two pages are online at these addresses. You can also run them on your own machine (below).
 
 - [Explainer](https://jin-wolee.github.io/LS_Bioprocess/): a scroll page on the problem, with a slider that moves the measurement time and a matrix of which flag covers which error.
 - [Lab](https://jin-wolee.github.io/LS_Bioprocess/lab/): runs the synthetic plant in the browser and shows what the record of each architecture can reconstruct. You can walk through that plant (see "Usage"), follow one sample through each record, and take a challenge: find the planted error in a record.

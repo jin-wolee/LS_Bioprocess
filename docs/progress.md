@@ -3803,3 +3803,11 @@ The finder has its own tests (34 of the 37 tests: a number under no `data-src`, 
   Both are waits that ran out on a busy shared runner (load 5 on 4 CPUs), not a fault the page shows elsewhere.
 - The author's choice (2026-11-04): run a failed check once more instead of rerunning the whole job or lengthening waits across the files. `scripts/qa/qa_plant.py` gains `run_checks` and `--retry-failed {0,1}` (default 0). With 1, each check that failed runs again after all twenty, and its second verdict is kept with the first failure written beside it ("passed on the second try" or "failed twice"). The Pages workflow passes `--retry-failed 1`; the local gate does not retry. `tests/test_qa_plant_retry.py` (4 tests) holds the order, the notes and that a passing check never runs twice; `test_pages_workflow.py` pins the new command; `docs/design/lab_ui.md` (the build job's row) says why.
 - Gate: `bash scripts/check_all.sh --manual` PASS (`check_docs --all` 1,146 files, 0 failures, pytest included). A local plant QA with `--retry-failed 1` was started on this tree; its first checks passed through `run_checks`.
+
+## 2026-11-04 — L1: the site is online (orchestrator, committed)
+
+- Run 41791677223 (`deploy=true`, public runner, commit ee6d2a8) passed and deployed. The plant QA passed all 20 checks on the first try (no second try was needed), and the deploy job published `dist/site` to `https://jin-wolee.github.io/LS_Bioprocess/`.
+- Checked live, headless: the explainer answers 200 with the title "Sample Lineage Lab", the mark and name in its header and an icon link; the lab at `lab/` answers 200, becomes ready with the mark in its header, and the plant opens its scene with "Browser check: Passed" and no console error.
+- The READMEs now say the two pages are online ("The two pages are online at these addresses." / "두 페이지는 아래 주소에서 열립니다."), and the two tests that pinned the old "goes live when the author publishes it" sentence check the new one and that the old one is gone.
+- The Dependabot alert (minimatch, moderate, a development dependency under the lint tools; the published packages have none) stays open until the two-week rule allows the fixed major version on 2026-11-10.
+- Gate: `bash scripts/check_all.sh --manual` PASS (`check_docs --all` 1,146 files, 0 failures, pytest included).

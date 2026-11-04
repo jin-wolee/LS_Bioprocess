@@ -153,9 +153,9 @@ def test_the_korean_prose_has_no_dash_and_no_bold_but_the_language_row():
 # ---- the claims the English tests pin, in Korean --------------------------------------------------
 
 
-def test_it_says_the_site_goes_live_when_the_author_publishes_it_and_where_the_language_is_kept():
+def test_it_says_the_site_is_online_and_where_the_language_is_kept():
     quick = between(KO, "## 빠른 시작", "### 역추적 사례를 로컬에서 보기")
-    assert "저자가 공개하면 사이트가 열립니다" in quick and "이 주소들이 응답하지 않으므로" in quick and quick.index("jin-wolee.github.io") < quick.index("```bash")
+    assert "두 페이지는 아래 주소에서 열립니다" in quick and "저자가 공개하면" not in quick and quick.index("jin-wolee.github.io") < quick.index("```bash")  # since the first deploy
     usage = between(KO, "## 사용법", "### 공장")
     assert "영어로 열리고 한국어 전환 버튼이 있으며(ADR-0006)" in usage and "고른 언어는 다른 페이지로 넘어가도 유지됩니다" in usage and "글로 된 판" in usage
     assert f"]({SITE})" in KO and f"]({SITE}lab/)" in KO
