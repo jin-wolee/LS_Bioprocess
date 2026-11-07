@@ -20,6 +20,7 @@ at the root of a server and fail there. Drives headless Chromium (Playwright syn
                  limits (`size` of qa_plant_checks.py); and, with WebGL off, the text alternative with no request for the plant chunk (`plant_fallback` of qa_plant_checks.py)
 """
 from __future__ import annotations
+from qa_report import report as write_report
 
 import argparse
 import dataclasses
@@ -223,12 +224,7 @@ def renamed(result: Result, name: str) -> Result:
 
 
 def report(results: list[Result], out: Path) -> str:
-    rows = [(f"{i} {r.name}", "PASS" if r.ok else "FAIL", r.detail) for i, r in enumerate(results, 1)]
-    width = max(len(r[0]) for r in rows)
-    table = "\n".join(f"{n:<{width}}  {s}  {d}" for n, s, d in rows)
-    (out / "results.json").write_text(json.dumps([r.__dict__ for r in results], indent=2, ensure_ascii=False), encoding="utf-8")
-    md = "| check | result | detail |\n|---|---|---|\n" + "\n".join(f"| {n} | {s} | {d.replace('|', '/')} |" for n, s, d in rows)
-    (out / "summary.md").write_text(f"# Site QA\n\n{md}\n", encoding="utf-8")
+    table = write_report(results, out, 'Site QA')
     return table
 
 

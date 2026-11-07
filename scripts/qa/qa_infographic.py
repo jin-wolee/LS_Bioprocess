@@ -10,6 +10,9 @@ page's two font families load from its own files and every picture it names load
 live in qa_checks.py. The element contract is in the S0b brief.
 """
 from __future__ import annotations
+from qa_report import report as write_report
+from qa_build import Quiet, serve
+from qa_report import guarded
 
 import argparse
 import functools
@@ -31,20 +34,8 @@ REPO = Path(__file__).resolve().parents[2]
 FAMILIES = ("Archivo", "IBM Plex Mono")  # the two families of the page (site/infographic/fonts/README.md)
 
 
-class Quiet(SimpleHTTPRequestHandler):
-    def log_message(self, *args):
-        pass
 
 
-@contextmanager
-def serve(directory: Path):
-    server = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(directory)))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    try:
-        yield f"http://127.0.0.1:{server.server_address[1]}/"
-    finally:
-        server.shutdown()
-        server.server_close()
 
 
 # ---- checks that sweep the theme matrix ------------------------------------------------------------------
@@ -180,20 +171,10 @@ def check_origin(browser, url) -> Result:
 
 # ---- driver ---------------------------------------------------------------------------------------------
 
-def guarded(name: str, fn) -> Result:
-    try:
-        return fn()
-    except Exception as e:  # a crashed check is a failed check, not a crashed run
-        return Result(name, False, f"crashed: {first_line(e)}")
 
 
 def report(results: list[Result], out: Path) -> str:
-    rows = [(f"{i} {r.name}", "PASS" if r.ok else "FAIL", r.detail) for i, r in enumerate(results, 1)]
-    width = max(len(r[0]) for r in rows)
-    table = "\n".join(f"{n:<{width}}  {s}  {d}" for n, s, d in rows)
-    (out / "results.json").write_text(json.dumps([r.__dict__ for r in results], indent=2, ensure_ascii=False), encoding="utf-8")
-    md = "| check | result | detail |\n|---|---|---|\n" + "\n".join(f"| {n} | {s} | {d.replace('|', '/')} |" for n, s, d in rows)
-    (out / "summary.md").write_text(f"# Infographic QA\n\n{md}\n", encoding="utf-8")
+    table = write_report(results, out, 'Infographic QA')
     return table
 
 

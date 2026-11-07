@@ -168,8 +168,9 @@ export default tseslint.config(
     rules: { "no-restricted-imports": srcRestrict(PAGE_NO_ENGINE, PAGE_NO_WORKER) },
   },
   {
-    // Lab page zones, 2: the Worker entry.
-    files: ["src/worker/worker.ts"],
+    // Lab page zones, 2: Worker modules, apart from the separately governed data bundle.
+    files: ["src/worker/**/*.{ts,tsx}"],
+    ignores: ["src/worker/data.ts", "src/**/*.test.ts"],
     rules: { "no-restricted-imports": srcRestrict(WORKER_ONLY_LAB, WORKER_NO_SCENARIOS, NO_THREE) },
   },
   {
