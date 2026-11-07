@@ -10,7 +10,6 @@ export type Grade = "S" | "P" | "D" | "A";
 
 interface AssumptionView {
   grade: Grade;
-  range_grade: Grade;
   range: unknown;
   unit: string;
   sources: string[];

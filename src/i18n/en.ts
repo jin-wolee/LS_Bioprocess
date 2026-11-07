@@ -1,4 +1,3 @@
-import { BREAKOUT_PUBLIC } from "../generated/breakout_public.ts";
 // English texts of the lab (docs/design/lab_ui.md section 10): the source of the dictionary. A flat object, keys by screen, {name} placeholders. src/i18n/ko.ts is typed against it, so a
 // missing Korean key is a type error. A text holds no digit: every number on the page is an input with a ledger id (<Ref>), a simulation result (<ResultBlock>) or a label (invariant 3).
 // Strings that come from the engine (error messages, the reason of the check) are data and are shown verbatim in a lang="en" element under a translated label.
@@ -16,12 +15,7 @@ import { enSetup } from "./en_setup.ts";
 import { enTour } from "./en_tour.ts";
 
 export const enBase = {
-  "breakout.refused.heading": "The Break-out screen is not offered in this build",
-  "breakout.refused.text": "The inputs of the contamination event, the delays and the lot topology rest on sources that have not all been re-read, and nothing from the extensions goes on a public page until they are. A local build shows the screen, marked as not for publication.",
   "app.title": "Sample Lineage Lab",
-  "app.skip": "Skip to main content",
-  "app.source": "Source code",
-  "error.worker.recovery": "Refresh the page and try again, or use another browser if the problem persists.",
   "app.footer": "Synthetic data. Simulation results under the inputs shown; not a prediction of a real plant.",
   "app.loading": "Starting the engine in a Worker.",
 
@@ -103,7 +97,6 @@ export const enBase = {
   "grade.provisional": "provisional",
 } as const;
 
-const dictionary = { ...enBase, ...enSetup, ...enResults, ...enNotes, ...enLineage, ...enChallenge, ...((import.meta.env.VITE_LAB_LOCAL === "1" || BREAKOUT_PUBLIC) ? enBreakout : {}), ...enPlant, ...enDrill, ...enAct, ...enItems, ...enTour, ...enOneFlag } as const;
+export const en = { ...enBase, ...enSetup, ...enResults, ...enNotes, ...enLineage, ...enChallenge, ...enBreakout, ...enPlant, ...enDrill, ...enAct, ...enItems, ...enTour, ...enOneFlag } as const;
 
-export type Key = keyof typeof dictionary | keyof typeof enBreakout;
-export const en = dictionary as Record<Key, string>;
+export type Key = keyof typeof en;

@@ -2,11 +2,6 @@ import type { enNotes } from "./en_notes.ts";
 
 // Korean texts of the Notes screen and of the flags (ADR-0006: no number, claim or source that the English text lacks). Terms follow site/infographic/src/i18n.js.
 export const koNotes: Record<keyof typeof enNotes, string> = {
-  "notes.more.heading": "더 읽기",
-  "notes.more.repo": "소스 저장소",
-  "notes.more.design": "설계 문서",
-  "notes.more.adr": "아키텍처 결정",
-  "notes.more.research": "연구와 출처 원장",
   "notes.heading": "수치가 무엇이고 무엇이 아닌지",
   "notes.scope.heading": "범위와 비목표",
   "notes.scope.synthetic": "이 페이지의 모든 것은 합성입니다. 엔진은 표시된 입력 아래에서 공장을 시뮬레이션하며 실제 데이터를 쓰지 않습니다.",

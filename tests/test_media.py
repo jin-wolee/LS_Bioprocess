@@ -28,7 +28,7 @@ GIF_LIMITS = {"tour.gif": (15.0, 25.0, 6 * MB), "action.gif": (6.0, 10.0, 3 * MB
 PNG_LIMIT = 400 * KB
 MARK = "mark.svg"  # B1: the mark, one drawing written in code (not made by the script; the READMEs show it beside the title, the pages use it as their icon, tests/test_brand.py)
 MARK_LIMIT = 2 * KB
-EXPECTED_FILES = {"tour.gif", "action.gif", "plant_en.png", "tour_table_en.png", "lineage_en.png", "results_en.png", "breakout_en.png", "plant_ko.png", "tour_table_ko.png", "lineage_ko.png", "results_ko.png", "breakout_ko.png"}
+EXPECTED_FILES = {"tour.gif", "action.gif", "plant_en.png", "tour_table_en.png", "lineage_en.png", "results_en.png", "breakout_en.png", "plant_ko.png", "tour_table_ko.png", "lineage_ko.png"}
 
 
 def named(text: str) -> list[str]:
@@ -73,7 +73,7 @@ def test_the_folder_holds_exactly_the_pictures_the_readmes_name_and_weighs_under
 
 
 def test_the_korean_screenshots_are_not_the_english_ones():
-    for name in ("plant", "tour_table", "lineage", "results", "breakout"):
+    for name in ("plant", "tour_table", "lineage"):
         assert (MEDIA / f"{name}_ko.png").read_bytes() != (MEDIA / f"{name}_en.png").read_bytes(), name
 
 

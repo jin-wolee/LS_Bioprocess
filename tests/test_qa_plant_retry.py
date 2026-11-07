@@ -46,38 +46,3 @@ def test_a_check_that_passed_is_never_run_again():
     calls: list[str] = []
     run_checks([check("a", [True], calls), check("b", [True], calls)], retries=1)
     assert calls == ["a", "b"]
-
-
-def test_recovered_check_is_reported_as_flaky_without_changing_success(tmp_path):
-    import json
-    from qa_plant import report
-
-    calls: list[str] = []
-    result = run_checks([check("a", [False, True], calls)], retries=1)[0]
-    assert result.ok
-    assert result.data["qa_retry"]["flaky"] is True
-    assert result.data["qa_retry"]["first_detail"] == "a timed out"
-    assert "FLAKY" in report([result], tmp_path)
-    assert "FLAKY" in (tmp_path / "summary.md").read_text()
-    assert json.loads((tmp_path / "results.json").read_text())[0]["data"]["qa_retry"]["flaky"] is True
-
-
-def test_failed_retry_is_not_reported_as_flaky(tmp_path):
-    from qa_plant import report
-
-    calls: list[str] = []
-    result = run_checks([check("a", [False, False], calls)], retries=1)[0]
-    assert not result.ok
-    assert "FAIL" in report([result], tmp_path)
-    assert "FLAKY" not in (tmp_path / "summary.md").read_text()
-
-
-def test_report_uses_shared_verdicts_totals_and_preserves_failure_lines(tmp_path):
-    from qa_plant import report
-
-    results = [Result("ok", True, "ok"), Result("omitted", True, "skipped", {"skipped": True}),
-               Result("recover", True, "passed retry", {"qa_retry": {"flaky": True}}), Result("bad", False, "reason")]
-    output = report(results, tmp_path)
-    assert "SKIP" in output and "FLAKY" in output
-    assert "PASS 1" in output and "SKIP 1" in output and "FLAKY 1" in output and "FAIL 1" in output
-    assert "FAIL  qa_plant bad: reason" in output

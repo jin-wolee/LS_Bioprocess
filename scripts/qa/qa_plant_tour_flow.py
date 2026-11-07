@@ -231,13 +231,3 @@ def walk_tour(page, lang: str, out: Path, size: str, deep: bool) -> list[str]:
         if i < len(STEP_IDS) - 1:
             page.click("[data-tour-next]")
     return problems
-
-
-def rapid_reversals(page) -> None:
-    """Rapid reversals must converge after a late parent overlay update."""
-    # The step marker can render before the parent's overlay update settles.
-    # Rapid reversals must still converge on the final step's overlay state.
-    for _ in range(5):
-        for key, step_id in (("ArrowLeft", "records"), ("ArrowRight", "truth")):
-            page.keyboard.press(key)
-            page.wait_for_selector(f"#plant[data-plant-tour={step_id}]", timeout=15_000)

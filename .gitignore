@@ -28,7 +28,3 @@ qa_out/
 
 # infographic build output
 site/infographic/dist/
-
-# browser snapshots and test coverage
-.playwright-mcp/
-coverage/

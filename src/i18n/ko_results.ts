@@ -6,6 +6,7 @@ export const koResults: Record<keyof typeof enResults, string> = {
   "results.lead": "아키텍처마다 블록 하나씩, 명세의 각 지표를 시드에 걸친 중앙값과 분포 범위, 그 뒤에 있는 시드 수, 분모, 상태와 함께 보여 줍니다. 표시된 수치는 표시된 입력 아래의 시뮬레이션 결과이며 실제 공장에 대한 예측이 아니고, 하나의 점수로 합치지도 않습니다.",
   "results.empty": "아직 실행한 결과가 없습니다. 설정을 고르고 실행을 누르세요.",
   "results.empty.link": "설정으로 가기",
+  "results.running": "실행이 진행 중입니다.",
   "results.meets.warn": "시드 수가 최소값 {min}에 못 미칩니다. 보고서는 이것을 비교라고 부르지 않습니다. 각 분포 범위를 적은 수의 시드 표본의 범위로 읽으세요.",
   "results.interval.label": "범위의 뜻",
   "results.interval.text": "시드 전반의 산포: 다섯 번째에서 아흔다섯 번째 백분위수, 각각 관측된 값이며 신뢰구간이 아님",
@@ -30,6 +31,7 @@ export const koResults: Record<keyof typeof enResults, string> = {
   "results.hold_limit.review_ids": "A213",
   "results.hold_limit.cannot": "이 아키텍처의 기록에는 보관 시간이 저장되지 않으므로 규칙이 작동할 수 없고, 해제할 거절도 없습니다.",
   "results.detection.lead": "재현율은 항상 정밀도와 오경보율 옆에 함께 표시하며, 실현된 기회가 재현율의 분모입니다.",
+  "results.detection.type": "오류 유형",
   "results.note.label_error": "{flag}이(가) 없으면 여기서 라벨 오류는 탐지되지 않습니다. 중복 파일 검사({dup})의 충돌은 재전송된 파일과, 라벨 오류 때문에 같은 라벨을 받은 두 분석을 구분하지 못하고, 이중 라벨 검사({double})는 서로 다른 두 id를 찾기 때문에, 이 오류는 {type} 유형의 오경보로 나타납니다. 수치는 있는 그대로 표시합니다.",
 
   "results.fig.median": "중앙값",

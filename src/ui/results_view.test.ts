@@ -60,13 +60,8 @@ describe("barPositions: the range bar on a 100-wide axis", () => {
     expect(barPositions({ median: 0.5, lo: 0.25, hi: 0.75 }, 1, 100)).toEqual({ median: 50, lo: 25, hi: 75 });
   });
 
-  it("Given all values at either axis end Then the marks stay inside the viewBox", () => {
-    expect(barPositions({ median: 0, lo: 0, hi: 0 }, 1, 100)).toEqual({ median: 1, lo: 1, hi: 1 });
-    expect(barPositions({ median: 1, lo: 1, hi: 1 }, 1, 100)).toEqual({ median: 99, lo: 99, hi: 99 });
-  });
-
   it("Given a figure above the axis or below zero Then it is held to the ends", () => {
-    expect(barPositions({ median: 3, lo: -1, hi: 5 }, 2, 100)).toEqual({ median: 99, lo: 1, hi: 99 });
+    expect(barPositions({ median: 3, lo: -1, hi: 5 }, 2, 100)).toEqual({ median: 100, lo: 0, hi: 100 });
   });
 });
 

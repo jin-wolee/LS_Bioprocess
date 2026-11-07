@@ -16,7 +16,7 @@
 # equipment_id of the earlier tables, the confirming tests as master data and the machines of 15.2. They exist in a dataset only when the recorder was given the master data of a scenario with a break-out block
 # (absent, not null, otherwise). Break-out batch 4 adds the investigation, a step after recording on the recorded side: it places the rows of quality_hold, gives the deviation its estimated onset, assumed
 # lag and closing, moves lots and equipment items into on_hold and quarantined, and writes the retro-flag versions of data_model 15.3 (result.hold_id and the hold, person and reason on the audit event of
-# a flag). Break-out batch 5 adds the mycoplasma confirming tests (A144 to A146) to the master data. The CLI records FX12a, FX12e and FX12m under the thirteen configurations and investigates them. # provisional: A144, A146
+# a flag). Break-out batch 5 adds the mycoplasma confirming tests (A144 to A146) to the master data. The CLI records FX12a, FX12e and FX12m under the thirteen configurations and investigates them.
 
 dictionary_version: "1"
 data_model: docs/design/data_model.md
@@ -35,19 +35,19 @@ roles:
 analytes:
   vcd: {unit: "10*6/mL", ledger: A007, description: "viable cell density, 1e6 cells per mL"}
   viability: {unit: "%", ledger: A211, description: "viability in percent"}
-  glucose: {unit: "g/L", ledger: A190, description: "glucose"} # provisional: A190
-  glutamine: {unit: "mmol/L", ledger: A191, description: "glutamine, mM in the profile settings"} # provisional: A191
+  glucose: {unit: "g/L", ledger: A190, description: "glucose"}
+  glutamine: {unit: "mmol/L", ledger: A191, description: "glutamine, mM in the profile settings"}
   lactate: {unit: "g/L", ledger: A209, description: "lactate"}
   titer: {unit: "g/L", ledger: A210, description: "product titer"}
-  ph: {unit: "[pH]", ledger: A198, description: "pH on its scale"} # provisional: A198
+  ph: {unit: "[pH]", ledger: A198, description: "pH on its scale"}
 
 # ---- master data: the confirming tests of the break-out events (data_model 15.1, method kind). A confirming result carries the test in its `analyte` column and an outcome instead of a value ------------
 confirming_tests:
-  bioburden: {ledger: A142, description: "bioburden (plate count), asked of a confirming sample after a signal"} # provisional: A142
-  sterility: {ledger: A143, description: "sterility, two media (A148)"} # provisional: A143, A148
-  mycoplasma_culture: {ledger: A144, description: "mycoplasma, culture method (28 d); a negative result needs the full period"} # provisional: A144
-  mycoplasma_indicator_cells: {ledger: A145, description: "mycoplasma, indicator cell method (8 d)"} # provisional: A145
-  nucleic_acid_test: {ledger: A146, description: "nucleic-acid test (1 d); sequence-specific, it reports an organism only when the scenario marks its target as covering it (input A224)"} # provisional: A146, A224
+  bioburden: {ledger: A142, description: "bioburden (plate count), asked of a confirming sample after a signal"}
+  sterility: {ledger: A143, description: "sterility, two media (A148)"}
+  mycoplasma_culture: {ledger: A144, description: "mycoplasma, culture method (28 d); a negative result needs the full period"}
+  mycoplasma_indicator_cells: {ledger: A145, description: "mycoplasma, indicator cell method (8 d)"}
+  nucleic_acid_test: {ledger: A146, description: "nucleic-acid test (1 d); sequence-specific, it reports an organism only when the scenario marks its target as covering it (input A224)"}
 
 # ---- the recorded dataset (engine/src/record/types.ts) -----------------------------------------------------------------------------------------------------------------------------
 dataset:
@@ -111,7 +111,7 @@ entities:
       - {name: version, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "rank of the attempt among the attempts recorded for (request, analyte); an overwrite in place keeps 1"}
       - {name: run_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "K2: a result cannot exist without a run"}
       - {name: value, type: number, nullable: true, unit: null, unit_by: analyte, values: null, time: neither, visibility: observable, default: null, description: "the value in the canonical unit of its analyte (the engine works in the canonical units until the raw layer keeps an original unit); null on a confirming result, which carries an outcome instead (K18), and on every result of a run whose QC outcome is over_range_unresolved (simulation_spec 2.3)"}
-      - {name: measured_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "K2: the instant the measurement ended; a wrong instrument clock makes it wrong in the record (A049); for a confirming test the read-out, the draw plus the turnaround (A142, A143)"} # provisional: A142, A143
+      - {name: measured_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "K2: the instant the measurement ended; a wrong instrument clock makes it wrong in the record (A049); for a confirming test the read-out, the draw plus the turnaround (A142, A143)"}
       - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only: when this version became knowable; a released row has the review point; a rejected row has none"}
       - {name: supersedes, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "append_only_versions only: the result_id this version replaces"}
       - {name: ingested_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the instant the system wrote the row; null in architecture A, where no system writes the rows (data_model section 7)"}
@@ -122,9 +122,9 @@ entities:
       - {name: raw_ref, type: object, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "raw layer only: {raw_file_id, line_no} of the line the row was loaded from; set only on adapter_ingest (K20, K23)"}
       - {name: unit_original, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "raw layer only (K11): the unit text of the file or of the typed entry; null when the file carries none and the entry's unit applied"}
       - {name: unit_ucum, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "raw layer only: the UCUM code of the unit the row was read or typed in (VR-005 compares its dimension with the analyte's)"}
-      - {name: dilution_factor, type: number, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: {value: 1, ledger: A090}, description: "raw layer only: the dilution ratio of the file or of the typed entry; null when it was left out (VR-013 on a typed entry)"} # provisional: A090
-      - {name: time_resolution_s, type: integer, nullable: true, unit: s, values: {min: 1}, time: neither, visibility: observable, default: null, description: "raw layer only: the resolution of the stamp the row was read from (one minute for the counter dialect, A166); null on a typed entry"} # provisional: A166
-      - {name: outcome, type: string, nullable: true, unit: null, values: [detected, not_detected], time: neither, visibility: observable, default: null, description: "break-out only (data_model 15.1, K18): what a confirming test found; set exactly on the results of confirmatory requests, null on a routine result. The tests report the truth, except that the nucleic-acid test finds only what its target covers (A146). Absent without a break-out block"} # provisional: A146
+      - {name: dilution_factor, type: number, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: {value: 1, ledger: A090}, description: "raw layer only: the dilution ratio of the file or of the typed entry; null when it was left out (VR-013 on a typed entry)"}
+      - {name: time_resolution_s, type: integer, nullable: true, unit: s, values: {min: 1}, time: neither, visibility: observable, default: null, description: "raw layer only: the resolution of the stamp the row was read from (one minute for the counter dialect, A166); null on a typed entry"}
+      - {name: outcome, type: string, nullable: true, unit: null, values: [detected, not_detected], time: neither, visibility: observable, default: null, description: "break-out only (data_model 15.1, K18): what a confirming test found; set exactly on the results of confirmatory requests, null on a routine result. The tests report the truth, except that the nucleic-acid test finds only what its target covers (A146). Absent without a break-out block"}
       - {name: hold_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "break-out retro-flag only (data_model 15.3 item 3, K16): set on version n+1 of a released result that a hold covers, naming the quality_hold. Absent, not null, on every other row, so a run without a retro-flag has no such column; version n is never modified"}
   audit_event:
     emitted: true
@@ -147,7 +147,7 @@ entities:
     columns:
       - {name: qualification_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
       - {name: operator_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the operator the record attests"}
-      - {name: qualified, type: boolean, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the recorded training status (the level of A072 and A073 as a boolean); the truth-side counterpart is truth_operator.qualified"} # provisional: A072, A073
+      - {name: qualified, type: boolean, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the recorded training status (the level of A072 and A073 as a boolean); the truth-side counterpart is truth_operator.qualified"}
       - {name: valid_from, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "start of validity"}
       - {name: valid_to, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "end of validity; null while the qualification has no end"}
   source_event:
@@ -195,7 +195,7 @@ entities:
       - {name: clock_style, type: string, nullable: false, unit: null, values: ["24h", "12h", unknown], time: neither, visibility: observable, default: null, description: "24 h, or 12 h whose day-part marker the file may lack (RQ2)"}
       - {name: source_zone_s, type: integer, nullable: true, unit: s, values: null, time: neither, visibility: observable, default: null, description: "the zone the adapter applies, seconds ahead of UTC; null leaves every stamp unresolved (VR-024, RQ1)"}
       - {name: stamp_means, type: string, nullable: false, unit: null, values: [start, end, instant], time: neither, visibility: observable, default: null, description: "whether the row stamp is the start or the end of the run (spec 2.4.8: the default, end, is an assumption); instant for a controller row, which is not a run"}
-      - {name: time_resolution_s, type: integer, nullable: false, unit: s, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the resolution of the stamp (one minute for the counter dialect, A166)"} # provisional: A166
+      - {name: time_resolution_s, type: integer, nullable: false, unit: s, values: {min: 1}, time: neither, visibility: observable, default: null, description: "the resolution of the stamp (one minute for the counter dialect, A166)"}
       - {name: modeled_on, type: array, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the S### ledger ids the dialect is modeled on"}
       - {name: banner, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the first line of every file of the dialect: synthetic, modeled on public documentation; not a real instrument file (ADR-0014 R3)"}
   raw_file:
@@ -206,7 +206,7 @@ entities:
       - {name: raw_file_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key"}
       - {name: adapter_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the adapter the file was parsed with"}
       - {name: adapter_version, type: integer, nullable: false, unit: null, values: {min: 1}, time: neither, visibility: observable, default: null, description: "its version"}
-      - {name: file_name, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "vendor-neutral prefix, the instrument and the export time (A159)"} # provisional: A159
+      - {name: file_name, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "vendor-neutral prefix, the instrument and the export time (A159)"}
       - {name: content_hash, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "hash of the content; a replayed file has the hash of the first"}
       - {name: row_count, type: integer, nullable: false, unit: null, values: {min: 0}, time: neither, visibility: observable, default: null, description: "data lines in the file, repeated rows included"}
       - {name: received_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the host clock when the file arrived; the ingested_at of everything loaded from it"}
@@ -270,7 +270,7 @@ entities:
       - {name: cell_line_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "seed lots only, null in S3: the cell line waits for S4 (data_model 15.1)"}
       - {name: prepared_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "when the lot was prepared: master data of the scenario topology"}
       - {name: quantity, type: number, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "null in S3: no ledger entry gives a lot size and nothing reads it"}
-      - {name: parent_lot_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "stored and not walked; null in S3 (the N-1 seed train is S4, A155)"} # provisional: A155
+      - {name: parent_lot_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "stored and not walked; null in S3 (the N-1 seed train is S4, A155)"}
       - {name: state, type: string, nullable: false, unit: null, values: [prepared, available, in_use, consumed, discarded, on_hold, quarantined], time: neither, visibility: observable, default: null, description: "state of the lot machine (state_machines.material_lot): the recorder registers every lot as available and puts a lot that some event consumed in use; the investigation puts a lot on_hold while a quality_hold covers it and quarantined under a positive result (a quarantine is final in S3). A lot is never left on_hold in a finished run: a hold ends released or as a quarantine"}
   equipment:
     emitted: true
@@ -314,12 +314,12 @@ entities:
       - {name: deviation_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "K15: every hold references a deviation"}
       - {name: target_kind, type: string, nullable: false, unit: null, values: [batch, material_lot, equipment, result], time: neither, visibility: observable, default: null, description: "what the hold covers; a lot target exists only with material_lot_links and an equipment target only with equipment_links (the item is a key)"}
       - {name: target_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch, lot, equipment item or result"}
-      - {name: kind, type: string, nullable: false, unit: null, values: [hold, quarantine], time: neither, visibility: observable, default: null, description: "a hold, or a quarantine after a positive confirming result (at the result plus d2, A176); named quality_hold so it does not clash with the validation action hold of data_model section 8"} # provisional: A176
+      - {name: kind, type: string, nullable: false, unit: null, values: [hold, quarantine], time: neither, visibility: observable, default: null, description: "a hold, or a quarantine after a positive confirming result (at the result plus d2, A176); named quality_hold so it does not clash with the validation action hold of data_model section 8"}
       - {name: state, type: string, nullable: false, unit: null, values: [placed, under_test, released, quarantined, rejected, closed], time: neither, visibility: observable, default: null, description: "state of the hold machine (state_machines.quality_hold): a hold is placed, put under test and decided at once, so a finished run leaves every hold closed with its deviation"}
       - {name: placed_at, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the placement"}
       - {name: placed_by, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only"}
       - {name: reason, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only"}
-      - {name: released_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "null while the hold stands; the release instant (the last negative result plus d2) or, for a quarantine, the next review point (A215) at which it is rejected"} # provisional: A215
+      - {name: released_at, type: integer, nullable: true, unit: s, values: null, time: valid, visibility: observable, default: null, description: "null while the hold stands; the release instant (the last negative result plus d2) or, for a quarantine, the next review point (A215) at which it is rejected"}
       - {name: released_by, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "audit_trail only"}
       - {name: outcome, type: string, nullable: true, unit: null, values: [released, rejected], time: neither, visibility: observable, default: null, description: "how the hold ended; null while it stands"}
       - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only"}
@@ -337,7 +337,7 @@ entities:
     emitted: true
     description: "a historian row that arrived later than its valid time (data_model section 5). Empty from a layer-off recorder. With the raw layer on and adapter_ingest, a controller on the bay (S2e2) makes the logged rows the historian of the dataset: one row per logged tag value, never interpolated (RQ9; the value of a tag at a time is the last row at or before it, data_model 16.4)"
     columns:
-      - {name: tag, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "`unit_tag.signal` layer off; with the raw layer on the canonical `unit_tag.signal.role` with role PV, SP or OUT (A171, data_model 16.4); both families of controller land in this one form"} # provisional: A171
+      - {name: tag, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "`unit_tag.signal` layer off; with the raw layer on the canonical `unit_tag.signal.role` with role PV, SP or OUT (A171, data_model 16.4); both families of controller land in this one form"}
       - {name: ts, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the value: the stamp of the logged row"}
       - {name: value, type: number, nullable: false, unit: null, unit_by: tag, values: null, time: neither, visibility: observable, default: null, description: "the value; the unit follows the signal of the tag"}
       - {name: quality, type: string, nullable: false, unit: null, values: [good], time: neither, visibility: observable, default: null, description: "quality flag as the controller wrote it"}
@@ -352,29 +352,29 @@ entities:
       - {name: alarm_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the alarm instance, with unit_id"}
       - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit (vessel) the alarm belongs to"}
       - {name: tag, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the process tag the alarm watches, canonical; null where the family alarm log does not carry it"}
-      - {name: severity, type: integer, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "OPC UA severity (A174); null where the family log does not carry it"} # provisional: A174
+      - {name: severity, type: integer, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "OPC UA severity (A174); null where the family log does not carry it"}
       - {name: from_state, type: string, nullable: false, unit: null, values: [normal, unacknowledged, acknowledged, rtn_unacknowledged, shelved, suppressed_by_design, out_of_service], time: neither, visibility: observable, default: null, description: "the state before the transition: written by the family that has a From column, else the previous state of the instance, normal for the first row"}
       - {name: to_state, type: string, nullable: false, unit: null, values: [normal, unacknowledged, acknowledged, rtn_unacknowledged, shelved, suppressed_by_design, out_of_service], time: neither, visibility: observable, default: null, description: "the state after the transition (state_machines.alarm_event)"}
       - {name: ts, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the transition"}
       - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the file received_at"}
-      - {name: actor, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the acknowledging user, where the family records one (A174, S099); null otherwise"} # provisional: A174, S099
+      - {name: actor, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the acknowledging user, where the family records one (A174, S099); null otherwise"}
       - {name: comment, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "free text; no family of S2 writes one, so it is always null"}
       - {name: raw_ref, type: object, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the raw file and line ({raw_file_id, line_no}); every row loaded from a file has one (K20)"}
   batch_phase_record:
     emitted: true
     kind: raw_layer
-    description: "adapter_ingest only (data_model 16.4): one state transition of one phase instance, as a controller log wrote it (RQ11), with the ISA-88 hierarchy as ids (A170). Append-only (K22). A transition the phase model does not allow is stored and held (VR-025): a finding targets batch_phase_record:<phase_record_id>. The phase log is checked against the batch times, never used to overwrite them" # provisional: A170
+    description: "adapter_ingest only (data_model 16.4): one state transition of one phase instance, as a controller log wrote it (RQ11), with the ISA-88 hierarchy as ids (A170). Append-only (K22). A transition the phase model does not allow is stored and held (VR-025): a finding targets batch_phase_record:<phase_record_id>. The phase log is checked against the batch times, never used to overwrite them"
     columns:
       - {name: phase_record_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "key: raw file and line"}
       - {name: batch_id, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the batch; null where the family phase log does not carry it"}
       - {name: unit_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the unit (vessel)"}
       - {name: recipe_id, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the recipe"}
       - {name: procedure, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "ISA-88 procedure; null where the family log does not carry it"}
-      - {name: unit_procedure, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "ISA-88 unit procedure (at most one open per unit, S093); null where the family log does not carry it"} # provisional: S093
+      - {name: unit_procedure, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "ISA-88 unit procedure (at most one open per unit, S093); null where the family log does not carry it"}
       - {name: operation, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "ISA-88 operation; null where the family log does not carry it"}
       - {name: phase, type: string, nullable: false, unit: null, values: null, time: neither, visibility: observable, default: null, description: "the phase; the production run writes before_shift and after_shift (data_model section 7, S2e2 table)"}
       - {name: from_state, type: string, nullable: false, unit: null, values: [idle, running, complete, pausing, paused, holding, held, restarting, stopping, stopped, aborting, aborted, resetting], time: neither, visibility: observable, default: null, description: "the state before the transition: written by the family that has a From column, else the previous state of the instance, idle for the first row"}
-      - {name: to_state, type: string, nullable: false, unit: null, values: [idle, running, complete, pausing, paused, holding, held, restarting, stopping, stopped, aborting, aborted, resetting], time: neither, visibility: observable, default: null, description: "the state after the transition (state_machines.batch_phase_record): the 13 phase states of A170"} # provisional: A170
+      - {name: to_state, type: string, nullable: false, unit: null, values: [idle, running, complete, pausing, paused, holding, held, restarting, stopping, stopped, aborting, aborted, resetting], time: neither, visibility: observable, default: null, description: "the state after the transition (state_machines.batch_phase_record): the 13 phase states of A170"}
       - {name: ts, type: integer, nullable: false, unit: s, values: null, time: valid, visibility: observable, default: null, description: "valid time of the transition"}
       - {name: ingested_at, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the file received_at"}
       - {name: actor, type: string, nullable: true, unit: null, values: null, time: neither, visibility: observable, default: null, description: "who caused the transition, where a family records it; no family of S2 does, so it is always null"}
@@ -417,7 +417,7 @@ entities:
       - {name: ctx_feed_epoch, type: integer, nullable: true, unit: null, values: {min: 0}, time: neither, visibility: observable, default: null, description: "process_context.feed_epoch"}
       - {name: ctx_batch_phase, type: string, nullable: true, unit: null, values: [before_shift, after_shift, harvested], time: neither, visibility: observable, default: null, description: "process_context.batch_phase"}
       - {name: ctx_pv_pH, type: number, nullable: true, unit: "[pH]", values: null, time: neither, visibility: observable, default: null, description: "process_context.pv for pH; null when the unit has no such series or no row is visible"}
-      - {name: ctx_pv_DO, type: number, nullable: true, unit: "%", values: null, time: neither, visibility: observable, default: null, description: "process_context.pv for dissolved oxygen, percent air saturation (A198)"} # provisional: A198
+      - {name: ctx_pv_DO, type: number, nullable: true, unit: "%", values: null, time: neither, visibility: observable, default: null, description: "process_context.pv for dissolved oxygen, percent air saturation (A198)"}
       - {name: ctx_pv_temperature, type: number, nullable: true, unit: Cel, values: null, time: neither, visibility: observable, default: null, description: "process_context.pv for temperature"}
       - {name: available_at, type: integer, nullable: true, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "available_at only: when this version became knowable"}
       - {name: context_as_of, type: integer, nullable: false, unit: s, values: null, time: transaction, visibility: observable, default: null, description: "the stated time of the process context: what was known at this second; the same on every row of an export. Chosen by the caller of the export; the default is the end of the horizon, and the package metadata (`context_as_of_basis`) says which"}
@@ -431,7 +431,7 @@ entities:
       - {name: noise, type: number, nullable: false, unit: null, unit_by: analyte, values: null, time: neither, visibility: hidden, default: null, description: "the analyzer noise applied to the reading"}
       - {name: stability_kind, type: string, nullable: true, unit: null, values: [linear_rate, first_order_offset], time: neither, visibility: hidden, default: null, description: "the stability effect applied between sampled_at and run_started_at; absent when no effect moved the value"}
       - {name: stability_delta, type: number, nullable: true, unit: null, unit_by: analyte, values: null, time: neither, visibility: hidden, default: null, description: "the change that effect caused"}
-      - {name: extrapolated, type: boolean, nullable: true, unit: null, values: null, time: neither, visibility: hidden, default: null, description: "set when the hold exceeds the range its source covers (A039, A046)"} # provisional: A046
+      - {name: extrapolated, type: boolean, nullable: true, unit: null, values: null, time: neither, visibility: hidden, default: null, description: "set when the hold exceeds the range its source covers (A039, A046)"}
   truth_sample_drawn:
     emitted: false
     description: "hidden field of the truth event sample_drawn"
@@ -446,12 +446,12 @@ entities:
     emitted: false
     description: "hidden field of the truth event calibration_recorded"
     columns:
-      - {name: drift_before_pct, type: number, nullable: false, unit: "%", values: null, time: neither, visibility: hidden, default: null, description: "the drift the reset removed (A091)"} # provisional: A091
+      - {name: drift_before_pct, type: number, nullable: false, unit: "%", values: null, time: neither, visibility: hidden, default: null, description: "the drift the reset removed (A091)"}
   truth_operator:
     emitted: false
     description: "truth-side attribute of an operator (data_model section 2); the engine returns the operators beside the log, not as events"
     columns:
-      - {name: qualified, type: boolean, nullable: false, unit: null, values: null, time: neither, visibility: hidden, default: null, description: "the training status in the truth world, true for the experienced staff profile and false for trainee (A072, A073); the recorded counterpart is qualification.qualified"} # provisional: A072, A073
+      - {name: qualified, type: boolean, nullable: false, unit: null, values: null, time: neither, visibility: hidden, default: null, description: "the training status in the truth world, true for the experienced staff profile and false for trainee (A072, A073); the recorded counterpart is qualification.qualified"}
 
 # ---- documents of the evaluator and the experiments (their own schemas; not tables) ------------------------------------------------------------------------------------------------
 documents:

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import json
 import re
 import shutil
 import sys
@@ -30,10 +31,9 @@ import tempfile
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
-from qa_build import serve
 from qa_checks import Result
 from qa_checks import check_size as check_page_size
-from qa_infographic import cold_load, origin_problems
+from qa_infographic import cold_load, guarded, origin_problems, serve
 from qa_lab_browser import open_lab, wait_final
 from qa_lab_breakout import public_build_result
 from qa_lab_checks import check_size as check_lab_size
@@ -42,7 +42,6 @@ from qa_lab_helpers import cross_origin, outside_base
 from qa_plant_checks import check_plant_fallback
 from qa_plant_checks import check_size as check_plant_size
 from qa_plant_helpers import SOFTWARE_GL
-from qa_report import guarded, report as write_report
 from qa_site_plant import check_plant_route
 from qa_timing import set_mode
 
@@ -224,9 +223,13 @@ def renamed(result: Result, name: str) -> Result:
 
 
 def report(results: list[Result], out: Path) -> str:
-    table = write_report(results, out, "Site QA")
-    failures = "".join(f"\nFAIL  qa_site {r.name}: {r.detail[:300]}" for r in results if not r.ok)
-    return table + failures
+    rows = [(f"{i} {r.name}", "PASS" if r.ok else "FAIL", r.detail) for i, r in enumerate(results, 1)]
+    width = max(len(r[0]) for r in rows)
+    table = "\n".join(f"{n:<{width}}  {s}  {d}" for n, s, d in rows)
+    (out / "results.json").write_text(json.dumps([r.__dict__ for r in results], indent=2, ensure_ascii=False), encoding="utf-8")
+    md = "| check | result | detail |\n|---|---|---|\n" + "\n".join(f"| {n} | {s} | {d.replace('|', '/')} |" for n, s, d in rows)
+    (out / "summary.md").write_text(f"# Site QA\n\n{md}\n", encoding="utf-8")
+    return table
 
 
 def main(argv=None) -> int:

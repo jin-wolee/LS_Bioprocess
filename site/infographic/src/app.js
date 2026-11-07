@@ -47,7 +47,6 @@
 
   /* story mode: highlights the active step of the timeline and lineage figures while scrolling */
   var storyBtn = $('#story-toggle');
-  var storyNote = $('#story-note');
   var io = null;
   function activate(li) {
     var scope = li.closest('[data-story-root]');
@@ -77,11 +76,10 @@
     store.set('story', on ? 'on' : 'off');
   }
   function syncMotion() {
-    storyBtn.setAttribute('aria-disabled', reduced.matches ? 'true' : 'false');
-    storyNote.hidden = !reduced.matches;
-    if (reduced.matches) setStory(false);
+    storyBtn.disabled = !!reduced.matches;
+    if (reduced.matches) { storyBtn.title = 'Disabled: reduced motion is on'; setStory(false); } else { storyBtn.removeAttribute('title'); }
   }
-  storyBtn.addEventListener('click', function () { if (!reduced.matches) setStory(storyBtn.getAttribute('aria-pressed') !== 'true'); });
+  storyBtn.addEventListener('click', function () { setStory(storyBtn.getAttribute('aria-pressed') !== 'true'); });
   if (reduced.addEventListener) reduced.addEventListener('change', syncMotion);
 
   /* timeline: move measured_at, see which state each join attaches */

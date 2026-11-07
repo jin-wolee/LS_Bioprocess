@@ -16,7 +16,7 @@ from qa_checks import Result, first_line
 from qa_plant_browser import RECORD_PLANT_JS, hud_click, open_plant, settle, wait_scene
 from qa_plant_drill import open_link
 from qa_plant_helpers import PLANT_VIEWPORTS, split_requests
-from qa_plant_tour_flow import SENT_JS, landed_on, layout_problems, rapid_reversals, settle_on_target, shoot, step_state, sweep_problems, walk_tour
+from qa_plant_tour_flow import SENT_JS, landed_on, layout_problems, settle_on_target, shoot, step_state, sweep_problems, walk_tour
 from qa_plant_tour_helpers import STEP_IDS, TOUR_KEY, offer_problems, reduced_tour_problems
 
 DEFAULT_LINK = "#/plant?scenario=default&arch=a_manual,b_lims_lite,c_context&seed=1&schema=1"
@@ -102,7 +102,6 @@ def back_and_keys(page) -> list[str]:
     for key, step_id in (("ArrowRight", "truth"), ("ArrowLeft", "records"), ("ArrowDown", "truth"), ("ArrowUp", "records"), ("ArrowRight", "truth")):
         page.keyboard.press(key)
         page.wait_for_selector(f"#plant[data-plant-tour={step_id}]", timeout=15_000)
-    rapid_reversals(page)
     page.wait_for_selector("#plant[data-plant-truth=on]", timeout=15_000)
     if asked >= len(page.evaluate(SENT_JS)):
         problems.append("stepping back and on again asked the Worker for nothing: the overlay was not asked again")

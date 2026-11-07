@@ -23,7 +23,6 @@ SOURCES = """sources:
     type: vendor-doc
     supports: "x"
     verification: main-reread
-    used_in: [A001, A002]
   - id: S002
     title: "t"
     publisher: "p"
@@ -32,7 +31,6 @@ SOURCES = """sources:
     type: paper
     supports: "x"
     verification: snippet
-    used_in: [A002]
 """
 ASSUMPTIONS = """assumptions:
   - id: A001
@@ -88,7 +86,7 @@ def view_of(root):
 # ---------- what the view holds ----------
 def test_a_main_reread_source_is_not_provisional_and_the_view_holds_grade_range_unit_and_sources(tmp_path):
     view = view_of(make_root(tmp_path, ("A001",)))
-    assert view["assumptions"]["A001"] == {"grade": "S", "range_grade": "S", "range": [5, 100], "unit": "reactors", "sources": ["S001"], "provisional": False}
+    assert view["assumptions"]["A001"] == {"grade": "S", "range": [5, 100], "unit": "reactors", "sources": ["S001"], "provisional": False}
     assert view["sources"] == {"S001": {"verification": "main-reread"}}
 
 
@@ -122,7 +120,7 @@ def test_the_ids_are_those_of_the_files_data_ts_imports_not_of_every_scenario_fi
 
 def test_the_bundle_field_of_a_shipped_profile_file_is_named_like_a_ref_and_its_grade_comes_from_the_ledger(tmp_path):
     view = view_of(make_root(tmp_path, ("A001",), bundle="A002"))
-    assert view["assumptions"]["A002"] == {"grade": "S", "range_grade": "S", "range": [1, 6], "unit": "analyzers", "sources": ["S001", "S002"], "provisional": True}
+    assert view["assumptions"]["A002"] == {"grade": "S", "range": [1, 6], "unit": "analyzers", "sources": ["S001", "S002"], "provisional": True}
     assert list(view["assumptions"]) == ["A001", "A002"]
     assert view["sources"] == {"S001": {"verification": "main-reread"}, "S002": {"verification": "snippet"}}
 
@@ -184,7 +182,7 @@ def test_the_committed_view_equals_a_fresh_generation():
 def test_the_committed_view_follows_the_header_of_the_ledger():
     # docs/research/assumptions.yaml: A001 is grade A with no source; A004 is grade S on S017 (main-reread) and S019 (not in the header's list of eleven)
     view = json.loads((REPO / "src/generated/ledger_view.json").read_text(encoding="utf-8"))
-    assert view["assumptions"]["A001"] == {"grade": "A", "range_grade": "A", "range": [5, 100], "unit": "reactors", "sources": [], "provisional": False}
+    assert view["assumptions"]["A001"] == {"grade": "A", "range": [5, 100], "unit": "reactors", "sources": [], "provisional": False}
     assert view["assumptions"]["A004"]["provisional"] is True
     assert view["sources"]["S017"] == {"verification": "main-reread"}
     assert view["sources"]["S019"]["verification"] != "main-reread"
@@ -386,12 +384,3 @@ def test_check_fails_when_only_the_public_view_is_stale(tmp_path):
 def test_the_committed_public_view_equals_a_fresh_generation():
     committed = (REPO / PUBLIC_VIEW).read_text(encoding="utf-8")
     assert committed == ll.render(ll.build(REPO, public=True)), "run: uv run python scripts/lab_ledger.py --write"
-
-
-def test_range_grade_is_preserved_in_both_views_and_defaults_to_grade(tmp_path):
-    assumptions = ASSUMPTIONS.replace("grade: S\n    sources: [S001]", "grade: S\n    range_grade: A\n    sources: [S001]", 1)
-    root = make_root(tmp_path, ("A001", "A002"), ledger_assumptions=assumptions)
-    for public in (False, True):
-        view = ll.build(root, public=public)
-        assert view["assumptions"]["A001"]["range_grade"] == "A"
-        assert view["assumptions"]["A002"]["range_grade"] == "S"

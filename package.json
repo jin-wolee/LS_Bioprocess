@@ -1,15 +1,15 @@
 {
   "name": "sample-lineage-lab",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Portfolio simulator: shared analyzers, sample lineage, several data architectures compared on one synthetic run.",
   "license": "MIT",
   "engines": {
-    "node": "25.6.1"
+    "node": "25"
   },
   "scripts": {
-    "lint": "eslint engine src site/infographic/src eslint.config.js",
+    "lint": "eslint engine src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:perf": "vitest run --mode perf --reporter=default",

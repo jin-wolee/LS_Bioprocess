@@ -9,7 +9,7 @@ The simulator compares data architectures on one synthetic run. Two things can r
 Two flagship cases drive the design.
 
 1. **Feed in the gap.** A sample is drawn at 08:40, a bolus feed happens at 09:00, and the sample is measured at 09:25 (illustrative scenario times). Joining the result to the historian by `measured_at` pairs a pre-feed value with post-feed process state, which contaminates anything trained on it. Discrete feeds that can fall between a draw and its measurement are part of the process description (A010, A050, S017).
-2. **Offline pH used to re-standardise the online probe.** Offline pH is commonly treated as the source of truth when probes are readjusted, and sampling, hold time, temperature and CO2 degassing add offsets (S013, A051 (provisional)). A sampling offset therefore propagates into control. The same source describes a GMP-style alternative that does not readjust onto offline values, using a CO2-based reference and delta-probe alarms (S013; a related exhaust-CO2 recalibration note is snippet-level, S045 (provisional)). That alternative is the "context-preserving" story: record how the sample was taken and held so the offset can be modelled or excluded instead of baked into the probe. Offsets depend on equipment and local procedure; the ledger default (A041) is a cell-free, liquid-handler case and is never presented as a universal figure.
+2. **Offline pH used to re-standardise the online probe.** Offline pH is commonly treated as the source of truth when probes are readjusted, and sampling, hold time, temperature and CO2 degassing add offsets (S013, A051). A sampling offset therefore propagates into control. The same source describes a GMP-style alternative that does not readjust onto offline values, using a CO2-based reference and delta-probe alarms (S013; a related exhaust-CO2 recalibration note is snippet-level, S045). That alternative is the "context-preserving" story: record how the sample was taken and held so the offset can be modelled or excluded instead of baked into the probe. Offsets depend on equipment and local procedure; the ledger default (A041) is a cell-free, liquid-handler case and is never presented as a universal figure.
 
 ## Options
 
@@ -42,12 +42,12 @@ Proposed: strict separation; both experiments.
 ## Consequences
 
 - Positive: leakage and comparability are tested properties, not hopes; the two flagship cases map to concrete scenarios (SC3, SC8).
-- Negative: experiment 2 needs common random numbers and an oracle, which is more code and more ways to be wrong; the pH controller and the feed rule are simulator choices (A050, A051 (provisional) frequency unsourced), so excursions are model-internal; pH hold effects rest on proxy values (A042 (provisional), A043 (provisional)) and an unsourced technique error rate (A064).
+- Negative: experiment 2 needs common random numbers and an oracle, which is more code and more ways to be wrong; the pH controller and the feed rule are simulator choices (A050, A051 frequency unsourced), so excursions are model-internal; pH hold effects rest on proxy values (A042, A043) and an unsourced technique error rate (A064).
 - Results are reported as distributions over many seeds with sensitivity to the grade-A inputs, and no number is stated for a stage that has no result yet.
 
 ## Evidence
 
-- S013, A041, A051 (provisional), S045 (provisional) (pH practice and the alternative); A037 (provisional), A042 (provisional), A043 (provisional), A064 (container and hold effects); A010, A050, S017 (discrete feeds); A038, A039, A040, S012 (viability hold).
+- S013, A041, A051, S045 (pH practice and the alternative); A037, A042, A043, A064 (container and hold effects); A010, A050, S017 (discrete feeds); A038, A039, A040, S012 (viability hold).
 - Design source: `docs/design/simulation_spec.md`, sections on the observation contract and experiments.
 
 ## Author statement (verbatim, if any)

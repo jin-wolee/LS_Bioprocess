@@ -48,7 +48,7 @@ function Count({ spec, scenario, form, onChange }: { spec: (typeof COUNTS)[numbe
   );
 }
 
-function Seeds({ ready, form, update, reason }: { ready: ReadyInfo; form: Form; update: (patch: Partial<Form>) => void; reason: string | null }) {
+function Seeds({ ready, form, update }: { ready: ReadyInfo; form: Form; update: (patch: Partial<Form>) => void }) {
   const seeds = parseSeeds(form.seeds);
   const minimum = ready.evaluation.find((e) => e.name === "min_seeds");
   const range = seeds && minimum ? rangeWarning(minimum.ref, seeds.length) : null;
@@ -77,9 +77,8 @@ function Seeds({ ready, form, update, reason }: { ready: ReadyInfo; form: Form; 
       </div>
       <div class="field">
         <T as="label" k="setup.seeds.label" for="seeds" />
-        <input id="seeds" type="text" autocomplete="off" spellcheck={false} value={form.seeds} aria-invalid={seeds === null || reason !== null} {...(reason && { "aria-describedby": "seed-problem" })} onInput={(event) => update({ seeds: event.currentTarget.value })} />
+        <input id="seeds" type="text" autocomplete="off" spellcheck={false} value={form.seeds} aria-invalid={seeds === null} onInput={(event) => update({ seeds: event.currentTarget.value })} />
       </div>
-      {reason && <p id="seed-problem" class="warn" role="status"><T k="setup.seeds.invalid" /> <Label engine>{reason}</Label></p>}
       {seeds === null && <T as="p" k="setup.seeds.parse" class="warn" data-warn="seeds" />}
       {seeds && minimum && seeds.length < Number(minimum.value) && (
         <T as="p" k="setup.seeds.below" class="warn" data-warn="seeds-minimum" parts={{ min: <Ref ids={[minimum.ref]}>{minimum.value} {minimum.unit}</Ref> }} />
@@ -108,11 +107,9 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, leftOut, 
   const update = (patch: Partial<Form>) => setForm({ ...form, ...patch });
   const scenario = ready.scenarios.find((s) => s.id === form.scenario);
   const spec = specOf(form, ready);
-  const problem = state.problem && state.problem.id !== HOME_ID && state.problem.code !== "worker" ? state.problem : null;
+  const problem = state.problem && state.problem.id !== HOME_ID ? state.problem : null;
   const running = state.running !== null;
   const fleet = fleetView(form, state.fleet);
-  const invalidPositions = fleet.problems.flatMap((problem) => problem.kind === "unmeasured" ? form.analyzers.map((_, i) => i + 1) : [problem.first.analyzer, problem.second.analyzer]);
-  const seedVerdict = state.seedCheck.verdict?.key === form.seeds ? state.seedCheck.verdict : null;
   const setScenario = (id: string) => setForm(defaultForm(ready, id, form));
   return (
     <>
@@ -155,7 +152,7 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, leftOut, 
         <ProfileList kind="bioreactor" picks={form.bays} profiles={ready.profiles} onPick={(i, profile) => update({ bays: form.bays.map((b, j) => (j === i ? profile : b)) })} />
         <T as="h3" k="setup.analyzers.heading" />
         <T as="p" k="setup.analyzers.lead" parts={{ first: <Label>1</Label> }} />
-        <ProfileList kind="analyzer" invalidPositions={invalidPositions} picks={form.analyzers} profiles={ready.profiles} onPick={(i, profile) => update({ analyzers: form.analyzers.map((a, j) => (j === i ? profile : a)) })} />
+        <ProfileList kind="analyzer" picks={form.analyzers} profiles={ready.profiles} onPick={(i, profile) => update({ analyzers: form.analyzers.map((a, j) => (j === i ? profile : a)) })} />
         <FleetProblems problems={fleet.problems} />
         <T as="p" k="setup.lists.note" />
       </section>
@@ -169,7 +166,7 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, leftOut, 
       </section>
 
       <Capture form={form} update={update} />
-      <Seeds ready={ready} form={form} update={update} reason={seedVerdict?.reason ?? null} />
+      <Seeds ready={ready} form={form} update={update} />
 
       <section id="inputs" aria-labelledby="inputs-heading">
         <T as="h2" k="setup.inputs.heading" id="inputs-heading" />
@@ -182,7 +179,7 @@ export function Setup({ ready, form, setForm, state, link, linkEngine, leftOut, 
         <T as="p" k="setup.run.lead" />
         {problem && <ErrorBlock problem={problem} />}
         {fleet.problems.length > 0 && <T as="p" k="setup.fleet.run" id="run-blocked" class="warn" data-warn="fleet-run" />}
-        <button id="run" type="button" class="primary" disabled={!spec.ok || running || fleet.blocked || seedVerdict === null || seedVerdict.reason !== null} {...(fleet.problems.length > 0 && { "aria-describedby": "run-blocked" })} onClick={() => onRun(form)}>
+        <button id="run" type="button" class="primary" disabled={!spec.ok || running || fleet.blocked} {...(fleet.problems.length > 0 && { "aria-describedby": "run-blocked" })} onClick={() => onRun(form)}>
           <T k={running ? "setup.run.running" : "setup.run.button"} />
         </button>
         {running && <RunStatus progress={state.progress} onCancel={onCancel} />}

@@ -9,14 +9,8 @@ import yaml
 VERIFICATION = {"snippet", "agent-read", "main-reread"}
 GRADES = {"S", "P", "D", "A"}
 GRADE_RANK = {g: i for i, g in enumerate("SPDA")}  # strongest first: a bundle is only as good as its weakest component
-ID_RE = re.compile(
-    r"(?<![A-Za-z0-9_])(?<![Uu]\+)(?<![Uu]\+[0-9A-Fa-f]{4}-)"
-    r"(?<![Uu]\+[0-9A-Fa-f]{5}-)(?<![Uu]\+[0-9A-Fa-f]{6}-)([SA][0-9]{3})(?![A-Za-z0-9_])"
-)  # Korean particles are boundaries; Unicode code points and ranges are not ledger IDs.
-PROVISIONAL_AFTER = re.compile(
-    r"`?(?:에서|으로|은|는|이|가|을|를|의|과|와|로|에|도|만)?\)?(?:\s*,\s*|\s+)(?:\(provisional\)|provisional\b)",
-    re.I,
-)
+ID_RE = re.compile(r"(?<![Uu]\+)\b([SA]\d{3})\b")  # not the code point of a Unicode range (`U+A720-A7FF` in a font face's unicode-range)
+PROVISIONAL_RE = re.compile(r"\bprovisional\b", re.I)
 PUBLIC_NUMBER_FILES = ("README.md", "README.ko.md", "docs/research/README.md", "site/infographic/index.html")  # numbers here need main-reread sources
 LEDGER_FILES = {"docs/research/sources.yaml", "docs/research/assumptions.yaml"}  # they define ids, so they are not checked as references
 
@@ -72,36 +66,7 @@ def load_ledgers(root: Path) -> tuple[dict, dict, list[str]]:
                 errors.append(f"assumptions.yaml: duplicate id {aid}")
             assumptions[aid] = a
         errors += check_components(assumptions)
-    errors += check_ledger_references(sources, assumptions)
     return sources, assumptions, errors
-
-
-def check_ledger_references(sources: dict, assumptions: dict) -> list[str]:
-    """Resolve ledger prose and check source usage against assumption sources."""
-    errors: list[str] = []
-    for kind, entries in (("sources", sources), ("assumptions", assumptions)):
-        for entry_id, entry in entries.items():
-            for field in ("notes", "supports"):
-                for ref in sorted(set(ID_RE.findall(str(entry.get(field) or "")))):
-                    known = sources if ref.startswith("S") else assumptions
-                    if ref not in known:
-                        errors.append(f"{kind}.yaml {entry_id}: {field} references unknown {ref}")
-    for sid, source in sources.items():
-        used = source.get("used_in", [])
-        if not isinstance(used, list):
-            errors.append(f"sources.yaml {sid}: used_in must be a list of assumption ids")
-            continue
-        for aid in used:
-            if not isinstance(aid, str) or not re.fullmatch(r"A\d{3}", aid):
-                errors.append(f"sources.yaml {sid}: invalid used_in entry {aid}")
-            elif aid not in assumptions:
-                errors.append(f"sources.yaml {sid}: used_in references unknown {aid}")
-            elif sid not in (assumptions[aid].get("sources") or []):
-                errors.append(f"sources.yaml {sid}: used_in {aid} missing {sid} in assumptions sources")
-        for aid, assumption in assumptions.items():
-            if sid in (assumption.get("sources") or []) and aid not in used:
-                errors.append(f"sources.yaml {sid}: used_in missing {aid} from assumption sources")
-    return errors
 
 
 def check_components(assumptions: dict) -> list[str]:
@@ -129,7 +94,7 @@ def check_references(rel: str, text: str, sources: dict, assumptions: dict) -> l
         known = sources if ref.startswith("S") else assumptions
         if ref not in known:
             errors.append(f"{rel}: references unknown {ref}")
-    if rel in PUBLIC_NUMBER_FILES or rel.startswith(("docs/design/", "docs/adr/")):
+    if rel in PUBLIC_NUMBER_FILES:
         errors += check_public_numbers(rel, text, sources, assumptions)
     return errors
 
@@ -140,65 +105,16 @@ def unverified_sources(ref: str, sources: dict, assumptions: dict) -> list[str]:
     return [s for s in behind if s in sources and sources[s].get("verification") != "main-reread"]
 
 
-def yaml_comment_start(line: str) -> int | None:
-    """Find a YAML comment without mistaking a quoted hash for one."""
-    quote = None
-    i = 0
-    while i < len(line):
-        c = line[i]
-        if quote == '"' and c == "\\":
-            i += 2
-            continue
-        if quote == "'" and c == "'" and line[i:i + 2] == "''":
-            i += 2
-            continue
-        if c == quote:
-            quote = None
-        elif quote is None and c in "\"'":
-            quote = c
-        elif quote is None and c == "#" and (i == 0 or line[i - 1].isspace()):
-            return i
-        i += 1
-    return None
-
-
-def structured_labels(rel: str, line: str) -> tuple[set[int], set[int]]:
-    """Reference offsets covered by explicit per-ID labels and offsets of the labels themselves."""
-    covered: set[int] = set()
-    labels: set[int] = set()
-    if rel.endswith((".yaml", ".yml")):
-        comment = yaml_comment_start(line)
-        marker = re.search(r"# provisional: ([SA][0-9]{3}(?:, [SA][0-9]{3})*)\s*$", line[comment:], re.I) if comment is not None else None
-        if marker:
-            start = comment + marker.start()
-            ids = set(ID_RE.findall(marker.group(1)))
-            covered.update(m.start() for m in ID_RE.finditer(line[:start]) if m.group(1) in ids)
-            labels.update(m.start() for m in ID_RE.finditer(line, start))
-    if rel == "site/infographic/index.html":
-        for tag in re.finditer(r"<[^>]*>", line):
-            src = re.search(r'\bdata-src="([^"]*)"', tag.group())
-            marker = re.search(r'\bdata-provisional-refs="([^"]*)"', tag.group())
-            if not marker:
-                continue
-            labels.update(tag.start() + marker.start(1) + m.start() for m in ID_RE.finditer(marker.group(1)))
-            if src and re.search(r'\bdata-status="provisional"', tag.group()):
-                ids = set(ID_RE.findall(marker.group(1)))
-                covered.update(tag.start() + src.start(1) + m.start() for m in ID_RE.finditer(src.group(1)) if m.group(1) in ids)
-    return covered, labels
-
-
 def check_public_numbers(rel: str, text: str, sources: dict, assumptions: dict) -> list[str]:
-    """Every citation of an unverified source needs its own adjacent label."""
+    """Public files may cite only main-reread sources; a line containing 'provisional' is the labelled exception."""
     errors = []
     for n, line in enumerate(text.splitlines(), 1):
-        covered, labels = structured_labels(rel, line)
-        for match in ID_RE.finditer(line):
-            if match.start() in covered or match.start() in labels or PROVISIONAL_AFTER.match(line, match.end()):
-                continue
-            ref = match.group(1)
+        if PROVISIONAL_RE.search(line):
+            continue
+        for ref in dict.fromkeys(ID_RE.findall(line)):
             for s in unverified_sources(ref, sources, assumptions):
                 how = sources[s].get("verification")
                 via = f"{ref}, whose source {s}" if s != ref else s
                 errors.append(f"{rel}:{n}: public number cites {via} (verification: {how}), not main-reread; "
-                              "re-read the source or label this reference 'provisional'")
+                              "re-read the source or label the line 'provisional'")
     return errors

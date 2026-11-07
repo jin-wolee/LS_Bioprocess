@@ -11,9 +11,8 @@ import { challengeStart, defaultChallengeForm } from "./challenge_form.ts";
 import type { ChallengeForm } from "./challenge_form.ts";
 import { leftOutOf } from "../plant/action_list.ts";
 import { isCase } from "../plant/spec.ts";
-import { defaultForm, fleetKey, fleetRequest, fromQuery, parseSeeds, runRequest } from "./form.ts";
+import { defaultForm, fleetKey, fleetRequest, fromQuery, runRequest } from "./form.ts";
 import type { Form } from "./form.ts";
-import { ErrorBlock } from "./ErrorBlock.tsx";
 import { Home } from "./Home.tsx";
 import { Lineage } from "./Lineage.tsx";
 import { Mark } from "./Mark.tsx";
@@ -28,7 +27,7 @@ import { SCREENS, hashOf, parseHash } from "./route.ts";
 import type { Route, Screen } from "./route.ts";
 import { Setup } from "./Setup.tsx";
 import { SiteLink } from "./SiteLink.tsx";
-import { HOME_ID, globalProblem, initial, reduce, sendWorker } from "./state.ts";
+import { HOME_ID, initial, reduce } from "./state.ts";
 import { LangContext, T } from "./T.tsx";
 import { useOrigin } from "./useOrigin.ts";
 import { usePlant } from "./usePlant.ts";
@@ -50,21 +49,12 @@ const pageAddress = (): string => {
   }
 };
 
-/** Move focus only on screen navigation; the main landmark is the fallback while a heading loads. */
-export function focusRoute(main: HTMLElement | null): void {
-  if (!main) return;
-  const target = main.querySelector<HTMLElement>("h1") ?? main;
-  target.setAttribute("tabindex", "-1");
-  target.focus();
-}
-
 export function App({ worker }: { worker: Worker }) {
   const [state, dispatch] = useReducer(reduce, initial);
   const [lang, setLang] = useState<Lang>(savedLang);
   const [theme, setTheme] = useState<Theme>("auto");
   const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash));
   const [form, setForm] = useState<Form | null>(null);
-  const previousScreen = useRef(route.screen);
   const [linkEngine, setLinkEngine] = useState<string | null>(null);
   const ids = useRef(HOME_ID + 1);
   const take = (): number => ids.current++;
@@ -77,26 +67,16 @@ export function App({ worker }: { worker: Worker }) {
   const challengeNow = challengeForm ?? (ready ? defaultChallengeForm(ready) : null);
   const breakoutNow = breakoutForm ?? (ready ? defaultBreakoutForm(ready) : null);
 
-  const send = (request: Request): void => sendWorker(worker, dispatch, request);
-
   // a layout effect runs inside the render task, before the Worker's first message can be handled
   useLayoutEffect(() => {
     const onMessage = (event: MessageEvent<Response>) => dispatch(event.data);
     const onError = (event: ErrorEvent) => dispatch({ type: "worker_error", message: event.message || "the Worker raised an error" });
-    const onMessageError = () => dispatch({ type: "worker_error", message: "Worker message could not be read." });
-    worker.addEventListener("messageerror", onMessageError);
     worker.addEventListener("message", onMessage);
     worker.addEventListener("error", onError);
     return () => {
-      worker.removeEventListener("messageerror", onMessageError);
       worker.removeEventListener("message", onMessage);
       worker.removeEventListener("error", onError);
     };
-  }, [worker]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => dispatch({ type: "worker_timeout" }), 20_000);
-    return () => window.clearTimeout(timer);
   }, [worker]);
 
   useEffect(() => {
@@ -106,7 +86,7 @@ export function App({ worker }: { worker: Worker }) {
   }, []);
 
   useEffect(() => {
-    if (ready) send(HOME_REQUEST);
+    if (ready) worker.postMessage(HOME_REQUEST);
   }, [ready !== null, worker]);
 
   // what the page knows of the build, to read a link against
@@ -116,7 +96,7 @@ export function App({ worker }: { worker: Worker }) {
     [ready],
   );
   // the plant: the run the route wants, the rows of a card, the truth overlay (usePlant.ts)
-  const plant = usePlant({ send, state, dispatch, route, known, take });
+  const plant = usePlant({ worker, state, dispatch, route, known, take });
 
   // a screen opened from the plant: the plant it came from (useOrigin), and the first Lineage link asks for its sample
   const { origin, waiting } = useOrigin(
@@ -156,31 +136,8 @@ export function App({ worker }: { worker: Worker }) {
     if (!ready || !form) return;
     const id = take();
     dispatch({ type: "fleet_asked", id, key: fleetKey(form) });
-    send(fleetRequest(form, id) satisfies Request);
+    worker.postMessage(fleetRequest(form, id) satisfies Request);
   }, [ready !== null, pickKey, worker]);
-
-  const seedKey = form?.seeds ?? null;
-  useEffect(() => {
-    const seeds = seedKey === null ? null : parseSeeds(seedKey);
-    if (!ready || seeds === null || seedKey === null) {
-      dispatch({ type: "seed_clear" });
-      return;
-    }
-    const id = take();
-    dispatch({ type: "seed_asked", id, key: seedKey });
-    send({ type: "seed_check", id, seeds });
-  }, [ready !== null, seedKey, worker]);
-
-  useLayoutEffect(() => {
-    document.title = `${text(lang, `nav.${route.screen}`)} - Sample Lineage Lab`;
-  }, [route.screen, lang]);
-
-  useLayoutEffect(() => {
-    if (previousScreen.current !== route.screen) {
-      previousScreen.current = route.screen;
-      focusRoute(document.getElementById("main"));
-    }
-  }, [route.screen]);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -192,21 +149,16 @@ export function App({ worker }: { worker: Worker }) {
     else document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  const updateSetup = (next: Form) => {
-    if (form && next.seeds !== form.seeds) dispatch({ type: "seed_edited" });
-    setForm(next);
-  };
-
   const run = (f: Form) => {
     const id = take();
     const request = ready ? runRequest(f, ready, id) : null;
     if (!request) return;
     dispatch({ type: "run_started", id });
-    send(request satisfies Request);
+    worker.postMessage(request satisfies Request);
     window.location.hash = hashOf("results");
   };
   const cancel = () => {
-    if (state.running !== null) send({ type: "cancel", id: state.running } satisfies Request);
+    if (state.running !== null) worker.postMessage({ type: "cancel", id: state.running } satisfies Request);
   };
   // A3 (lab_ui.md section 26): the card on Home asks for its run when the reader presses its button, and nowhere else (no effect names it). The page stays where it is; the run has its own state.
   const runOneFlag = () => {
@@ -214,11 +166,11 @@ export function App({ worker }: { worker: Worker }) {
     const request = ready ? oneFlagRequest(ready, id) : null;
     if (!request) return;
     dispatch({ type: "one_flag_started", id });
-    send(request satisfies Request);
+    worker.postMessage(request satisfies Request);
   };
   const cancelOneFlag = () => {
     const request = oneFlagCancel(state.oneFlag);
-    if (request) send(request satisfies Request);
+    if (request) worker.postMessage(request satisfies Request);
   };
 
   const showLineage = (f: LineageForm) => {
@@ -226,47 +178,45 @@ export function App({ worker }: { worker: Worker }) {
     const request = lineageRequest(f, id);
     if (request?.type !== "lineage") return;
     dispatch({ type: "lineage_started", id, asked: { scenario: request.spec.scenario, seed: request.seed, architectures: request.spec.architectures } });
-    send(request);
+    worker.postMessage(request);
   };
   const runBreakout = (f: BreakoutForm) => {
     const id = take();
     const request = ready ? breakoutRequest(f, ready, id) : null;
     if (request?.type !== "breakout") return;
     dispatch({ type: "breakout_started", id, asked: { case: request.case, seed: request.seed, architectures: request.architectures } });
-    send(request);
+    worker.postMessage(request);
   };
   const startChallenge = (f: ChallengeForm) => {
     const id = take();
     const request = ready ? challengeStart(f, ready, id) : null;
     if (request?.type !== "challenge_start") return;
     dispatch({ type: "challenge_starting", id, meta: { variant: f.variant, scenario: f.scenario, seed: request.seed, shown: f.shown } });
-    send(request);
+    worker.postMessage(request);
   };
   const active = state.challenge.active;
   const openSample = (sample_id: string) => {
     if (!active) return;
     const id = take();
     dispatch({ type: "challenge_busy", busy: { id, kind: "open", sample_id } });
-    send({ type: "challenge_open", id, challenge: active.challenge, sample_id } satisfies Request);
+    worker.postMessage({ type: "challenge_open", id, challenge: active.challenge, sample_id } satisfies Request);
   };
   const guess = (target: { sample_id: string } | { decision_id: string }) => {
     if (!active) return;
     const id = take();
     dispatch({ type: "challenge_busy", busy: { id, kind: "guess" } });
-    send({ type: "challenge_guess", id, challenge: active.challenge, target } satisfies Request);
+    worker.postMessage({ type: "challenge_guess", id, challenge: active.challenge, target } satisfies Request);
   };
   const giveUp = () => {
     if (!active) return;
     const id = take();
     dispatch({ type: "challenge_busy", busy: { id, kind: "giveup" } });
-    send({ type: "challenge_giveup", id, challenge: active.challenge } satisfies Request);
+    worker.postMessage({ type: "challenge_giveup", id, challenge: active.challenge } satisfies Request);
   };
 
   const other: Lang = lang === "en" ? "ko" : "en";
-  const sharedProblem = globalProblem(state, route.screen);
   return (
     <LangContext.Provider value={lang}>
-      <a href="#main" onClick={(event) => { event.preventDefault(); document.getElementById("main")?.focus(); }}><T k="app.skip" /></a>
       <header class="top">
         <div class="logo">
           <Mark />
@@ -294,9 +244,7 @@ export function App({ worker }: { worker: Worker }) {
           </label>
         </div>
       </header>
-      <main id="main" tabIndex={-1} data-ready={ready ? "true" : "false"} data-screen={route.screen} {...(ready && { "data-flags": ready.flags.join(",") })}>
-        {sharedProblem && <ErrorBlock problem={sharedProblem} />}
-        <div id="run-completion" role="status" aria-live="polite">{state.running === null && state.results && <T k="setup.run.complete" />}</div>
+      <main id="main" data-ready={ready ? "true" : "false"} data-screen={route.screen} {...(ready && { "data-flags": ready.flags.join(",") })}>
         {route.screen === "home" && <Home state={state} onRunOneFlag={runOneFlag} onCancelOneFlag={cancelOneFlag} />}
         {origin && ready && <PlantOrigin origin={origin} plant={state.plant} engine={ready.engine_version} screen={route.screen} />}
         {route.screen === "plant" &&
@@ -322,7 +270,7 @@ export function App({ worker }: { worker: Worker }) {
           ))}
         {route.screen === "setup" &&
           (ready && form ? (
-            <Setup ready={ready} form={form} setForm={updateSetup} state={state} link={pageAddress()} linkEngine={linkEngine} leftOut={origin ? leftOutOf(origin.link.spec.actions) : []} onRun={run} onCancel={cancel} />
+            <Setup ready={ready} form={form} setForm={setForm} state={state} link={pageAddress()} linkEngine={linkEngine} leftOut={origin ? leftOutOf(origin.link.spec.actions) : []} onRun={run} onCancel={cancel} />
           ) : (
             <T as="p" k="app.loading" />
           ))}
@@ -341,7 +289,6 @@ export function App({ worker }: { worker: Worker }) {
       </main>
       <footer class="foot">
         <T as="p" k="app.footer" />
-        <p><a href="https://github.com/jin-wolee/LS_Bioprocess"><T k="app.source" /></a></p>
       </footer>
     </LangContext.Provider>
   );

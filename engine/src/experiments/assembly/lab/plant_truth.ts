@@ -109,8 +109,7 @@ const sampleOf = (kept: PlantKept, sample_id: string): Extract<TruthOverlay, { k
  */
 export const answerPlantTruth = (kept: PlantKept, challenges: Challenges, pick: TruthPick): PlantTruthResult => {
   // a break-out case has no run spec: no challenge can be opened on it
-  // audit R1, S-01: the lock asks the run its spec writes without the actions and the truth log the actions made (`kept.events`)
-  if (kept.run !== null && (challenges.locked(kept.run, kept.seed) || challenges.lockedTruth(kept.events))) {
+  if (kept.run !== null && challenges.locked(kept.run, kept.seed)) {
     return { ok: false, code: "locked", message: "this run is a challenge that has not been revealed; the simulation's view of it opens after the guess or the give-up" };
   }
   if ("breakout" in pick) {

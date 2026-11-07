@@ -42,7 +42,7 @@ def assert_reports_notes(out: str) -> None:
 @pytest.mark.parametrize("flags", [("--all",), ("--all", "--ci")])
 def test_all_reports_file_line_and_item_but_not_the_term(listed, flags):
     listed.write("notes.md", NOTES)
-    r = listed.check(*flags, env={"GUARDRAIL_TERMS": LIST} if "--ci" in flags else None)
+    r = listed.check(*flags)
     assert r.returncode == 1
     assert_reports_notes(r.stdout)
     assert_no_term(r.stdout, r.stderr)
@@ -55,11 +55,7 @@ def test_all_numbers_the_items_of_the_secret_the_same_way(listed, flags):
     listed.write("notes.md", NOTES)
     r = listed.check(*flags, env={"GUARDRAIL_TERMS": LIST})
     assert r.returncode == 1
-    if "--ci" in flags:
-        assert_reports_notes(r.stdout)
-    else:
-        assert "no banned-token list" in r.stderr
-        assert not r.stdout  # a local check cannot silently substitute a CI secret for its file
+    assert_reports_notes(r.stdout)
     assert_no_term(r.stdout, r.stderr)
 
 

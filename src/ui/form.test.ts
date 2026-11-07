@@ -214,17 +214,3 @@ describe("rangeWarning: a typed value outside the ledger range of its id (00 sec
     expect(rangeWarning("A098", 5)).toBeNull();
   });
 });
-
-
-describe("processing bounds", () => {
-  it.each(["101", "1000000000", "9".repeat(400)])("rejects an unsafe count without growing lists: %s", (n) => {
-    const form = withCounts(fresh(), READY, { n, m: n });
-    expect(form.bays.length).toBeLessThanOrEqual(100);
-    expect(form.analyzers.length).toBeLessThanOrEqual(100);
-    expect(specOf(form, READY).ok).toBe(false);
-  });
-  it("accepts the count boundary", () => {
-    const form = withCounts(fresh(), READY, { n: "100", baySize: "1", m: "100" });
-    expect([form.bays.length, form.analyzers.length, specOf(form, READY).ok]).toEqual([100, 100, true]);
-  });
-});

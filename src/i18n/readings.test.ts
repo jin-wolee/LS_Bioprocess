@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { en } from "./en.ts";
-import { enBreakout } from "./en_breakout.ts";
 import { ko } from "./ko.ts";
 
 // A2 (docs/design/lab_ui.md section 23; the audit of 2026-11-02, findings F8, F9 and F13 and the reading of the comparison; the author's decisions of the same day): the texts of the lab say what the
@@ -63,10 +62,9 @@ describe("the lab says what the audit trail, the labels and the Break-out screen
   });
 
   it("Given the Break-out screen Then a hold is a state of the record, containment is the effect of tracking and holding, and a confirming test is coverage and no sensitivity", () => {
-    expect(en["notes.breakout.hold"]).toMatch(/hold is a state of the record/);
-    expect(enBreakout["breakout.reading"]).toMatch(/hold is a state of the record/);
+    for (const key of ["notes.breakout.hold", "breakout.reading"] as const) expect(en[key], key).toMatch(/hold is a state of the record/);
     expect(en["notes.breakout.hold"]).toMatch(/effect of tracking and holding on the record, not of a control of the culture or of how a contamination spreads/);
-    expect(enBreakout["breakout.reading"]).toMatch(/confirming test is judged by coverage, not by a sensitivity/);
+    expect(en["breakout.reading"]).toMatch(/confirming test is judged by coverage, not by a sensitivity/);
     expect(en["notes.breakout.tests"]).toMatch(/judged by coverage, not by a sensitivity/);
   });
 

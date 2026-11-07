@@ -6,7 +6,7 @@ import { Label, T } from "../ui/T.tsx";
 // The text at the head of the plant route (docs/design/plant_ui.md section 9): the heading, the lead, the status line and, without WebGL, the notice. It is part of the first load.
 
 /** What the scene is doing: not asked for, being fetched, drawn, or failed with the message of the error. */
-export type SceneStatus = { kind: "none" | "loading" | "ready" } | { kind: "failed"; message: string; messageKey?: "plant.status.scene.lost" };
+export type SceneStatus = { kind: "none" | "loading" | "ready" } | { kind: "failed"; message: string };
 
 export function Intro({ webgl, planned, breakout, scenario, problem, scene, state, renderer }: {
   webgl: boolean;
@@ -36,13 +36,12 @@ export function Intro({ webgl, planned, breakout, scenario, problem, scene, stat
           <>
             <T k="plant.status.scene.failed" />{" "}
             <code>
-              {scene.messageKey ? <T k={scene.messageKey} /> : <Label engine>{scene.message}</Label>}
+              <Label engine>{scene.message}</Label>
             </code>
           </>
         )}{" "}
         {renderer && <T k="plant.status.renderer" parts={{ renderer: <Label engine>{renderer}</Label> }} />}
       </p>
-      {scene.kind === "failed" && <button id="plant-reload" type="button" onClick={() => window.location.reload()}><T k="plant.status.scene.reload" /></button>}
       {!webgl && (
         <div class="notice" role="note" data-plant-fallback>
           <T as="h2" k="plant.nowebgl.heading" />

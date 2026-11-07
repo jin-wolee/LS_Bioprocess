@@ -20,9 +20,9 @@ GIF_WIDTH = 960
 GIFS = {"tour.gif": {"seconds": (15.0, 25.0), "max_bytes": 6 * MB}, "action.gif": {"seconds": (6.0, 10.0), "max_bytes": 3 * MB}}
 SHOT_MAX_BYTES = 400 * KB
 TOTAL_MAX_BYTES = 12 * MB
-# The same static screens in English and Korean, for their respective READMEs.
+# The screenshots, English for README.md; the Korean ones (`_ko`) are the plant, the table of the tour and the Lineage view, for README.ko.md.
 SHOTS_EN = ["plant_en.png", "tour_table_en.png", "lineage_en.png", "results_en.png", "breakout_en.png"]
-SHOTS_KO = ["plant_ko.png", "tour_table_ko.png", "lineage_ko.png", "results_ko.png", "breakout_ko.png"]
+SHOTS_KO = ["plant_ko.png", "tour_table_ko.png", "lineage_ko.png"]
 SHOT_SIZE = (1280, 720)
 
 FPS = 10

@@ -15,8 +15,12 @@ export type DrawnType = (typeof DRAWN_TYPES)[number];
 /** The types that can have no ledger rate: a drawn type other than the label error, and the clock error (A049 gives an example offset, no frequency). */
 export type NotModelled = Exclude<DrawnType, "label_error"> | "clock_offset";
 
-// Instrument effects (A032) and technique errors (A064) belong to truth-side measurement.
-// Late corrections have no layer-off opportunity: the historian late list is empty before raw capture.
+/** Matrix rows that are not injected, with the reason: the effect sits in the truth world or has no source in the layer-off stream. */
+export const NOT_INJECTED = {
+  instrument_effect: "truth-side: the bias of an instrument is part of the L3 measurement (A032); the injector has nothing to materialise",
+  late_correction: "no late correction exists in the layer-off observable stream (the historian late list is empty until the raw layer); no ledger rate",
+  technique_error: "truth-side: a technique error changes the sample itself (A064), so it belongs to the truth world and experiment 2",
+} as const;
 
 export interface Opportunity {
   type: DrawnType;

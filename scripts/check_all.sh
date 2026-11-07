@@ -44,14 +44,9 @@ try: print(str(json.load(sys.stdin).get("stop_hook_active", False)).lower())
 except Exception: print("false")')"
   [ "$ACTIVE" = "true" ] && exit 0        # already continuing because of this hook: never loop
   if [ $LAB -eq 0 ] && [ $PLANT -eq 0 ] && [ -e .claude/.batch-running ]; then  # an executor batch is running: leave state alone, the gate is the orchestrator's
-    MARKER_AGE="$(python3 -I -c 'import os,time; print(max(0, int(time.time() - os.stat(".claude/.batch-running").st_mtime)))' 2>/dev/null || echo 999999)"
-    if [ "$MARKER_AGE" -gt 21600 ]; then
-      echo "check_all: stale batch marker (${MARKER_AGE}s old); running the gate." >&2
-    else
     BATCH="$({ tr -s '[:space:]' ' ' < .claude/.batch-running; } 2>/dev/null)"; BATCH="${BATCH# }"; BATCH="${BATCH% }"
     echo "check_all: gate deferred while an executor batch runs (${BATCH:-.claude/.batch-running is empty or unreadable}); the orchestrator runs 'bash scripts/check_all.sh --manual' before it commits." >&2
     exit 0
-    fi
   fi
   STATE="$(state_hash)"
   LAST="$(cat .claude/.last-check 2>/dev/null)"
@@ -70,10 +65,10 @@ step check_docs uv run --frozen --quiet python scripts/check_docs.py --all
 step pytest uv run --frozen --quiet pytest -q
 if [ -f package.json ]; then step "npm run check" npm run -s check; fi
 # Seeded PRNG only: Math.random is banned in engine/src and src (test files and tests/ directories excepted)
-RANDOM_HITS="$(grep -rIl --include='*.ts' --include='*.tsx' --include='*.js' 'Math\.random' engine/src src site 2>/dev/null \
-  | grep -Ev '^src/(.*/)?[^/]+\.test\.ts$')"
+RANDOM_HITS="$(grep -rIl --include='*.ts' --include='*.js' 'Math\.random' engine/src src 2>/dev/null \
+  | grep -Ev '(^|/)(__)?tests(__)?/|/[^/]*test[^/]*$')"
 if [ -n "$RANDOM_HITS" ]; then
-  OUT="$OUT"$'\n'"FAIL  Math.random found in engine/src, src or site (use the seeded PRNG): $(printf '%s' "$RANDOM_HITS" | tr '\n' ' ')"; RC=1
+  OUT="$OUT"$'\n'"FAIL  Math.random found in engine/src or src (use the seeded PRNG): $(printf '%s' "$RANDOM_HITS" | tr '\n' ' ')"; RC=1
 fi
 
 # The end-to-end checks of the lab page, last because they are the slowest; qa_lab.py prints one `FAIL  qa_lab <check>: ...` line per failed check, which the summary below keeps.

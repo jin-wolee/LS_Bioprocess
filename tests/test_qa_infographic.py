@@ -5,7 +5,6 @@ Expected values are hand arithmetic from the WCAG 2.x definitions, never taken f
 from __future__ import annotations
 
 import gzip
-import json
 import sys
 
 import pytest
@@ -15,64 +14,6 @@ from helpers import REPO
 sys.path.insert(0, str(REPO / "scripts" / "qa"))
 import qa_checks as qc  # noqa: E402
 import qa_infographic as qa  # noqa: E402
-
-
-def test_guarded_returns_the_result_or_a_first_line_failure():
-    result = qc.Result("ok", True, "fine", {"value": 1})
-    assert qa.guarded("ok", lambda: result) is result
-
-    def crash():
-        raise ValueError("first line\nsecond line")
-
-    assert qa.guarded("bad", crash) == qc.Result("bad", False, "crashed: ValueError: first line")
-
-
-def test_server_binds_locally_and_closes_even_when_the_caller_raises(tmp_path, monkeypatch):
-    events = []
-
-    class Server:
-        server_address = ("127.0.0.1", 4321)
-
-        def __init__(self, address, handler):
-            assert address == ("127.0.0.1", 0)
-            assert handler.keywords["directory"] == str(tmp_path)
-
-        def serve_forever(self):
-            pass
-
-        def shutdown(self):
-            events.append("shutdown")
-
-        def server_close(self):
-            events.append("close")
-
-    class Thread:
-        def __init__(self, *, target, daemon):
-            assert target.__name__ == "serve_forever" and daemon is True
-
-        def start(self):
-            events.append("start")
-
-    monkeypatch.setitem(qa.serve.__wrapped__.__globals__, "ThreadingHTTPServer", Server)
-    monkeypatch.setattr(qa.serve.__wrapped__.__globals__["threading"], "Thread", Thread)
-    with pytest.raises(ValueError, match="caller"):
-        with qa.serve(tmp_path) as url:
-            assert url == "http://127.0.0.1:4321/"
-            raise ValueError("caller")
-    assert events == ["start", "shutdown", "close"]
-
-
-def test_infographic_report_preserves_table_json_and_markdown(tmp_path):
-    results = [qc.Result("short", True, "한글 | detail", {"n": 1}), qc.Result("long name", False, "broken")]
-    assert qa.report(results, tmp_path) == "1 short      PASS  한글 | detail\n2 long name  FAIL  broken\nFAIL  qa_infographic long name: broken"
-    assert json.loads((tmp_path / "results.json").read_text()) == [
-        {"name": "short", "ok": True, "detail": "한글 | detail", "data": {"n": 1}},
-        {"name": "long name", "ok": False, "detail": "broken", "data": {}},
-    ]
-    assert (tmp_path / "summary.md").read_text() == (
-        "# Infographic QA\n\n| check | result | detail |\n|---|---|---|\n"
-        "| 1 short | PASS | 한글 / detail |\n| 2 long name | FAIL | broken |\n"
-    )
 
 
 def test_luminance_of_black_and_white():

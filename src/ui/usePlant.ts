@@ -24,7 +24,7 @@ export interface PlantWiring {
 }
 
 export function usePlant(
-  { send, state, dispatch, route, known, take }: { send: (request: Request) => void; state: State; dispatch: (action: Action) => void; route: Route; known: Known | null; take: () => number },
+  { worker, state, dispatch, route, known, take }: { worker: Worker; state: State; dispatch: (action: Action) => void; route: Route; known: Known | null; take: () => number },
 ): PlantWiring {
   const epochs = useRef(0);
   const ready = state.ready;
@@ -39,7 +39,7 @@ export function usePlant(
     const id = take();
     const epoch = ++epochs.current;
     dispatch({ type: "plant_started", id, epoch, spec });
-    send({ type: "plant_run", id, epoch, spec } satisfies Request);
+    worker.postMessage({ type: "plant_run", id, epoch, spec } satisfies Request);
   }, [route.screen, route.query, ready !== null]);
 
   // a card of a record hall is opened: the Worker reads the rows of one sample from the run it keeps for the epoch of the plan on screen (plant_ui.md section 6); the sample panel asks the same for its
@@ -49,7 +49,7 @@ export function usePlant(
     if (epoch === undefined) return;
     const id = take();
     dispatch({ type: "plant_record_started", id, epoch, architecture, sample_id, ...(role && { role }) });
-    send({ type: "plant_record", id, epoch, architecture, sample_id } satisfies Request);
+    worker.postMessage({ type: "plant_record", id, epoch, architecture, sample_id } satisfies Request);
   };
 
   // the truth overlay (plant_ui.md section 3.3): nothing is asked of the Worker before the switch is on. Then, under the epoch of the plan on screen, the placeholders of the halls built so far (asked
@@ -59,7 +59,7 @@ export function usePlant(
   const askTruth = (epoch: number, pick: { halls: true } | { sample_id: string } | { breakout: true }): void => {
     const id = take();
     dispatch({ type: "plant_truth_started", id, epoch, pick });
-    send({ type: "plant_truth", id, epoch, pick } satisfies Request);
+    worker.postMessage({ type: "plant_truth", id, epoch, pick } satisfies Request);
   };
   useEffect(() => {
     if (state.plant.truth.on && plantEpoch !== undefined) askTruth(plantEpoch, { halls: true });
@@ -80,7 +80,7 @@ export function usePlant(
     const id = take();
     const epoch = ++epochs.current;
     dispatch({ type: "plant_acted", id, epoch, spec, play });
-    send({ type: "plant_run", id, epoch, spec } satisfies Request);
+    worker.postMessage({ type: "plant_run", id, epoch, spec } satisfies Request);
   };
 
   return {

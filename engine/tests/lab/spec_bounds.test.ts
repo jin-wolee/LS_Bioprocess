@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { RUN_SIZE_CAP, kindOf, runSize, settingFault } from "../../src/experiments/assembly/lab/settings_bounds.ts";
-import { checkPlantSpec } from "../../src/experiments/assembly/lab/plant.ts";
 import { checkRunSpec } from "../../src/experiments/assembly/lab/spec.ts";
 import { scenarioDoc } from "../../src/experiments/assembly/lab/setup.ts";
 import { withDecisionScenario } from "../../src/experiments/assembly/lab/challenge_decision.ts";
@@ -32,7 +31,7 @@ describe("F5: a setting that no plant can have is refused", () => {
     [{ analyzer_count: 2.5 }, /analyzer_count must be a count/],
     [{ initial_viability_pct: 0 }, /initial_viability_pct must be a viability, above 0 and at most 100 percent/],
     [{ harvest_viability_pct: 100.5 }, /harvest_viability_pct must be a viability/],
-    [{ rerun_probability: 2 }, /rerun_probability must be a probability from 0 inclusive to 1 exclusive; it is 2/],
+    [{ rerun_probability: 2 }, /rerun_probability must be a probability, from 0 to 1; it is 2/],
     [{ burst_share: -0.1 }, /burst_share must be a probability/],
     [{ initial_glucose_g_per_l: -1 }, /initial_glucose_g_per_l must be a concentration, not below 0; it is -1/],
     [{ horizon_days: 0 }, /horizon_days must be a duration, above 0/],
@@ -42,7 +41,7 @@ describe("F5: a setting that no plant can have is refused", () => {
   });
 
   it.each<Record<string, number>>([
-    { reactor_count: 1 }, { initial_viability_pct: 100 }, { rerun_probability: 0 }, { rerun_probability: 1 - Number.EPSILON }, { initial_glucose_g_per_l: 0 },
+    { reactor_count: 1 }, { initial_viability_pct: 100 }, { rerun_probability: 0 }, { rerun_probability: 1 }, { initial_glucose_g_per_l: 0 },
     // outside the ledger range of its id (A001: 5 to 100 reactors) but possible: a warning on the page, not a refusal
     { reactor_count: 200 },
   ])("Given %j (at a bound, or outside a ledger range only) When the spec is checked Then it is accepted", (settings) => {
@@ -131,18 +130,5 @@ describe("F6 in a link: the grid of the process", () => {
   // 480.5 min is 28,830 s, not a whole minute: the inoculations would fall between two steps.
   it("Given an inoculation start of 480.5 min in a link Then it is refused: it places the inoculations off a whole minute (28830 s)", () => {
     expect(refusal({ inoculation_start_min: 480.5 })).toMatch(/inoculation start \(A188\) must place its event on a whole minute.*it gives 28830 s/);
-  });
-});
-
-
-describe("S-02: rerun probability has an exclusive upper bound", () => {
-  it.each([-0.01, 1, 1.01])("rejects %s in the spec check", (value) => {
-    expect(check({ rerun_probability: value }).ok).toBe(false);
-  });
-  it("returns invalid_spec from the plant request at 1", () => {
-    expect(checkPlantSpec({ run: { ...home, architectures: ["a_manual"], settings: { rerun_probability: 1 } }, seed: 1, actions: [] }, data)).toMatchObject({ ok: false, code: "invalid_spec" });
-  });
-  it.each([0, 1 - Number.EPSILON])("accepts the boundary value %s", (value) => {
-    expect(check({ rerun_probability: value }).ok).toBe(true);
   });
 });

@@ -65,32 +65,12 @@ export function useScene({ host, webgl, plan, layout, playback, halls, lens, pic
   handlersRef.current = handlers;
   const flagsRef = useRef(flags);
   flagsRef.current = flags;
-  const langRef = useRef(lang);
-  langRef.current = lang;
-
-  // Measure the space above the plant, including wrapped navigation and other header content.
-  useEffect(() => {
-    const wrap = host.current?.parentElement;
-    const header = document.querySelector(".top");
-    if (!webgl || !wrap || !header) return;
-    const measure = (): void => wrap.style.setProperty("--plant-top-space", `${Math.max(0, wrap.getBoundingClientRect().top + window.scrollY)}px`);
-    const observer = new ResizeObserver(measure);
-    observer.observe(header);
-    window.addEventListener("resize", measure);
-    measure();
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-      wrap.style.removeProperty("--plant-top-space");
-    };
-  }, [webgl, host]);
 
   useEffect(() => {
     const target = host.current;
     if (!webgl || !plan || !layout || !target || !playback) return;
     let live = true;
     let made: Scene | null = null;
-    let stopContext = (): void => {};
     setScene({ kind: "loading" });
     handlersRef.current.reset();
     loadScene()
@@ -104,21 +84,6 @@ export function useScene({ host, webgl, plan, layout, playback, halls, lens, pic
           onPickCell: (hall, flag) => handlersRef.current.cell(hall, flag),
           onFollowEnd: () => handlersRef.current.followEnd(),
         });
-        const canvas = target.querySelector("canvas.plant-canvas");
-        if (canvas) {
-          const lost = (event: Event): void => {
-            event.preventDefault();
-            playback.pause();
-            setScene({ kind: "failed", message: text(langRef.current, "plant.status.scene.lost"), messageKey: "plant.status.scene.lost" });
-          };
-          const restored = (): void => setScene({ kind: "ready" });
-          canvas.addEventListener("webglcontextlost", lost);
-          canvas.addEventListener("webglcontextrestored", restored);
-          stopContext = () => {
-            canvas.removeEventListener("webglcontextlost", lost);
-            canvas.removeEventListener("webglcontextrestored", restored);
-          };
-        }
         mounted.current = made;
         setRenderer(made.renderer);
         setScene({ kind: "ready" });
@@ -128,7 +93,6 @@ export function useScene({ host, webgl, plan, layout, playback, halls, lens, pic
       });
     return () => {
       live = false;
-      stopContext();
       made?.dispose();
       mounted.current = null;
     };

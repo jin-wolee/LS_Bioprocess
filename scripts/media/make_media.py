@@ -4,14 +4,14 @@
     uv run python scripts/media/make_media.py [--out docs/media] [--no-build] [--only tour,action,shots,hero] [--keep-video DIR] [--timeline] [--hero-out site/infographic/media]
 
 The media are the lab's own pictures of its synthetic run: the default scenario and the scenario of the guided scene, fixed seeds and fixed instants, the light theme, English for README.md and Korean
-for the screenshots intended for README.ko.md. The script builds the lab as a local build (`VITE_LAB_LOCAL=1 npm run build:lab`, the build the plant QA serves: the plant of a Break-out
+for the plant, the table of the tour and Lineage in README.ko.md. The script builds the lab as a local build (`VITE_LAB_LOCAL=1 npm run build:lab`, the build the plant QA serves: the plant of a Break-out
 case is in it and not in the public build) unless --no-build, serves `dist/lab` on a free localhost port and drives headless Chromium with software WebGL through Python Playwright under uv; every browser
 is closed. The GIFs are the recordings of Playwright turned into GIF by ffmpeg (`palettegen` and `paletteuse`, scripts/media/media_files.py); ffmpeg must be on the PATH, and the script says
 so and stops if it is not. At the end it checks every file against the limits of the brief (media_files.py) and exits 1 on a file over its limit.
 
     tour.gif            the guided scene from the entry of the plant through its five steps
     action.gif          one operator action: a feed added from the bar, the run recomputed, the clock playing again, the list showing it
-    *_en.png, *_ko.png  the plant, the card table of the tour, Lineage, Results and the plant of a Break-out case (both languages)
+    *_en.png, *_ko.png  the plant, the card table of the tour, Lineage (both languages), Results and the plant of a Break-out case (English)
     plant.jpg           the hero picture of the explainer (P10): the scene of plant_en.png as one JPEG of at most 100 KB, written to --hero-out (site/infographic/media/), not to docs/media/;
                         scripts/assemble_site.py copies it to the site's media/. `--only hero` makes it alone and leaves docs/media/ as it is
 
@@ -20,6 +20,8 @@ The script states no simulation result: a picture shows what the lab computed in
 from __future__ import annotations
 
 import argparse
+import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -32,7 +34,7 @@ from media_clips import record_action, record_tour  # noqa: E402
 from media_files import HERO_NAME, SHOTS_EN, SHOTS_KO, hero_problems, inspect, kept_seconds, render_gif, render_jpeg, require_ffmpeg, size_problems  # noqa: E402
 from media_shots import breakout_shot, lineage_shot, plant_shot, results_shot, tour_table_shot  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
-from qa_build import build_local_lab, serve  # noqa: E402
+from qa_infographic import serve  # noqa: E402
 from qa_plant_helpers import SOFTWARE_GL  # noqa: E402
 
 PARTS = ("tour", "action", "shots", "hero")
@@ -40,7 +42,7 @@ PARTS = ("tour", "action", "shots", "hero")
 
 def build() -> int:
     """The local build of the lab, as the plant QA makes it."""
-    return build_local_lab()
+    return subprocess.run(["npm", "run", "build:lab"], cwd=REPO, env={**os.environ, "VITE_LAB_LOCAL": "1"}).returncode
 
 
 def make_gif(recorder, browser, url: str, out: Path, name: str, work: Path, keep: Path | None, timeline: bool) -> None:
@@ -59,8 +61,8 @@ def make_shots(browser, url: str, out: Path) -> None:
         plant_shot(browser, url, out / f"plant_{lang}.png", lang)
         tour_table_shot(browser, url, out / f"tour_table_{lang}.png", lang)
         lineage_shot(browser, url, out / f"lineage_{lang}.png", lang)
-        results_shot(browser, url, out / f"results_{lang}.png", lang)
-        breakout_shot(browser, url, out / f"breakout_{lang}.png", lang)
+    results_shot(browser, url, out / "results_en.png")
+    breakout_shot(browser, url, out / "breakout_en.png")
 
 
 def make_hero(browser, url: str, out: Path, work: Path) -> None:

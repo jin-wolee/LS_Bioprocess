@@ -11,13 +11,11 @@ import type { Playback } from "./playback.ts";
  */
 export function useOpening(playback: Playback | null, start: number | null, play: boolean | null, drawn: boolean, reduced: boolean, lens: string, onLeave: (t: number, lens: string) => void): void {
   const held = useRef(false);
-  const opened = useRef(false);
   const latest = useRef({ playback, lens, onLeave });
   latest.current = { playback, lens, onLeave };
 
   useEffect(() => {
     held.current = false;
-    opened.current = false;
     if (playback && start !== null) {
       playback.seek(start);
       held.current = true;
@@ -25,8 +23,7 @@ export function useOpening(playback: Playback | null, start: number | null, play
   }, [playback]);
 
   useEffect(() => {
-    if (!drawn || !playback || opened.current) return;
-    opened.current = true;
+    if (!drawn || !playback) return;
     if (play !== null) {
       if (play) playback.play();
       return;

@@ -1,4 +1,3 @@
-import type { Event } from "../../../generated/event.schema";
 import { checkSeeds } from "../config.ts";
 import { evaluationRefs } from "./catalogue.ts";
 import type { RefValue } from "./catalogue.ts";
@@ -13,7 +12,7 @@ import { scenarioDoc } from "./setup.ts";
 import type { LabData } from "./setup.ts";
 import { checkRunSpec } from "./spec.ts";
 import type { RunSpec } from "./spec.ts";
-import { truthKey, truthKeyOf } from "./truth_key.ts";
+import { truthKey } from "./truth_key.ts";
 
 /** How many truth keys the Worker keeps: a bound of its memory, not a domain number. */
 const KEYS_KEPT = 16;
@@ -90,26 +89,6 @@ export const createChallenges = (data: LabData) => {
     return [...open.values()].some((c) => c.key === key);
   };
 
-  // the key of a truth log held as an array, by identity: the overlay of a kept plan asks the same log again for every sample picked
-  const logKeys = new WeakMap<readonly Event[], string>();
-
-  /** Whether an unrevealed challenge is open: a caller that must make a truth run to ask `lockedTruth` makes it only then. */
-  const anyOpen = (): boolean => open.size > 0;
-
-  /**
-   * Whether a truth log, the events of a run with its operator actions applied, is the truth of an unrevealed challenge's run (rule 2; audit R1, S-01). `locked` asks the run its spec writes with the
-   * actions stripped; this asks the run the actions make, because a spec that is not the challenge's can write its truth out (the default scenario with the maintenance window of SC5).
-   */
-  const lockedTruth = (events: readonly Event[]): boolean => {
-    if (open.size === 0) return false;
-    let key = logKeys.get(events);
-    if (key === undefined) {
-      key = truthKeyOf(events);
-      logKeys.set(events, key);
-    }
-    return [...open.values()].some((c) => c.key === key);
-  };
-
   const start = (raw: { variant: unknown; spec: unknown; seed: unknown; shown: unknown }, onProgress?: (done: number, total: number) => void): ChallengeStarted | Refusal => {
     const { variant, shown } = raw;
     const sample = variant === "sample";
@@ -166,7 +145,7 @@ export const createChallenges = (data: LabData) => {
     return reveal;
   };
 
-  return { locked, lockedTruth, anyOpen, keyOf, start, drillDown, finish };
+  return { locked, keyOf, start, drillDown, finish };
 };
 
 export type Challenges = ReturnType<typeof createChallenges>;

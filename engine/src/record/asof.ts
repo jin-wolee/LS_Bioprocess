@@ -65,7 +65,6 @@ export interface ProcessContext {
  * The late rows of a dataset by tag, in time order (S2e2: a parsed controller log has about fifty thousand rows, so a read must not scan them). The index is rebuilt when the list
  * grew, and it is keyed by the list itself, so a dataset that is copied with another list gets its own.
  */
-// Dataset row arrays are append-only. Replace the array when changing existing rows; indexes key on identity and length.
 const lateIndexes = new WeakMap<readonly HistorianRow[], { n: number; byTag: Map<string, HistorianRow[]> }>();
 const lateByTag = (late: readonly HistorianRow[]): Map<string, HistorianRow[]> => {
   const cached = lateIndexes.get(late);

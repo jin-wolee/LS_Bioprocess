@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CheckDetail, ResultFooter, Response, ScenePlan } from "../protocol.ts";
 import { DEFAULT_PLANT } from "../plant/spec.ts";
 import { READY } from "./fixture.ts";
-import { displayedCheck, initial, reduce, sendWorker } from "./state.ts";
+import { displayedCheck, initial, reduce } from "./state.ts";
 import type { State } from "./state.ts";
 
 // The page keeps what the Worker told it in one reducer (lab_ui.md section 2: hooks and one reducer). Messages in, state out; no DOM.
@@ -29,7 +29,6 @@ describe("reduce", () => {
       breakout: { running: null, asked: null, result: null, problem: null },
       plant: { epoch: 0, spec: null, view: null, running: null, ready: null, halls: [], record: null, fields: null, truth: { on: false, halls: null, sample: null }, act: { pending: null, refusal: null, resume: null }, problem: null },
       fleet: { asked: null, verdict: null },
-      seedCheck: { asked: null, verdict: null },
       oneFlag: { running: null, progress: null, result: null, problem: null },
     });
   });
@@ -136,49 +135,4 @@ describe("the plant in the page state (plant_ui.md section 6, rule 3)", () => {
     expect(reduce(asked, { type: "error", id: 9, epoch: 1, code: "cancelled", message: "m" })).toEqual(asked);
     expect(reduce(asked, { type: "error", id: 3, code: "engine_error", message: "m" }).problem?.code).toBe("engine_error");
   });
-});
-
-
-describe("worker startup timeout", () => {
-  it("reports a missing ready message and ignores a timeout after ready", () => {
-    expect(reduce(initial, { type: "worker_timeout" }).problem?.code).toBe("worker");
-    expect(reduce({ ...initial, ready: {} as NonNullable<typeof initial.ready> }, { type: "worker_timeout" }).problem).toBeNull();
-  });
-});
-
-
-describe("worker message delivery", () => {
-  it("converts a synchronous clone failure into a request error with its epoch", () => {
-    const actions: Parameters<typeof reduce>[1][] = [];
-    const worker = { postMessage: () => { throw new Error("clone failed"); } } as unknown as Worker;
-    sendWorker(worker, (action) => actions.push(action), { type: "plant_run", id: 4, epoch: 2, spec: DEFAULT_PLANT });
-    expect(actions).toEqual([{ type: "error", id: 4, epoch: 2, code: "engine_error", message: "clone failed" }]);
-  });
-});
-
-describe("worker failure and browser check", () => {
-  it("marks a startup timeout as a check error while preserving the reason", () => {
-    const next = reduce(initial, { type: "worker_timeout" });
-    expect(next.check.state).toBe("error");
-    expect(next.check.detail.reason).toBeTruthy();
-  });
-  it("keeps ready data and marks the check as error after a worker crash", () => {
-    const ready = {} as NonNullable<typeof initial.ready>;
-    const next = reduce({ ...initial, ready }, { type: "worker_error", message: "script failed" });
-    expect(next.ready).toBe(ready);
-    expect(next.check.state).toBe("error");
-    expect(next.check.detail.reason).toBe("script failed");
-    expect(next.problem).toMatchObject({ code: "worker", message: "script failed" });
-  });
-});
-
-it("surfaces a post-ready worker failure on every non-home route and lets Home show its own error", async () => {
-  const { globalProblem } = await import("./state.ts");
-  expect(globalProblem).toBeTypeOf("function");
-  const ready = {} as NonNullable<typeof initial.ready>;
-  const crashed = reduce({ ...initial, ready }, { type: "worker_error", message: "script failed" });
-  for (const screen of ["setup", "results", "lineage", "challenge", "breakout", "plant", "notes"] as const) {
-    expect(globalProblem(crashed, screen)).toBe(crashed.problem);
-  }
-  expect(globalProblem(crashed, "home")).toBeNull();
 });

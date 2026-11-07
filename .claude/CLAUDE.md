@@ -20,7 +20,7 @@ honest comparison, not a prediction about any real plant.
 ## Invariants
 1. Truth world and recorded world stay separate. Recorders see observable events only, never the hidden truth state.
 2. Determinism. Seeded integer PRNG only, no `Math.random`. Randomness is keyed by one canonical tuple `(run_seed, physical_sample_id, analyte, attempt, purpose)`.
-3. Public inputs carry an `S###` or `A###` id from the `docs/research/` ledgers. Outputs appear with their input ids in the Simulation result block. Values resting on weaker sources carry a provisional chip; an unmarked value uses main-reread sources or is an unsourced assumption. Follow an `A###` to its `S###` sources.
+3. Every number in public docs or UI carries an `S###` or `A###` id from the `docs/research/` ledgers. Public numbers use only `main-reread` sources, and an `A###` is followed to its `S###` sources.
 4. ADRs: Claude writes `Proposed` only. Never fill "Decider's note", never flip a status to `Accepted`.
 5. Files listed in `.claude/user_owned.txt` are the author's implementation track. Review them, never write them (reviews go to `docs/user_track/reviews/`). The list is empty since ADR-0022: `reference/sql/` and `reference/simpy/` are written by AI clean-room from the specification (never from `engine/src/` or `src/`), and every text says so.
 6. No publishing. Push, remote changes and GitHub writes belong to the author; the hooks block them. Give the author the command to run with `!`.

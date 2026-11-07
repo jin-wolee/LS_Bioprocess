@@ -1,4 +1,4 @@
-import type { CheckDetail, CheckState, FleetProblem, Request, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
+import type { CheckDetail, CheckState, FleetProblem, Response, ResultFooter, RunSummary, UtilisationView } from "../protocol.ts";
 import { initialPlant, reducePlant } from "../plant/plant_state.ts";
 import type { PlantPageAction, PlantState } from "../plant/plant_state.ts";
 import { initialOneFlag, isAboutOneFlag, reduceOneFlag } from "./one_flag_state.ts";
@@ -63,12 +63,11 @@ export interface State {
   plant: PlantState;
   /** U2: the check of the analyzer list of Setup. */
   fleet: FleetState;
-  seedCheck: { asked: { id: number; key: string } | null; verdict: { key: string; reason: string | null } | null };
   /** A3: the run of the card on Home, with a state of its own (one_flag_state.ts). */
   oneFlag: OneFlagState;
 }
 
-export type Action = Response | OneSeedAction | PlantPageAction | { type: "worker_error"; message: string } | { type: "worker_timeout" } | { type: "run_started"; id: number } | { type: "fleet_asked"; id: number; key: string } | { type: "seed_asked"; id: number; key: string } | { type: "seed_clear" } | { type: "seed_edited" } | OneFlagAction;
+export type Action = Response | OneSeedAction | PlantPageAction | { type: "worker_error"; message: string } | { type: "run_started"; id: number } | { type: "fleet_asked"; id: number; key: string } | OneFlagAction;
 
 export const initial: State = {
   ready: null,
@@ -83,7 +82,6 @@ export const initial: State = {
   breakout: initialBreakout,
   plant: initialPlant,
   fleet: initialFleet,
-  seedCheck: { asked: null, verdict: null },
   oneFlag: initialOneFlag,
 };
 
@@ -133,14 +131,6 @@ export const reduce = (state: State, action: Action): State => {
     }
     case "check":
       return { ...state, check: { state: action.state, detail: action.detail } };
-    case "seed_asked":
-      return { ...state, seedCheck: { asked: { id: action.id, key: action.key }, verdict: null } };
-    case "seed_edited":
-      return { ...state, seedCheck: { asked: null, verdict: null }, problem: state.problem?.code === "invalid_spec" ? null : state.problem };
-    case "seed_clear":
-      return { ...state, seedCheck: { asked: null, verdict: null } };
-    case "seed_checked":
-      return state.seedCheck.asked?.id === action.id ? { ...state, seedCheck: { ...state.seedCheck, verdict: { key: state.seedCheck.asked.key, reason: action.reason } } } : state;
     case "fleet_asked":
       return { ...state, fleet: { ...state.fleet, asked: { id: action.id, key: action.key } } };
     case "fleet_checked":
@@ -160,25 +150,10 @@ export const reduce = (state: State, action: Action): State => {
       if (action.epoch !== undefined) return { ...state, plant: reducePlant(state.plant, action) }; // an error of a plant request: the plant's problem, or dropped when its epoch is not the newest
       if (forOneSeed(state, action.id)) return withOneSeed(state);
       return { ...state, problem: problemOf(action), ...over(state, action.id) };
-    case "worker_timeout":
-      return state.ready ? state : { ...state, check: { state: "error", detail: { ...state.check.detail, reason: "Worker did not become ready within 20 seconds." } }, problem: { id: null, code: "worker", message: "Worker did not become ready within 20 seconds." } };
     case "worker_error":
-      return { ...state, check: { state: "error", detail: { ...state.check.detail, reason: action.message } }, problem: { id: null, code: "worker", message: action.message }, running: null, progress: null, oneFlag: reduceOneFlag(state.oneFlag, action) };
+      return { ...state, problem: { id: null, code: "worker", message: action.message }, running: null, progress: null, oneFlag: reduceOneFlag(state.oneFlag, action) };
   }
 };
-
-/** Home renders its own problem; other routes share the global Worker failure notice. */
-export const globalProblem = (state: State, screen: string): Problem | null =>
-  screen !== "home" && state.problem && (!state.ready || state.problem.code === "worker") ? state.problem : null;
 
 /** The state a result block shows: a result made while the check was pending is never dropped, and takes the check's state when that arrives (lab_ui.md section 7). */
 export const displayedCheck = (atResult: CheckState, now: CheckState): CheckState => (atResult === "pending" ? now : atResult);
-
-/** Turn a synchronous structured-clone failure into the same request-scoped error as the Worker. */
-export const sendWorker = (worker: Worker, dispatch: (action: Action) => void, request: Request): void => {
-  try {
-    worker.postMessage(request);
-  } catch (error) {
-    dispatch({ type: "error", id: request.id, code: "engine_error", message: error instanceof Error ? error.message : "Worker message failed", ...("epoch" in request ? { epoch: request.epoch } : {}) });
-  }
-};

@@ -10,7 +10,7 @@ main[data-screen="plant"] { max-width: none; padding-left: 0; padding-right: 0; 
 .plant-wrap + .plant-intro { margin-top: 8px; }
 .plant-status { color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
 
-.plant-wrap { position: relative; width: 100%; height: max(33rem, calc(100svh - var(--plant-top-space, 0px))); background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); overflow: hidden; }
+.plant-wrap { position: relative; width: 100%; height: max(460px, calc(100svh - 72px)); background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); overflow: hidden; }
 .plant-gl { position: absolute; inset: 0; }
 .plant-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
 .plant-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -153,7 +153,7 @@ a.primary-link:hover { text-decoration: underline; }
 @media (max-width: 599px) {
   body:has(main[data-screen="plant"]) .top { gap: 4px 12px; padding-top: 6px; padding-bottom: 6px; }
   body:has(main[data-screen="plant"]) .nav { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
-  .plant-wrap { height: max(33rem, calc(100svh - var(--plant-top-space, 0px))); }
+  .plant-wrap { height: max(460px, calc(100svh - 11.5rem)); }
   .plant-time-keys-wrap { display: none; }
   .plant-time { gap: 4px 8px; padding: 4px 8px; }
   .plant-time button { min-width: 32px; padding: 2px 6px; }
@@ -170,12 +170,4 @@ a.primary-link:hover { text-decoration: underline; }
   .plant-sheet-hint { display: block; margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px 10px; font-size: 0.85rem; max-width: none; }
   .plant-side, .plant-huds:has(.plant-record[data-record-truth="on"]) .plant-side { grid-column: 1; grid-row: 2; align-self: end; max-height: 100%; z-index: 3; }
   .plant-bottom, .plant-huds:has(.plant-side:not(:empty)) .plant-bottom, .plant-huds:has(.plant-record[data-record-truth="on"]) .plant-bottom { grid-column: 1; }
-}
-
-:lang(ko) { word-break: keep-all; overflow-wrap: anywhere; }
-
-/* At low heights, let the HUD contribute its natural height so controls remain reachable. */
-@media (max-height: 720px) {
-  .plant-wrap { height: auto; min-height: max(33rem, calc(100svh - var(--plant-top-space, 0px))); }
-  .plant-huds { position: relative; inset: auto; margin: 12px; min-height: max(calc(33rem - 24px), calc(100svh - var(--plant-top-space, 0px) - 26px)); }
 }

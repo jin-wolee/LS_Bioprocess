@@ -93,11 +93,11 @@ def test_the_table_of_contents_links_the_anchors_of_the_korean_headings():
     assert len(toc) == len(re.findall(r"^- \[", top(README)[5], re.M))
 
 
-def test_it_shows_the_same_pictures_in_the_same_places_with_its_own_static_screenshots():
+def test_it_shows_the_same_pictures_in_the_same_places_with_its_own_screenshots_of_three_of_them():
     en, ko = images(README), images(KO)
     assert [p.replace("_ko.png", "_en.png") for p in ko] == en
-    assert ko == ["docs/media/mark.svg", "docs/media/tour.gif", "docs/media/plant_ko.png", "docs/media/tour_table_ko.png", "docs/media/lineage_ko.png", "docs/media/results_ko.png", "docs/media/action.gif",
-                  "docs/media/breakout_ko.png"]
+    assert ko == ["docs/media/mark.svg", "docs/media/tour.gif", "docs/media/plant_ko.png", "docs/media/tour_table_ko.png", "docs/media/lineage_ko.png", "docs/media/results_en.png", "docs/media/action.gif",
+                  "docs/media/breakout_en.png"]
 
 
 def test_it_has_the_same_links_with_the_switch_pointing_at_the_other_file():
@@ -197,7 +197,7 @@ def test_it_keeps_the_wording_of_how_to_read_the_comparison():
     assert "실제 스프레드시트나 실험실 시스템의 품질, 효율, 도입 효과를 재는 척도가 아닙니다" in reading
     assert "모형의 불확실성이 아닙니다" in reading and "세포주의 상수는 시드에 따라 바뀌지 않으므로" in reading
     assert "최소 시드 수(A103)는 설계상의 문턱이며, 통계적 충분성의 증명이 아닙니다" in reading
-    assert "`VR-010`" in reading and "A046과 (provisional) A213은 (provisional) 둘 다 잠정" in reading
+    assert "`VR-010`" in reading and "A046과 A213은 둘 다 잠정" in reading
     assert "혈액가스 취급에서 가져온 대리 기준이며, 가정으로서 모든 분석 항목에 적용합니다" in reading
     assert "실제 실험실의 정확도가 아닙니다" in reading
     assert "보류는 기록의 상태이며 배양을 멈추지 않습니다" in reading and "민감도가 아니라 포괄 범위로 판정합니다" in reading
@@ -205,7 +205,7 @@ def test_it_keeps_the_wording_of_how_to_read_the_comparison():
 
 def test_it_keeps_the_break_out_screen_back_and_says_the_pages_ship_no_result():
     numbers = between(KO, "### 수치", "## 구성")
-    assert "main-reread 출처에 기대거나 출처 없는 가정" in numbers and "점선 잠정 칩" in numbers and "`scripts/check_docs.py`" in numbers
+    assert "main-reread 출처만 뒷받침합니다" in numbers and "점선 잠정 칩" in numbers and "`scripts/check_docs.py`" in numbers
     assert "보류되어 있습니다" in numbers and "공개 빌드는 그 화면을 거절하고 사례를 내놓지 않습니다" in numbers and "다시 읽을 때까지" in numbers
     assert "페이지는 결과를 싣고 있지 않습니다" in numbers and "방문할 때마다 내 브라우저 안에서" in numbers
 

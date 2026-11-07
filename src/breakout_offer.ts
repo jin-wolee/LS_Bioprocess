@@ -10,4 +10,4 @@ export type Offer = "offered" | "local_only" | "refused";
 export const offerOf = (publicOk: boolean, local: boolean): Offer => (publicOk ? "offered" : local ? "local_only" : "refused");
 
 /** The Break-out screen of this build. In a build that refuses it, src/worker/data.ts bundles none of its files (see there), so the public bundle holds no extension figure. */
-export const OFFER: Offer = BREAKOUT_PUBLIC ? "offered" : import.meta.env.VITE_LAB_LOCAL === "1" ? "local_only" : "refused";
+export const OFFER: Offer = offerOf(BREAKOUT_PUBLIC, import.meta.env.VITE_LAB_LOCAL === "1");

@@ -74,7 +74,7 @@ Store as JSON in `tests/fixtures/hand/F#_*.json` with `inputs`, `expected` and a
 | Y | 08:50:00 | 10 min | 09:00:00 |
 | Z | 08:55:00 | 10 min | 09:05:00 |
 
-Expected: Y 09:00:00-09:10:00 (wait 0); X 09:10:00-09:20:00 (wait 300); Z 09:20:00-09:30:00 (wait 900; ties X at arrival, X has the lower `seq`). `hold_time` (sampled to `run_started_at`): Y 600, X 1800, Z 1500. F1c tests the distinction when both reversed arrivals are waiting behind a busy analyzer; its expected times are derived in its fixture.
+Expected: Y 09:00:00-09:10:00 (wait 0); X 09:10:00-09:20:00 (wait 300); Z 09:20:00-09:30:00 (wait 900; ties X at arrival, X has the lower `seq`). `hold_time` (sampled to `run_started_at`): Y 600, X 1800, Z 1500. A sampling-time-ordered admission would start X at 09:05:00 and Y at 09:15:00, so this fails it.
 F1b, same samples with 2 analyzers: Y AN-1 09:00:00-09:10:00; X AN-2 09:05:00-09:15:00; Z AN-1 09:10:00-09:20:00.
 
 **F2 Window boundary** (1 analyzer, service 600 s, window `[09:30:00, 10:00:00)`; each row is its own run on a fresh engine)

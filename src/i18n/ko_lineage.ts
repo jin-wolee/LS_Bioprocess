@@ -35,6 +35,7 @@ export const koLineage: Record<keyof typeof enLineage, string> = {
 
   "lineage.column.flags": "플래그",
   "lineage.column.labelling": "라벨링",
+  "lineage.q.heading": "세 가지 질문",
   "lineage.q.unit": "어느 유닛에서 채취했나?",
   "lineage.q.sampled_at": "언제 채취했나?",
   "lineage.q.process_context": "채취 시점에 어떤 공정 맥락이었나?",
@@ -48,6 +49,7 @@ export const koLineage: Record<keyof typeof enLineage, string> = {
   "lineage.stub": "저장된 링크 없음",
   "lineage.errors.heading": "이 기록에서 이 시료에 주입기가 실제로 만든 오류",
   "lineage.errors.none": "없음",
+  "lineage.legend.heading": "열 읽는 법",
   "lineage.legend.edges": "선은 키가 나온 행에서 그 키가 잇는 행으로, 파생 방향을 따라 그어집니다. 점선은 시료를 기록이 쓴 시각으로 공정 맥락에 잇습니다. 틈에서 끝나는 짧은 선은 기록이 저장하지 않은 키입니다.",
   "lineage.legend.answers": "실선 테두리의 답은 맞는 답, 십자가 있는 굵은 테두리는 틀린 답이며 옆에 진실이 적힙니다. 점선 속이 빈 테두리는 기록이 저장하지 않는 필드라서 답할 수 없다는 뜻입니다.",
   "lineage.svg.title": "시료 하나에 대한 기록 {architecture}의 행과 이를 잇는 키",

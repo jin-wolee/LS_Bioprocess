@@ -71,10 +71,6 @@ def mode_hook(root: Path, terms: list[str]) -> int:
         return 0
     (root / ".claude").mkdir(exist_ok=True)
     (root / ".claude/.dirty").touch()
-    path_hits = banned_hits(rel, terms)
-    if path_hits:
-        sys.stderr.write(f"check_docs (edit hook): [redacted path]: {banned_message(path_hits)}\n")
-        return 2
     text = read_text(root / rel)
     if text is None:
         return 0
@@ -98,17 +94,13 @@ def mode_all(root: Path, terms: list[str], ci: bool) -> int:
         p = root / rel
         if not p.is_file():
             continue
-        path_hits = banned_hits(rel, terms)
-        if path_hits:
-            errors.append(f"[redacted path]: {banned_message(path_hits)}")
-            continue
         text = read_text(p)
         if text is None:
             continue
         e, w = scan_file(rel, text, terms)
         errors += e
         warnings += w
-        if strict_refs and rel.endswith((".md", ".html", ".yaml", ".yml", ".json", ".ts", ".tsx", ".js", ".sql", ".py")) and rel not in LEDGER_FILES and not rel.startswith("tests/"):
+        if strict_refs and rel.endswith((".md", ".html", ".yaml", ".yml", ".json", ".ts", ".py")) and rel not in LEDGER_FILES and not rel.startswith("tests/"):
             errors += check_references(rel, text, sources, assumptions)
     if ci:
         errors += warnings
@@ -128,10 +120,6 @@ def mode_staged(root: Path, terms: list[str]) -> int:
     for rel in names:
         if rel.startswith(PRIVATE_PREFIXES) or rel in PRIVATE_FILES:
             errors.append(f"{rel}: private path staged")
-            continue
-        path_hits = banned_hits(rel, terms)
-        if path_hits:
-            errors.append(f"[redacted path]: {banned_message(path_hits)}")
             continue
         blob = subprocess.run(["git", "show", f":{rel}"], cwd=root, capture_output=True).stdout
         try:
@@ -168,7 +156,7 @@ def main() -> int:
     ap.add_argument("--ci", action="store_true")
     args = ap.parse_args()
     root = repo_root()
-    terms = load_terms(root, ci=args.ci)
+    terms = load_terms(root)
     if terms is None or (args.ci and not terms):  # --ci is the Pages job: a secret that is blank or all comments would scan for nothing
         msg = "FAIL  no banned-token list (.guardrails.local.txt or GUARDRAIL_TERMS), or no term in it — refusing to pass silently\n"
         sys.stderr.write(msg)

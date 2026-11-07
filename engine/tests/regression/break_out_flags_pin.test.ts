@@ -11,7 +11,6 @@ import { pinHashes } from "../support/break_out_pin.ts";
 // utilisation per staffed window followed the roster. Only `utilisation.per_staffed_window` (and its per-profile entries) moved, checked cell by cell against the base commit be1a3cc; the truth,
 // the answer key and the eleven datasets are the values of the base commit.
 // A2 again (2026-11-02, approved in advance; audit F9): the eleven report blocks gain the three rows `hold_limit.*` (spec section 8); no cell and no earlier row changed, so only the `block_*` hashes were taken again.
-// R6 O-01: author approved denominator-first report wording on 2026-11-07. Only report-text block pins change; restoring the old sentence reproduces all original pins.
 const BEFORE: Record<string, string> = {
   truth_seed_1: "9692942bf38f16b7826732e379dec3c721210c4a2c35839fd6f6e2cc5856c46d",
   key_seed_1: "30bc58bba035838e09e0cfbdc99969f94dae8b601755cbe00b157c44fb385831",
@@ -49,16 +48,16 @@ const BEFORE: Record<string, string> = {
   cell_seed_2_c_context_minus_ingest_idempotency: "ff7b5851e66b998d6ecbc1968e2fe8bb0893801a16db6a9e760c51ace2de41be",
   cell_seed_2_c_context_minus_audit_trail: "ae261e7a78a6c9bea861d7acc2290c59e40323fdb26fc3514c6bcdc71004083b",
   block_a_manual: "8c70ecc4dd9c9be303bac232e44315f8b9e2fc3b9b1c41bc9a2e6a0bcb9a6c75",
-  block_b_lims_lite: "67d42f2fd9484ac98dd20f344ee965fc3ea351891daac3553ef4f5d6428925d9",
-  block_c_context: "841088e6dc8f467ca79a81ce79557f1fdb9dc3f9503dd1b96cb1f01a198409ca",
-  block_c_context_minus_system_issued_id: "d9f11c74ee809ae6fceb098feed7a1ec2e736ce37756c3ed03379ee0da20ec13",
-  block_c_context_minus_two_clocks: "981565320ea8e623c0f83607209efc8edec25817a471261132e329136ff47476",
-  block_c_context_minus_available_at: "533e18fb3395810f63680f39ae55ccf641dd042de6774fe8d138b7135c58e4cb",
-  block_c_context_minus_instrument_state_snapshot: "b1a9ccde91e177c46e0c703819234729c300b484872bf7e6f1b7c3b468b44263",
-  block_c_context_minus_append_only_versions: "32dc5ffda2673abd518789a4241eaf565bb507f4f748744f427504e2bdd7fc10",
-  block_c_context_minus_write_time_keys: "dd8bfd4811a58072a7ed1f1b29d3d34c07027c687b668ea381405fbd6709b681",
-  block_c_context_minus_ingest_idempotency: "7132a61eb6f22fbd0e7556fe25a0d125b51efea08e17e91b3f5d4438819483ef",
-  block_c_context_minus_audit_trail: "399b7dc31f2bf2b96c26885060a39d7da8042c60be6da0e2bad68453252790f4",
+  block_b_lims_lite: "5a5f0ed5e8fc9e5db933723f7768f329eb5e99dde3acfd29d512ed435f970ca2",
+  block_c_context: "216a2d301bc0fffcdf0a53ebdb3a80c19b96f38e860474d0a01e5e73d205d652",
+  block_c_context_minus_system_issued_id: "7628941f5703445180a9fa63c4c1175607e32c7aed4042b31ecf1544f4c8b44f",
+  block_c_context_minus_two_clocks: "938113427fbd7c3faabdb4c45fec8e66930b2be3aad2e6cb6138dcdd44ffe943",
+  block_c_context_minus_available_at: "6441404645f94575c40a4ba61f2c51f80ef085d1b977e012bcc8357af9f923a9",
+  block_c_context_minus_instrument_state_snapshot: "373513edfce41f7b262a2bddaf0ae10ba89d424341553ee71065a4a9d058d0a1",
+  block_c_context_minus_append_only_versions: "aa040b8d3e0997aca40acf72d3b410a34bda535ce87be5712131443619171b1b",
+  block_c_context_minus_write_time_keys: "4b10f1e8dd9e6e5df1ff72cb9f93e3675f73b34f8860a2d8b80ca0a75c2e9dc6",
+  block_c_context_minus_ingest_idempotency: "1f426bee3c9c111971a5c35fe3c31f1fd16834efdaafa0bce45c48dcf74e3dd3",
+  block_c_context_minus_audit_trail: "ea1742525f4e823f5fff5aef6f938c8d5adfe8b9409c354da506586b935e3f04",
 };
 
 describe("The ninth and tenth flags with no break-out event: the eleven architectures of before record what they recorded", () => {

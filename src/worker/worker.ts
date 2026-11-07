@@ -7,19 +7,18 @@ import type { Refusal } from "../../engine/src/experiments/assembly/lab/challeng
 import { checkFleet } from "../../engine/src/experiments/assembly/lab/fleet_check.ts";
 import { homeRun } from "../../engine/src/experiments/assembly/lab/home.ts";
 import { answerLineage } from "../../engine/src/experiments/assembly/lab/lineage_request.ts";
+import type { PlantKept } from "../../engine/src/experiments/assembly/lab/plant.ts";
 import { answerPlantRecord } from "../../engine/src/experiments/assembly/lab/plant_record.ts";
 import { answerPlantStart } from "../../engine/src/experiments/assembly/lab/plant_stage.ts";
 import { answerPlantTruth, checkTruthPick } from "../../engine/src/experiments/assembly/lab/plant_truth.ts";
 import { readyOf } from "../../engine/src/experiments/assembly/lab/ready.ts";
 import { checkRunActions, runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
-import { checkRunSeeds, checkRunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
+import { checkRunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
 import type { RunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
 import { truthKeyOf } from "../../engine/src/experiments/assembly/lab/truth_key.ts";
 import type { CheckDetail, CheckState, ErrorCode, ResultFooter, Response } from "../protocol.ts";
 import { LAB_DATA } from "./data.ts";
-import { BREAKOUT_PUBLIC } from "../generated/breakout_public.ts";
-import { createPlantWorker } from "./plant_worker.ts";
 
 // The Worker entry (docs/design/lab_ui.md section 4): the only file of src/ with value imports from engine/, and only from engine/src/experiments/assembly/lab/. The page sends a request of plain
 // data and gets plain data back; there is no message that asks for a truth log, an event stream, the answer key or the raw quirk key. Both sides are one build, so the page trusts the Worker's
@@ -65,6 +64,8 @@ export interface WorkerEnv {
   now(): number;
 }
 
+const yieldToLoop = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
 const PENDING: CheckDetail = { runs_ms: [], truth: [], repeats_equal: false, cells_equal: false };
 
 export const createWorker = (post: (message: Response) => void, env: WorkerEnv) => {
@@ -79,7 +80,6 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
   let last: Promise<void> = Promise.resolve();
 
   const fail = (id: number | null, code: ErrorCode, message: string): void => post({ type: "error", id, code, message });
-  const { plantRun, plantRecord, plantTruth } = createPlantWorker(post, env, challenges, fail, { answerPlantRecord, answerPlantStart, answerPlantTruth, checkTruthPick, truthKeyOf });
 
   /** Start-up: ready, then the browser check. Results may be asked for while it runs; their footer says `pending`. */
   const start = async (): Promise<void> => {
@@ -207,6 +207,75 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
     }
   };
 
+  /** The plant: the newest epoch asked for, what the last answer posted kept and the epoch it belongs to, and the queue (plant runs are answered one at a time, in the order they arrive). */
+  let plantLatest = -1;
+  let plantKept: PlantKept | undefined;
+  let keptEpoch = -1;
+  let plantQueue: Promise<void> = Promise.resolve();
+
+  const plantAnswer = async (id: number, epoch: number, raw: unknown): Promise<void> => {
+    const stale = (): boolean => epoch !== plantLatest;
+    const cancelled = (): void => post({ type: "error", id, epoch, code: "cancelled", message: "the plant run was replaced by a newer one before its answer was drawn" });
+    try {
+      // one turn of the event loop first: a newer request that is already waiting is handled before this one builds anything
+      await yieldToLoop();
+      if (stale()) return cancelled();
+      const out = await answerPlantStart(env.data, challenges, { spec: raw }, plantKept);
+      if (stale()) return cancelled();
+      if (!out.ok) return post({ type: "error", id, epoch, code: out.code, message: out.message, ...(out.code === "refused" && { reason: out.reason, index: out.index }) });
+      plantKept = out.kept;
+      keptEpoch = epoch;
+      // the key of the truth of the run, its actions stripped; a break-out case has no run spec and no challenge can be opened on it, so its key is that of its own truth log (plant_ui.md section 6, rule 11)
+      post({ type: "plant_ready", id, epoch, ...out.answer, key: out.kept.run === null ? truthKeyOf(out.kept.events) : challenges.keyOf(out.kept.run, out.kept.seed) });
+      // the other halls, one at a time, a turn of the event loop between them; a newer epoch stops the ones still pending and nothing is posted for them (section 5.5)
+      for (const build of out.halls) {
+        await yieldToLoop();
+        if (stale()) return;
+        const hall = await build();
+        if (stale()) return;
+        post({ type: "plant_halls", id, epoch, ...hall });
+      }
+    } catch (e) {
+      post({ type: "error", id, epoch, code: "engine_error", message: e instanceof Error ? e.message : String(e) });
+    }
+  };
+
+  /** `plant_record`: the rows one architecture holds for one card, read from the halls the Worker kept for that epoch. Answered at once; the epoch is echoed on every message about it. */
+  const plantRecord = (id: number, message: Record<string, unknown>): void => {
+    const { epoch, architecture, sample_id } = message;
+    if (typeof epoch !== "number" || !Number.isInteger(epoch) || epoch < 0) return fail(id, "invalid_spec", "a plant_record request needs a whole epoch, 0 or more");
+    if (typeof architecture !== "string" || typeof sample_id !== "string") return post({ type: "error", id, epoch, code: "invalid_spec", message: "a plant_record request needs an architecture and a sample_id, both strings" });
+    // the record is read from the run of the epoch asked for: when the Worker holds another run (a newer one was posted, or none was) the request is stale and the page drops the answer anyway
+    if (plantKept === undefined || epoch !== keptEpoch) return post({ type: "error", id, epoch, code: "cancelled", message: `the Worker holds no plant run of epoch ${epoch}` });
+    const out = answerPlantRecord(plantKept, architecture, sample_id);
+    if (!out.ok) return post({ type: "error", id, epoch, code: "refused", reason: "unknown_target", message: out.message });
+    post({ type: "plant_record_view", id, epoch, sample: out.sample });
+  };
+
+  /**
+   * `plant_truth`: what the simulation knows and no record can hold, for the run the Worker kept (plant_truth.ts). The order of the checks: a malformed request, then the epoch (another one is
+   * `cancelled`), then the lock of a challenge on the same run, asked at this moment, then the sample. Answered at once; the epoch is echoed on every message about it.
+   */
+  const plantTruth = (id: number, message: Record<string, unknown>): void => {
+    const { epoch, pick } = message;
+    if (typeof epoch !== "number" || !Number.isInteger(epoch) || epoch < 0) return fail(id, "invalid_spec", "a plant_truth request needs a whole epoch, 0 or more");
+    const checked = checkTruthPick(pick);
+    if (!checked.ok) return post({ type: "error", id, epoch, code: "invalid_spec", message: checked.message });
+    if (plantKept === undefined || epoch !== keptEpoch) return post({ type: "error", id, epoch, code: "cancelled", message: `the Worker holds no plant run of epoch ${epoch}` });
+    const out = answerPlantTruth(plantKept, challenges, checked.pick);
+    if (!out.ok) return post(out.code === "locked" ? { type: "error", id, epoch, code: "locked", message: out.message } : { type: "error", id, epoch, code: "refused", reason: out.reason, message: out.message });
+    post({ type: "plant_truth_view", id, epoch, view: out.view });
+  };
+
+  const plantRun = (id: number, message: Record<string, unknown>): Promise<void> | void => {
+    const epoch = message.epoch;
+    if (typeof epoch !== "number" || !Number.isInteger(epoch) || epoch < 0) return fail(id, "invalid_spec", "a plant_run request needs a whole epoch, 0 or more");
+    if (epoch <= plantLatest) return post({ type: "error", id, epoch, code: "invalid_spec", message: `the epoch ${epoch} is not larger than the last epoch seen (${plantLatest})` });
+    plantLatest = epoch;
+    plantQueue = plantQueue.then(() => plantAnswer(id, epoch, message.spec));
+    return plantQueue;
+  };
+
   const onMessage = (message: unknown): Promise<void> | void => {
     if (typeof message !== "object" || message === null || Array.isArray(message)) return fail(null, "invalid_spec", "a request must be an object with a type");
     const { type, id, spec, actions } = message as { type?: unknown; id?: unknown; spec?: unknown; actions?: unknown };
@@ -219,21 +288,12 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       return;
     }
     if (type === "cancel") return fail(null, "invalid_spec", "a cancel request needs a numeric id");
-    if (type === "seed_check") {
-      if (requestId === null) return fail(null, "invalid_spec", "a seed_check request needs a numeric id");
-      const checked = checkRunSeeds((message as Record<string, unknown>).seeds);
-      return post({ type: "seed_checked", id: requestId, reason: checked.ok ? null : checked.message });
-    }
     if (type === "fleet_check") return requestId === null ? fail(null, "invalid_spec", "a fleet_check request needs a numeric id") : fleetCheck(requestId, message as Record<string, unknown>);
     if (type === "lineage" || type === "challenge_start" || type === "challenge_open" || type === "challenge_guess" || type === "challenge_giveup") {
       if (requestId === null) return fail(null, "invalid_spec", `a ${type} request needs a numeric id`);
       return oneSeed(requestId, message as Record<string, unknown>);
     }
-    if (type === "breakout") {
-      if (requestId === null) return fail(null, "invalid_spec", "a breakout request needs a numeric id");
-      if (!(import.meta.env.VITE_LAB_LOCAL === "1" || BREAKOUT_PUBLIC)) return fail(requestId, "invalid_spec", "this build does not offer the Break-out screen");
-      return breakout(requestId, message as Record<string, unknown>);
-    }
+    if (type === "breakout") return requestId === null ? fail(null, "invalid_spec", "a breakout request needs a numeric id") : breakout(requestId, message as Record<string, unknown>);
     if (type === "plant_run") return requestId === null ? fail(null, "invalid_spec", "a plant_run request needs a numeric id") : plantRun(requestId, message as Record<string, unknown>);
     if (type === "plant_record") return requestId === null ? fail(null, "invalid_spec", "a plant_record request needs a numeric id") : plantRecord(requestId, message as Record<string, unknown>);
     if (type === "plant_truth") return requestId === null ? fail(null, "invalid_spec", "a plant_truth request needs a numeric id") : plantTruth(requestId, message as Record<string, unknown>);

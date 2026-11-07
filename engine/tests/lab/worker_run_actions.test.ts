@@ -30,8 +30,7 @@ const run = (id: number, spec: unknown, extra: Record<string, unknown> = {}) => 
 // Taken at the base commit 408ab0c, before any change of P6b (a temporary test, removed after the pin was written down): the SHA-256 of the canonical JSON of every message the Worker posts for the run
 // of the default scenario at its own size, seeds 1 and 2, A, B and C (the two `progress` messages and the `result`), with the browser check as the unit tests have it.
 // A2 (2026-11-02, approved in advance; audit F4): taken again after the utilisation per staffed window followed the roster; the base commit 408ab0c's value was 411763f45c11f3cc21ddd1ffc27c0a765c6c648988c1b895199aceb66a2b504d, and the F4 value fa31e05a74b8f645e3d777a21bb624b68014ed81c9e16b7c4ac5042b512f8784 was taken again for F9 (A2, approved in advance): the report of the answer gains the three rows `hold_limit.*`.
-// R6 O-01 (author approved 2026-11-07): only ten zero-denominator reason strings changed; event logs and all other response fields are byte-identical.
-const PIN = "b0f2d3ff50cb738eca513f1736a5ee90a29428ffa927617d1cb1a003501a968f";
+const PIN = "99ba0b18d42873debd79e8e2976a2bc1d29e9325234675689ffa539fe59d7223";
 
 describe("no actions: the answer is the answer of the code before P6b, byte for byte", () => {
   it.each([["absent", {}], ["an empty list", { actions: [] }]])("Given %s Then the default scenario over seeds 1 and 2 hashes to the pin", async (_n, extra) => {

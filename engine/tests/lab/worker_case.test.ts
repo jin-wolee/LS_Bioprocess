@@ -1,4 +1,3 @@
-import { vi } from "vitest";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Response, ScenePlan } from "../../../src/protocol.ts";
 import { createWorker } from "../../../src/worker/worker.ts";
@@ -11,8 +10,6 @@ import { canonicalJson } from "../../src/trace.ts";
 import { labData } from "../support/lab_data.ts";
 import { SMALL } from "../support/scenarios.ts";
 import { breakoutData } from "./breakout_data.ts";
-
-vi.stubEnv("VITE_LAB_LOCAL", "1");
 
 // P7b (docs/design/plant_ui.md section 6, rules 8 and 11): the break-out case through the Worker. `plant_run` with a case answers `plant_ready` with the first hall and one `plant_halls` for each other
 // architecture, as for any run; the plan assembled from them is byte-equal to the plan of one build (`runPlantCase`); `plant_record` and `plant_truth` read what the Worker kept; a build with no

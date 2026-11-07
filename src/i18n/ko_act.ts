@@ -111,5 +111,6 @@ export const koAct: Record<keyof typeof enAct, string> = {
   "plant.flags.state.on.to": "켬으로",
   "plant.flags.state.off.to": "끔으로",
   "plant.flags.cell": "{hall}의 {flag}는 {state} 상태입니다. {next} 바꿉니다.",
+  "plant.col.sample": "시료",
   "plant.col.planned": "계획",
 };

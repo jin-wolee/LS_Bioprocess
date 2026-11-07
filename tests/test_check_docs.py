@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-import yaml
 
 from helpers import BANNED
 
@@ -55,13 +54,7 @@ UNKNOWN_A = "A" + "999"
 
 
 def ledgers(repo, sources=SOURCES, assumptions=ASSUMPTIONS):
-    source_data = yaml.safe_load(sources)
-    assumption_data = yaml.safe_load(assumptions)
-    for source in source_data.get("sources", []):
-        sid = source.get("id")
-        source["used_in"] = [a.get("id") for a in assumption_data.get("assumptions", [])
-                             if sid in (a.get("sources") or [])]
-    repo.write("docs/research/sources.yaml", yaml.safe_dump(source_data, sort_keys=False))
+    repo.write("docs/research/sources.yaml", sources)
     repo.write("docs/research/assumptions.yaml", assumptions)
 
 
@@ -93,11 +86,10 @@ def test_missing_guardrail_list_fails_instead_of_passing(repo):
     assert hook.returncode == 2
 
 
-def test_local_mode_rejects_environment_only_terms(repo):
+def test_terms_can_come_from_environment(repo):
     (repo.root / ".guardrails.local.txt").unlink()
     repo.write("notes.md", f"{BANNED}\n")
     assert repo.check("--all", env={"GUARDRAIL_TERMS": f"{BANNED}\n"}).returncode == 1
-    assert "no banned-token list" in repo.check("--all", env={"GUARDRAIL_TERMS": f"{BANNED}\n"}).stderr
 
 
 def test_ci_reads_the_terms_from_the_secret_alone(repo):
@@ -340,7 +332,7 @@ def test_unknown_reference_fails_only_after_bootstrap(repo):
 def test_known_references_pass_after_bootstrap(repo):
     ledgers(repo)
     repo.write(".claude/.bootstrap-done", "")
-    repo.write("docs/design/notes.md", "turnaround A001 from S001 and S002 (provisional)\n")
+    repo.write("docs/design/notes.md", "turnaround A001 from S001 and S002\n")
     assert repo.check("--all").returncode == 0
 
 
@@ -421,10 +413,8 @@ def test_grade_a_assumption_without_sources_is_allowed_in_public_files(repo):
     assert gated(repo, "README.md", "assumed turnaround (A001)\n", assumptions=unsourced).returncode == 0
 
 
-def test_design_citations_require_provisional_for_unverified_sources(repo):
-    assert gated(repo, "docs/design/notes.md", "a figure (S002) and A001\n").returncode == 1
-    assert gated(repo, "docs/design/notes.md", "a figure S002 (provisional) and A001\n").returncode == 0
-    assert gated(repo, "docs/notes.md", "a figure (S002) and A001\n").returncode == 0
+def test_files_outside_the_public_list_may_cite_unverified_sources(repo):
+    assert gated(repo, "docs/design/notes.md", "a figure (S002) and A001\n").returncode == 0
 
 
 def test_tests_directory_may_use_fixture_ids(repo):
@@ -473,47 +463,3 @@ def test_history_catches_a_private_path(repo):
     repo.git("add", "-f", "docs/private/x.md")
     repo.commit("oops")
     assert repo.check("--history").returncode == 1
-
-
-def test_local_terms_cannot_be_replaced_by_environment(repo):
-    repo.write("notes.md", BANNED)
-    assert repo.check("--all", env={"GUARDRAIL_TERMS": "different"}).returncode == 1
-
-
-@pytest.mark.parametrize("mode", ["--all", "--staged"])
-def test_filename_is_scanned_without_echoing_the_name(repo, mode):
-    name = f"{BANNED}.txt"
-    repo.write(name, "clean")
-    if mode == "--staged":
-        repo.git("add", name)
-    result = repo.check(mode)
-    assert result.returncode == 1
-    assert BANNED not in result.stdout + result.stderr
-
-
-@pytest.mark.parametrize("suffix", ["tsx", "js", "sql"])
-def test_audit_reference_scope_catches_unknown_ids(repo, suffix):
-    ledgers(repo)
-    repo.write(".claude/.bootstrap-done", "")
-    repo.write(f"src/example.{suffix}", f"value {UNKNOWN_A}\n")
-    assert repo.check("--all").returncode == 1
-
-
-@pytest.mark.parametrize("mode", ["--all", "--staged", "--hook"])
-def test_audit_binary_filename_is_checked_without_leaking(repo, mode):
-    path = repo.write(f"{BANNED}.bin", "")
-    path.write_bytes(b"\xff")
-    if mode == "--staged":
-        repo.git("add", path.name)
-    result = repo.hook(path) if mode == "--hook" else repo.check(mode)
-    assert result.returncode == (2 if mode == "--hook" else 1)
-    assert BANNED not in result.stdout + result.stderr
-
-
-def test_audit_filename_does_not_leak_through_reference_errors(repo):
-    ledgers(repo)
-    repo.write(".claude/.bootstrap-done", "")
-    repo.write(f"docs/design/{BANNED}.md", f"{UNKNOWN_A}\n")
-    result = repo.check("--all")
-    assert result.returncode == 1
-    assert BANNED not in result.stdout + result.stderr

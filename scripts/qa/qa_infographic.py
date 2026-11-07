@@ -12,20 +12,39 @@ live in qa_checks.py. The element contract is in the S0b brief.
 from __future__ import annotations
 
 import argparse
+import functools
+import json
 import sys
+import threading
+from contextlib import contextmanager
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
-from qa_build import Quiet, serve  # re-exported for existing QA and media callers
 from qa_checks import (THEMES, VIEWPORTS, WHITE, Result, apply_state, check_clipping, check_flags, check_keyboard, check_ko,
                        check_size, check_timeline, contrast_ratio, effective_background, first_line, fmt_ratio, open_page, over,
                        required_ratio)
 from qa_lab_browser import open_lab
 from qa_lab_helpers import cross_origin
-from qa_report import guarded, report as write_report
 
 REPO = Path(__file__).resolve().parents[2]
 FAMILIES = ("Archivo", "IBM Plex Mono")  # the two families of the page (site/infographic/fonts/README.md)
+
+
+class Quiet(SimpleHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+
+
+@contextmanager
+def serve(directory: Path):
+    server = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(directory)))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}/"
+    finally:
+        server.shutdown()
+        server.server_close()
 
 
 # ---- checks that sweep the theme matrix ------------------------------------------------------------------
@@ -161,10 +180,21 @@ def check_origin(browser, url) -> Result:
 
 # ---- driver ---------------------------------------------------------------------------------------------
 
+def guarded(name: str, fn) -> Result:
+    try:
+        return fn()
+    except Exception as e:  # a crashed check is a failed check, not a crashed run
+        return Result(name, False, f"crashed: {first_line(e)}")
+
+
 def report(results: list[Result], out: Path) -> str:
-    table = write_report(results, out, "Infographic QA")
-    failures = "".join(f"\nFAIL  qa_infographic {r.name}: {r.detail[:300]}" for r in results if not r.ok)
-    return table + failures
+    rows = [(f"{i} {r.name}", "PASS" if r.ok else "FAIL", r.detail) for i, r in enumerate(results, 1)]
+    width = max(len(r[0]) for r in rows)
+    table = "\n".join(f"{n:<{width}}  {s}  {d}" for n, s, d in rows)
+    (out / "results.json").write_text(json.dumps([r.__dict__ for r in results], indent=2, ensure_ascii=False), encoding="utf-8")
+    md = "| check | result | detail |\n|---|---|---|\n" + "\n".join(f"| {n} | {s} | {d.replace('|', '/')} |" for n, s, d in rows)
+    (out / "summary.md").write_text(f"# Infographic QA\n\n{md}\n", encoding="utf-8")
+    return table
 
 
 def main(argv=None) -> int:

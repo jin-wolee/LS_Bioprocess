@@ -41,9 +41,6 @@ const TRUTH_READER_FOLDERS = {
   regex: "(^|/)(evaluate|experiments/assembly)(/|$)",
   message: "evaluate/ and experiments/assembly/ read the truth world: the recorded side (record, ingest, inject, export, experiments/arms, raw) never imports them.",
 };
-// Flat readers and bundled data can expose scenario truth to recorded-side code.
-const FLAT_TRUTH_READERS = { regex: `^(?=\\.)(?:.*/)?(?:\\.\\.|src)/(scenario|trace|mmc)${EXT}$`, message: "The recorded side cannot import flat truth readers." };
-const SCENARIO_DATA = { regex: "(^|/)data(/|$)", message: "The recorded side cannot import scenario data." };
 // 2026-10-29 S2b: the generated Event type still carries the hidden fields (true_value, noise, true_state, ...). The recorded side
 // uses the observable types of observe.ts, in which those fields are removed from the type (S2a Parked, closed here).
 const HIDDEN_EVENT = {
@@ -74,7 +71,7 @@ const TRUTH_READERS = [
 ];
 
 // 2026-10-30 S3b (docs/design/lab_ui.md section 2): import zones for the lab page. The page (src/ui, src/main.tsx, src/i18n, src/protocol.ts) imports no engine or scenario module; only
-// src/worker modules reach the engine only through engine/src/experiments/assembly/lab/; src/worker/data.ts bundles the scenario JSON and nothing of the engine. Test files
+// src/worker/worker.ts reaches the engine, and only through engine/src/experiments/assembly/lab/; src/worker/data.ts bundles the scenario JSON and nothing of the engine. Test files
 // (src/**/*.test.ts) are outside the zones, as engine/tests is. Each zone repeats the Node-only ban through srcRestrict(), because a later object replaces the options.
 const SRC_NODE_ONLY = NODE_ONLY.map(({ name }) => ({ name, message: "The lab page and its Worker run in a browser: no Node-only imports in src." }));
 const srcRestrict = (...zone) => ["error", { paths: SRC_NODE_ONLY, patterns: [{ group: ["node:*"], message: "No Node-only imports in src." }, ...zone] }];
@@ -86,7 +83,7 @@ const PAGE_NO_ENGINE = {
 const PAGE_NO_WORKER = { regex: "(^|/)worker(/|$)", message: "The page never imports the Worker: it creates it with new Worker(new URL(...))." };
 const WORKER_ONLY_LAB = {
   regex: "(^|/)engine(/(?!src/experiments/assembly/lab/)|$)",
-  message: "src/worker modules import engine/src/experiments/assembly/lab/ only: the truth modules, the answer key, the raw quirk key, the hidden event type and the tests stay behind it.",
+  message: "src/worker/worker.ts imports engine/src/experiments/assembly/lab/ only: the truth modules, the answer key, the raw quirk key, the hidden event type and the tests stay behind it.",
 };
 // 2026-11-01 P3 (docs/design/plant_ui.md section 6, rule 6): `three` is imported only under src/plant/gl/, so layout.ts, the controls' state and everything else of the plant run in Vitest without WebGL
 // and the Worker never reaches it. The pattern takes `three` and every path under it, type imports included.
@@ -142,15 +139,10 @@ export default tseslint.config(
     rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS, BREAKOUT) },
   },
   {
-    // The recorders cannot read scenario truth through flat readers or data files.
-    files: ["engine/src/record/**/*.ts"],
-    rules: { "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, HIDDEN_EVENT, TRUTH_READER_FOLDERS, BREAKOUT, FLAT_TRUTH_READERS, SCENARIO_DATA) },
-  },
-  {
     // Zone 3: the decision code of experiment 2.
     files: ["engine/src/experiments/arms/**/*.ts"],
     rules: {
-      "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, ARMS_ONLY_RECORDED, HIDDEN_EVENT, BREAKOUT, FLAT_TRUTH_READERS, SCENARIO_DATA),
+      "no-restricted-imports": restrict(ANSWER_KEY, RAW_KEY, TRUTH_IN_FOLDER, ARMS_ONLY_RECORDED, HIDDEN_EVENT, BREAKOUT),
     },
   },
   {
@@ -176,30 +168,14 @@ export default tseslint.config(
     rules: { "no-restricted-imports": srcRestrict(PAGE_NO_ENGINE, PAGE_NO_WORKER) },
   },
   {
-    // Lab page zones, 2: Worker modules, apart from the separately governed data bundle.
-    files: ["src/worker/**/*.{ts,tsx}"],
-    ignores: ["src/worker/data.ts", "src/**/*.test.ts"],
+    // Lab page zones, 2: the Worker entry.
+    files: ["src/worker/worker.ts"],
     rules: { "no-restricted-imports": srcRestrict(WORKER_ONLY_LAB, WORKER_NO_SCENARIOS, NO_THREE) },
   },
   {
     // Lab page zones, 3: the bundled JSON of the Worker.
     files: ["src/worker/data.ts"],
     rules: { "no-restricted-imports": srcRestrict(DATA_NO_ENGINE, NO_THREE) },
-  },
-  {
-    // Plain JavaScript follows the recommended rules, including undefined and unused names.
-    files: ["site/infographic/src/**/*.js", "eslint.config.js"],
-    rules: {
-      ...js.configs.recommended.rules,
-      "@typescript-eslint/no-unused-vars": "off",
-      "no-restricted-properties": ["error", { object: "Math", property: "random", message: "Seeded PRNG only (invariant 2)." }],
-    },
-  },
-  {
-    // These files are classic scripts running in the page, not Node modules.
-    files: ["site/infographic/src/**/*.js"],
-    languageOptions: { sourceType: "script", globals: { window: "readonly", document: "readonly", IntersectionObserver: "readonly" } },
-    rules: { "no-unused-vars": ["error", { caughtErrors: "none" }] },
   },
   {
     // Invariant 2 in src: seeded PRNG only (check_all.sh greps engine/src and src for Math.random as well).

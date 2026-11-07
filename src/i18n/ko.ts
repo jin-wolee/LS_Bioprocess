@@ -1,4 +1,3 @@
-import { BREAKOUT_PUBLIC } from "../generated/breakout_public.ts";
 import type { Key, enBase } from "./en.ts";
 import { koBreakout } from "./ko_breakout.ts";
 import { koChallenge } from "./ko_challenge.ts";
@@ -17,12 +16,7 @@ import { koTour } from "./ko_tour.ts";
 // English text lacks (engine/tests/lab/i18n.test.ts). Terms follow site/infographic/src/i18n.js where one exists there (the grades, the provisional chip).
 const koBase: Record<keyof typeof enBase, string> = {
   // B1: the product name is not translated (the author, 2026-11-04). This key equals the English on purpose; the parity checks of scripts/qa/qa_checks.py (KEPT_IN_ENGLISH) leave it out of their count.
-  "breakout.refused.heading": "이 빌드는 오염 이벤트 역추적 화면을 제공하지 않습니다",
-  "breakout.refused.text": "오염 이벤트의 입력과 지연 시간, 로트 토폴로지는 아직 모두 재확인되지 않은 출처에 기대고 있고, 확장 기능의 어떤 것도 그 출처가 재확인되기 전에는 공개 페이지에 올리지 않습니다. 로컬 빌드는 이 화면을 공개용 아님으로 표시해 보여 줍니다.",
   "app.title": "Sample Lineage Lab",
-  "app.skip": "본문으로 건너뛰기",
-  "app.source": "소스 코드",
-  "error.worker.recovery": "페이지를 새로고침해 다시 시도하고, 문제가 계속되면 다른 브라우저를 이용하세요.",
   "app.footer": "합성 데이터입니다. 표시된 입력 아래의 시뮬레이션 결과이며 실제 공장에 대한 예측이 아닙니다.",
   "app.loading": "Worker에서 엔진을 시작하는 중입니다.",
 
@@ -104,4 +98,4 @@ const koBase: Record<keyof typeof enBase, string> = {
   "grade.provisional": "잠정",
 };
 
-export const ko = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge, ...((import.meta.env.VITE_LAB_LOCAL === "1" || BREAKOUT_PUBLIC) ? koBreakout : {}), ...koPlant, ...koDrill, ...koAct, ...koItems, ...koTour, ...koOneFlag } as Record<Key, string>;
+export const ko: Record<Key, string> = { ...koBase, ...koSetup, ...koResults, ...koNotes, ...koLineage, ...koChallenge, ...koBreakout, ...koPlant, ...koDrill, ...koAct, ...koItems, ...koTour, ...koOneFlag };

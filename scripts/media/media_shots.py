@@ -1,5 +1,5 @@
 """The screenshots of the README media (R2), each at most 1280 by 720 in the light theme (a plant is cut to its own box), one page of a headless Chromium (software WebGL) for each: the plant floor with its record halls, the card table of the
-guided scene, the Lineage view of one sample, Results with the hold-time share, and the plant of a Break-out case (a local build only). All five are made in English and in Korean; the page is driven
+guided scene, the Lineage view of one sample, Results with the hold-time share, and the plant of a Break-out case (a local build only). The first three are made in English and in Korean; the page is driven
 by the controls a reader uses, and every figure on a screenshot is the lab's own on that visit (this file states no result).
 
 The instants and the run are fixed: the default scenario, seed 1, 09:40 of day 8 for the plant; the scenario of the tour (the sample its lineage rule picks) for the table; the scenario `sc03_feed_in_gap`
@@ -92,11 +92,11 @@ def lineage_shot(browser, url: str, path: Path, lang: str) -> None:
         assert not errors, errors[:3]
 
 
-def results_shot(browser, url: str, path: Path, lang: str) -> None:
+def results_shot(browser, url: str, path: Path) -> None:
     """Results of the default run of Setup (the default scenario, its 20 seeds, A, B and C), scrolled to the block of the record C where the hold-time rule's share of the result starts."""
     with open_lab(browser, url, SIZE, "light") as (page, errors, _):
         page.wait_for_selector("#main[data-ready=true]", timeout=60_000)
-        assert not apply_state(page, "light", lang)
+        apply_state(page, "light", "en")
         go(page, "setup")
         page.wait_for_selector("#run:not([disabled])", timeout=30_000)
         page.click("#run")
@@ -108,11 +108,10 @@ def results_shot(browser, url: str, path: Path, lang: str) -> None:
         assert not errors, errors[:3]
 
 
-def breakout_shot(browser, url: str, path: Path, lang: str) -> None:
+def breakout_shot(browser, url: str, path: Path) -> None:
     """The plant of a Break-out case (the lot rack, the crates, the tape of the record C on the lot that was quarantined) at the instant of its last confirming result, the camera on the crate of ML-3 with its
     panel open. The truth overlay is off, as it is on every entry."""
     with open_link(browser, url, case_href(CASE), color_scheme="light") as (page, errors):
-        assert not apply_state(page, "light", lang)
         wait_scene(page, halls=5)
         plan = plan_from_messages(plant_messages(page), int(state(page)["epoch"]))
         pause(page)

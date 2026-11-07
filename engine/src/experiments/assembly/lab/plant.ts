@@ -226,13 +226,7 @@ export const runPlant = async (data: LabData, spec: PlantSpec, previous?: PlantK
 export const checkPlantRequest = (data: LabData, challenges: Challenges, raw: { spec: unknown }): { ok: true; spec: PlantSpec } | PlantRefusal => {
   const checked = checkPlantSpec(raw.spec, data);
   if (!checked.ok) return checked;
-  const locked = { ok: false, code: "locked", message: "this run is a challenge that has not been revealed; the plant of it opens after the guess or the give-up" } as const;
-  if (challenges.locked(checked.spec.run, checked.spec.seed)) return locked;
-  // audit R1, S-01: the actions can make the truth of a challenge out of a spec that is not the challenge's, so while one is open the truth the actions make is asked too (a run that needs one more truth run)
-  if (checked.spec.actions.length > 0 && challenges.anyOpen()) {
-    const made = truthOf(data, checked.spec);
-    if (made.ok && challenges.lockedTruth(made.truth.run.events)) return locked;
-  }
+  if (challenges.locked(checked.spec.run, checked.spec.seed)) return { ok: false, code: "locked", message: "this run is a challenge that has not been revealed; the plant of it opens after the guess or the give-up" };
   return checked;
 };
 

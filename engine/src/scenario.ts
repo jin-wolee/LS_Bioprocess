@@ -129,7 +129,6 @@ export const loadScenario = (raw: unknown, lookup: ProfileLookup): ScenarioConfi
   if (breakout) planBreakout(breakout, sc.scenario_id, proc); // the refusals that need the units; the run plans again for the script
   const lots = (sc.lot_changes ?? []).map((l) => ({ analyzer: l.analyzer, at_s: minutes(l.at) }));
   const v = readAll(settings, { analyzers: ["analyzer_count", "analyzers"], rerun: ["rerun_probability", "fraction"], qcStart: ["qc_window_start_min", "min"], qcLength: ["qc_window_length_min", "min"] });
-  if (!Number.isFinite(v.rerun) || v.rerun < 0 || v.rerun >= 1) throw new Error("scenario: rerun_probability must be at least 0 and less than 1");
   const fleet = loadFleet(sc.scenario_id, sc.analyzer_profiles, analyzer, v.analyzers, lookup, routeConfig);
   const plan = oneOf(sc.sampling_plan, ["burst", "staggered"], "burst", "sampling_plan");
   const label = oneOf(sc.label_method, ["handwritten", "preprinted_barcode", "issued_at_draw"], "handwritten", "label_method");

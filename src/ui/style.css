@@ -150,7 +150,7 @@ input[aria-invalid="true"] { border: 2px solid var(--fail-fg); }
 .pick label { min-width: 5.5rem; font-weight: 600; }
 .pick-detail { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; color: var(--muted); font-size: 0.9rem; min-width: 0; overflow-wrap: anywhere; }
 .checks { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 8px 0; }
-.check-option { display: inline-flex; flex-wrap: wrap; max-width: 100%; overflow-wrap: anywhere; align-items: center; gap: 6px; }
+.check-option { display: inline-flex; align-items: center; gap: 6px; }
 button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; padding: 6px 24px; }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 .run-status { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 8px 12px; margin: 12px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
@@ -162,11 +162,6 @@ progress { width: min(100%, 18rem); height: 14px; accent-color: var(--accent); }
 .flag-matrix { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 8px 0; }
 .flag-matrix th, .flag-matrix td { border-bottom: 1px solid var(--border); padding: 4px 6px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
 .flag-matrix thead th { border-bottom: 2px solid var(--border); }
-@media (max-width: 599px) {
-  .flag-matrix { display: block; max-width: 100%; overflow-x: auto; table-layout: auto; }
-  .flag-matrix th, .flag-matrix td { white-space: nowrap; font-size: 0.8rem; }
-  .flag-matrix .flag-name { overflow-wrap: normal; }
-}
 .flag-name { color: var(--muted); overflow-wrap: anywhere; }
 .flag-state { white-space: nowrap; }
 .flag-on { font-weight: 600; }
@@ -210,7 +205,7 @@ select { max-width: 100%; }
 .shown-list { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
 .shown-head { margin: 4px 0 0; font-weight: 600; }
 .check-option.disabled { color: var(--muted); }
-.disabled-reason { font-size: 0.85rem; color: var(--muted); overflow-wrap: anywhere; }
+.disabled-reason { font-size: 0.85rem; color: var(--muted); }
 #lineage-seed, #challenge-seed { width: 10rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 #lineage-sample { width: min(100%, 20rem); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .lg-legend { color: var(--muted); font-size: 0.9rem; }
@@ -284,5 +279,3 @@ select { max-width: 100%; }
 .flag-col { border: 1px solid var(--border); border-radius: 8px; padding: 4px 12px 12px; background: var(--surface); min-width: 0; }
 .flag-col-head { margin: 8px 0 4px; font-size: 1rem; overflow-wrap: anywhere; }
 .flag-col .figures { grid-template-columns: minmax(0, 1fr); }
-
-:lang(ko) { word-break: keep-all; overflow-wrap: anywhere; }

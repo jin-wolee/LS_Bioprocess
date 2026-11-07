@@ -1,4 +1,3 @@
-import { loadavg } from "node:os";
 import { describe, expect, it } from "vitest";
 import { runScenario } from "../src/run.ts";
 import { ENGINE_NODE_FLAGS } from "./support/node_flags.ts";
@@ -13,16 +12,7 @@ import { configOf } from "./support/scenarios.ts";
 // Where it runs (H1): not in the default `npm run test`, whose 200 files share the cores and would make the figure the machine's; `npm run test:perf` (vite.config.ts, mode "perf") runs this
 // file alone, after the suite, and `npm run check` and so `scripts/check_all.sh` include that step. engine/tests/node_flags.test.ts fails if the step leaves the check.
 
-function formatI12Line(median: number, ms: number[], load: number[]): string {
-  return `I12 median ${median.toFixed(0)} ms of 5 runs (${ms.map((x) => x.toFixed(0)).join(", ")} ms); load avg ${load.map((x) => x.toFixed(2)).join(", ")}`;
-}
-
 describe("I12 engine run time of the default scenario", () => {
-  it("reports all three load averages beside the I12 timings", () => {
-    expect(formatI12Line(200, [100, 200, 300, 400, 500], [1.25, 2.5, 3.75]))
-      .toBe("I12 median 200 ms of 5 runs (100, 200, 300, 400, 500 ms); load avg 1.25, 2.50, 3.75");
-  });
-
   it("is measured by a worker that carries the Node flags of the engine (ADR-0016), as the engine runs in production", () => {
     for (const flag of ENGINE_NODE_FLAGS) expect(process.execArgv).toContain(flag);
   });
@@ -39,7 +29,7 @@ describe("I12 engine run time of the default scenario", () => {
     }
     const sorted = [...ms].sort((a, b) => a - b);
     const median = sorted[2] as number;
-    console.log(formatI12Line(median, ms, loadavg()));
+    console.log(`I12 median ${median.toFixed(0)} ms of 5 runs (${ms.map((x) => x.toFixed(0)).join(", ")} ms)`);
     expect(median).toBeLessThanOrEqual(1000);
   }, 60_000);
 });

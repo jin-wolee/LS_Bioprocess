@@ -55,8 +55,8 @@ Proposed: option 2.
 
 ## Evidence
 
-- A047 (provisional) (label error rate, clinical proxy), A061 (provisional) (standardised labelling protocols reduce errors, proxy; supports a system-issued-id lever, not a training lever).
-- A036 (provisional) (instrument results arrive as a file drop in practice), A032 and A033 (instrument bias and drift are unsourced assumptions), A049, S029, S030 (clock control and time zones), A056 (site-dependent system of record).
+- A047 (label error rate, clinical proxy), A061 (standardised labelling protocols reduce errors, proxy; supports a system-issued-id lever, not a training lever).
+- A036 (instrument results arrive as a file drop in practice), A032 and A033 (instrument bias and drift are unsourced assumptions), A049, S029, S030 (clock control and time zones), A056 (site-dependent system of record).
 - A103 (minimum seeds for reported comparisons).
 - Design source: `docs/design/simulation_spec.md`, data-architecture and experiments sections; time fields in `docs/design/data_model.md`, section 5.
 

@@ -101,16 +101,6 @@ export function Notes({ ready }: { ready: ReadyInfo | null }) {
         <T as="p" k="notes.flags.lead" />
         {ready && <FlagTable ready={ready} />}
       </section>
-
-      <section id="more-reading" aria-labelledby="more-reading-heading">
-        <T as="h2" k="notes.more.heading" id="more-reading-heading" />
-        <ul>
-          <li><a href="https://github.com/jin-wolee/LS_Bioprocess"><T k="notes.more.repo" /></a></li>
-          <li><a href="https://github.com/jin-wolee/LS_Bioprocess/tree/main/docs/design"><T k="notes.more.design" /></a></li>
-          <li><a href="https://github.com/jin-wolee/LS_Bioprocess/tree/main/docs/adr"><T k="notes.more.adr" /></a></li>
-          <li><a href="https://github.com/jin-wolee/LS_Bioprocess/tree/main/docs/research"><T k="notes.more.research" /></a></li>
-        </ul>
-      </section>
     </>
   );
 }

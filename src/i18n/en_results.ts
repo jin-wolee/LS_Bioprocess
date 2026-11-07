@@ -5,6 +5,7 @@ export const enResults = {
   "results.lead": "One block per architecture: each metric of the specification as the median over the seeds with its spread, the number of seeds behind it, its denominator and its status. The figures are simulation results under the inputs shown, not a prediction of a real plant, and they are not combined into one score.",
   "results.empty": "No run yet. Choose a setup and press Run.",
   "results.empty.link": "Go to Setup",
+  "results.running": "A run is in progress.",
   "results.meets.warn": "The seed count is below the minimum of {min}: the report does not call this a comparison. Read each spread as that of a small sample of seeds.",
   "results.interval.label": "What the range is",
   "results.interval.text": "spread across seeds: the fifth to the ninety-fifth percentile, each an observed value; not a confidence interval",
@@ -29,6 +30,7 @@ export const enResults = {
   "results.hold_limit.review_ids": "A213",
   "results.hold_limit.cannot": "The record of this architecture stores no hold time, so the rule cannot run on it and there is nothing to lift.",
   "results.detection.lead": "Recall is always shown beside precision and the false-alarm rate, and the realised opportunities are the denominator of recall.",
+  "results.detection.type": "Error type",
   "results.note.label_error": "Without {flag}, a label error is not detected here. A conflict of the duplicate-file check ({dup}) cannot tell a replayed file from two analyses that a label error gave the same label, and the double-label check ({double}) looks for two different ids, so the error appears as false alarms of the type {type}. The numbers are shown as they are.",
 
   "results.fig.median": "median",

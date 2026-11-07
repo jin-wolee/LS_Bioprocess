@@ -6,7 +6,7 @@
 
 The simulator was scoped around one story: an analysis result loses its process context on the way from a bioreactor to a record. The default scenario is therefore uniform on purpose, with one cell line, one fed-batch mode and no accidents (ADR-0009). The author asked for the simulator to cover more of what can happen in bio-manufacturing: a cell line that differs from reactor to reactor, operating modes that differ, and contamination or sterility failures as break-out events, because they really happen. The author also said that adding CFD would be too much, and that for now the sample-results-lose-context story may stay the focus.
 
-Two facts shape the choice. First, the ledgers now hold the parameters for all three extensions (A119 (provisional) to A158 (provisional), S057 (provisional) to S083 (provisional)), almost all provisional. Second, an accident is where lineage earns its keep: the question after a positive test is which samples, results, pools and lots the event touched, and that is a lineage question, the thing this simulator already compares across data architectures. ADR-0012 already gives the mechanism for variation: named data profiles chosen by scenarios, with a generic engine.
+Two facts shape the choice. First, the ledgers now hold the parameters for all three extensions (A119 to A158, S057 to S083), almost all provisional. Second, an accident is where lineage earns its keep: the question after a positive test is which samples, results, pools and lots the event touched, and that is a lineage question, the thing this simulator already compares across data architectures. ADR-0012 already gives the mechanism for variation: named data profiles chosen by scenarios, with a generic engine.
 
 ## Options
 
@@ -32,30 +32,30 @@ Proposed: option 4, with the schedule the author chose in the guided review: bre
 
 | Extension | What it adds | Built in | Ledger bundles | Bundle grade (weakest component) |
 |---|---|---|---|---|
-| Cell-line profiles | per-reactor clone draw around the platform kinetics; lactate consumers and high producers | S4 | A150 (provisional), A151 (provisional), A152 (provisional) | A, A, P |
-| Operating-mode profiles | batch, fed-batch, intensified fed-batch, perfusion; cadence and context unit per mode | S4 | A153 (provisional), A154 (provisional), A155 (provisional), A156 (provisional) | A, A, A, A |
-| Break-out events | contamination first: origin including sampling, signal lag, confirmatory tests and turnaround, holds, investigation walk-back, retro-flagging | S3 | A157 (provisional), A158 (provisional) | A, A |
+| Cell-line profiles | per-reactor clone draw around the platform kinetics; lactate consumers and high producers | S4 | A150, A151, A152 | A, A, P |
+| Operating-mode profiles | batch, fed-batch, intensified fed-batch, perfusion; cadence and context unit per mode | S4 | A153, A154, A155, A156 | A, A, A, A |
+| Break-out events | contamination first: origin including sampling, signal lag, confirmatory tests and turnaround, holds, investigation walk-back, retro-flagging | S3 | A157, A158 | A, A |
 
 - Scheduling. S0 to S2 are unchanged and stay on context loss. Nothing in this ADR is implemented before S2 ends. Cell-line profiles and operating-mode profiles are built in S4. Break-out events are built in S3, together with the lab UI. With no extension selected, every earlier scenario produces a byte-identical event log.
 - Mechanism. Cell lines, modes and event types are data under `data/scenarios/`, validated like the ADR-0012 profiles (`{value, unit, ref}` with `ref` resolving to a ledger id). The engine gains only generic mechanisms (a per-reactor parameter draw, material-lot consumption, an event script with onset, signal and test times) and never branches on a profile, mode or event id.
 - Open loop. Break-out events run as a variant of experiment 1: the truth run, including the scripted response (unit stopped, confirming samples drawn), is shared by all architectures. Architectures differ only in what their records let an investigator find. Detection never changes the truth run (ADR-0004).
-- Honesty about rates. The per-batch contamination rate is derived from a 2008 self-reported survey (A135 (provisional), S066 (provisional), grade D) and the per-draw rate is an assumption under a derived ceiling (A136 (provisional), grade A). Scenarios therefore inject an event at a chosen time, origin and type instead of waiting for chance, and any random-draw mode is labelled assumed. No result is presented as a prediction of a real plant.
+- Honesty about rates. The per-batch contamination rate is derived from a 2008 self-reported survey (A135, S066, grade D) and the per-draw rate is an assumption under a derived ceiling (A136, grade A). Scenarios therefore inject an event at a chosen time, origin and type instead of waiting for chance, and any random-draw mode is labelled assumed. No result is presented as a prediction of a real plant.
 - Not in scope: CFD, mechanistic mixing or transport, assay sensitivity (tests report the truth), downstream process models beyond lineage edges.
 - Detail lives in `docs/design/simulation_spec.md` (section 11, scenarios SC12 to SC14, the extension metrics, the rule-to-flags table in section 5) and `docs/design/data_model.md` (section 15).
 
 ## Consequences
 
 - Positive: the simulator can show an investigation, the use of lineage with the highest stakes; cell-line and instrument effects can be confounded on purpose (SC13); the context unit can change (SC14); no new mechanism type is needed beyond ADR-0012's.
-- Negative: scope grows by three profile families, new entities (material lots, quality holds, deviations), two new lineage relations and new scenario-level metrics. Almost every new parameter is provisional (none of S057 (provisional) to S083 (provisional) is `main-reread`) and many bundles are graded A, so nothing from the extensions may go on a public page until its sources are re-read.
+- Negative: scope grows by three profile families, new entities (material lots, quality holds, deviations), two new lineage relations and new scenario-level metrics. Almost every new parameter is provisional (none of S057 to S083 is `main-reread`) and many bundles are graded A, so nothing from the extensions may go on a public page until its sources are re-read.
 - Schedule: in S3 the walk-back covers the reactor's samples and results and the other reactors that share a seed, feed or media lot (material lots). The downstream walk-back through pools and lots extends in S4, when genealogy lands (SC10). S3 workload grows: it carries the break-out engine work (event script, material lots, holds, confirming tests, retro-flagging) next to the lab UI and its end-to-end tests.
-- Data needs: the delays between the first signal, the confirmed result and the hold/quarantine action are A176 (provisional), and the shared-lot topology (how many reactors share a seed, media or feed lot) is A177 (provisional); both are grade A scenario inputs without defaults, printed with every result. The lot withdrawal schedule after a recall decision is A187 (provisional) (grade P).
+- Data needs: the delays between the first signal, the confirmed result and the hold/quarantine action are A176, and the shared-lot topology (how many reactors share a seed, media or feed lot) is A177; both are grade A scenario inputs without defaults, printed with every result. The lot withdrawal schedule after a recall decision is A187 (grade P).
 - Open question for ADR-0005: lot and derivation links need a recorder that stores them. The eight flags may not cover this. Either architectures A and B store lot links as free text (the subset rule of the data model), or a ninth flag is added, which would be an amendment to ADR-0005. Parked; decide when SC12 is built, which is now in S3.
 - Keeping YAGNI: events other than contamination (equipment faults, power loss, operator errors) stay out until the first event type has run.
 
 ## Evidence
 
-- Ledger entries A119 (provisional) to A158 (provisional) and the revised A009 (provisional); sources S057 (provisional) to S083 (provisional), all provisional.
-- A135 (provisional), A136 (provisional), A137 (provisional) (rates and mix), A138 (provisional) to A141 (provisional) (signals), A142 (provisional) to A148 (provisional) (confirming tests and volumes), A149 (provisional) (investigation scope), A134 (provisional) (port limit).
+- Ledger entries A119 to A158 and the revised A009; sources S057 to S083, all provisional.
+- A135, A136, A137 (rates and mix), A138 to A141 (signals), A142 to A148 (confirming tests and volumes), A149 (investigation scope), A134 (port limit).
 - Design sources: `docs/design/simulation_spec.md` section 11, `docs/design/data_model.md` section 15, `docs/research/README.md` ("Planned extensions").
 - Related: ADR-0004 (truth world and recorded world, experiments), ADR-0005 (flags), ADR-0009 (default scenario), ADR-0012 (profiles).
 

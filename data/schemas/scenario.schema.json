@@ -42,7 +42,6 @@
     },
     "settings": {
       "type": "object",
-      "properties": { "rerun_probability": { "allOf": [{ "$ref": "profile.schema.json#/$defs/param" }, { "type": "object", "properties": { "value": { "type": "number", "minimum": 0, "exclusiveMaximum": 1 } } }] } },
       "additionalProperties": { "$ref": "profile.schema.json#/$defs/param" }
     },
     "maintenance": {

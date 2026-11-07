@@ -37,8 +37,6 @@ export const answerLineage = (data: LabData, challenges: Challenges, raw: { spec
   if (spec.spec.architectures.length === 0) return invalid("a lineage view needs at least one architecture");
   const made = truthOf(data, { run: spec.spec, seed: seed.seed, actions: listed.actions });
   if (!made.ok) return made;
-  // audit R1, S-01: the actions can make the truth of a challenge out of a spec that is not the challenge's
-  if (challenges.lockedTruth(made.truth.run.events)) return { ok: false, code: "locked", message: "this run is a challenge that has not been revealed; the lineage view of it opens after the guess or the give-up" };
   const out = lineageOn(made.truth.run, made.truth.input, which);
   return out.ok ? out : invalid(out.message);
 };

@@ -42,7 +42,7 @@ Proposed: option 1.
 ## Evidence
 
 - Decisions it builds on: ADR-0005 (flags and presets; a ninth flag needs its own ADR), ADR-0013 (break-out events in S3; the open question), ADR-0014 (capture path as a setting, not a flag).
-- Design: `docs/design/data_model.md` sections 15.1 (entities and the two edge relations), 15.4 (the walk-back), 15.5 (VR-021); `docs/design/simulation_spec.md` section 11.5 (SC12). The shared-lot topology is A177 (provisional), a scenario input without a default.
+- Design: `docs/design/data_model.md` sections 15.1 (entities and the two edge relations), 15.4 (the walk-back), 15.5 (VR-021); `docs/design/simulation_spec.md` section 11.5 (SC12). The shared-lot topology is A177, a scenario input without a default.
 - No `S###` applies: the choice is a design decision about the record, not a domain number.
 
 ## Author statement (verbatim, if any)

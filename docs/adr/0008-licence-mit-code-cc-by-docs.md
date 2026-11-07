@@ -33,7 +33,7 @@ Proposed: option 1, as a proposal only. **No licence is displayed anywhere until
 
 ## Evidence
 
-- A public dataset in the survey is released under CC BY 4.0 (S035 (provisional), snippet), a precedent for data licensing in this field.
+- A public dataset in the survey is released under CC BY 4.0 (S035, snippet), a precedent for data licensing in this field.
 - No domain number is involved.
 
 ## Author statement (verbatim, if any)

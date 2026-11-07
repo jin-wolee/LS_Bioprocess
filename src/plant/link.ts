@@ -87,25 +87,16 @@ const seedFrom = (q: URLSearchParams, fallback: number, note: Note): number => {
   return fallback;
 };
 
-/** Bound untrusted action payloads before comparison or structured cloning. */
-export const safeActions = (value: unknown): value is PlantAction[] =>
-  Array.isArray(value) && value.length <= 16 && value.every((action: unknown) => {
-    if (typeof action !== "object" || action === null || Array.isArray(action)) return false;
-    const entries = Object.entries(action);
-    return entries.length <= 16 && entries.every(([key, v]) => key.length <= 128 &&
-      (v === null || typeof v === "boolean" || (typeof v === "number" && Number.isFinite(v)) || (typeof v === "string" && v.length <= 256)));
-  });
-
 const actionsFrom = (q: URLSearchParams, note: Note): PlantAction[] => {
   const carried = q.get("actions");
   if (carried === null) return [];
   try {
-    const parsed: unknown = carried.length <= 65536 ? JSON.parse(carried) : null;
-    if (safeActions(parsed)) return parsed;
+    const parsed: unknown = JSON.parse(carried);
+    if (Array.isArray(parsed)) return parsed as PlantAction[];
   } catch {
     // not JSON: named below
   }
-  note("actions", carried.slice(0, 256));
+  note("actions", carried);
   return [];
 };
 

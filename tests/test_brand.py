@@ -199,13 +199,13 @@ def test_the_explainer_page_links_the_mark_as_its_icon_and_is_titled_with_the_na
 
 def test_the_explainer_header_holds_the_mark_hidden_from_readers_and_the_name_as_text_in_both_languages():
     page = explainer()
-    brand = re.search(r'<p class="brand" lang="en">(.*?)</p>', page, re.S).group(1)
+    brand = re.search(r'<p class="brand">(.*?)</p>', page, re.S).group(1)
     drawing, name = brand.rsplit("</svg>", 1)
     assert (drawing + "</svg>") == inline(mark()).replace("<svg ", '<svg aria-hidden="true" ', 1)
     assert name == NAME  # text, right after the drawing
     assert "data-i18n" not in re.search(r'<p class="brand"[^>]*>', page).group(0) and 'data-i18n="brand' not in page  # no Korean text for it
     source = (EXPLAINER / "src" / "body.html").read_text(encoding="utf-8")
-    assert re.search(r'<p class="brand" lang="en"><!--MARK-->' + NAME + "</p>", source)  # the source names the place; the build fills it from the file
+    assert re.search(r'<p class="brand"><!--MARK-->' + NAME + "</p>", source)  # the source names the place; the build fills it from the file
     assert not re.search(r"<p class=\"brand\"><svg", source)
 
 

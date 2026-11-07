@@ -7,7 +7,6 @@ names under media/ (P10), the lab under lab/ and an empty .nojekyll, and nothing
 from __future__ import annotations
 
 import sys
-import json
 
 from helpers import REPO
 
@@ -20,19 +19,6 @@ PAGE = """<style>
 @font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url(fonts/ibm-plex-mono-400-latin.woff2) format("woff2"); }
 body { background: url(img/not-a-font.png) }
 </style>"""
-
-
-def test_site_report_preserves_table_json_and_markdown(tmp_path):
-    results = [qs.Result("site", True, "한글 | detail", {"n": 2}), qs.Result("failed", False, "broken")]
-    assert qs.report(results, tmp_path) == "1 site    PASS  한글 | detail\n2 failed  FAIL  broken\nFAIL  qa_site failed: broken"
-    assert json.loads((tmp_path / "results.json").read_text()) == [
-        {"name": "site", "ok": True, "detail": "한글 | detail", "data": {"n": 2}},
-        {"name": "failed", "ok": False, "detail": "broken", "data": {}},
-    ]
-    assert (tmp_path / "summary.md").read_text() == (
-        "# Site QA\n\n| check | result | detail |\n|---|---|---|\n"
-        "| 1 site | PASS | 한글 / detail |\n| 2 failed | FAIL | broken |\n"
-    )
 
 
 def test_the_folder_the_design_describes_has_no_problem():

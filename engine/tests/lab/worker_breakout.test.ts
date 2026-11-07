@@ -1,11 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Response } from "../../../src/protocol.ts";
 import { createWorker } from "../../../src/worker/worker.ts";
 import type { WorkerEnv } from "../../../src/worker/worker.ts";
 import { labData } from "../support/lab_data.ts";
 import { breakoutData } from "./breakout_data.ts";
-
-vi.stubEnv("VITE_LAB_LOCAL", "1");
 
 // S3g, the `breakout` request of the Worker protocol (docs/design/lab_ui.md sections 4 and 20). The Worker is driven through createWorker with a recording `post`, as worker.test.ts does.
 
