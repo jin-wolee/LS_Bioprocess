@@ -20,7 +20,7 @@ from qa_lab_breakout import build_public
 from qa_lab_browser import NUMBERS_JS, apply_state, go, open_lab, set_lang, wait_final
 from qa_lab_helpers import number_offenders
 from qa_lab_oneflag_helpers import (
-    ONE_FLAG_ARCHS, one_flag_load_problems, one_flag_problems, one_flag_request_problems, setup_problems, signature, statuses,
+    one_flag_load_problems, one_flag_problems, one_flag_request_problems, setup_problems, signature, statuses,
 )
 
 # what the page sends to the Worker: the type and, for a run, the parts of the spec the card must keep exactly (window.__labRequests, in order)

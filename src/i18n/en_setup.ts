@@ -70,7 +70,6 @@ export const enSetup = {
   "setup.run.cancel": "Cancel",
   "setup.run.lead": "The engine runs one seed at a time in the Worker. Cancel is read between seeds.",
   "setup.run.progress": "Seeds done: {done} of {total}",
-  "setup.run.cancelled": "The run was cancelled.",
 
   "setup.link.heading": "Link to this setup",
   "setup.link.lead": "The link holds the setup and never a result. Opening it fills this form; press Run to see the result.",

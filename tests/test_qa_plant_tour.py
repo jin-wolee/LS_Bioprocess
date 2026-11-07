@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "qa"))
 
 from qa_plant_tour_helpers import (  # noqa: E402
-    TRACE, card_cells, centre_problems, expected_steps, offer_problems, reduced_tour_problems, step_problems, tour_sample, trace_problems, truth_request_problems, verdict_problems,
+    card_cells, centre_problems, expected_steps, offer_problems, reduced_tour_problems, step_problems, tour_sample, trace_problems, truth_request_problems, verdict_problems,
 )
 
 

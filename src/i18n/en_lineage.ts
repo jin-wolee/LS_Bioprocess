@@ -34,7 +34,6 @@ export const enLineage = {
 
   "lineage.column.flags": "Flags",
   "lineage.column.labelling": "Labelling",
-  "lineage.q.heading": "The three questions",
   "lineage.q.unit": "Which unit was it drawn from?",
   "lineage.q.sampled_at": "At which instant was it drawn?",
   "lineage.q.process_context": "Which process context applied at the draw?",
@@ -48,7 +47,6 @@ export const enLineage = {
   "lineage.stub": "no link stored",
   "lineage.errors.heading": "Errors the injector realised on this sample in this record",
   "lineage.errors.none": "none",
-  "lineage.legend.heading": "How to read a column",
   "lineage.legend.edges": "A line runs from the row a key comes from to the row it joins, in the direction of derivation. A dashed line joins the sample to its process context by the time the record used. A short line that ends in a gap is a key the record does not store.",
   "lineage.legend.answers": "An answer with a solid outline is correct; a heavy outline with a cross is wrong, and the truth is written beside it; a dashed hollow outline is a field the record does not store, so it cannot answer.",
   "lineage.svg.title": "Rows of the record {architecture} for one sample, joined by their keys",

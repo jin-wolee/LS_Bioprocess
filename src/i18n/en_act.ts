@@ -111,6 +111,5 @@ export const enAct = {
   "plant.flags.state.on.to": "on",
   "plant.flags.state.off.to": "off",
   "plant.flags.cell": "{flag} in {hall} is {state}. Set it {next}.",
-  "plant.col.sample": "Sample",
   "plant.col.planned": "Planned",
 } as const;

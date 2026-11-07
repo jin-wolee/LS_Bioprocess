@@ -71,7 +71,6 @@ export const koSetup: Record<keyof typeof enSetup, string> = {
   "setup.run.cancel": "취소",
   "setup.run.lead": "엔진은 Worker에서 시드를 하나씩 실행합니다. 취소는 시드 사이에 확인됩니다.",
   "setup.run.progress": "완료한 시드: {total}개 중 {done}개",
-  "setup.run.cancelled": "실행이 취소되었습니다.",
 
   "setup.link.heading": "이 설정의 링크",
   "setup.link.lead": "링크에는 설정만 들어 있고 결과는 들어 있지 않습니다. 링크를 열면 이 폼이 채워지며, 결과를 보려면 실행을 누르세요.",

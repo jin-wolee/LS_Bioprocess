@@ -94,7 +94,6 @@ export const enBreakout = {
   "breakout.items.path": "Reached by",
 
   "breakout.metrics.heading": "The six extension metrics",
-  "breakout.metrics.lead": "Each figure is for this one seed: a count over its denominator in words. One seed has no spread; the spread across seeds belongs to the report of the experiment. Recall is shown beside precision and the false-alarm rate, and no figure is combined with another into one number.",
   "breakout.metrics.containment": "Time to containment, by kind of item",
   "breakout.metrics.held": "held",
   "breakout.metrics.median": "median",
