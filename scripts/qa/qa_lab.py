@@ -12,6 +12,8 @@ The Pages workflow (P9; docs/design/lab_ui.md section 13) runs `--timing report 
 run because only Chromium is installed there.
 """
 from __future__ import annotations
+from qa_report import report as write_report
+from qa_build import build_local_lab
 
 import argparse
 import json
@@ -36,21 +38,13 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def report(results: list[Result], out: Path) -> str:
-    rows = [(f"{i} {r.name}", "PASS" if r.ok else "FAIL", r.detail) for i, r in enumerate(results, 1)]
-    width = max(len(r[0]) for r in rows)
-    table = "\n".join(f"{n:<{width}}  {s}  {d}" for n, s, d in rows)
-    (out / "results.json").write_text(json.dumps([r.__dict__ for r in results], indent=2, ensure_ascii=False), encoding="utf-8")
-    md = "| check | result | detail |\n|---|---|---|\n" + "\n".join(f"| {n} | {s} | {d.replace('|', '/')} |" for n, s, d in rows)
-    (out / "summary.md").write_text(f"# Lab QA\n\n{md}\n", encoding="utf-8")
-    # one line per failed check that check_all.sh can show (its summary keeps the lines that start with FAIL)
+    table = write_report(results, out, 'Lab QA')
     failures = "".join(f"\nFAIL  qa_lab {r.name}: {r.detail[:300]}" for r in results if not r.ok)
     return table + failures
 
 
 def build() -> int:
-    # The QA serves a local build (VITE_LAB_LOCAL=1): it must show the Break-out screen, which the public build refuses while a source of it is below main-reread (lab_ui.md section 20).
-    # The check `breakout_public` builds the public build itself.
-    return subprocess.run(["npm", "run", "build:lab"], cwd=REPO, env={**os.environ, "VITE_LAB_LOCAL": "1"}).returncode
+    return build_local_lab()
 
 
 def main(argv=None) -> int:

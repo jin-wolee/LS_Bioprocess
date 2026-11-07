@@ -34,6 +34,7 @@ from media_clips import record_action, record_tour  # noqa: E402
 from media_files import HERO_NAME, SHOTS_EN, SHOTS_KO, hero_problems, inspect, kept_seconds, render_gif, render_jpeg, require_ffmpeg, size_problems  # noqa: E402
 from media_shots import breakout_shot, lineage_shot, plant_shot, results_shot, tour_table_shot  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
+from qa_build import build_local_lab
 from qa_infographic import serve  # noqa: E402
 from qa_plant_helpers import SOFTWARE_GL  # noqa: E402
 
@@ -41,8 +42,7 @@ PARTS = ("tour", "action", "shots", "hero")
 
 
 def build() -> int:
-    """The local build of the lab, as the plant QA makes it."""
-    return subprocess.run(["npm", "run", "build:lab"], cwd=REPO, env={**os.environ, "VITE_LAB_LOCAL": "1"}).returncode
+    return build_local_lab()
 
 
 def make_gif(recorder, browser, url: str, out: Path, name: str, work: Path, keep: Path | None, timeline: bool) -> None:
