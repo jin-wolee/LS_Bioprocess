@@ -15,7 +15,7 @@ Engine:
    - Con: two implementations of the core loop to keep in step; parity cannot be judged until the reference exists (see the separate gates in ADR-0010).
 2. **Python only, in the browser through Pyodide.**
    - Pro: one implementation.
-   - Con: a multi-megabyte runtime download before anything runs; slower start; the other browser-side Python route in the survey states it does not work in Firefox (S034). A browser-based discrete-event lab with seeded trace replay does use Pyodide (S033), so the route is viable but heavy.
+   - Con: a multi-megabyte runtime download before anything runs; slower start; the other browser-side Python route in the survey states it does not work in Firefox (S034 (provisional)). A browser-based discrete-event lab with seeded trace replay does use Pyodide (S033 (provisional)), so the route is viable but heavy.
 3. **TypeScript only, no reference.**
    - Pro: least work.
    - Con: the engine would be judged only by its own tests; no independent check of event ordering.
@@ -47,7 +47,7 @@ Proposed: TypeScript engine in a Web Worker with a SimPy reference; DuckDB as th
 
 ## Evidence
 
-- S033 (browser discrete-event lab using Pyodide with seeded trace replay), S034 (SimPy-in-browser route that does not work in Firefox).
+- S033 (provisional) (browser discrete-event lab using Pyodide with seeded trace replay), S034 (provisional) (SimPy-in-browser route that does not work in Firefox).
 - Version facts (TypeScript 6.0.3, 7.0.2, `typescript-eslint` 8.72.1, Biome 2.6.3) are software facts from the 2026-10-28 registry check; they carry no ledger id and are not domain parameters.
 
 ## Author statement (verbatim, if any)

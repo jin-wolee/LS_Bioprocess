@@ -14,21 +14,22 @@
 <a class="skip" href="#premise" data-i18n="ui.skip">Skip to content</a>
 <div class="page">
 <header class="top">
-<p class="brand"><!--MARK-->Sample Lineage Lab</p>
+<p class="brand" lang="en"><!--MARK-->Sample Lineage Lab</p>
 <div class="controls" role="group" aria-label="Display options" data-i18n-aria="ui.opts">
 <a class="btn" id="lab-link" href="lab/" data-i18n="ui.lab">Open the lab</a>
 <label><span data-i18n="ui.theme">Theme</span> <select id="theme-select"><option value="auto" data-i18n="ui.t.auto">Auto</option><option value="light" data-i18n="ui.t.light">Light</option><option value="dark" data-i18n="ui.t.dark">Dark</option><option value="neon" data-i18n="ui.t.neon">Neon</option></select></label>
 <button id="lang-toggle" type="button" aria-label="Switch language" data-i18n-aria="ui.lang"><span class="lg-en">EN</span> &#8644; <span class="lg-ko">KO</span></button>
-<button id="story-toggle" type="button" aria-pressed="false"><span data-i18n="ui.story">Story mode</span>: <span class="st-off" data-i18n="ui.off">off</span><span class="st-on" data-i18n="ui.on">on</span></button>
+<button id="story-toggle" type="button" aria-pressed="false" aria-describedby="story-note"><span data-i18n="ui.story">Story mode</span>: <span class="st-off" data-i18n="ui.off">off</span><span class="st-on" data-i18n="ui.on">on</span></button>
 </div>
+<p id="story-note" data-i18n="ui.story.note" hidden>Story mode is unavailable while reduced motion is on.</p>
 <nav class="toc" aria-label="Sections" data-i18n-aria="ui.nav"><ol>
-<li><a href="#premise">premise</a></li><li><a href="#capacity">capacity</a></li><li><a href="#timeline">timeline</a></li><li><a href="#architectures">architectures</a></li><li><a href="#lineage">lineage</a></li><li><a href="#systems">systems</a></li><li><a href="#method">method</a></li>
+<li><a href="#premise" data-i18n="nav.premise">premise</a></li><li><a href="#capacity" data-i18n="nav.capacity">capacity</a></li><li><a href="#timeline" data-i18n="nav.timeline">timeline</a></li><li><a href="#architectures" data-i18n="nav.architectures">architectures</a></li><li><a href="#lineage" data-i18n="nav.lineage">lineage</a></li><li><a href="#systems" data-i18n="nav.systems">systems</a></li><li><a href="#method" data-i18n="nav.method">method</a></li>
 </ol></nav>
 </header>
 <main>
 
 <section id="premise" class="sec" aria-labelledby="h-premise">
-<p class="rail" aria-hidden="true">premise</p>
+<p class="rail" aria-hidden="true" data-i18n="nav.premise">premise</p>
 <div>
 <p class="eyebrow" data-i18n="p.eyebrow">Interactive explainer</p>
 <h1 id="h-premise" data-i18n="p.h1">When reactors share analyzers, which reactor and which moment does a result belong to?</h1>
@@ -40,15 +41,15 @@
 <p class="cta-note" data-i18n="p.cta">Walk through the synthetic plant in your browser. Without WebGL, a text version takes its place.</p>
 </div>
 <figure class="hero-pic">
-<img src="media/plant.jpg" width="1024" height="518" alt="The lab's synthetic plant seen from the front: rows of small reactors, the analyzers on their bench, the staff on the floor and the record halls along the back wall." data-i18n-alt="p.hero.alt" fetchpriority="high" decoding="async">
+<img src="media/plant.jpg" width="1024" height="474" alt="The lab's synthetic plant seen from the front: rows of small reactors, the analyzers on their bench, the staff on the floor and the record halls along the back wall." data-i18n-alt="p.hero.alt" fetchpriority="high" decoding="async">
 <figcaption data-i18n="p.hero.cap">A screenshot of the lab's plant, drawn from a synthetic run.</figcaption>
 </figure>
 </div>
 <p class="case" data-i18n="p.case">Join a result to the process by the time it was measured, and a sample drawn before a feed lands on the post-feed state it never saw.</p>
 <figure class="fig" data-src="A102">
-<div tabindex="0" class="fig-scroll"><svg class="wide-only" viewBox="0 0 760 130" role="img" aria-labelledby="hero-t" aria-describedby="hero-d">
-<title id="hero-t">One sample, three moments</title>
-<desc id="hero-d">A ruler from 08:30 to 09:40. The sample is drawn at 08:40, a bolus feed happens at 09:00, and the analyzer measures the sample at 09:25, 45 minutes after the draw.</desc>
+<div tabindex="0" class="fig-scroll" role="region" aria-labelledby="cap-p-f-cap"><svg class="wide-only" viewBox="0 0 760 130" role="img" aria-labelledby="hero-t" aria-describedby="hero-d">
+<title id="hero-t" lang="en">One sample, three moments</title>
+<desc id="hero-d" lang="en">A ruler from 08:30 to 09:40. The sample is drawn at 08:40, a bolus feed happens at 09:00, and the analyzer measures the sample at 09:25, 45 minutes after the draw.</desc>
 <rect class="reg1" x="30" y="56" width="300" height="28"/>
 <rect class="reg2" x="330" y="56" width="400" height="28"/>
 <text class="t2 sm" x="36" y="20" data-i18n="p.f.pre">pre-feed state</text>
@@ -59,20 +60,20 @@
 <text class="t2 sm m" x="330" y="100" text-anchor="middle">09:00</text>
 <text class="t2 sm m" x="630" y="100" text-anchor="middle">09:30</text>
 <circle class="p1f" cx="130" cy="70" r="7"/>
-<text class="p1t m" x="130" y="40" text-anchor="middle">sampled_at</text>
+<text class="p1t m" x="130" y="40" text-anchor="middle" lang="en">sampled_at</text>
 <text class="p1t m" x="130" y="54" text-anchor="middle">08:40</text>
 <path class="edge" d="M330 60l9 10-9 10-9-10z"/>
-<text class="m b" x="330" y="40" text-anchor="middle">feed</text>
+<text class="m b" x="330" y="40" text-anchor="middle" data-i18n="fig.feed">feed</text>
 <text class="m b" x="330" y="54" text-anchor="middle">09:00</text>
 <circle class="p2f" cx="580" cy="70" r="7"/>
-<text class="p2t m" x="580" y="40" text-anchor="middle">measured_at</text>
+<text class="p2t m" x="580" y="40" text-anchor="middle" lang="en">measured_at</text>
 <text class="p2t m" x="580" y="54" text-anchor="middle">09:25</text>
 <path class="edge" d="M130 116H580M130 111v10M580 111v10"/>
 <text class="m b halo" x="355" y="126" text-anchor="middle">45 min</text>
 </svg>
 <svg class="narrow-only" viewBox="0 0 400 164" role="img" aria-labelledby="hero-t2" aria-describedby="hero-d2">
-<title id="hero-t2">One sample, three moments</title>
-<desc id="hero-d2">A ruler from 08:30 to 09:40. The sample is drawn at 08:40, a bolus feed happens at 09:00, and the analyzer measures the sample at 09:25, 45 minutes after the draw.</desc>
+<title id="hero-t2" lang="en">One sample, three moments</title>
+<desc id="hero-d2" lang="en">A ruler from 08:30 to 09:40. The sample is drawn at 08:40, a bolus feed happens at 09:00, and the analyzer measures the sample at 09:25, 45 minutes after the draw.</desc>
 <rect class="reg1" x="28" y="76" width="147.4" height="24"/>
 <rect class="reg2" x="175.4" y="76" width="196.6" height="24"/>
 <text class="t2 sm" x="30" y="22" data-i18n="p.f.pre">pre-feed state</text>
@@ -82,32 +83,32 @@
 <text class="t2 sm m" x="175.4" y="118" text-anchor="middle">09:00</text>
 <text class="t2 sm m" x="322.9" y="118" text-anchor="middle">09:30</text>
 <circle class="p1f" cx="77.1" cy="88" r="7"/>
-<text class="p1t m" x="77.1" y="44" text-anchor="middle">sampled_at</text>
+<text class="p1t m" x="77.1" y="44" text-anchor="middle" lang="en">sampled_at</text>
 <text class="p1t m" x="77.1" y="60" text-anchor="middle">08:40</text>
 <path class="edge" d="M175.4 78l9 10-9 10-9-10z"/>
-<text class="m b" x="175.4" y="44" text-anchor="middle">feed</text>
+<text class="m b" x="175.4" y="44" text-anchor="middle" data-i18n="fig.feed">feed</text>
 <text class="m b" x="175.4" y="60" text-anchor="middle">09:00</text>
 <circle class="p2f" cx="298.3" cy="88" r="7"/>
-<text class="p2t m" x="298.3" y="44" text-anchor="middle">measured_at</text>
+<text class="p2t m" x="298.3" y="44" text-anchor="middle" lang="en">measured_at</text>
 <text class="p2t m" x="298.3" y="60" text-anchor="middle">09:25</text>
 <path class="edge" d="M77.1 138H298.3M77.1 132v12M298.3 132v12"/>
 <text class="m b halo" x="187.7" y="158" text-anchor="middle">45 min</text>
 </svg>
 </div>
-<figcaption data-i18n="p.f.cap">A result measured at 09:25 describes a sample drawn at 08:40, before the 09:00 feed. The times are invented for illustration.</figcaption>
+<figcaption id="cap-p-f-cap" data-i18n="p.f.cap">A result measured at 09:25 describes a sample drawn at 08:40, before the 09:00 feed. The times are invented for illustration.</figcaption>
 </figure>
 <div class="notice quiet" role="note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><p data-i18n="p.notice">All data is synthetic, and nothing on this page predicts a real laboratory or states a simulation result. The Break-out screen and the plant's Break-out cases are held back in the public build until the sources behind them are re-read.</p></div>
 <div data-src="A001 A022"><dl class="facts">
 <div><dt data-i18n="p.k.def">Reactors</dt><dd>24 <small data-i18n="p.k.defd">in two bays of 12</small></dd></div>
 <div><dt data-i18n="p.k.an">Analyzers</dt><dd>2 <small data-i18n="p.k.and">shared at-line instruments</small></dd></div>
 <div><dt data-i18n="p.k.range">Scenario range</dt><dd>N 5&ndash;100, M 1&ndash;6 <small data-i18n="p.k.ranged">reactors N and analyzers M; both are scenario settings</small></dd></div>
-<div><dt data-i18n="p.k.read">How to read a figure</dt><dd class="mono" style="font-size:.95rem">id &middot; grade <small data-i18n="p.k.readd">every figure carries a ledger id and a grade: sourced, proxy, derived or assumed. A dashed amber chip marks a provisional figure.</small></dd></div>
+<div><dt data-i18n="p.k.read">How to read a figure</dt><dd class="mono" style="font-size:.95rem"><span data-i18n="fig.grade">id &middot; grade</span> <small data-i18n="p.k.readd">every figure carries a ledger id and a grade: sourced, proxy, derived or assumed. A dashed amber chip marks a provisional figure.</small></dd></div>
 </dl></div>
 </div>
 </section>
 
 <section id="capacity" class="sec" aria-labelledby="h-capacity">
-<p class="rail" aria-hidden="true">capacity</p>
+<p class="rail" aria-hidden="true" data-i18n="nav.capacity">capacity</p>
 <div>
 <h2 id="h-capacity" data-i18n="c.h2">The capacity paradox: a light average load, and still a queue?</h2>
 <p data-i18n="c.lead">An all-in-one at-line analyzer is fast, and two of them keep the average load light. The question is whether samples can still wait.</p>
@@ -116,73 +117,71 @@
 <div><dt data-i18n="c.k.cycle">Cycle</dt><dd>4.5 min <small data-i18n="c.k.cycled">270 s for the full panel</small></dd></div>
 <div><dt data-i18n="c.k.vol">Sample</dt><dd>275 &micro;L <small data-i18n="c.k.vold">for the full panel</small></dd></div>
 </dl></div>
-<p data-i18n="c.ceiling" data-src="S001">Derived ceiling: 60 min &divide; 4.5 min is about 13.3 samples per hour per analyzer, before QC, calibration and maintenance.</p>
-<p data-i18n="c.load" data-src="A074 A001">The default lab asks for 24 reactors &times; 1.4 to 1.6 samples per reactor-day, which is 33.6 to 38.4 samples a day. At 4.5 min each that is 151 to 173 min of analyzer time. The sample counts and the window are assumptions.</p>
+<p data-i18n="c.ceiling" data-src="S001">Derived ceiling based on the distributor specification: 60 min &divide; 4.5 min is about 13.3 samples per hour per analyzer, before QC, calibration and maintenance.</p>
+<p data-i18n="c.load" data-src="A074 A001 A014 A015" data-provisional-refs="A014" data-status="provisional">The default lab assumes 24 reactors and an average of 1.6 samples per reactor-day, or 38.4 samples a day. At 4.5 min each that is 172.8 min of analyzer time. The sample counts and the window are assumptions.</p>
 <figure class="fig" data-src="A074 A098">
-<div tabindex="0" class="fig-scroll"><svg class="fit" viewBox="0 0 520 170" role="img" aria-labelledby="cap-t" aria-describedby="cap-d">
-<title id="cap-t">Analyzer utilisation of the default lab, two windows</title>
-<desc id="cap-d">Two horizontal bars on a 0 to 100 percent scale. Over a 10 hour staffed window the two analyzers are busy 12.6 to 14.4 percent of the time. Over a 24 hour clock the same load is 5.2 to 6.0 percent.</desc>
+<div tabindex="0" class="fig-scroll" role="region" aria-labelledby="cap-c-cap"><svg class="fit" viewBox="0 0 520 170" role="img" aria-labelledby="cap-t" aria-describedby="cap-d">
+<title id="cap-t" lang="en">Analyzer utilisation of the default lab, two windows</title>
+<desc id="cap-d" lang="en">Two horizontal bars on a 0 to 100 percent scale. The assumed average load is 14.4 percent of the time over a 10 hour staffed window and 6.0 percent over a 24 hour clock.</desc>
 <g class="m sm"><path class="gr" d="M20 8V132M140 8V132M260 8V132M380 8V132M500 8V132"/>
 <text class="t2" x="20" y="152" text-anchor="middle">0 %</text><text class="t2" x="140" y="152" text-anchor="middle">25 %</text><text class="t2" x="260" y="152" text-anchor="middle">50 %</text><text class="t2" x="380" y="152" text-anchor="middle">75 %</text><text class="t2" x="500" y="152" text-anchor="middle">100 %</text></g>
 <text class="b lg" x="20" y="24" data-i18n="c.b1">Per 10 h staffed window</text>
 <text class="t2 sm" x="500" y="24" text-anchor="end" data-i18n="c.b1s">2 analyzers = 1200 analyzer-min</text>
 <rect class="track" x="20" y="32" width="480" height="26" rx="2"/>
-<rect class="p1f" x="20" y="32" width="60.5" height="26" rx="2"/>
-<rect x="80.5" y="32" width="8.6" height="26" fill="url(#hatch)"/>
-<text class="m b lg" x="98" y="50">12.6&ndash;14.4 %</text>
+<rect class="p1f" x="20" y="32" width="69.12" height="26" rx="2"/>
+<text class="m b lg" x="98" y="50">14.4 %</text>
 <text class="b lg" x="20" y="88" data-i18n="c.b2">Per 24 h clock</text>
 <text class="t2 sm" x="500" y="88" text-anchor="end" data-i18n="c.b2s">2 analyzers = 2880 analyzer-min</text>
 <rect class="track" x="20" y="96" width="480" height="26" rx="2"/>
-<rect class="p1f" x="20" y="96" width="25" height="26" rx="2"/>
-<rect x="45" y="96" width="3.8" height="26" fill="url(#hatch)"/>
-<text class="m b lg" x="58" y="114">5.2&ndash;6.0 %</text>
+<rect class="p1f" x="20" y="96" width="28.8" height="26" rx="2"/>
+<text class="m b lg" x="58" y="114">6.0 %</text>
 </svg></div>
-<figcaption data-i18n="c.cap">Same load, two denominators. Solid is the low end of the range, hatched the high end. Always state the window next to a utilisation figure.</figcaption>
+<figcaption id="cap-c-cap" data-i18n="c.cap">The same assumed average load, shown with two denominators. Always state the window next to a utilisation figure.</figcaption>
 </figure>
-<div tabindex="0" class="tablewrap" data-src="A074 A098"><table>
-<caption data-i18n="c.t.cap">The arithmetic behind the bars (table view)</caption>
+<div tabindex="0" class="tablewrap" role="region" aria-labelledby="cap-c-t-cap" data-src="A074 A098"><table>
+<caption id="cap-c-t-cap" data-i18n="c.t.cap">The arithmetic behind the bars (table view)</caption>
 <thead><tr><th data-i18n="c.t.w">Window</th><th data-i18n="c.t.a">Analyzer-minutes available</th><th data-i18n="c.t.l">Load per day</th><th data-i18n="c.t.u">Utilisation</th></tr></thead>
 <tbody>
-<tr><th scope="row" data-i18n="c.t.r1">10 h staffed window, 2 analyzers</th><td>1200 min</td><td>151&ndash;173 min</td><td>12.6&ndash;14.4 %</td></tr>
-<tr><th scope="row" data-i18n="c.t.r2">24 h clock, 2 analyzers</th><td>2880 min</td><td>151&ndash;173 min</td><td>5.2&ndash;6.0 %</td></tr>
+<tr><th scope="row" data-i18n="c.t.r1">10 h staffed window, 2 analyzers</th><td>1200 min</td><td>172.8 min</td><td>14.4 %</td></tr>
+<tr><th scope="row" data-i18n="c.t.r2">24 h clock, 2 analyzers</th><td>2880 min</td><td>172.8 min</td><td>6.0 %</td></tr>
 </tbody></table></div>
 <div class="hyp"><svg class="ico" aria-hidden="true"><use href="#i-hyp"/></svg><p data-i18n="c.hyp" data-src="A016"><b>Hypothesis, not a result.</b> If 65 % of samples are drawn around 08:30 with a spread of 18 min (an assumed shift-start burst), arrivals may outrun what two analyzers can start in that hour even though the daily average stays low. The simulator tests this in scenario SC2.</p></div>
 </div>
 </section>
 
 <section id="timeline" class="sec" aria-labelledby="h-timeline">
-<p class="rail" aria-hidden="true">timeline</p>
+<p class="rail" aria-hidden="true" data-i18n="nav.timeline">timeline</p>
 <div data-story-root="tl">
 <h2 id="h-timeline" data-i18n="t.h2">Feed in the gap: which timestamp does the join use?</h2>
 <p data-i18n="t.lead" data-src="A102 A050">A sample is drawn at 08:40 (<code>sampled_at</code>). A bolus feed follows at 09:00. The analyzer finishes the measurement at 09:25 (<code>measured_at</code>). The times are an illustrative example. Move the measurement time and watch which process state each join attaches.</p>
 <figure class="fig story-fig" data-src="A102">
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
-<div tabindex="0" class="fig-scroll"><svg id="tl-svg" data-state="gap" viewBox="0 0 780 270" role="img" aria-labelledby="tl-t" aria-describedby="tl-d">
-<title id="tl-t">Timeline of one sample against a feed</title>
-<desc id="tl-d">Three lanes on a time axis from 08:30 to 10:30. Process lane: pre-feed state until the 09:00 feed, post-feed state after. Sample lane: draw at 08:40, wait, a 4.5 minute run ending at the measurement time you choose. Join lane: the sampled_at join always lands in the pre-feed state; the measured_at join lands where the measurement lies.</desc>
+<div tabindex="0" class="fig-scroll" role="region" aria-labelledby="cap-t-cap"><svg id="tl-svg" data-state="gap" viewBox="0 0 780 270" role="img" aria-labelledby="tl-t" aria-describedby="tl-d">
+<title id="tl-t" lang="en">Timeline of one sample against a feed</title>
+<desc id="tl-d" lang="en">Three lanes on a time axis from 08:30 to 10:30. Process lane: pre-feed state until the 09:00 feed, post-feed state after. Sample lane: draw at 08:40, wait, a 4.5 minute run ending at the measurement time you choose. Join lane: the sampled_at join always lands in the pre-feed state; the measured_at join lands where the measurement lies.</desc>
 <g class="m sm" id="tl-axis"><path class="ax" d="M150 246H750"/>
 <path class="ax" d="M150 241v10M300 241v10M450 241v10M600 241v10M750 241v10"/>
 <text class="t2" x="150" y="264" text-anchor="middle">08:30</text><text class="t2" x="300" y="264" text-anchor="middle">09:00</text><text class="t2" x="450" y="264" text-anchor="middle">09:30</text><text class="t2" x="600" y="264" text-anchor="middle">10:00</text><text class="t2" x="750" y="264" text-anchor="middle">10:30</text></g>
 <text class="b" x="4" y="58" data-i18n="t.s.proc">Process U03</text>
-<text class="t2 m sm" x="4" y="74">U03.pH, feed</text>
+<text class="t2 m sm" x="4" y="74" data-i18n="fig.u03feed">U03.pH, feed</text>
 <rect class="reg1" x="150" y="36" width="150" height="48"/>
 <rect class="reg2" x="300" y="36" width="450" height="48"/>
 <text class="t2 sm" x="156" y="52" data-i18n="p.f.pre">pre-feed state</text>
 <text class="t2 sm" x="306" y="52" data-i18n="p.f.post">post-feed state</text>
-<g data-step="2"><path class="edge dash" d="M300 30V230"/><path class="edge" d="M300 20l8 10-8 10-8-10z"/><text class="m b sm" x="316" y="28">feed 09:00</text></g>
+<g data-step="2"><path class="edge dash" d="M300 30V230"/><path class="edge" d="M300 20l8 10-8 10-8-10z"/><text class="m b sm" x="316" y="28" data-i18n="fig.feedtime">feed 09:00</text></g>
 <text class="b" x="4" y="128" data-i18n="t.s.samp">Sample</text>
-<text class="t2 m sm" x="4" y="144">hold_time</text>
+<text class="t2 m sm" x="4" y="144" lang="en">hold_time</text>
 <rect class="track" x="150" y="108" width="600" height="46"/>
 <g data-step="4"><path class="p1" d="M200 216V92"/><path class="p1f" d="M194 96l6-12 6 12z"/>
 <text class="p1t sm" x="208" y="212" data-i18n="t.j1">join on sampled_at: always pre-feed</text>
 <g id="tl-join2"><path id="tl-j2line" class="p2" d="M425 236V92"/><path class="p2f" d="M419 96l6-12 6 12z"/><text class="p2t sm j2 j2-gap" x="431" y="232" data-i18n="t.j2a">join on measured_at: post-feed</text><text class="p2t sm j2 j2-ok" x="431" y="232" data-i18n="t.j2b">join on measured_at: pre-feed</text></g></g>
 <g data-step="1"><circle class="p1f" cx="200" cy="131" r="7"/><text class="p1t m sm halo" x="192" y="94" text-anchor="end">sampled_at<tspan x="192" dy="11">08:40</tspan></text></g>
 <rect id="tl-wait" x="200" y="127" width="202.5" height="8" fill="url(#hatch)"/>
-<path class="edge dash" d="M600 100V230"/><text class="t2 m sm" x="604" y="176">decision due 10:00</text>
+<path class="edge dash" d="M600 100V230"/><text class="t2 m sm" x="604" y="176" data-i18n="fig.due">decision due 10:00</text>
 <g data-step="3"><rect id="tl-run" class="p2f" x="402.5" y="120" width="22.5" height="22"/><g id="tl-meas" transform="translate(0 0)"><circle class="p2f" cx="425" cy="131" r="7"/><text id="tl-meas-lbl" class="p2t m sm halo" x="433" y="94" text-anchor="start">measured_at<tspan id="tl-meas-t" x="433" dy="11">09:25</tspan></text></g></g>
 <text class="b" x="4" y="198" data-i18n="t.s.join">Joins</text>
 </svg></div>
-<figcaption data-i18n="t.cap">Blue follows the draw time, vermilion follows the measurement time. A result measured after 09:00 joined by <code>measured_at</code> lands in a state the sample never saw.</figcaption>
+<figcaption id="cap-t-cap" data-i18n="t.cap">Blue follows the draw time, vermilion follows the measurement time. A result measured after 09:00 joined by <code>measured_at</code> lands in a state the sample never saw.</figcaption>
 </figure>
 <div class="tl-control">
 <label for="timeline-slider" data-i18n="t.slider">Measurement time (measured_at)</label>
@@ -191,10 +190,10 @@
 </div>
 <div id="join-result" data-state="gap" data-hold="over30" aria-live="polite" data-src="A102 A097 S001">
 <dl class="readout">
-<div><dt>measured_at</dt><dd id="r-meas">09:25</dd></div>
-<div><dt>run_started_at</dt><dd id="r-run">09:20:30</dd></div>
+<div><dt lang="en">measured_at</dt><dd id="r-meas">09:25</dd></div>
+<div><dt lang="en">run_started_at</dt><dd id="r-run">09:20:30</dd></div>
 <div><dt data-i18n="t.r.span">draw to measurement</dt><dd id="r-span">45 min</dd></div>
-<div><dt>hold_time</dt><dd id="r-hold">40.5 min</dd></div>
+<div><dt lang="en">hold_time</dt><dd id="r-hold">40.5 min</dd></div>
 </dl>
 <div class="state ok" data-show="agree"><svg class="ico" aria-hidden="true"><use href="#i-ok"/></svg><p><b data-i18n="t.v.okh">Joins agree.</b> <span data-i18n="t.v.ok">Both joins attach the pre-feed state, so no context mismatch arises at this measurement time.</span></p></div>
 <div class="state dev" data-show="gap"><svg class="ico" aria-hidden="true"><use href="#i-dev"/></svg><p><b data-i18n="t.v.devh">Feed in the gap.</b> <span data-i18n="t.v.dev">The measured_at join attaches post-feed state to a sample that was drawn before the feed. The sampled_at join still attaches the pre-feed state.</span></p></div>
@@ -209,22 +208,22 @@
 <li data-step-li="4" data-i18n="t.st4">Two joins. One keeps the draw time and sees the state the sample came from; the other keeps the measurement time and may not.</li>
 </ol>
 <div class="defs">
-<div><h4>hold_time</h4><p data-i18n="t.d1" data-src="A102 S001"><code>run_started_at</code> minus <code>sampled_at</code>, truth stamps. It ends when the run starts, so it is the 45 min span minus the 4.5 min run: 40.5 min. The queue wait is only part of it.</p></div>
-<div><h4>turnaround</h4><p data-i18n="t.d2"><code>available_at</code> minus <code>sampled_at</code>. It includes measurement, ingestion and review, and tells whether a result could inform a decision.</p></div>
+<div><h4 lang="en">hold_time</h4><p data-i18n="t.d1" data-src="A102 S001"><code>run_started_at</code> minus <code>sampled_at</code>, truth stamps. It ends when the run starts, so it is the 45 min span minus the 4.5 min run: 40.5 min. The queue wait is only part of it.</p></div>
+<div><h4 lang="en">turnaround</h4><p data-i18n="t.d2"><code>available_at</code> minus <code>sampled_at</code>. It includes measurement, ingestion and review, and tells whether a result could inform a decision.</p></div>
 <div><h4 data-i18n="t.d3h">Why two clocks</h4><p data-i18n="t.d3">With one stored time (the measured time) the draw time cannot be reconstructed, and neither rule above can run.</p></div>
 </div>
 <h3 data-i18n="t.h3a">What held time does to the sample</h3>
-<p data-i18n="t.stab" data-src="S012 A038 A039 A040">In the cited study, CHO samples held neat for up to 55 min at room temperature showed no decrease in viability according to the authors; they attribute the decline they measured to the diluent. The reported neat slope of &minus;0.03 percentage points per minute carries no significance test and is valid to 55 min. The simulator applies a slope of 0 to neat samples, and a diluent or handling slope (down to &minus;7.2 percentage points per hour) is a scenario knob.</p>
-<p data-i18n="t.proxy" data-src="A046" data-status="provisional">The 30 min hold limit used elsewhere in the design is a blood-gas rule borrowed from another domain and applied, as an assumption, to every analyte.</p>
+<p data-i18n="t.stab" data-src="S012 A038 A039 A040">In the cited study, CHO samples held neat for up to 55 min at room temperature showed no decrease in viability according to the authors; they attribute the decline they measured to the diluent. The neat slope of &minus;0.03 percentage points per minute (the unit is inferred in the ledger) carries no significance test and is valid to 55 min. The simulator applies a slope of 0 to neat samples, and a diluent or handling slope (down to &minus;7.2 percentage points per hour) is a scenario knob.</p>
+<p data-i18n="t.proxy" data-src="A046" data-provisional-refs="A046" data-status="provisional">The 30 min hold limit used elsewhere in the design is a blood-gas rule borrowed from another domain and applied, as an assumption, to every analyte.</p>
 <h3 data-i18n="t.h3b">Second case: an offline pH that re-standardises the online probe</h3>
 <p data-i18n="t.ph" data-src="S013">A common practice treats the offline pH value as the source of truth and readjusts the online probe onto it when the two differ by more than a set criterion. Sampling procedure, equipment, hold time, temperature shift and CO2 degassing all add offsets to the offline value, and at higher cell density pH should not be considered stable after sampling. An offset that is wrong in the record can therefore propagate into the controller.</p>
 <figure class="fig">
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
-<div tabindex="0" class="fig-scroll"><svg viewBox="0 0 760 300" role="img" aria-labelledby="ph-t" aria-describedby="ph-d">
-<title id="ph-t">How a sampling offset reaches pH control</title>
-<desc id="ph-d">Process pH is sampled into an open or closed container, producing an offline pH value that includes offsets. The offline value is treated as truth and the online probe is readjusted onto it. The pH controller acts on the probe reading and changes the process pH. A dashed alternative keeps the sampling context and raises a delta-probe alarm or excludes the value instead.</desc>
+<div tabindex="0" class="fig-scroll" role="region" aria-labelledby="cap-ph-cap"><svg viewBox="0 0 760 300" role="img" aria-labelledby="ph-t" aria-describedby="ph-d">
+<title id="ph-t" lang="en">How a sampling offset reaches pH control</title>
+<desc id="ph-d" lang="en">Process pH is sampled into an open or closed container, producing an offline pH value that includes offsets. The offline value is treated as truth and the online probe is readjusted onto it. The pH controller acts on the probe reading and changes the process pH. A dashed alternative keeps the sampling context and raises a delta-probe alarm or excludes the value instead.</desc>
 <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0l10 5-10 5z"/></marker></defs>
-<rect class="node" x="20" y="24" width="150" height="48" rx="2"/><text class="b" x="95" y="45" text-anchor="middle">Process pH</text><text class="t2 sm" x="95" y="61" text-anchor="middle" data-i18n="ph.truth">(truth)</text>
+<rect class="node" x="20" y="24" width="150" height="48" rx="2"/><text class="b" x="95" y="45" text-anchor="middle" data-i18n="fig.processph">Process pH</text><text class="t2 sm" x="95" y="61" text-anchor="middle" data-i18n="ph.truth">(truth)</text>
 <rect class="node" x="270" y="24" width="150" height="48" rx="2"/><text class="b" x="345" y="45" text-anchor="middle" data-i18n="ph.draw">Sample drawn</text><text class="t2 sm" x="345" y="61" text-anchor="middle" data-i18n="ph.cont">open or closed container</text>
 <rect class="node" x="520" y="24" width="150" height="48" rx="2"/><text class="b" x="595" y="45" text-anchor="middle" data-i18n="ph.off">Offline pH value</text><text class="t2 sm" x="595" y="61" text-anchor="middle" data-i18n="ph.offs">includes the offsets</text>
 <path class="edge" d="M170 48H268" marker-end="url(#ar)"/><text class="t2 sm" x="219" y="20" text-anchor="middle" data-i18n="ph.e1">hold, CO2, technique</text>
@@ -237,22 +236,22 @@
 <rect class="node alt" x="520" y="236" width="150" height="48" rx="2"/><text class="b" x="595" y="257" text-anchor="middle" data-i18n="ph.alt">Delta-probe alarm</text><text class="t2 sm" x="595" y="273" text-anchor="middle" data-i18n="ph.alts">or exclusion</text>
 <path class="edge dash" d="M670 48H720V260H672" marker-end="url(#ar)"/><text class="t2 sm" x="440" y="270" text-anchor="end" data-i18n="ph.e4">alternative: keep container, hold time, who and when</text>
 </svg></div>
-<figcaption data-i18n="ph.cap" data-src="S013">Solid path: the offline value becomes the reference. Dashed path: the record keeps how the sample was taken and held, so the offset can be modelled or the value excluded.</figcaption>
+<figcaption id="cap-ph-cap" data-i18n="ph.cap" data-src="S013">Solid path: the offline value becomes the reference. Dashed path: the record keeps how the sample was taken and held, so the offset can be modelled or the value excluded.</figcaption>
 </figure>
-<div tabindex="0" class="tablewrap" data-src="S013 A041"><table>
-<caption data-i18n="ph.t.cap">Offline minus vessel pH, measured on cell-free medium before inoculation (proxy: no cell respiration)</caption>
+<div tabindex="0" class="tablewrap" role="region" aria-labelledby="cap-ph-t-cap" data-src="S013 A041"><table>
+<caption id="cap-ph-t-cap" data-i18n="ph.t.cap">Offline minus vessel pH, measured on cell-free medium before inoculation (proxy: no cell respiration)</caption>
 <thead><tr><th data-i18n="ph.t.h1">Setup</th><th data-i18n="ph.t.h2">Offset (pH units)</th></tr></thead>
 <tbody>
-<tr><th scope="row" data-i18n="ph.t.r1">2 L bench vessels, manual sampling</th><td>0.02&ndash;0.06, average about 0.04</td></tr>
-<tr><th scope="row" data-i18n="ph.t.r2">Mini-scale liquid handler</th><td>mean about 0.05</td></tr>
-<tr><th scope="row" data-i18n="ph.t.r3">250 L single-use vessels, syringe sampling</th><td>mean 0.021</td></tr>
+<tr><th scope="row" data-i18n="ph.t.r1">2 L bench vessels, manual sampling</th><td data-i18n="ph.mean.range">0.02&ndash;0.06, average about 0.04</td></tr>
+<tr><th scope="row" data-i18n="ph.t.r2">Mini-scale liquid handler</th><td data-i18n="ph.mean.approx">mean about 0.05</td></tr>
+<tr><th scope="row" data-i18n="ph.t.r3">250 L single-use vessels, syringe sampling</th><td data-i18n="ph.mean.exact">mean 0.021</td></tr>
 </tbody></table></div>
 <p data-i18n="ph.note">The size of the offset depends on equipment and local procedure, so the simulator sweeps this range and reports sensitivity. No single offset is presented as general. The effect on control is a result inside the model, under stated assumptions, and predicts nothing about a real plant.</p>
 </div>
 </section>
 
 <section id="architectures" class="sec" aria-labelledby="h-arch">
-<p class="rail" aria-hidden="true">architectures</p>
+<p class="rail" aria-hidden="true" data-i18n="nav.architectures">architectures</p>
 <div>
 <h2 id="h-arch" data-i18n="a.h2">One sample, three ways to record it</h2>
 <p data-i18n="a.lead">Three hard-coded architectures would hide which mechanism makes the difference. The design uses ten independent feature flags instead. A, B and C are presets of those flags (ADR-0005, ADR-0017, ADR-0020), and the ablation is C with exactly one flag switched off. B is built from features that simple laboratory systems really have: barcodes, automatic capture and an audit trail.</p>
@@ -278,16 +277,16 @@
 <h3 data-i18n="a.h3a">The same sample under each preset</h3>
 <p data-i18n="a.recintro">Synthetic example record for the sample of the timeline above. A dash means the architecture cannot store that field.</p>
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
-<div tabindex="0" class="tablewrap" data-src="A102 A016 S001"><table class="rec">
-<caption data-i18n="a.rec.cap">One sample, recorded three ways (synthetic example)</caption>
+<div tabindex="0" class="tablewrap" role="region" aria-labelledby="cap-a-rec-cap" data-src="A102 A016 S001"><table class="rec">
+<caption id="cap-a-rec-cap" data-i18n="a.rec.cap">One sample, recorded three ways (synthetic example)</caption>
 <thead><tr><th data-i18n="a.rec.field">Field</th><th>A</th><th>B</th><th>C</th></tr></thead>
 <tbody>
-<tr><th scope="row">sample id</th><td>"U3 d4 am", <span data-i18n="a.rec.idA">handwritten</span></td><td>SMP-0412, <span data-i18n="a.rec.idB">pre-printed barcode</span></td><td>SMP-0412, <span data-i18n="a.rec.idC">issued at draw</span></td></tr>
-<tr><th scope="row">sampled_at</th><td>&mdash;</td><td>&mdash; (planned_at 08:30)</td><td>2026-03-12T08:40</td></tr>
-<tr><th scope="row">measured_at</th><td>09:25</td><td>2026-03-12T09:25</td><td>2026-03-12T09:25</td></tr>
+<tr><th scope="row" data-i18n="rec.sampleid">sample id</th><td>"U3 d4 am", <span data-i18n="a.rec.idA">handwritten</span></td><td>SMP-0412, <span data-i18n="a.rec.idB">pre-printed barcode</span></td><td>SMP-0412, <span data-i18n="a.rec.idC">issued at draw</span></td></tr>
+<tr><th scope="row" lang="en">sampled_at</th><td>&mdash;</td><td data-i18n="rec.planned">&mdash; (planned_at 08:30)</td><td>2026-03-12T08:40</td></tr>
+<tr><th scope="row" lang="en">measured_at</th><td>09:25</td><td>2026-03-12T09:25</td><td>2026-03-12T09:25</td></tr>
 <tr><th scope="row" data-i18n="a.rec.path">capture path</th><td data-i18n="a.rec.pA">typed by hand from the instrument printout</td><td data-i18n="a.rec.pP">parsed by an adapter from the instrument file (a synthetic file here)</td><td data-i18n="a.rec.pP">parsed by an adapter from the instrument file (a synthetic file here)</td></tr>
-<tr><th scope="row">unit, batch</th><td>"U3", <span data-i18n="a.rec.uA">batch attached later by a time join</span></td><td data-i18n="a.rec.uB">attached later by a time join on 09:25</td><td data-i18n="a.rec.uC">U03, B-2603-03, fixed at write time</td></tr>
-<tr><th scope="row">hold_time</th><td>&mdash;</td><td>&mdash;</td><td data-i18n="a.rec.hC">40.5 min, flagged by the hold rule</td></tr>
+<tr><th scope="row" data-i18n="rec.unitbatch">unit, batch</th><td>"U3", <span data-i18n="a.rec.uA">batch attached later by a time join</span></td><td data-i18n="a.rec.uB">attached later by a time join on 09:25</td><td data-i18n="a.rec.uC">U03, B-2603-03, fixed at write time</td></tr>
+<tr><th scope="row" lang="en">hold_time</th><td>&mdash;</td><td>&mdash;</td><td data-i18n="a.rec.hC">40.5 min, flagged by the hold rule</td></tr>
 <tr><th scope="row" data-i18n="a.rec.inst">instrument</th><td data-i18n="a.rec.iA">"FLEX", free text</td><td data-i18n="a.rec.iB">"AN-1", free text; lot and calibration not linked</td><td data-i18n="a.rec.iC">IS-AN1-0117: calibration and reagent lot</td></tr>
 <tr><th scope="row" data-i18n="a.rec.ver">result versions</th><td data-i18n="a.rec.vA">overwritten in place</td><td data-i18n="a.rec.vB">overwritten; the change is logged</td><td data-i18n="a.rec.vC">v1 kept, v2 supersedes it</td></tr>
 <tr><th scope="row" data-i18n="a.rec.who">operator</th><td data-i18n="a.rec.wA">initials, free text</td><td data-i18n="a.rec.wB">OP-07, audit trail</td><td data-i18n="a.rec.wC">OP-07 with the qualification in force</td></tr>
@@ -298,8 +297,8 @@
 <div class="hyp"><svg class="ico" aria-hidden="true"><use href="#i-hyp"/></svg><p data-i18n="a.hyp"><b>Design hypothesis, to be tested by the simulator.</b> The matrix below is the expected outcome from the design documents, not a result. The simulator checks each cell with a hand-built forced-error fixture before any stochastic run.</p></div>
 <div class="legend" aria-label="Legend" data-i18n-aria="a.legend"><span class="ok-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><b data-i18n="a.lg1">prevented</b></span><span class="warn-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><b data-i18n="a.lg2">detected</b></span><span class="dev-t"><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><b data-i18n="a.lg3">invisible</b></span></div>
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
-<div tabindex="0" class="tablewrap"><table id="outcome-matrix">
-<caption data-i18n="a.m.cap">Outcome per error class for the flags ticked above (design hypothesis)</caption>
+<div tabindex="0" class="tablewrap" role="region" aria-labelledby="cap-a-m-cap"><table id="outcome-matrix">
+<caption id="cap-a-m-cap" data-i18n="a.m.cap">Outcome per error class for the flags ticked above (design hypothesis)</caption>
 <thead><tr><th data-i18n="a.m.h0">Error class</th><th><svg class="ico ico-inline" aria-hidden="true"><use href="#i-prev"/></svg><span data-i18n="a.lg1">prevented</span></th><th><svg class="ico ico-inline" aria-hidden="true"><use href="#i-det"/></svg><span data-i18n="a.lg2">detected</span></th><th><svg class="ico ico-inline" aria-hidden="true"><use href="#i-inv"/></svg><span data-i18n="a.lg3">invisible</span></th></tr></thead>
 <tbody>
 <tr data-err="label"><th scope="row"><span data-i18n="a.e1">Label or transcription error</span></th>
@@ -349,51 +348,51 @@
 </section>
 
 <section id="lineage" class="sec" aria-labelledby="h-lineage">
-<p class="rail" aria-hidden="true">lineage</p>
+<p class="rail" aria-hidden="true" data-i18n="nav.lineage">lineage</p>
 <div data-story-root="ln">
 <h2 id="h-lineage" data-i18n="l.h2">Lineage is a graph, and the hard part is the merge</h2>
 <p data-i18n="l.lead">Each step from a reactor to a result is an edge. Following the edges backwards from any result finds its origin batches. One batch gives a tree; a pool built from several batches makes the relation many-to-many.</p>
 <figure class="fig story-fig" data-src="A102">
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
-<div tabindex="0" class="fig-scroll wide"><svg viewBox="0 0 1120 510" role="img" aria-labelledby="ln-t" aria-describedby="ln-d">
-<title id="ln-t">Lineage graph: one in-process sample, and a cross-batch pool</title>
-<desc id="ln-d">Top: batch B-2603-03 yields sample SMP-0412, which is split into an aliquot. The aliquot is measured in a run whose QC failed; a rerun produces a second run linked to an instrument state snapshot. Result version 1 is superseded by version 2. Bottom: two batches are harvested and split into Protein A cycles that are pooled into pool P1, from which a sample and an aliquot are drawn.</desc>
+<div tabindex="0" class="fig-scroll wide" role="region" aria-labelledby="cap-l-cap"><svg viewBox="0 0 1120 510" role="img" aria-labelledby="ln-t" aria-describedby="ln-d">
+<title id="ln-t" lang="en">Lineage graph: one in-process sample, and a cross-batch pool</title>
+<desc id="ln-d" lang="en">Top: batch B-2603-03 yields sample SMP-0412, which is split into an aliquot. The aliquot is measured in a run whose QC failed; a rerun produces a second run linked to an instrument state snapshot. Result version 1 is superseded by version 2. Bottom: two batches are harvested and split into Protein A cycles that are pooled into pool P1, from which a sample and an aliquot are drawn.</desc>
 <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0l10 5-10 5z"/></marker></defs>
 <text class="t2 b sm m" x="10" y="16" data-i18n="l.p1">ONE IN-PROCESS SAMPLE</text>
-<g data-step="1"><rect class="node" x="10" y="64" width="130" height="52" rx="2"/><text class="b" x="75" y="86" text-anchor="middle">Batch B-2603-03</text><text class="t2 sm m" x="75" y="102" text-anchor="middle">unit U03</text>
-<path class="edge" d="M140 90H208" marker-end="url(#ar2)"/><text class="t2 sm m" x="174" y="82" text-anchor="middle">drawn_as</text>
-<rect class="node" x="210" y="64" width="140" height="52" rx="2"/><text class="b" x="280" y="86" text-anchor="middle">Sample SMP-0412</text><text class="t2 sm m" x="280" y="102" text-anchor="middle">sampled_at 08:40</text></g>
-<g data-step="2"><path class="edge" d="M350 90H432" marker-end="url(#ar2)"/><text class="t2 sm m" x="391" y="82" text-anchor="middle">aliquot_of</text>
-<rect class="node" x="434" y="64" width="140" height="52" rx="2"/><text class="b" x="504" y="86" text-anchor="middle">Aliquot AL-0412a</text><text class="t2 sm m" x="504" y="102" text-anchor="middle">room temperature</text></g>
-<g data-step="3"><path class="edge" d="M574 80C610 80 616 44 656 44" marker-end="url(#ar2)"/><path class="edge" d="M574 100C610 100 616 132 656 132" marker-end="url(#ar2)"/><text class="t2 sm m" x="615" y="94" text-anchor="middle">measured_in</text>
-<rect class="node box-dev" x="658" y="20" width="160" height="48" rx="2"/><text class="b" x="738" y="40" text-anchor="middle">Run RUN-3318</text><text class="sm m" x="738" y="56" text-anchor="middle">QC failed, held</text>
-<rect class="node" x="658" y="108" width="160" height="48" rx="2"/><text class="b" x="738" y="128" text-anchor="middle">Run RUN-3319</text><text class="t2 sm m" x="738" y="144" text-anchor="middle">rerun, QC passed</text>
-<path class="edge" d="M738 68V106" marker-end="url(#ar2)"/><text class="t2 sm m" x="746" y="92">rerun_of</text>
-<rect class="node alt" x="658" y="182" width="160" height="48" rx="2"/><text class="b" x="738" y="202" text-anchor="middle">Instrument state</text><text class="t2 sm m" x="738" y="218" text-anchor="middle">calibration, lot</text>
-<path class="edge dash" d="M738 182V158" marker-end="url(#ar2)"/><text class="t2 sm m" x="746" y="174">snapshot for</text></g>
+<g data-step="1"><rect class="node" x="10" y="64" width="130" height="52" rx="2"/><text class="b" x="75" y="86" text-anchor="middle" data-i18n="graph.batch1">Batch B-2603-03</text><text class="t2 sm m" x="75" y="102" text-anchor="middle" data-i18n="graph.unit03">unit U03</text>
+<path class="edge" d="M140 90H208" marker-end="url(#ar2)"/><text class="t2 sm m" x="174" y="82" text-anchor="middle" lang="en">drawn_as</text>
+<rect class="node" x="210" y="64" width="140" height="52" rx="2"/><text class="b" x="280" y="86" text-anchor="middle" data-i18n="graph.sample1">Sample SMP-0412</text><text class="t2 sm m" x="280" y="102" text-anchor="middle" lang="en">sampled_at 08:40</text></g>
+<g data-step="2"><path class="edge" d="M350 90H432" marker-end="url(#ar2)"/><text class="t2 sm m" x="391" y="82" text-anchor="middle" lang="en">aliquot_of</text>
+<rect class="node" x="434" y="64" width="140" height="52" rx="2"/><text class="b" x="504" y="86" text-anchor="middle" data-i18n="graph.aliquot1">Aliquot AL-0412a</text><text class="t2 sm m" x="504" y="102" text-anchor="middle" data-i18n="graph.room">room temperature</text></g>
+<g data-step="3"><path class="edge" d="M574 80C610 80 616 44 656 44" marker-end="url(#ar2)"/><path class="edge" d="M574 100C610 100 616 132 656 132" marker-end="url(#ar2)"/><text class="t2 sm m" x="615" y="94" text-anchor="middle" lang="en">measured_in</text>
+<rect class="node box-dev" x="658" y="20" width="160" height="48" rx="2"/><text class="b" x="738" y="40" text-anchor="middle" data-i18n="graph.run1">Run RUN-3318</text><text class="sm m" x="738" y="56" text-anchor="middle" data-i18n="graph.qcfail">QC failed, held</text>
+<rect class="node" x="658" y="108" width="160" height="48" rx="2"/><text class="b" x="738" y="128" text-anchor="middle" data-i18n="graph.run2">Run RUN-3319</text><text class="t2 sm m" x="738" y="144" text-anchor="middle" data-i18n="graph.qcpass">rerun, QC passed</text>
+<path class="edge" d="M738 68V106" marker-end="url(#ar2)"/><text class="t2 sm m" x="746" y="92" lang="en">rerun_of</text>
+<rect class="node alt" x="658" y="182" width="160" height="48" rx="2"/><text class="b" x="738" y="202" text-anchor="middle" data-i18n="graph.instrument">Instrument state</text><text class="t2 sm m" x="738" y="218" text-anchor="middle" data-i18n="graph.calibration">calibration, lot</text>
+<path class="edge dash" d="M738 182V158" marker-end="url(#ar2)"/><text class="t2 sm m" x="746" y="174" data-i18n="graph.snapshot">snapshot for</text></g>
 <g data-step="4"><path class="edge" d="M818 44H902" marker-end="url(#ar2)"/><path class="edge" d="M818 132H902" marker-end="url(#ar2)"/>
-<rect class="node alt" x="904" y="20" width="160" height="48" rx="2"/><text class="b" x="984" y="40" text-anchor="middle">Result R-3318 v1</text><text class="t2 sm m" x="984" y="56" text-anchor="middle">superseded, kept</text>
-<rect class="node" x="904" y="108" width="160" height="48" rx="2"/><text class="b" x="984" y="128" text-anchor="middle">Result R-3318 v2</text><text class="t2 sm m" x="984" y="144" text-anchor="middle">available_at: ingest</text>
-<path class="edge" d="M984 68V106" marker-end="url(#ar2)"/><text class="t2 sm m" x="992" y="92">superseded_by</text></g>
+<rect class="node alt" x="904" y="20" width="160" height="48" rx="2"/><text class="b" x="984" y="40" text-anchor="middle" data-i18n="graph.result1">Result R-3318 v1</text><text class="t2 sm m" x="984" y="56" text-anchor="middle" data-i18n="graph.superseded">superseded, kept</text>
+<rect class="node" x="904" y="108" width="160" height="48" rx="2"/><text class="b" x="984" y="128" text-anchor="middle" data-i18n="graph.result2">Result R-3318 v2</text><text class="t2 sm m" x="984" y="144" text-anchor="middle" data-i18n="graph.availability">available_at: ingest</text>
+<path class="edge" d="M984 68V106" marker-end="url(#ar2)"/><text class="t2 sm m" x="992" y="92" lang="en">superseded_by</text></g>
 <path class="gr" d="M10 252H1110"/>
 <text class="t2 b sm m" x="10" y="276" data-i18n="l.p2">CROSS-BATCH POOL (MANY-TO-MANY)</text>
-<g data-step="5"><rect class="node" x="10" y="318" width="120" height="48" rx="2"/><text class="b" x="70" y="338" text-anchor="middle">Batch B1</text><text class="t2 sm m" x="70" y="354" text-anchor="middle">unit U03</text>
-<rect class="node" x="10" y="410" width="120" height="48" rx="2"/><text class="b" x="70" y="430" text-anchor="middle">Batch B2</text><text class="t2 sm m" x="70" y="446" text-anchor="middle">unit U07</text>
-<path class="edge" d="M130 342H228" marker-end="url(#ar2)"/><path class="edge" d="M130 434H228" marker-end="url(#ar2)"/><text class="t2 sm m" x="179" y="330" text-anchor="middle">harvested_from</text>
-<rect class="node" x="230" y="318" width="100" height="48" rx="2"/><text class="b" x="280" y="347" text-anchor="middle">Harvest H1</text>
-<rect class="node" x="230" y="410" width="100" height="48" rx="2"/><text class="b" x="280" y="439" text-anchor="middle">Harvest H2</text>
-<path class="edge" d="M330 335C360 335 366 306 408 306" marker-end="url(#ar2)"/><path class="edge" d="M330 349C360 349 366 372 408 372" marker-end="url(#ar2)"/><path class="edge" d="M330 434H408" marker-end="url(#ar2)"/><text class="t2 sm m" x="369" y="296" text-anchor="middle">split_into</text>
-<rect class="node" x="410" y="286" width="140" height="40" rx="2"/><text class="b sm" x="480" y="310" text-anchor="middle">Protein A cycle 1a</text>
-<rect class="node" x="410" y="352" width="140" height="40" rx="2"/><text class="b sm" x="480" y="376" text-anchor="middle">Protein A cycle 1b</text>
-<rect class="node" x="410" y="414" width="140" height="40" rx="2"/><text class="b sm" x="480" y="438" text-anchor="middle">Protein A cycle 2a</text>
-<path class="edge" d="M550 306C584 306 584 370 604 370" marker-end="url(#ar2)"/><path class="edge" d="M550 372H604" marker-end="url(#ar2)"/><path class="edge" d="M550 434C584 434 584 382 604 382" marker-end="url(#ar2)"/><text class="t2 sm m" x="580" y="476" text-anchor="middle">pooled_into</text>
-<circle class="node box-ok" cx="640" cy="376" r="34"/><text class="b" x="640" y="372" text-anchor="middle">Pool P1</text><text class="t2 sm m" x="640" y="388" text-anchor="middle">B1 + B2</text>
-<path class="edge" d="M674 376H740" marker-end="url(#ar2)"/><text class="t2 sm m" x="707" y="368" text-anchor="middle">drawn_as</text>
-<rect class="node" x="742" y="352" width="130" height="48" rx="2"/><text class="b" x="807" y="372" text-anchor="middle">Sample SMP-0900</text><text class="t2 sm m" x="807" y="388" text-anchor="middle">two origin batches</text>
-<path class="edge" d="M872 376H954" marker-end="url(#ar2)"/><text class="t2 sm m" x="913" y="368" text-anchor="middle">aliquot_of</text>
-<rect class="node" x="956" y="352" width="150" height="48" rx="2"/><text class="b" x="1031" y="372" text-anchor="middle">Aliquot AL-0900a</text><text class="t2 sm m" x="1031" y="388" text-anchor="middle">then as above</text></g>
+<g data-step="5"><rect class="node" x="10" y="318" width="120" height="48" rx="2"/><text class="b" x="70" y="338" text-anchor="middle" data-i18n="graph.batchb1">Batch B1</text><text class="t2 sm m" x="70" y="354" text-anchor="middle" data-i18n="graph.unit03">unit U03</text>
+<rect class="node" x="10" y="410" width="120" height="48" rx="2"/><text class="b" x="70" y="430" text-anchor="middle" data-i18n="graph.batchb2">Batch B2</text><text class="t2 sm m" x="70" y="446" text-anchor="middle" data-i18n="graph.unit07">unit U07</text>
+<path class="edge" d="M130 342H228" marker-end="url(#ar2)"/><path class="edge" d="M130 434H228" marker-end="url(#ar2)"/><text class="t2 sm m" x="179" y="330" text-anchor="middle" lang="en">harvested_from</text>
+<rect class="node" x="230" y="318" width="100" height="48" rx="2"/><text class="b" x="280" y="347" text-anchor="middle" data-i18n="graph.harvest1">Harvest H1</text>
+<rect class="node" x="230" y="410" width="100" height="48" rx="2"/><text class="b" x="280" y="439" text-anchor="middle" data-i18n="graph.harvest2">Harvest H2</text>
+<path class="edge" d="M330 335C360 335 366 306 408 306" marker-end="url(#ar2)"/><path class="edge" d="M330 349C360 349 366 372 408 372" marker-end="url(#ar2)"/><path class="edge" d="M330 434H408" marker-end="url(#ar2)"/><text class="t2 sm m" x="369" y="296" text-anchor="middle" lang="en">split_into</text>
+<rect class="node" x="410" y="286" width="140" height="40" rx="2"/><text class="b sm" x="480" y="310" text-anchor="middle" data-i18n="graph.cycle1a">Protein A cycle 1a</text>
+<rect class="node" x="410" y="352" width="140" height="40" rx="2"/><text class="b sm" x="480" y="376" text-anchor="middle" data-i18n="graph.cycle1b">Protein A cycle 1b</text>
+<rect class="node" x="410" y="414" width="140" height="40" rx="2"/><text class="b sm" x="480" y="438" text-anchor="middle" data-i18n="graph.cycle2a">Protein A cycle 2a</text>
+<path class="edge" d="M550 306C584 306 584 370 604 370" marker-end="url(#ar2)"/><path class="edge" d="M550 372H604" marker-end="url(#ar2)"/><path class="edge" d="M550 434C584 434 584 382 604 382" marker-end="url(#ar2)"/><text class="t2 sm m" x="580" y="476" text-anchor="middle" lang="en">pooled_into</text>
+<circle class="node box-ok" cx="640" cy="376" r="34"/><text class="b" x="640" y="372" text-anchor="middle" data-i18n="graph.pool">Pool P1</text><text class="t2 sm m" x="640" y="388" text-anchor="middle">B1 + B2</text>
+<path class="edge" d="M674 376H740" marker-end="url(#ar2)"/><text class="t2 sm m" x="707" y="368" text-anchor="middle" lang="en">drawn_as</text>
+<rect class="node" x="742" y="352" width="130" height="48" rx="2"/><text class="b" x="807" y="372" text-anchor="middle" data-i18n="graph.sample2">Sample SMP-0900</text><text class="t2 sm m" x="807" y="388" text-anchor="middle" data-i18n="graph.origins">two origin batches</text>
+<path class="edge" d="M872 376H954" marker-end="url(#ar2)"/><text class="t2 sm m" x="913" y="368" text-anchor="middle" lang="en">aliquot_of</text>
+<rect class="node" x="956" y="352" width="150" height="48" rx="2"/><text class="b" x="1031" y="372" text-anchor="middle" data-i18n="graph.aliquot2">Aliquot AL-0900a</text><text class="t2 sm m" x="1031" y="388" text-anchor="middle" data-i18n="graph.above">then as above</text></g>
 </svg></div>
-<figcaption data-i18n="l.cap">Reading the figure in provenance terms: samples, aliquots and results are entities; drawing, splitting, running and pooling are activities; each edge says which item was derived from which. Edges point in the direction of derivation, and the graph is acyclic.</figcaption>
+<figcaption id="cap-l-cap" data-i18n="l.cap">Reading the figure in provenance terms: samples, aliquots and results are entities; drawing, splitting, running and pooling are activities; each edge says which item was derived from which. Edges point in the direction of derivation, and the graph is acyclic.</figcaption>
 </figure>
 <ol class="steps" aria-label="Story steps" data-i18n-aria="t.steps">
 <li data-step-li="1" data-i18n="l.st1">Draw. The sample keeps its unit and batch keys from the moment of writing; they are never re-keyed afterwards.</li>
@@ -407,21 +406,21 @@
 </section>
 
 <section id="systems" class="sec" aria-labelledby="h-systems">
-<p class="rail" aria-hidden="true">systems</p>
+<p class="rail" aria-hidden="true" data-i18n="nav.systems">systems</p>
 <div>
 <h2 id="h-systems" data-i18n="s.h2">Where the record lives: system boundaries and integration reality</h2>
 <p data-i18n="s.lead" data-src="A056">Several systems each hold part of the story: the historian holds process tags such as <code>U03.pH</code>, the batch record holds events, and some system holds the in-process test result. Which one owns routine in-process results is site-dependent, so the model treats it as a setting.</p>
 <figure class="fig" data-src="A001">
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
-<div tabindex="0" class="fig-scroll"><svg viewBox="0 0 760 320" role="img" aria-labelledby="sy-t" aria-describedby="sy-d">
-<title id="sy-t">System boundary of a process-development lab</title>
-<desc id="sy-d">Bioreactors feed a historian. At-line analyzers drop CSV files into a shared folder that feeds the system of record for in-process results, which is either MES or EBR, or LIMS, depending on the site. A chromatography data system and an electronic lab notebook also feed it.</desc>
+<div tabindex="0" class="fig-scroll" role="region" aria-labelledby="cap-s-cap"><svg viewBox="0 0 760 320" role="img" aria-labelledby="sy-t" aria-describedby="sy-d">
+<title id="sy-t" lang="en">System boundary of a process-development lab</title>
+<desc id="sy-d" lang="en">Bioreactors feed a historian. At-line analyzers drop CSV files into a shared folder that feeds the system of record for in-process results, which is either MES or EBR, or LIMS, depending on the site. A chromatography data system and an electronic lab notebook also feed it.</desc>
 <defs><marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0l10 5-10 5z"/></marker></defs>
 <rect class="node" x="10" y="20" width="150" height="56" rx="2"/><text class="b" x="85" y="44" text-anchor="middle" data-i18n="sy.bio">Bioreactors</text><text class="t2 sm m" x="85" y="62" text-anchor="middle">U01 ... U24</text>
-<rect class="node" x="10" y="140" width="150" height="56" rx="2"/><text class="b" x="85" y="164" text-anchor="middle" data-i18n="sy.hist">Historian</text><text class="t2 sm m" x="85" y="182" text-anchor="middle">tags, event frames</text>
+<rect class="node" x="10" y="140" width="150" height="56" rx="2"/><text class="b" x="85" y="164" text-anchor="middle" data-i18n="sy.hist">Historian</text><text class="t2 sm m" x="85" y="182" text-anchor="middle" data-i18n="sys.tags">tags, event frames</text>
 <path class="edge" d="M85 76V138" marker-end="url(#ar3)"/><text class="t2 sm m" x="93" y="112">U03.pH</text>
 <rect class="node" x="10" y="250" width="150" height="56" rx="2"/><text class="b" x="85" y="274" text-anchor="middle" data-i18n="sy.an">At-line analyzers</text><text class="t2 sm" x="85" y="292" text-anchor="middle" data-i18n="sy.ans">cells, metabolites, titer</text>
-<rect class="node alt" x="220" y="250" width="140" height="56" rx="2"/><text class="b" x="290" y="274" text-anchor="middle" data-i18n="sy.fold">Shared folder</text><text class="t2 sm m" x="290" y="292" text-anchor="middle">CSV file drop</text>
+<rect class="node alt" x="220" y="250" width="140" height="56" rx="2"/><text class="b" x="290" y="274" text-anchor="middle" data-i18n="sy.fold">Shared folder</text><text class="t2 sm m" x="290" y="292" text-anchor="middle" data-i18n="sys.csv">CSV file drop</text>
 <path class="edge" d="M160 278H218" marker-end="url(#ar3)"/>
 <rect class="node alt" x="400" y="40" width="350" height="170" rx="2"/><text class="t2 sm" x="414" y="62" data-i18n="sy.sor">System of record for routine in-process results: depends on the site</text>
 <rect class="node" x="420" y="84" width="150" height="56" rx="2"/><text class="b" x="495" y="108" text-anchor="middle">MES / EBR</text><text class="t2 sm" x="495" y="126" text-anchor="middle" data-i18n="sy.mes">batch record, events</text>
@@ -433,54 +432,54 @@
 <rect class="node" x="630" y="250" width="120" height="48" rx="2"/><text class="b" x="690" y="271" text-anchor="middle">ELN</text><text class="t2 sm" x="690" y="287" text-anchor="middle" data-i18n="sy.eln">experiment notes</text>
 <path class="edge" d="M560 250V212" marker-end="url(#ar3)"/><path class="edge dash" d="M690 250V212" marker-end="url(#ar3)"/>
 </svg></div>
-<figcaption data-i18n="s.cap">Boundary sketch with the integration points that matter here: the file drop, the time-based join to the historian, and the site-dependent owner of in-process results.</figcaption>
+<figcaption id="cap-s-cap" data-i18n="s.cap">Boundary sketch with the integration points that matter here: the file drop, the time-based join to the historian, and the site-dependent owner of in-process results.</figcaption>
 </figure>
-<p data-i18n="s.vend" data-src="S042 S043" data-status="provisional">Vendor material disagrees on which system should own in-process checks, which is why the design leaves it as a setting.</p>
+<p data-i18n="s.vend" data-src="S042 S043" data-provisional-refs="S042 S043" data-status="provisional">Vendor material disagrees on which system should own in-process checks, which is why the design leaves it as a setting.</p>
 <h3 data-i18n="s.h3a">Getting results out of an instrument</h3>
 <div class="cards">
-<div class="card" data-src="A036 S003" data-status="provisional"><h4 data-i18n="s.c1h">CSV file drop (baseline)</h4><p data-i18n="s.c1">The all-in-one analyzer exports a CSV file to a shared folder on its bridge computer. The simulator models this path first. The file carries a local time, often without a stated zone.</p></div>
-<div class="card" data-src="S004" data-status="provisional"><h4 data-i18n="s.c2h">Vendor OPC server</h4><p data-i18n="s.c2">A vendor OPC server exists as a separately licensed add-on. The simulator does not model it by default.</p></div>
-<div class="card" data-src="S040" data-status="provisional"><h4 data-i18n="s.c3h">SiLA 2, OPC UA LADS (future)</h4><p data-i18n="s.c3">One vendor map describes SiLA 2 adoption as slow and OPC UA LADS as early on installed fleets.</p></div>
+<div class="card" data-src="A036 S003" data-provisional-refs="A036 S003" data-status="provisional"><h4 data-i18n="s.c1h">CSV file drop (baseline)</h4><p data-i18n="s.c1">The all-in-one analyzer exports a CSV file to a shared folder on its bridge computer. The simulator models this path first. The file carries a local time, often without a stated zone.</p></div>
+<div class="card" data-src="S004" data-provisional-refs="S004" data-status="provisional"><h4 data-i18n="s.c2h">Vendor OPC server</h4><p data-i18n="s.c2">A vendor OPC server exists as a separately licensed add-on. The simulator does not model it by default.</p></div>
+<div class="card" data-src="S040" data-provisional-refs="S040" data-status="provisional"><h4 data-i18n="s.c3h">SiLA 2, OPC UA LADS (future)</h4><p data-i18n="s.c3">One vendor map describes SiLA 2 adoption as slow and OPC UA LADS as early on installed fleets.</p></div>
 </div>
 <h3 data-i18n="s.h3b">Clocks and time zones are a data-integrity control</h3>
-<p data-i18n="s.clock" data-src="S029 S030">UK MHRA guidance asks for access to controlled or synchronised clocks for recording timed events and for specifying the time zone (section 5.1). The WHO guidance lists restricting the ability to change any clock used for recording timed events, including clocks in process instrumentation (section 4.12). The design stores every instant in UTC with the source's own offset beside it.</p>
+<p data-i18n="s.clock" data-src="S029 S030">UK MHRA guidance lists controlled or synchronised clocks for recording timed events as an enabler, with a specified time zone for multiple sites (section 5.1). The WHO guidance lists restricting the ability to change any clock used for recording timed events, including clocks in process instrumentation (section 4.12). The design stores every instant in UTC with the source's own offset beside it.</p>
 <p data-i18n="s.clock2" data-src="A049">How often a clock is wrong has no source. The wrong-clock scenario (SC6) uses a +5 h offset on one analyzer as a neutral stress case.</p>
 <h3 data-i18n="s.h3c" class="nochip" data-src="S027">EU Annex 11</h3>
 <p data-i18n="s.a11" data-src="S027">The European Commission lists Annex 11 on computerised systems as the January 2011 revision. That is the text this page treats as current.</p>
-<p data-i18n="s.a11b" data-src="S028" data-status="provisional">A revised Annex 11, a revised Chapter 4 and a new draft Annex 22 on AI went to consultation from 7 July to 7 October 2025. The revision is a draft and not final.</p>
+<p data-i18n="s.a11b" data-src="S028" data-provisional-refs="S028" data-status="provisional">A revised Annex 11, a revised Chapter 4 and a new draft Annex 22 on AI went to consultation from 7 July to 7 October 2025. The revision is a draft and not final.</p>
 <p data-i18n="s.a11c">The model describes controls. It does not claim compliance with either text.</p>
 </div>
 </section>
 
 <section id="method" class="sec" aria-labelledby="h-method">
-<p class="rail" aria-hidden="true">method</p>
+<p class="rail" aria-hidden="true" data-i18n="nav.method">method</p>
 <div>
 <h2 id="h-method" data-i18n="m.h2">Method: five layers, one observation contract</h2>
 <p data-i18n="m.lead">The engine runs a hidden truth world and an observable recorded world side by side. Recorders see only what a person or an instrument could see, and the evaluator alone compares the two.</p>
 <figure class="fig" data-src="A100">
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
-<div tabindex="0" class="fig-scroll"><svg viewBox="0 0 760 270" role="img" aria-labelledby="ly-t" aria-describedby="ly-d">
-<title id="ly-t">Five layers and the observation contract</title>
-<desc id="ly-d">Layers L1 process, L2 sampling and logistics, and L3 analysis form the truth world and write a truth log. They also emit observable events. Recorders A, B and C in layer L4 read only the observable events. Layer L5 uses the records for queries and decisions. The evaluator reads the truth log and the recorded results to score them.</desc>
+<div tabindex="0" class="fig-scroll" role="region" aria-labelledby="cap-ly-cap"><svg viewBox="0 0 760 270" role="img" aria-labelledby="ly-t" aria-describedby="ly-d">
+<title id="ly-t" lang="en">Five layers and the observation contract</title>
+<desc id="ly-d" lang="en">Layers L1 process, L2 sampling and logistics, and L3 analysis form the truth world and write a truth log. They also emit observable events. Recorders A, B and C in layer L4 read only the observable events. Layer L5 uses the records for queries and decisions. The evaluator reads the truth log and the recorded results to score them.</desc>
 <defs><marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0l10 5-10 5z"/></marker></defs>
 <rect class="node alt" x="6" y="8" width="520" height="86" rx="2"/><text class="t2 sm" x="16" y="26" data-i18n="ly.truth">TRUTH WORLD (hidden state, true times)</text>
-<rect class="node" x="20" y="40" width="150" height="44" rx="2"/><text class="b" x="95" y="60" text-anchor="middle">L1 process</text><text class="t2 sm m" x="95" y="75" text-anchor="middle">60 s sensor ticks</text>
-<rect class="node" x="190" y="40" width="150" height="44" rx="2"/><text class="b" x="265" y="60" text-anchor="middle">L2 sampling</text><text class="t2 sm" x="265" y="75" text-anchor="middle" data-i18n="ly.l2">draw, label, transport</text>
-<rect class="node" x="360" y="40" width="150" height="44" rx="2"/><text class="b" x="435" y="60" text-anchor="middle">L3 analysis</text><text class="t2 sm" x="435" y="75" text-anchor="middle" data-i18n="ly.l3">queue, QC, runs</text>
+<rect class="node" x="20" y="40" width="150" height="44" rx="2"/><text class="b" x="95" y="60" text-anchor="middle" data-i18n="layer.l1">L1 process</text><text class="t2 sm m" x="95" y="75" text-anchor="middle" data-i18n="layer.ticks">60 s sensor ticks</text>
+<rect class="node" x="190" y="40" width="150" height="44" rx="2"/><text class="b" x="265" y="60" text-anchor="middle" data-i18n="layer.l2">L2 sampling</text><text class="t2 sm" x="265" y="75" text-anchor="middle" data-i18n="ly.l2">draw, label, transport</text>
+<rect class="node" x="360" y="40" width="150" height="44" rx="2"/><text class="b" x="435" y="60" text-anchor="middle" data-i18n="layer.l3">L3 analysis</text><text class="t2 sm" x="435" y="75" text-anchor="middle" data-i18n="ly.l3">queue, QC, runs</text>
 <path class="edge" d="M170 62H188M340 62H358" marker-end="url(#ar4)"/>
-<rect class="node" x="6" y="120" width="520" height="34" rx="2"/><text class="b m sm" x="266" y="141" text-anchor="middle">observable_events</text>
+<rect class="node" x="6" y="120" width="520" height="34" rx="2"/><text class="b m sm" x="266" y="141" text-anchor="middle" lang="en">observable_events</text>
 <path class="edge" d="M95 84V118M265 84V118M435 84V118" marker-end="url(#ar4)"/>
-<rect class="node" x="20" y="184" width="100" height="44" rx="2"/><text class="b" x="70" y="204" text-anchor="middle">L4 A</text><text class="t2 sm" x="70" y="219" text-anchor="middle">manual</text>
-<rect class="node" x="136" y="184" width="100" height="44" rx="2"/><text class="b" x="186" y="204" text-anchor="middle">L4 B</text><text class="t2 sm" x="186" y="219" text-anchor="middle">LIMS-lite</text>
-<rect class="node" x="252" y="184" width="100" height="44" rx="2"/><text class="b" x="302" y="204" text-anchor="middle">L4 C</text><text class="t2 sm" x="302" y="219" text-anchor="middle">context</text>
+<rect class="node" x="20" y="184" width="100" height="44" rx="2"/><text class="b" x="70" y="204" text-anchor="middle">L4 A</text><text class="t2 sm" x="70" y="219" text-anchor="middle" data-i18n="layer.manual">manual</text>
+<rect class="node" x="136" y="184" width="100" height="44" rx="2"/><text class="b" x="186" y="204" text-anchor="middle">L4 B</text><text class="t2 sm" x="186" y="219" text-anchor="middle" lang="en">LIMS-lite</text>
+<rect class="node" x="252" y="184" width="100" height="44" rx="2"/><text class="b" x="302" y="204" text-anchor="middle">L4 C</text><text class="t2 sm" x="302" y="219" text-anchor="middle" data-i18n="layer.context">context</text>
 <path class="edge" d="M70 154V182M186 154V182M302 154V182" marker-end="url(#ar4)"/>
-<rect class="node" x="390" y="184" width="136" height="44" rx="2"/><text class="b" x="458" y="204" text-anchor="middle">L5 use</text><text class="t2 sm" x="458" y="219" text-anchor="middle" data-i18n="ly.l5">queries, decisions</text>
+<rect class="node" x="390" y="184" width="136" height="44" rx="2"/><text class="b" x="458" y="204" text-anchor="middle" data-i18n="layer.l5">L5 use</text><text class="t2 sm" x="458" y="219" text-anchor="middle" data-i18n="ly.l5">queries, decisions</text>
 <path class="edge" d="M352 206H388" marker-end="url(#ar4)"/>
 <rect class="node box-ok" x="580" y="90" width="170" height="64" rx="2"/><text class="b" x="665" y="116" text-anchor="middle" data-i18n="ly.eval">Evaluator</text><text class="t2 sm" x="665" y="134" text-anchor="middle" data-i18n="ly.evals">scores records against truth</text>
 <path class="edge dash" d="M526 62H640V88" marker-end="url(#ar4)"/><path class="edge dash" d="M526 206H665V156" marker-end="url(#ar4)"/>
 <text class="t2 sm" x="6" y="256" data-i18n="ly.rule">Recorders and L5 never read the truth world.</text>
 </svg></div>
-<figcaption data-i18n="ly.cap">The layered design keeps the comparison fair: every architecture records the same truth run, and only the recording differs.</figcaption>
+<figcaption id="cap-ly-cap" data-i18n="ly.cap">The layered design keeps the comparison fair: every architecture records the same truth run, and only the recording differs.</figcaption>
 </figure>
 <ul class="plain">
 <li data-i18n="m.o1">Recorders consume observable events only. A test changes hidden-only fields and requires the recorder output to stay byte-identical.</li>
@@ -491,22 +490,22 @@
 <h3 data-i18n="m.h3a">Profiles: named bundles, graded by their weakest part</h3>
 <p data-i18n="m.pr.lead">Bioreactor type, analyzer type and staff proficiency each change how data is recorded. Each is a named bundle of sourced and assumed parts, and a bundle takes the grade of its weakest component.</p>
 <p class="scroll-hint" aria-hidden="true" data-i18n="ui.scroll">scroll sideways &rarr;</p>
-<div tabindex="0" class="tablewrap"><table>
-<caption data-i18n="m.pr.cap">Profiles (default first)</caption>
+<div tabindex="0" class="tablewrap" role="region" aria-labelledby="cap-m-pr-cap"><table>
+<caption id="cap-m-pr-cap" data-i18n="m.pr.cap">Profiles (default first)</caption>
 <thead><tr><th data-i18n="m.pr.h1">Profile</th><th data-i18n="m.pr.h2">What it changes</th><th data-i18n="m.pr.h3">Bundle grade</th></tr></thead>
 <tbody>
-<tr><th scope="row">bench_manual</th><td data-i18n="m.pr.b1">operator draws into a closed container or syringe; the sample is a negligible share of the culture</td><td data-src="A067" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
-<tr><th scope="row">micro_mini_parallel</th><td data-i18n="m.pr.b2" data-src="A112 A114">a liquid handler draws into a cup; a 600 &micro;L sample is a burden for daily sampling of micro-scale vessels; mini-scale vessels hold 100 to 250 mL</td><td data-src="A065 A066" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
-<tr><th scope="row">pilot</th><td data-i18n="m.pr.b3">sterile syringe from a sampling line; the size class boundary and purge volumes are assumptions</td><td data-src="A068" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
-<tr><th scope="row">allinone_atline</th><td data-i18n="m.pr.a1" data-src="S001">one queue, one file, one clock: 16 analytes in 4.5 min from 275 &micro;L</td><td data-src="A069" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
-<tr><th scope="row">split_cellcounter_metabolite</th><td data-i18n="m.pr.a2">two queues and two visits; the two results can be measured at different times and carry different clocks</td><td data-src="A070" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
-<tr><th scope="row">hplc</th><td data-i18n="m.pr.a3">titer by HPLC; the shared column is the contested resource</td><td data-src="A071" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
-<tr><th scope="row">experienced</th><td data-i18n="m.pr.s1">label and count error rates borrowed from clinical and bead studies</td><td data-src="A072" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
-<tr><th scope="row">trainee</th><td data-i18n="m.pr.s2">every multiplier is an assumption; evidence on the effect of training could not be established</td><td data-src="A073" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row" lang="en">bench_manual</th><td data-i18n="m.pr.b1">operator draws into a closed container or syringe; the sample is a negligible share of the culture</td><td data-src="A067" data-provisional-refs="A067" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row" lang="en">micro_mini_parallel</th><td data-i18n="m.pr.b2" data-src="A112 A114">a liquid handler draws into a cup; a 600 &micro;L sample is a burden for daily sampling of micro-scale vessels; one mini-scale system has a working volume of 100 to 250 mL</td><td data-src="A065 A066" data-provisional-refs="A065 A066" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row" lang="en">pilot</th><td data-i18n="m.pr.b3">sterile syringe from a sampling line; the size class boundary and purge volumes are assumptions</td><td data-src="A068" data-provisional-refs="A068" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row" lang="en">allinone_atline</th><td data-i18n="m.pr.a1" data-src="S001">one queue, one file, one clock: 16 analytes in 4.5 min from 275 &micro;L</td><td data-src="A069" data-provisional-refs="A069" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row" lang="en">split_cellcounter_metabolite</th><td data-i18n="m.pr.a2">two queues and two visits; the two results can be measured at different times and carry different clocks</td><td data-src="A070" data-provisional-refs="A070" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row" lang="en">hplc</th><td data-i18n="m.pr.a3">titer by HPLC; the shared column is the contested resource</td><td data-src="A071" data-provisional-refs="A071" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row" lang="en">experienced</th><td data-i18n="m.pr.s1">label and count error rates borrowed from clinical and bead studies</td><td data-src="A072" data-provisional-refs="A072" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
+<tr><th scope="row" lang="en">trainee</th><td data-i18n="m.pr.s2">every multiplier is an assumption; evidence on the effect of training could not be established</td><td data-src="A073" data-provisional-refs="A073" data-status="provisional"><span data-i18n="m.pr.bg">bundle</span></td></tr>
 </tbody></table></div>
 <h3 data-i18n="m.h3b">Scenario catalogue</h3>
-<div tabindex="0" class="tablewrap"><table class="sc">
-<caption data-i18n="m.sc.cap">Each scenario asks one question; this page states no result for any of them</caption>
+<div tabindex="0" class="tablewrap" role="region" aria-labelledby="cap-m-sc-cap"><table class="sc">
+<caption id="cap-m-sc-cap" data-i18n="m.sc.cap">Each scenario asks one question; this page states no result for any of them</caption>
 <thead><tr><th>ID</th><th data-i18n="m.sc.q">Question</th><th data-i18n="m.sc.s">Session</th></tr></thead>
 <tbody>
 <tr><td>SC1</td><td data-i18n="m.sc1">What disappears on an ordinary day?</td><td>S2</td></tr>
@@ -521,8 +520,8 @@
 <tr><td>SC10</td><td data-i18n="m.sc10">What happens at merges across batch boundaries?</td><td>S4</td></tr>
 <tr><td>SC11</td><td data-i18n="m.sc11">Same model, different control strength?</td><td>S3</td></tr>
 </tbody></table></div>
-<h3 data-i18n="m.h3c">How numbers are graded and verified</h3>
-<div tabindex="0" class="tablewrap"><table>
+<h3 id="grade-heading" data-i18n="m.h3c">How numbers are graded and verified</h3>
+<div tabindex="0" class="tablewrap" role="region" aria-labelledby="grade-heading"><table>
 <thead><tr><th data-i18n="m.g.h1">Grade</th><th data-i18n="m.g.h2">Meaning</th></tr></thead>
 <tbody>
 <tr><th scope="row" data-i18n="m.g.s">S, sourced</th><td data-i18n="m.g.sd">Bioprocess primary source: paper, vendor specification or case study.</td></tr>

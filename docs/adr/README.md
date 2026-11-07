@@ -5,7 +5,7 @@ Each record states a context, at least two real options, a proposed decision, it
 ## Rule: who writes what
 
 - Claude writes records with status `Proposed` only. Claude never writes the decider's note and never sets another status.
-- The author reads a record, writes the decider's note (in any language), flips the status, and commits that change personally, without a co-author trailer.
+- The author reads a record; the author's chat answer is recorded verbatim in `review_*.json`, applied with `scripts/adr_accept.py`, and committed by the author without a co-author trailer.
 - Git history therefore separates human decisions (commits by the author, with a note) from AI drafts (commits carrying the AI trailer). The format check in `scripts/check_docs.py` verifies structure only; it is not proof of who decided what.
 - Verbatim statements of the author that shaped a record are quoted in its "Author statement" section, with channel and date.
 

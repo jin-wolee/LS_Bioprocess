@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { MYCOPLASMA_NOTE } from "../../engine/src/experiments/assembly/breakout_report.ts";
 import { en } from "../i18n/en.ts";
+import { enBreakout } from "../i18n/en_breakout.ts";
+import { koBreakout } from "../i18n/ko_breakout.ts";
 import { ko } from "../i18n/ko.ts";
 import type { BreakoutResult } from "../protocol.ts";
 import { Breakout, C29, FormPanel, ResultView } from "./Breakout.tsx";
@@ -113,11 +115,11 @@ describe("the result", () => {
   });
 
   it("Given the C29 sentence of the dictionary Then it says what the report says: the stop rule stays, and the effects show on a sibling and not on the signalling unit", () => {
-    const text = en["breakout.c29.text"];
+    const text = enBreakout["breakout.c29.text"];
     expect(text.startsWith("The stop rule stays.")).toBe(true);
     expect(MYCOPLASMA_NOTE.toLowerCase()).toContain("the stop rule stays.");
     expect(MYCOPLASMA_NOTE).toContain(text.slice("The stop rule stays. ".length));
-    expect(ko["breakout.c29.text"]).toMatch(/정지 규칙/);
+    expect(koBreakout["breakout.c29.text"]).toMatch(/정지 규칙/);
   });
 });
 
@@ -192,6 +194,6 @@ describe("the texts of the screen", () => {
   });
 
   it("Given the texts Then the screen never says what a record 'finds' as a fact about a real plant: it speaks of the simulation and of this record", () => {
-    expect(en["breakout.lead"]).toMatch(/simulation results under the inputs shown, not a prediction of a real plant/);
+    expect(enBreakout["breakout.lead"]).toMatch(/simulation results under the inputs shown, not a prediction of a real plant/);
   });
 });

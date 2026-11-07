@@ -20,11 +20,9 @@ at the root of a server and fail there. Drives headless Chromium (Playwright syn
                  limits (`size` of qa_plant_checks.py); and, with WebGL off, the text alternative with no request for the plant chunk (`plant_fallback` of qa_plant_checks.py)
 """
 from __future__ import annotations
-from qa_report import report as write_report
 
 import argparse
 import dataclasses
-import json
 import re
 import shutil
 import sys
@@ -32,9 +30,10 @@ import tempfile
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+from qa_build import serve
 from qa_checks import Result
 from qa_checks import check_size as check_page_size
-from qa_infographic import cold_load, guarded, origin_problems, serve
+from qa_infographic import cold_load, origin_problems
 from qa_lab_browser import open_lab, wait_final
 from qa_lab_breakout import public_build_result
 from qa_lab_checks import check_size as check_lab_size
@@ -43,6 +42,7 @@ from qa_lab_helpers import cross_origin, outside_base
 from qa_plant_checks import check_plant_fallback
 from qa_plant_checks import check_size as check_plant_size
 from qa_plant_helpers import SOFTWARE_GL
+from qa_report import guarded, report as write_report
 from qa_site_plant import check_plant_route
 from qa_timing import set_mode
 
@@ -224,8 +224,9 @@ def renamed(result: Result, name: str) -> Result:
 
 
 def report(results: list[Result], out: Path) -> str:
-    table = write_report(results, out, 'Site QA')
-    return table
+    table = write_report(results, out, "Site QA")
+    failures = "".join(f"\nFAIL  qa_site {r.name}: {r.detail[:300]}" for r in results if not r.ok)
+    return table + failures
 
 
 def main(argv=None) -> int:

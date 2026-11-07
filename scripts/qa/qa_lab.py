@@ -12,17 +12,13 @@ The Pages workflow (P9; docs/design/lab_ui.md section 13) runs `--timing report 
 run because only Chromium is installed there.
 """
 from __future__ import annotations
-from qa_report import report as write_report
-from qa_build import build_local_lab
 
 import argparse
-import json
-import os
-import subprocess
 import sys
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+from qa_build import build_local_lab
 from qa_checks import Result
 from qa_infographic import guarded, serve
 from qa_lab_breakout import check_breakout_public, check_sc12
@@ -31,19 +27,26 @@ from qa_lab_flags import check_flags
 from qa_lab_one_seed import check_challenge, check_lineage_sc3
 from qa_lab_oneflag import check_one_flag
 from qa_lab_results import check_results
+from qa_lab_robust import check_robust
 from qa_lab_sweeps import check_contrast, check_ko, check_matrix, check_numbers
+from qa_report import report as write_report, verdict
 from qa_timing import set_mode
 
 REPO = Path(__file__).resolve().parents[2]
 
 
 def report(results: list[Result], out: Path) -> str:
-    table = write_report(results, out, 'Lab QA')
+    table = write_report(results, out, "Lab QA")
+    statuses = [verdict(r) for r in results]
+    totals = ", ".join(f"{status} {statuses.count(status)}" for status in ("PASS", "SKIP", "FLAKY", "FAIL"))
+    # one line per failed check that check_all.sh can show (its summary keeps the lines that start with FAIL)
     failures = "".join(f"\nFAIL  qa_lab {r.name}: {r.detail[:300]}" for r in results if not r.ok)
-    return table + failures
+    return f"{table}\nqa_lab totals: {totals}" + failures
 
 
 def build() -> int:
+    # The QA serves a local build (VITE_LAB_LOCAL=1): it must show the Break-out screen, which the public build refuses while a source of it is below main-reread (lab_ui.md section 20).
+    # The check `breakout_public` builds the public build itself.
     return build_local_lab()
 
 
@@ -70,7 +73,7 @@ def main(argv=None) -> int:
                        guarded("size", lambda: check_size(browser, url, args.root)),
                        guarded("time", lambda: check_time(browser, url)),
                        guarded("check", lambda: check_check(browser, url, args.root)),
-                       guarded("engines", lambda: Result("engines", True, "not run (--no-engines): only Chromium is installed") if args.no_engines else check_engines(pw, url)),
+                       guarded("engines", lambda: Result("engines", True, "not run (--no-engines): only Chromium is installed", {"skipped": True}) if args.no_engines else check_engines(pw, url)),
                        guarded("results", lambda: check_results(browser, url)),
                        guarded("one_flag", lambda: check_one_flag(browser, url)),
                        guarded("lineage_sc3", lambda: check_lineage_sc3(browser, url)),
@@ -81,7 +84,8 @@ def main(argv=None) -> int:
                        guarded("flags", lambda: check_flags(browser, url)),
                        guarded("ko", lambda: check_ko(browser, url)),
                        guarded("matrix", lambda: check_matrix(browser, url, args.out)),
-                       guarded("contrast", lambda: check_contrast(browser, url, args.root))]
+                       guarded("contrast", lambda: check_contrast(browser, url, args.root)),
+                       guarded("robust", lambda: check_robust(browser, url))]
         finally:
             browser.close()
     print(report(results, args.out))

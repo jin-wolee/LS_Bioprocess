@@ -126,7 +126,7 @@ export function Report({ state, ready }: { state: State; ready: ReadyInfo }) {
 }
 
 export function Results({ state, ready, onCancel }: { state: State; ready: ReadyInfo; onCancel: () => void }) {
-  const problem = state.problem && state.problem.id !== HOME_ID ? state.problem : null;
+  const problem = state.problem && state.problem.id !== HOME_ID && state.problem.code !== "worker" ? state.problem : null;
   return (
     <>
       <section aria-labelledby="results-heading">

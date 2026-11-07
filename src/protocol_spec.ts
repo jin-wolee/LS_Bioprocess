@@ -14,3 +14,4 @@ export interface RunSpec {
   architectures: string[];
   seeds: number[];
 }
+

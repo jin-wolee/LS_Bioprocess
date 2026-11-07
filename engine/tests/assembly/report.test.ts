@@ -116,7 +116,7 @@ describe("Stochastic report: rows, statuses and denominators (hand-set cells)", 
   });
 
   it("Given a rate whose denominator is zero in every seed Then the status is none_occurred and no number is given (not 0 and not 100 percent)", () => {
-    expect(row("C", "detection.by_type.lost_rerun.recall")).toMatchObject({ status: "none_occurred", n_defined: 0, median: null, lo: null, hi: null, reason: "undefined in every seed: the denominator is zero" });
+    expect(row("C", "detection.by_type.lost_rerun.recall")).toMatchObject({ status: "none_occurred", n_defined: 0, median: null, lo: null, hi: null, reason: "the denominator is zero in every seed: undefined, not 0 and not 1" });
     expect(row("C", "detection.by_type.lost_rerun.recall")?.den).toEqual({ min: 0, median: 0, max: 0 });
   });
 

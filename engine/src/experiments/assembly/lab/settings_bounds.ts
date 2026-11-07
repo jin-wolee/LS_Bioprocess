@@ -9,11 +9,11 @@ import type { ScenarioDoc } from "./setup.ts";
 // the loader refuses too, and the settings that place a scheduled event, which a link must put on a whole minute.
 
 type Kind =
-  | "count" | "probability" | "share_pct" | "viability" | "concentration" | "duration" | "instant" | "rate" | "factor" | "spread" | "switch" | "constant" | "set_point" | "signed" | "offset";
+  | "count" | "probability" | "rerun_probability" | "share_pct" | "viability" | "concentration" | "duration" | "instant" | "rate" | "factor" | "spread" | "switch" | "constant" | "set_point" | "signed" | "offset";
 
 const KINDS: Readonly<Record<string, Kind>> = {
   reactor_count: "count", bay_size: "count", analyzer_count: "count", cohort_size: "count", operators_per_shift: "count", weekend_operators: "count", samples_per_reactor_per_day: "count",
-  second_sample_fraction: "probability", burst_share: "probability", rerun_probability: "probability", technique_error_probability: "probability",
+  second_sample_fraction: "probability", burst_share: "probability", rerun_probability: "rerun_probability", technique_error_probability: "probability",
   feed_bolus_pct: "share_pct", volume_cap_pct: "share_pct",
   initial_viability_pct: "viability", harvest_viability_pct: "viability",
   inoculation_density_e6_per_ml: "concentration", initial_glucose_g_per_l: "concentration", initial_glutamine_mm: "concentration", initial_lactate_g_per_l: "concentration",
@@ -40,6 +40,7 @@ const ANY = (): boolean => true; // the value is a finite number already (checkR
 const RULES: Readonly<Record<Kind, { ok: (v: number) => boolean; says: string }>> = {
   count: { ok: (v) => Number.isInteger(v) && v >= 1, says: "a count, a whole number of at least 1" },
   probability: { ok: (v) => v >= 0 && v <= 1, says: "a probability, from 0 to 1" },
+  rerun_probability: { ok: (v) => v >= 0 && v < 1, says: "a probability from 0 inclusive to 1 exclusive" },
   share_pct: { ok: (v) => v >= 0 && v <= 100, says: "a share in percent, from 0 to 100" },
   viability: { ok: (v) => v > 0 && v <= 100, says: "a viability, above 0 and at most 100 percent" },
   concentration: { ok: (v) => v >= 0, says: "a concentration, not below 0" },

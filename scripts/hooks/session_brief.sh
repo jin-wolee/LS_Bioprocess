@@ -14,4 +14,12 @@ if [ -n "$PROPOSED" ]; then
   for f in $PROPOSED; do head -1 "$f" | sed 's/^# /  /'; done
 fi
 [ -f .guardrails.local.txt ] || echo "!! .guardrails.local.txt is missing — check_docs will FAIL until it is restored."
+if [ -e .claude/.batch-running ]; then
+  AGE="$(python3 -I -c 'import os,time; print(max(0, int(time.time()-os.stat(".claude/.batch-running").st_mtime)))' 2>/dev/null || echo 999999)"
+  if [ "$AGE" -gt 21600 ]; then
+    echo "!! stale batch marker: $((AGE / 3600)) hours old; the Stop gate will ignore it."
+  else
+    echo "!! batch marker: $((AGE / 3600)) hours old; the Stop gate is deferred."
+  fi
+fi
 exit 0

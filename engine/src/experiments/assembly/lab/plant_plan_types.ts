@@ -66,3 +66,4 @@ export interface ScenePlan {
   equipment?: PlanEquipment[];
   confirms?: PlanConfirm[];
 }
+

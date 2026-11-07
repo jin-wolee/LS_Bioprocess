@@ -11,10 +11,9 @@ NOTE_PLACEHOLDER = "_(author only"
 SKIP_SCAN = {"uv.lock", "package-lock.json"}
 
 
-def load_terms(root: Path) -> list[str] | None:
-    env = os.environ.get("GUARDRAIL_TERMS")
-    if env:
-        lines = env.splitlines()
+def load_terms(root: Path, ci: bool = False) -> list[str] | None:
+    if ci:
+        lines = os.environ.get("GUARDRAIL_TERMS", "").splitlines()
     else:
         f = root / ".guardrails.local.txt"
         if not f.exists():
@@ -77,6 +76,10 @@ def check_adr(rel: str, text: str) -> tuple[list[str], list[str]]:
 # ---------- scan ----------
 def scan_file(rel: str, text: str, terms: list[str]) -> tuple[list[str], list[str]]:
     errors, warnings = [], []
+    path_hits = banned_hits(rel, terms)
+    if path_hits:
+        errors.append(f"[redacted path]: {banned_message(path_hits)}")
+        return errors, warnings
     if Path(rel).name not in SKIP_SCAN:
         for line, items in banned_lines(text, terms):
             errors.append(f"{rel}:{line}: {banned_message(items)}")

@@ -2,7 +2,7 @@
 
 Marker `user_track`: skipped, with a message, while reference/simpy/sim_core.py is absent. The test is written by the AI path and
 never edited to make the author's code pass. It runs the loop on every trace and compares exactly on integer times:
-- the 19 hand traces F1-F7 and variants (tests/fixtures/traces/) against the hand-typed expectation,
+- the 20 hand traces F1-F7 and variants (tests/fixtures/traces/) against the hand-typed expectation,
 - the 20 parity traces (tests/golden/parity/) against the expected_result of the TS core.
 """
 import json
@@ -51,7 +51,7 @@ def test_hand_traces_carry_the_hand_typed_expectation() -> None:
     for path in HAND_FIXTURES:
         for case in json.loads(path.read_text())["cases"]:
             expected[case["case"]] = case["expected"]["runs"]
-    assert len(expected) == len(HAND_TRACES) == 19
+    assert len(expected) == len(HAND_TRACES) == 20
     for path in HAND_TRACES:
         trace = json.loads(path.read_text())
         assert trace["source"] == "hand"

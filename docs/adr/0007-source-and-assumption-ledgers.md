@@ -38,7 +38,7 @@ Proposed: option 1.
 ## Evidence
 
 - `docs/research/README.md` (grades, verification, working rules), `scripts/check_docs.py` (id and verification checks).
-- Worked examples of the observed-versus-applied split: A038, A039, A040 (S012). Example of a weakest-part bundle grade: A070.
+- Worked examples of the observed-versus-applied split: A038, A039, A040 (S012). Example of a weakest-part bundle grade: A070 (provisional).
 
 ## Author statement (verbatim, if any)
 

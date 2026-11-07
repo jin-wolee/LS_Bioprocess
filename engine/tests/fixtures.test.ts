@@ -57,10 +57,10 @@ const outputOf = (c: FixtureCase): L3Output => {
 };
 
 describe("Hand fixtures: the set is complete", () => {
-  it("F1, F2, F2b, F3, F4, F5, F6 and F7 exist with all their variants", () => {
-    expect(fixtures.map((f) => f.fixture).sort()).toEqual(["F1", "F2", "F2b", "F3", "F4", "F5", "F6", "F7"]);
+  it("F1, F1c, F2, F2b, F3, F4, F5, F6 and F7 exist with all their variants", () => {
+    expect(fixtures.map((f) => f.fixture).sort()).toEqual(["F1", "F1c", "F2", "F2b", "F3", "F4", "F5", "F6", "F7"]);
     expect([...allCases.keys()].sort()).toEqual(
-      ["F1", "F1b", "F2-r1", "F2-r2", "F2-r3", "F2-r4", "F2-r5", "F2b-r1", "F2b-r2", "F3", "F3-control", "F3b", "F4", "F4-transfer60", "F5", "F5-initial-S", "F6", "F7", "F7-fifo"].sort(),
+      ["F1", "F1b", "F1c", "F2-r1", "F2-r2", "F2-r3", "F2-r4", "F2-r5", "F2b-r1", "F2b-r2", "F3", "F3-control", "F3b", "F4", "F4-transfer60", "F5", "F5-initial-S", "F6", "F7", "F7-fifo"].sort(),
     );
   });
 });

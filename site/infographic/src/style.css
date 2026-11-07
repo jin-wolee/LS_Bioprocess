@@ -92,9 +92,16 @@ html:not([lang="ko"]) .lg-en, html[lang="ko"] .lg-ko { opacity: 1; font-weight: 
 .eyebrow { font: 500 .8rem var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-2); margin-bottom: .8rem; }
 #premise h1 { font-size: clamp(1.6rem, 1rem + 2.5vw, 2.9rem); font-stretch: 112%; max-width: 26em; }
 .lede { font-size: 1.18rem; max-width: 62ch; margin-top: 1.25rem; }
-.hero { display: grid; gap: 1.25rem 2.25rem; margin-top: 1.25rem; }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem 2.25rem; margin-top: 1.25rem; }
 .hero .lede { margin-top: 0; }
 @media (min-width: 60rem) { .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); align-items: start; } }
+@media (max-width: 599px) {
+  .hero-text { display: contents; }
+  .hero .cta-row { order: 0; margin-top: 0; }
+  .hero-pic { order: 1; }
+  .hero .lede { order: 2; }
+  .hero .cta-note { order: 3; }
+}
 .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 1.4rem 0 0; }
 a.btn.cta { background: var(--pen1); color: var(--on-pen); border-color: var(--pen1); font-size: 1.02rem; font-weight: 600; padding: .6rem 1.2rem; min-height: 2.9rem; }
 .cta-alt { font-size: .95rem; }
@@ -222,7 +229,7 @@ html[data-story="on"] [data-step].is-active { opacity: 1; }
 /* architectures */
 .presets { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 1rem 0 .5rem; }
 .presets .btn[aria-pressed="true"] { background: var(--pen1); color: var(--on-pen); border-color: var(--pen1); }
-.flags { border: 1px solid var(--line); background: var(--surface); padding: .8rem 1rem 1rem; margin: .5rem 0 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: .4rem 1.25rem; }
+.flags { min-width: 0; border: 1px solid var(--line); background: var(--surface); padding: .8rem 1rem 1rem; margin: .5rem 0 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .4rem 1.25rem; }
 .flags legend { font: 600 .8rem var(--font-mono); padding: 0 .4rem; }
 .flag { display: grid; grid-template-columns: auto 1fr; gap: 0 .6rem; align-items: start; padding: .35rem 0; cursor: pointer; }
 .flag input { width: 1.15rem; height: 1.15rem; margin: .25rem 0 0; accent-color: var(--pen1); }

@@ -38,7 +38,7 @@ describe("ErrorBlock", () => {
     ["worker", "error.worker"],
   ] as const)("Given the code %s Then the sentence above the message is the dictionary key %s, translated, and the heading is error.heading", (code, key) => {
     const keys = keysOf(ErrorBlock({ problem: { id: 4, code, message } }));
-    expect(keys).toEqual(["error.heading", key]);
+    expect(keys).toEqual(code === "worker" ? ["error.heading", key, "error.worker.recovery"] : ["error.heading", key]);
   });
 
   it("Given a cancel Then the heading says the run was cancelled, not that the engine reported a problem, and the message is shown as sent", () => {

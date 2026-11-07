@@ -9,7 +9,7 @@ import { template } from "../i18n/index.ts";
 import type { Key, Lang } from "../i18n/index.ts";
 import type { FleetProblem, Response } from "../protocol.ts";
 import { createWorker } from "../worker/worker.ts";
-import { fleetKey, fleetRequest, withCounts, defaultForm } from "./form.ts";
+import { fleetKey, fleetRequest, withCounts, defaultForm, parseSeeds } from "./form.ts";
 import type { Form } from "./form.ts";
 import { READY } from "./fixture.ts";
 import { Setup } from "./Setup.tsx";
@@ -143,12 +143,22 @@ const worker = () => {
   };
 };
 const formOf = (analyzers: string[]): Form => ({ ...withCounts(defaultForm(REAL, "default"), REAL, { m: String(analyzers.length) }), analyzers });
-/** The page as it is after the Worker has answered the check of this form. */
+/** Settle the independent seed prerequisite through the real Worker and reducer. */
+const seedSettled = async (ask: (request: unknown) => Promise<Response[]>, f: Form, state: State, id: number): Promise<State> => {
+  const seeds = parseSeeds(f.seeds);
+  expect(seeds, "valid form seeds").not.toBeNull();
+  let next = reduce(state, { type: "seed_asked", id, key: f.seeds });
+  const messages = await ask({ type: "seed_check", id, seeds });
+  expect(messages).toEqual([{ type: "seed_checked", id, reason: null }]);
+  for (const message of messages) next = reduce(next, message);
+  return next;
+};
+/** The page after the Worker has checked both the fleet and the valid form seeds. */
 const settled = async (ask: (request: unknown) => Promise<Response[]>, f: Form, id = 2): Promise<State> => {
   let state: State = { ...initial, ready: REAL };
   state = reduce(state, { type: "fleet_asked", id, key: fleetKey(f) });
   for (const m of await ask(fleetRequest(f, id))) state = reduce(state, m);
-  return state;
+  return seedSettled(ask, f, state, id + 1);
 };
 const render = (f: Form, state: State): VNode[] => walk(Setup({ ready: REAL, form: f, setForm: () => undefined, state, link: "", linkEngine: null, leftOut: [], onRun: () => undefined, onCancel: () => undefined }));
 const run = (nodes: VNode[]): VNode => nodes.find((n) => n.props.id === "run") as VNode;
@@ -218,17 +228,19 @@ describe("Setup: Run is off exactly when the engine would refuse the list (M = 3
     expect(engineRefusal(["split_cellcounter_metabolite", "hplc", DEFAULT])).not.toBeNull();
   });
 
-  it("Given a check that has not answered for the picks on screen Then Run is off and no message is shown (nothing blinks for a check that answers in milliseconds)", () => {
+  it("Given a check that has not answered for the picks on screen Then Run is off and no message is shown (nothing blinks for a check that answers in milliseconds)", async () => {
     const f = formOf([DEFAULT, DEFAULT, DEFAULT]);
-    const nodes = render(f, { ...initial, ready: REAL, fleet: { asked: { id: 2, key: fleetKey(f) }, verdict: null } });
+    const state = await seedSettled(worker(), f, { ...initial, ready: REAL, fleet: { asked: { id: 2, key: fleetKey(f) }, verdict: null } }, 3);
+    const nodes = render(f, state);
     expect(run(nodes).props.disabled).toBe(true);
     expect(nodes.some((n) => "data-fleet-note" in n.props)).toBe(false);
     expect(nodes.some((n) => n.props.id === "run-blocked")).toBe(false);
   });
 
-  it("Given the default form of the fixture ready, answered with no problem Then Run is on", () => {
+  it("Given the default form of the fixture ready, answered with no problem Then Run is on", async () => {
     const f = defaultForm(READY, "default");
-    const nodes = walk(Setup({ ready: READY, form: f, setForm: () => undefined, state: { ...initial, fleet: { asked: { id: 2, key: fleetKey(f) }, verdict: { key: fleetKey(f), problems: [] } } }, link: "", linkEngine: null, leftOut: [], onRun: () => undefined, onCancel: () => undefined }));
+    const state = await seedSettled(worker(), f, { ...initial, fleet: { asked: { id: 2, key: fleetKey(f) }, verdict: { key: fleetKey(f), problems: [] } } }, 3);
+    const nodes = walk(Setup({ ready: READY, form: f, setForm: () => undefined, state, link: "", linkEngine: null, leftOut: [], onRun: () => undefined, onCancel: () => undefined }));
     expect(run(nodes).props.disabled).toBe(false);
   });
 });

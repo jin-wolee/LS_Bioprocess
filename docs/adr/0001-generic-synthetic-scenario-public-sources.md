@@ -16,7 +16,7 @@ The simulator is a public portfolio project. Its scenario has to be concrete eno
    - Con: the calibration cannot be cited by id, cannot be audited or reproduced, and anonymisation can fail silently; results would read as a statement about a real plant.
 3. **A public dataset as the scenario.**
    - Pro: real measurements, citable.
-   - Con: the one public dataset surveyed is an industrial-scale penicillin fermentation with no at-line analyzer and no sample-context layer, and it is not a CHO process (S035, snippet), so it cannot carry the question this simulator asks.
+   - Con: the one public dataset surveyed is an industrial-scale penicillin fermentation with no at-line analyzer and no sample-context layer, and it is not a CHO process (S035 (provisional), snippet), so it cannot carry the question this simulator asks.
 
 ## Decision
 
@@ -30,7 +30,7 @@ Proposed: option 1. The scenario is synthetic and generic. Its narrative anchor 
 
 ## Evidence
 
-- A001 (scenario setting, grade A), S009 (24-vessel parallel systems exist), S017 (public teaching case, hypothetical antibody), S035 (public dataset surveyed; not suitable).
+- A001 (scenario setting, grade A), S009 (24-vessel parallel systems exist), S017 (public teaching case, hypothetical antibody), S035 (provisional) (public dataset surveyed; not suitable).
 - Grade-A examples that remain assumptions: A016, A017, A018, A034.
 
 ## Author statement (verbatim, if any)

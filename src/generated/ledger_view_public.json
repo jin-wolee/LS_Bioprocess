@@ -3,6 +3,7 @@
   "assumptions": {
     "A001": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         5,
         100
@@ -13,6 +14,7 @@
     },
     "A002": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         2,
         5
@@ -26,6 +28,7 @@
     },
     "A004": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         12,
         17
@@ -39,6 +42,7 @@
     },
     "A007": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         0.5,
         1.5
@@ -51,6 +55,7 @@
     },
     "A008": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         10,
         30
@@ -63,6 +68,7 @@
     },
     "A010": {
       "grade": "S",
+      "range_grade": "S",
       "range": "fixed",
       "unit": "g/L",
       "sources": [
@@ -72,6 +78,7 @@
     },
     "A013": {
       "grade": "A",
+      "range_grade": "A",
       "range": "n/a",
       "unit": "rule",
       "sources": [
@@ -82,6 +89,7 @@
     },
     "A014": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         1,
         8
@@ -96,6 +104,7 @@
     },
     "A015": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0,
         1
@@ -106,6 +115,7 @@
     },
     "A016": {
       "grade": "A",
+      "range_grade": "A",
       "range": "n/a",
       "unit": "schedule",
       "sources": [],
@@ -113,6 +123,7 @@
     },
     "A018": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         5,
         60
@@ -123,6 +134,7 @@
     },
     "A019": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         135,
         275
@@ -136,6 +148,7 @@
     },
     "A022": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         1,
         6
@@ -146,6 +159,7 @@
     },
     "A023": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         4.5,
         8
@@ -160,6 +174,7 @@
     },
     "A025": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         80,
         130
@@ -172,6 +187,7 @@
     },
     "A028": {
       "grade": "S",
+      "range_grade": "A",
       "range": [
         1.0,
         4.0
@@ -184,6 +200,7 @@
     },
     "A029": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         5,
         50
@@ -196,6 +213,7 @@
     },
     "A030": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         30,
         120
@@ -206,6 +224,7 @@
     },
     "A032": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0,
         5
@@ -216,6 +235,7 @@
     },
     "A036": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         "shared-folder CSV drop",
         "vendor OPC server (licensed)",
@@ -233,6 +253,7 @@
     },
     "A039": {
       "grade": "S",
+      "range_grade": "S",
       "range": "fixed",
       "unit": "min",
       "sources": [
@@ -242,6 +263,7 @@
     },
     "A040": {
       "grade": "A",
+      "range_grade": "D",
       "range": [
         -7.2,
         0.0
@@ -252,6 +274,7 @@
     },
     "A041": {
       "grade": "P",
+      "range_grade": "P",
       "range": [
         0.02,
         0.06
@@ -264,6 +287,7 @@
     },
     "A042": {
       "grade": "P",
+      "range_grade": "A",
       "range": [
         2,
         6
@@ -276,6 +300,7 @@
     },
     "A043": {
       "grade": "P",
+      "range_grade": "P",
       "range": [
         -0.03,
         -0.01
@@ -288,6 +313,7 @@
     },
     "A046": {
       "grade": "P",
+      "range_grade": "A",
       "range": [
         5,
         60
@@ -300,6 +326,7 @@
     },
     "A047": {
       "grade": "P",
+      "range_grade": "P",
       "range": [
         1.2,
         17
@@ -313,6 +340,7 @@
     },
     "A051": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         "on",
         "off"
@@ -327,6 +355,7 @@
     },
     "A057": {
       "grade": "D",
+      "range_grade": "D",
       "range": [
         0.00055,
         6.0
@@ -344,6 +373,7 @@
     },
     "A058": {
       "grade": "P",
+      "range_grade": "P",
       "range": [
         2.81,
         5
@@ -356,6 +386,7 @@
     },
     "A059": {
       "grade": "P",
+      "range_grade": "P",
       "range": [
         0.46,
         5
@@ -368,6 +399,7 @@
     },
     "A060": {
       "grade": "P",
+      "range_grade": "A",
       "range": [
         3.3,
         7.1
@@ -380,6 +412,7 @@
     },
     "A061": {
       "grade": "P",
+      "range_grade": "P",
       "range": [
         -83.25,
         -46.5
@@ -392,6 +425,7 @@
     },
     "A062": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         1,
         5
@@ -402,6 +436,7 @@
     },
     "A063": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0,
         30
@@ -412,6 +447,7 @@
     },
     "A064": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0,
         0.3
@@ -422,6 +458,7 @@
     },
     "A065": {
       "grade": "D",
+      "range_grade": "D",
       "range": "bundle",
       "unit": "bundle",
       "sources": [
@@ -433,6 +470,7 @@
     },
     "A067": {
       "grade": "D",
+      "range_grade": "D",
       "range": "bundle",
       "unit": "bundle",
       "sources": [
@@ -444,6 +482,7 @@
     },
     "A068": {
       "grade": "A",
+      "range_grade": "A",
       "range": "bundle",
       "unit": "bundle",
       "sources": [
@@ -454,6 +493,7 @@
     },
     "A069": {
       "grade": "D",
+      "range_grade": "D",
       "range": "bundle",
       "unit": "bundle",
       "sources": [
@@ -466,6 +506,7 @@
     },
     "A070": {
       "grade": "A",
+      "range_grade": "A",
       "range": "bundle",
       "unit": "bundle",
       "sources": [
@@ -478,6 +519,7 @@
     },
     "A071": {
       "grade": "A",
+      "range_grade": "A",
       "range": "bundle",
       "unit": "bundle",
       "sources": [
@@ -488,6 +530,7 @@
     },
     "A072": {
       "grade": "A",
+      "range_grade": "A",
       "range": "bundle",
       "unit": "bundle",
       "sources": [
@@ -498,6 +541,7 @@
     },
     "A073": {
       "grade": "A",
+      "range_grade": "A",
       "range": "bundle",
       "unit": "bundle",
       "sources": [
@@ -509,6 +553,7 @@
     },
     "A076": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         1,
         3
@@ -519,6 +564,7 @@
     },
     "A077": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         3.0,
         7.0
@@ -531,6 +577,7 @@
     },
     "A078": {
       "grade": "S",
+      "range_grade": "S",
       "range": "fixed",
       "unit": "pH units or mOsm/kg",
       "sources": [
@@ -540,6 +587,7 @@
     },
     "A079": {
       "grade": "S",
+      "range_grade": "S",
       "range": "fixed",
       "unit": "% (counting repeatability)",
       "sources": [
@@ -549,6 +597,7 @@
     },
     "A080": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         0.022,
         0.033
@@ -563,6 +612,7 @@
     },
     "A081": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         0.0029,
         0.0067
@@ -575,6 +625,7 @@
     },
     "A082": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         1.2,
         2.5
@@ -587,6 +638,7 @@
     },
     "A083": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         0.3,
         1.2
@@ -599,6 +651,7 @@
     },
     "A084": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         1.2,
         2.3
@@ -611,6 +664,7 @@
     },
     "A085": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         "off",
         "on"
@@ -627,6 +681,7 @@
     },
     "A086": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         33.3,
         54.4
@@ -640,6 +695,7 @@
     },
     "A088": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0,
         0.1
@@ -650,6 +706,7 @@
     },
     "A089": {
       "grade": "S",
+      "range_grade": "S",
       "range": "fixed",
       "unit": "analyte units (see default)",
       "sources": [
@@ -660,6 +717,7 @@
     },
     "A090": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         "chemistry 1, 2, 4",
         "cell density 1, 2, 6"
@@ -672,6 +730,7 @@
     },
     "A091": {
       "grade": "S",
+      "range_grade": "S",
       "range": "fixed",
       "unit": "h",
       "sources": [
@@ -681,6 +740,7 @@
     },
     "A092": {
       "grade": "A",
+      "range_grade": "D",
       "range": [
         0,
         4.9
@@ -693,6 +753,7 @@
     },
     "A093": {
       "grade": "A",
+      "range_grade": "D",
       "range": [
         0,
         4.9
@@ -705,6 +766,7 @@
     },
     "A094": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0,
         0.05
@@ -717,6 +779,7 @@
     },
     "A095": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         0,
         0.05
@@ -730,6 +793,7 @@
     },
     "A096": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         1,
         8
@@ -740,6 +804,7 @@
     },
     "A097": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         15,
         60
@@ -750,6 +815,7 @@
     },
     "A098": {
       "grade": "A",
+      "range_grade": "A",
       "range": "n/a",
       "unit": "schedule",
       "sources": [],
@@ -757,6 +823,7 @@
     },
     "A100": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         10,
         600
@@ -767,6 +834,7 @@
     },
     "A102": {
       "grade": "A",
+      "range_grade": "A",
       "range": "n/a",
       "unit": "clock time",
       "sources": [],
@@ -774,6 +842,7 @@
     },
     "A103": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         20,
         200
@@ -784,6 +853,7 @@
     },
     "A104": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         50,
         250
@@ -797,6 +867,7 @@
     },
     "A106": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0,
         5
@@ -807,6 +878,7 @@
     },
     "A107": {
       "grade": "D",
+      "range_grade": "D",
       "range": "n/a",
       "unit": "s and uL",
       "sources": [
@@ -818,6 +890,7 @@
     },
     "A108": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         8,
         168
@@ -831,6 +904,7 @@
     },
     "A109": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         0.93,
         2.06
@@ -843,6 +917,7 @@
     },
     "A110": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         10,
         15
@@ -856,6 +931,7 @@
     },
     "A160": {
       "grade": "P",
+      "range_grade": "P",
       "range": "units row on or off",
       "unit": "layout",
       "sources": [
@@ -866,6 +942,7 @@
     },
     "A161": {
       "grade": "A",
+      "range_grade": "S",
       "range": "3 orders x 3 separators x 2 clock styles",
       "unit": "format",
       "sources": [
@@ -877,6 +954,7 @@
     },
     "A162": {
       "grade": "P",
+      "range_grade": "P",
       "range": "unit options per the manual table in section 3.5.3.1",
       "unit": "text",
       "sources": [
@@ -888,6 +966,7 @@
     },
     "A163": {
       "grade": "A",
+      "range_grade": "A",
       "range": "n/a",
       "unit": "category",
       "sources": [
@@ -898,6 +977,7 @@
     },
     "A164": {
       "grade": "S",
+      "range_grade": "S",
       "range": "fixed",
       "unit": "d",
       "sources": [
@@ -908,6 +988,7 @@
     },
     "A165": {
       "grade": "S",
+      "range_grade": "S",
       "range": "field set",
       "unit": "fields",
       "sources": [
@@ -918,6 +999,7 @@
     },
     "A166": {
       "grade": "P",
+      "range_grade": "P",
       "range": "32 headers in the fixture",
       "unit": "layout",
       "sources": [
@@ -929,6 +1011,7 @@
     },
     "A167": {
       "grade": "S",
+      "range_grade": "S",
       "range": "append on or off",
       "unit": "mode",
       "sources": [
@@ -939,6 +1022,7 @@
     },
     "A168": {
       "grade": "P",
+      "range_grade": "P",
       "range": "template-driven column choice",
       "unit": "layout",
       "sources": [
@@ -950,6 +1034,7 @@
     },
     "A169": {
       "grade": "P",
+      "range_grade": "P",
       "range": "n/a",
       "unit": "category",
       "sources": [
@@ -960,6 +1045,7 @@
     },
     "A188": {
       "grade": "A",
+      "range_grade": "A",
       "range": "cohort interval 0 to 2 d; in-cohort interval 5 to 60 min; cohort size 1 to 24",
       "unit": "d, min, reactors",
       "sources": [],
@@ -967,6 +1053,7 @@
     },
     "A189": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         14,
         42
@@ -977,6 +1064,7 @@
     },
     "A190": {
       "grade": "S",
+      "range_grade": "A",
       "range": [
         4,
         15
@@ -990,6 +1078,7 @@
     },
     "A191": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         2,
         8
@@ -1004,6 +1093,7 @@
     },
     "A192": {
       "grade": "D",
+      "range_grade": "D",
       "range": [
         2,
         20
@@ -1019,6 +1109,7 @@
     },
     "A193": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         60,
         500
@@ -1033,6 +1124,7 @@
     },
     "A194": {
       "grade": "A",
+      "range_grade": "A",
       "range": "window 1 to 4 h around 10:00",
       "unit": "clock time, h",
       "sources": [],
@@ -1040,6 +1132,7 @@
     },
     "A195": {
       "grade": "S",
+      "range_grade": "S",
       "range": "day 3 to 5 (day 5 assumed); set point 30 to 35 C; pre-shift 37 C",
       "unit": "d, C",
       "sources": [
@@ -1051,6 +1144,7 @@
     },
     "A196": {
       "grade": "A",
+      "range_grade": "A",
       "range": "growth x 0.2 to 1.0; death x 0.3 to 1.0; productivity x 1.0 to 2.0",
       "unit": "multiplier (dimensionless)",
       "sources": [
@@ -1063,6 +1157,7 @@
     },
     "A198": {
       "grade": "S",
+      "range_grade": "S",
       "range": "pH 6.8 to 7.4; DO 25 to 100 %; temperature 30 to 37 C",
       "unit": "pH, % air saturation, C",
       "sources": [
@@ -1073,6 +1168,7 @@
     },
     "A199": {
       "grade": "A",
+      "range_grade": "A",
       "range": "sd up to a third of the log deadband (pH 0.017, DO 0.67 %, temperature 0.07 C); lag 5 to 60 min",
       "unit": "pH units, % air saturation, C, min",
       "sources": [
@@ -1082,6 +1178,7 @@
     },
     "A200": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         10,
         600
@@ -1092,6 +1189,7 @@
     },
     "A201": {
       "grade": "A",
+      "range_grade": "A",
       "range": "n/a",
       "unit": "schedule; clock time, operators",
       "sources": [],
@@ -1099,6 +1197,7 @@
     },
     "A202": {
       "grade": "A",
+      "range_grade": "A",
       "range": "burst share 0 to 1 (A016 sets 0.65); the rest uniform",
       "unit": "schedule; fraction",
       "sources": [],
@@ -1106,6 +1205,7 @@
     },
     "A203": {
       "grade": "A",
+      "range_grade": "A",
       "range": "width 15 to 240 min; offset 0 to 240 min",
       "unit": "min",
       "sources": [],
@@ -1113,6 +1213,7 @@
     },
     "A204": {
       "grade": "A",
+      "range_grade": "A",
       "range": "length 15 to 60 min",
       "unit": "clock time, min",
       "sources": [],
@@ -1120,6 +1221,7 @@
     },
     "A205": {
       "grade": "A",
+      "range_grade": "A",
       "range": "start 08:00 to 14:00; length per A096 (1 to 8 h)",
       "unit": "clock time, h",
       "sources": [],
@@ -1127,6 +1229,7 @@
     },
     "A206": {
       "grade": "A",
+      "range_grade": "A",
       "range": "n/a",
       "unit": "rule; clock time",
       "sources": [],
@@ -1134,6 +1237,7 @@
     },
     "A207": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         10,
         50
@@ -1147,6 +1251,7 @@
     },
     "A208": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0,
         200
@@ -1157,6 +1262,7 @@
     },
     "A209": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0.0,
         0.5
@@ -1167,6 +1273,7 @@
     },
     "A210": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         0.0,
         0.05
@@ -1177,6 +1284,7 @@
     },
     "A211": {
       "grade": "A",
+      "range_grade": "A",
       "range": [
         90,
         99
@@ -1187,6 +1295,7 @@
     },
     "A212": {
       "grade": "S",
+      "range_grade": "S",
       "range": [
         0.001,
         0.0016
@@ -1199,6 +1308,7 @@
     },
     "A213": {
       "grade": "P",
+      "range_grade": "P",
       "range": "released or rejected per rule; no probability. Sensitivity variants are in A214 and A215",
       "unit": "category",
       "sources": [
@@ -1216,6 +1326,7 @@
     },
     "A228": {
       "grade": "A",
+      "range_grade": "A",
       "range": "a whole minute (A200) inside the run, from the scenario start to the horizon (A189); a moved draw only on the same day as its planned instant and inside the staffed window (A201, A202)",
       "unit": "min",
       "sources": [],

@@ -1,5 +1,5 @@
 import { Color, DirectionalLight, Fog, HemisphereLight, Scene as ThreeScene, WebGLRenderer } from "three";
-import type { InstancedMesh, Material, Mesh, MeshStandardMaterial } from "three";
+import type { InstancedMesh, Material, Mesh, MeshStandardMaterial, Texture } from "three";
 import type { Layout } from "../layout.ts";
 import type { Tier } from "../scene_types.ts";
 import { PALETTE } from "./floor.ts";
@@ -22,10 +22,11 @@ export interface Stage {
   sun: DirectionalLight;
 }
 
-let kept: { canvas: HTMLCanvasElement; renderer: WebGLRenderer; name: string; tier: Tier } | null = null;
+let kept: { canvas: HTMLCanvasElement; renderer: WebGLRenderer; name: string; tier: Tier; sharedTextures: Set<Texture> } | null = null;
 
 /** Frees the renderer kept from the scene before, and its context. */
 export const releaseStage = (): void => {
+  for (const texture of kept?.sharedTextures ?? []) texture.dispose();
   kept?.renderer.dispose();
   kept?.renderer.forceContextLoss();
   kept?.canvas.remove();
@@ -43,7 +44,7 @@ const rendererFor = (tier: Tier): NonNullable<typeof kept> => {
   renderer.shadowMap.enabled = tier === "high";
   const gl = renderer.getContext();
   const info = gl.getExtension("WEBGL_debug_renderer_info");
-  kept = { canvas, renderer, name: String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)), tier };
+  kept = { canvas, renderer, name: String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)), tier, sharedTextures: new Set() };
   return kept;
 };
 
@@ -70,14 +71,21 @@ export const buildStage = (host: HTMLElement, layout: Layout, tier: Tier): Stage
 };
 
 /** Frees what the scene holds: every geometry, instance buffer and map in it, and takes the canvas off the page. Not the materials and not the renderer (see the head of this file). */
-export const disposeStage = ({ canvas, scene, sun }: Stage): void => {
+export const disposeStage = ({ canvas, renderer, scene, sun }: Stage): void => {
   sun.dispose();
   scene.traverse((o) => {
     const mesh = o as Mesh;
     if (mesh.geometry) mesh.geometry.dispose();
     if ((o as InstancedMesh).isInstancedMesh) (o as InstancedMesh).dispose();
     const material = mesh.material as Material | Material[] | undefined;
-    for (const m of Array.isArray(material) ? material : material ? [material] : []) (m as MeshStandardMaterial).map?.dispose();
+    for (const m of Array.isArray(material) ? material : material ? [material] : []) {
+      (m as MeshStandardMaterial).map?.dispose();
+      // Three's module-level DFG lookup texture otherwise retains each disposed renderer via its dispose listener.
+      const properties = renderer.properties.get(m) as { uniforms?: { dfgLUT?: { value?: Texture } } };
+      const uniforms = properties.uniforms;
+      const lookup = uniforms?.dfgLUT?.value;
+      if (lookup?.isTexture && lookup.name === "DFG_LUT") kept?.sharedTextures.add(lookup);
+    }
   });
   canvas.remove();
 };

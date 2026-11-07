@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { template } from "../i18n/index.ts";
 import { Intro } from "./Intro.tsx";
 
@@ -48,5 +48,24 @@ describe("the lead under the plant", () => {
       expect(text).toContain("{scenario}");
       expect(text).not.toMatch(/default|기본/);
     }
+  });
+});
+
+
+describe("scene recovery guidance", () => {
+  const failed = (translated: boolean) => walk(Intro({ webgl: true, planned: true, breakout: false, scenario: "default", problem: null, scene: { kind: "failed", message: "장면 연결이 끊겼습니다", ...(translated ? { messageKey: "plant.status.scene.lost" as const } : {}) }, state: "failed", renderer: null }));
+  it("keeps a translated scene message in the selected page language", () => {
+    expect(failed(true).some((n) => n.props.k === "plant.status.scene.lost")).toBe(true);
+    expect(failed(false).find((n) => n.props.children === "장면 연결이 끊겼습니다")?.props.engine).toBe(true);
+  });
+  it("offers a working explicit page reload after a scene failure", () => {
+    const reload = vi.fn();
+    vi.stubGlobal("window", { location: { reload } });
+    try {
+      const button = failed(true).find((n) => n.type === "button" && n.props.id === "plant-reload");
+      expect(button).toBeDefined();
+      (button?.props.onClick as () => void)();
+      expect(reload).toHaveBeenCalledOnce();
+    } finally { vi.unstubAllGlobals(); }
   });
 });

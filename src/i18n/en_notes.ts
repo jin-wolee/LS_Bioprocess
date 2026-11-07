@@ -1,6 +1,11 @@
 // English texts of the Notes screen and of the flags (docs/design/lab_ui.md sections 3, 10 and 11; ADR-0005 for the flags). Part of the dictionary of en.ts; no digit in a text. The flag
 // entries are keyed `flag.<name>.label|on|off|effect`; a flag the engine adds later shows its name until its entries are added here.
 export const enNotes = {
+  "notes.more.heading": "Read more",
+  "notes.more.repo": "Source repository",
+  "notes.more.design": "Design documents",
+  "notes.more.adr": "Architecture decisions",
+  "notes.more.research": "Research and ledgers",
   "notes.heading": "What the numbers are and are not",
   "notes.scope.heading": "Scope and non-goals",
   "notes.scope.synthetic": "Everything on this page is synthetic. The engine simulates a plant under the inputs shown; it uses no real data.",
