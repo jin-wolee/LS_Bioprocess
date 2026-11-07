@@ -94,7 +94,6 @@ export const koBreakout: Record<keyof typeof enBreakout, string> = {
   "breakout.items.path": "도달 경로",
 
   "breakout.metrics.heading": "확장 지표 여섯 가지",
-  "breakout.metrics.lead": "각 수치는 이 시드 하나에 대한 것으로, 말로 쓴 분모 위의 개수입니다. 시드 하나에는 산포가 없으며, 시드 전반의 산포는 실험 보고서의 몫입니다. 재현율은 정밀도와 오경보율 옆에 함께 보이고, 어떤 수치도 다른 수치와 합쳐 하나의 숫자로 만들지 않습니다.",
   "breakout.metrics.containment": "봉쇄까지의 시간, 항목 종류별",
   "breakout.metrics.held": "보류됨",
   "breakout.metrics.median": "중앙값",
