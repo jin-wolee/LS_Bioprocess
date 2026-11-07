@@ -1,6 +1,7 @@
 // English texts of the plant (docs/design/plant_ui.md sections 2, 3, 9 and 10). Part of the dictionary of en.ts. No digit appears in a text: an identifier or a count reaches a text through a
 // {placeholder} filled with a marked element (invariant 3); the renderer name and the ids are labels. The plant says nothing about a real plant and ranks nothing.
 export const enPlant = {
+  "plant.status.scene.reload": "Reload this page",
   "nav.plant": "Plant",
   "error.refused": "The action was refused:",
 
@@ -18,7 +19,8 @@ export const enPlant = {
   "plant.status.plan.ready": "The plan is ready.",
   "plant.status.scene.loading": "Loading the scene.",
   "plant.status.scene.ready": "The scene is drawn.",
-  "plant.status.scene.failed": "The scene could not start:",
+  "plant.status.scene.failed": "The scene is unavailable:",
+  "plant.status.scene.lost": "The graphics context was lost. The scene is paused while recovery is attempted.",
   "plant.status.renderer": "Renderer: {renderer}",
   "plant.nowebgl.heading": "The three-dimensional view is not available",
   "plant.nowebgl.notice": "This browser does not offer WebGL version two, so the plant is described as text. The text below is the whole plant at the same instant, and every other screen of the lab works without it.",

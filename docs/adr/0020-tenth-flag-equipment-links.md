@@ -3,7 +3,7 @@
 - **Date:** 2026-10-30
 ## Context
 
-The author ruled on 2026-10-30 that the first break-out event of S3 includes equipment among its origins (spec section 11.8, decision D1). A contaminated piece of shared equipment touches every batch that used it, and the investigation walk-back reaches those batches in the same one-step backward hop as a shared lot (direction 3, data_model section 15.4; A149 and spec 11.4 already place equipment there). The record can follow that hop only if it stores which batch used which equipment item and when: data_model section 15 now has the entity `equipment`, the event kind `equipment_use` and the relation `used_in` (S3f part 2).
+The author ruled on 2026-10-30 that the first break-out event of S3 includes equipment among its origins (spec section 11.8, decision D1). A contaminated piece of shared equipment touches every batch that used it, and the investigation walk-back reaches those batches in the same one-step backward hop as a shared lot (direction 3, data_model section 15.4; A149 (provisional) and spec 11.4 already place equipment there). The record can follow that hop only if it stores which batch used which equipment item and when: data_model section 15 now has the entity `equipment`, the event kind `equipment_use` and the relation `used_in` (S3f part 2).
 
 ADR-0017 added a ninth flag, `material_lot_links`, for the edges from material lots to the batches that consumed them. It does not cover equipment. ADR-0005 says that a further flag needs its own proposed ADR.
 
@@ -27,7 +27,7 @@ Proposed: option 2 (the author's choice in chat).
 - Presets: A off; B on (the author's choice: a LIMS-lite system logs which equipment item a batch used, while it keeps lot consumption unlinked, ADR-0017); C on, so C has all ten flags.
 - The flag is read only where equipment items exist, that is with the break-out extension (SC12). With no extension nothing reads it, so no recorded value changes. Outputs that list the flags of an architecture gain one entry, as for ADR-0017; the trace fixture is regenerated under the same condition the author set for the ninth flag (the flag list and the checksum only).
 - S3 adds a forced-error fixture typed by hand before any run: a contaminated equipment item used by two batches; with the flag on, direction 3 reaches the second batch; with it off, it does not (spec 11.8, fixture FX12e).
-- The contamination share by origin and a list of which equipment is shared have no source; they are scenario inputs, not numbers of the engine (A177 as widened by the S3f ledger changes).
+- The contamination share by origin and a list of which equipment is shared have no source; they are scenario inputs, not numbers of the engine (A177 (provisional) as widened by the S3f ledger changes).
 
 ## Consequences
 
@@ -38,7 +38,7 @@ Proposed: option 2 (the author's choice in chat).
 ## Evidence
 
 - Decisions it builds on: ADR-0005 (flags and presets; a further flag needs its own ADR), ADR-0013 (break-out events), ADR-0017 (the ninth flag, the same shape).
-- Design: `docs/design/simulation_spec.md` section 11.8 (scope, fixtures, the places that list flags); `docs/design/data_model.md` section 15 (`equipment`, `equipment_use`, `used_in`); A149, A177.
+- Design: `docs/design/simulation_spec.md` section 11.8 (scope, fixtures, the places that list flags); `docs/design/data_model.md` section 15 (`equipment`, `equipment_use`, `used_in`); A149 (provisional), A177 (provisional).
 - No `S###` applies: the choice is a design decision about the record.
 
 ## Author statement (verbatim, if any)

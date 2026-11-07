@@ -121,7 +121,7 @@ def test_each_pinned_release_was_at_least_two_weeks_old_when_it_was_read(action)
 def test_node_comes_from_package_json_and_nothing_is_cached(wf):
     node = next(s for s in uses(wf) if s["uses"].startswith("actions/setup-node@"))
     assert node["with"]["node-version-file"] == "package.json"  # R3: setup-node reads `engines.node` there
-    assert json.loads((REPO / "package.json").read_text(encoding="utf-8"))["engines"]["node"] == "25"  # ADR-0016: Node stays at 25
+    assert json.loads((REPO / "package.json").read_text(encoding="utf-8"))["engines"]["node"] == "25.6.1"  # ADR-0016: Node stays at 25
     assert node["with"]["package-manager-cache"] is False
     uv = next(s for s in uses(wf) if s["uses"].startswith("astral-sh/setup-uv@"))
     assert uv["with"]["enable-cache"] is False
@@ -135,7 +135,7 @@ def test_uv_is_the_version_of_the_lockfile_toolchain(wf):
 def test_the_build_steps_run_in_this_order(wf):
     # P9 (audit item 21): the browser QA runs before anything is uploaded. The lab and plant QA build the lab as a local build into dist/lab, so the public build of assemble_site.py comes after them,
     # and the site QA checks that assembled folder, which is the one the upload step takes.
-    wanted = ["npm ci", "uv sync --frozen", "check_docs.py --all --ci", "pytest -q", "npm run check", "playwright install", "scripts/qa/qa_lab.py", "scripts/qa/qa_plant.py", "scripts/assemble_site.py", "scripts/qa/qa_site.py"]
+    wanted = ["npm ci", "uv sync --frozen", "check_docs.py --all --ci", "playwright install", "pytest -q --junitxml", "npm run check", "scripts/qa/qa_lab.py", "scripts/qa/qa_plant.py", "scripts/assemble_site.py", "scripts/qa/qa_site.py"]
     commands = runs(wf, "build")
     at = []
     for fragment in wanted:
@@ -150,9 +150,9 @@ def test_the_build_steps_run_in_this_order(wf):
 
 def test_the_banned_token_list_comes_from_the_secret_in_one_step_only(wf):
     holders = [s for job in wf["jobs"] for s in steps(wf, job) if "GUARDRAIL_TERMS" in (s.get("env") or {})]
-    assert len(holders) == 1
-    assert holders[0]["env"]["GUARDRAIL_TERMS"] == "${{ secrets.GUARDRAIL_TERMS }}"
-    assert "check_docs.py --all --ci" in holders[0]["run"]
+    assert len(holders) == 2
+    assert all(s["env"]["GUARDRAIL_TERMS"] == "${{ secrets.GUARDRAIL_TERMS }}" for s in holders)
+    assert {"check_docs.py --all --ci", "check_site_tokens.py --ci"} == {next(x for x in ("check_docs.py --all --ci", "check_site_tokens.py --ci") if x in s["run"]) for s in holders}
     assert "env" not in wf  # no workflow-wide environment that every step would inherit
 
 
@@ -204,7 +204,10 @@ def test_each_browser_qa_runs_in_the_timing_mode_report_and_the_lab_qa_skips_the
 def test_no_step_of_the_build_job_may_fail_without_failing_the_job(wf):
     # the deploy job needs the build job, so a failed QA step blocks the deploy only if it fails the job: no continue-on-error, no `|| true`, no `; true`, no condition on a step
     for step in steps(wf, "build"):
-        assert "continue-on-error" not in step, step.get("name")
+        if "-m user_track" in step.get("run", ""):
+            assert step.get("continue-on-error") is True
+        else:
+            assert "continue-on-error" not in step, step.get("name")
         assert "if" not in step, step.get("name")
         assert not re.search(r"\|\|\s*(true|:|exit\s+0)|;\s*true\b|&\s*$", step.get("run", "")), step.get("name")
     assert "continue-on-error" not in wf["jobs"]["build"] and "continue-on-error" not in wf["jobs"]["deploy"]
@@ -219,3 +222,52 @@ def test_the_deploy_job_still_needs_the_build_job_and_the_build_job_cannot_run_f
 def test_the_qa_steps_do_not_see_the_banned_token_secret(wf):
     for fragment in ("playwright install", "scripts/qa/qa_lab.py", "scripts/qa/qa_plant.py", "scripts/qa/qa_site.py"):
         assert "env" not in step_running(wf, fragment)
+
+
+def test_browser_install_precedes_blocking_python_tests_and_skips_fail(wf):
+    commands = runs(wf, "build")
+    install = next(i for i, c in enumerate(commands) if "playwright install" in c)
+    test = next(i for i, c in enumerate(commands) if "pytest -q" in c and "user_track" not in c)
+    assert install < test
+    assert "--junitxml" in commands[test]
+    guard = next(i for i, c in enumerate(commands) if "skipped" in c and "pytest-results.xml" in c)
+    assert test < guard
+
+
+def test_user_track_is_explicitly_nonblocking(wf):
+    step = step_running(wf, "-m user_track")
+    assert step.get("continue-on-error") is True
+    assert "-o addopts=" in step["run"]
+
+
+def test_assembled_site_token_scan_blocks_upload(wf):
+    all_steps = steps(wf, "build")
+    site = next(i for i, s in enumerate(all_steps) if "scripts/qa/qa_site.py" in s.get("run", ""))
+    scan = next(i for i, s in enumerate(all_steps) if "scripts/check_site_tokens.py --ci" in s.get("run", ""))
+    upload = next(i for i, s in enumerate(all_steps) if str(s.get("uses", "")).startswith("actions/upload-pages-artifact@"))
+    assert site < scan < upload
+    step = all_steps[scan]
+    assert step["run"] == "uv run --frozen python scripts/check_site_tokens.py --ci"
+    assert step["env"]["GUARDRAIL_TERMS"] == "${{ secrets.GUARDRAIL_TERMS }}"
+    assert not step.get("continue-on-error", False)
+
+
+def test_skip_guard_rejects_skipped_test_cases(wf, tmp_path):
+    import subprocess
+    import sys
+
+    guard = next(c for c in runs(wf, "build") if "skipped" in c and "pytest-results.xml" in c)
+    guard = guard.replace("uv run --frozen python", sys.executable, 1)
+    junit = tmp_path / "pytest-results.xml"
+    junit.write_text('<testsuite><testcase name="ok"/></testsuite>', encoding="utf-8")
+    assert subprocess.run(guard, shell=True, cwd=tmp_path, capture_output=True).returncode == 0
+    junit.write_text('<testsuite><testcase name="skip"><skipped/></testcase></testsuite>', encoding="utf-8")
+    assert subprocess.run(guard, shell=True, cwd=tmp_path, capture_output=True).returncode != 0
+
+
+def test_plant_retry_is_disclosed_and_timeout_comment_is_historical(wf, text):
+    plant = step_running(wf, "scripts/qa/qa_plant.py")
+    assert "retry failed checks once" in plant["name"].lower()
+    timeout_line = next(line for line in text.splitlines() if "timeout-minutes:" in line)
+    assert "historical" in timeout_line.lower()
+    assert "not yet measured" in timeout_line.lower()

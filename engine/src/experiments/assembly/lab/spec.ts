@@ -69,6 +69,16 @@ const checkProfileList = (data: LabData, field: string, kind: string, given: unk
   return { ok: true, list: [...(given as string[])] };
 };
 
+/** The exact seed rules of a run, also available for a no-run preflight. */
+export const checkRunSeeds = (raw: unknown): { ok: true; seeds: number[] } | { ok: false; message: string } => {
+  if (Array.isArray(raw) && raw.length === 0) return { ok: false, message: "seeds must name at least one seed" };
+  try {
+    return { ok: true, seeds: checkSeeds(raw, 1) };
+  } catch (e) {
+    return { ok: false, message: (e as Error).message.replace(/^experiment config: /, "") };
+  }
+};
+
 export const checkRunSpec = (raw: unknown, data: LabData): SpecCheck => {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return refuse("the spec must be an object");
   const doc = raw as Record<string, unknown>;
@@ -107,13 +117,9 @@ export const checkRunSpec = (raw: unknown, data: LabData): SpecCheck => {
     if (architectures.indexOf(id) !== i) return refuse(`architecture "${id}" is repeated`);
   }
 
-  if (Array.isArray(doc.seeds) && doc.seeds.length === 0) return refuse("seeds must name at least one seed"); // checkSeeds would cite the report minimum (A103), which is not this rule
-  let seeds: number[];
-  try {
-    seeds = checkSeeds(doc.seeds, 1);
-  } catch (e) {
-    return refuse((e as Error).message.replace(/^experiment config: /, ""));
-  }
+  const checkedSeeds = checkRunSeeds(doc.seeds);
+  if (!checkedSeeds.ok) return refuse(checkedSeeds.message);
+  const seeds = checkedSeeds.seeds;
   return {
     ok: true,
     spec: { schema_version: "1", scenario, settings: { ...(given as Record<string, number>) }, ...lists, ...(capture && { capture_path: capture }), architectures: [...(architectures as string[])], seeds },

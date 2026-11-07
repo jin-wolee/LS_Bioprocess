@@ -60,3 +60,4 @@ export interface InstrumentStateRow {
   /** Null while the state is the latest one. */
   valid_to: number | null;
 }
+

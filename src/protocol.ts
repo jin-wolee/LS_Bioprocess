@@ -17,6 +17,7 @@ export type Request =
   | { type: "run"; id: number; spec: RunSpec; actions?: PlantAction[] }
   | { type: "cancel"; id: number }
   // U2 (lab_ui.md section 4): the analyzer list as Setup holds it, checked by the engine's own check of the two lists (engine/src/fleet.ts); it runs nothing and is answered at once
+  | { type: "seed_check"; id: number; seeds: number[] }
   | { type: "fleet_check"; id: number; scenario: string; analyzers: string[] }
   // `actions` (P5c, plant_ui.md section 6, rule 9): the operator actions of the plant the view was opened from; absent or empty, the answer is as before
   | { type: "lineage"; id: number; spec: RunSpec; seed: number; pick: { rule: "sc3" } | { sample_id: string }; actions?: PlantAction[] }
@@ -156,6 +157,7 @@ export type Response =
   | { type: "check"; state: CheckState; detail: CheckDetail }
   | { type: "progress"; id: number; done: number; total: number }
   // U2: the answer to `fleet_check`, the id echoed; empty `problems` means the engine would load this list
+  | { type: "seed_checked"; id: number; reason: string | null }
   | { type: "fleet_checked"; id: number; problems: FleetProblem[] }
   | { type: "result"; id: number; summary?: RunSummary; report?: ExperimentReport; utilisation?: UtilisationView; footer: ResultFooter }
   // `key` (audit A1, F7; lab_ui.md section 4, rule 2): the key of the truth of the run, its actions stripped; the page empties what it holds of a run whose key a challenge answers with
@@ -165,7 +167,7 @@ export type Response =
   | { type: "challenge_reveal"; id: number; reveal: Reveal }
   | { type: "breakout_result"; id: number; result: BreakoutResult }
   /** The truth run and the record of the first architecture of the spec: `plan.records` holds that one hall and `hashes.cells` its digest. The others follow as `plant_halls`. */
-  | { type: "plant_ready"; id: number; epoch: number; plan: ScenePlan; resume_at: number; hashes: { truth: string; cells: Record<string, string> }; checks: { prefix_equal: boolean | null; truth_equal: boolean | null }; key: string }
+  | { type: "plant_ready"; id: number; epoch: number; plan: ScenePlan; resume_at: number; hashes: { truth: string; cells: Record<string, string> }; checks: { prefix_equal: boolean | null; truth_equal: boolean | null }; key: string; action_truth_key?: string }
   /** One hall that was not ready with `plant_ready`, in the order of the spec: its record for the plan and the digest of its metric cells. A newer epoch cancels the halls still pending. */
   | { type: "plant_halls"; id: number; epoch: number; records: ScenePlan["records"]; cells: Record<string, string> }
   /** The rows one architecture holds for one card, from the run the Worker keeps for the epoch: the record of the lineage view, with no truth and no verdict. */

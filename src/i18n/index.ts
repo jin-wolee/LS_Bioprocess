@@ -11,10 +11,10 @@ const STORAGE_KEY = "sll.lang";
 
 /** The text of a key in a language, with {name} placeholders filled from `params`. */
 export const text = (lang: Lang, key: Key, params: Readonly<Record<string, string>> = {}): string =>
-  DICTIONARIES[lang][key].replace(/\{(\w+)\}/g, (placeholder: string, name: string) => params[name] ?? placeholder);
+  (DICTIONARIES[lang][key] ?? key).replace(/\{(\w+)\}/g, (placeholder: string, name: string) => params[name] ?? placeholder);
 
 /** The text of a key with its {placeholders} left in, for a screen that fills them with elements (a label, an input with its id). */
-export const template = (lang: Lang, key: Key): string => DICTIONARIES[lang][key];
+export const template = (lang: Lang, key: Key): string => DICTIONARIES[lang][key] ?? key;
 
 /** Whether the dictionary has a key: a flag, a metric or an error type the engine adds later has none until its entries are written, and the screen then shows the name. */
 export const hasKey = (key: string): key is Key => key in en;

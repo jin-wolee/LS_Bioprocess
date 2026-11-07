@@ -20,7 +20,7 @@ The orchestrator reviews and orders rework; it does not build. Rails: PRINCIPLES
 
 - [ ] Every behaviour in the brief maps to a named test file that exists and ran in your run. List the mapping.
 - [ ] Red evidence was reported for hand fixtures and invariants; spot-check one by the mutations in section B.
-- [ ] No disabled tests: `git grep --untracked -nE "\.(only|skip)\(|xit\(|xdescribe|pytest\.mark\.skip\b" -- engine tests` is empty (the `user_track` skips for absent files of the second implementation are the only exception).
+- [ ] No disabled tests: `git grep --untracked -nP "\.(only|skip)\(|xit\(|xdescribe|pytest\.mark\.skip\b" -- engine tests` is empty (the `user_track` skips for absent files of the second implementation are the only exception).
 - [ ] Goldens untouched since creation: the checksum test passes and `docs/progress.md` records the one creation command per set (the S1a parity traces, the S1b event logs); any later golden diff without a recorded author approval is a blocker.
 - [ ] Expected values in fixtures match the brief's tables (re-derive one by hand), not engine output.
 
@@ -41,7 +41,7 @@ The orchestrator reviews and orders rework; it does not build. Rails: PRINCIPLES
 ## C. Truth/recorded leakage
 
 - [ ] (S2) Lint zones exist and each was shown failing on a planted import: truth modules importable only from `engine/src/observe/`, `experiments/assembly/`, `experiments/oracle/` and `evaluate/`; nothing in `record/`, `ingest/`, `inject/`, `export/` or `experiments/arms/` imports them. In S1 only the Node-only import ban exists; it applies to `engine/src/**` only.
-- [ ] (S2) The answer key is importable only inside `engine/src/evaluate/`: `git grep --untracked -nE "from ['\"].*answer_key" -- engine/src` hits only files under `engine/src/evaluate/`.
+- [ ] (S2) The answer key is importable only inside `engine/src/evaluate/`: `git grep --untracked -nE "from ['\"].*evaluate/answer_key" -- engine/src` hits only files under `engine/src/evaluate/`.
 - [ ] (S2) `git diff HEAD -- eslint.config.js` (read the file if it is untracked) shows only added zones and no loosened rule.
 - [ ] Hidden-field perturbation test exists. Mutation: let a recorder read a hidden field; the test must fail.
 - [ ] `observable_events` schema has `additionalProperties: false` and none of the fields marked `x-visibility: hidden`.
@@ -73,7 +73,7 @@ The orchestrator reviews and orders rework; it does not build. Rails: PRINCIPLES
 
 ## G. Overclaiming
 
-- [ ] `git grep --untracked -niE "\b(first|only|novel|validated|proves?|predicts?|industry standard|compliant|conforms|guarantees?)\b"` over README, docs, UI strings: each hit justified or removed.
+- [ ] `git grep --untracked -niP "\b(first|only|novel|validated|proves?|predicts?|industry standard|compliant|conforms|guarantees?)\b"` over README, docs, UI strings: each hit justified or removed.
 - [ ] Experiment 2 text says "model-internal effect under assumptions"; no claim about any real lab.
 - [ ] No compliance claims (Part 11, Annex 11, ASM, SiLA, OPC UA); Annex 11 current text and the draft revision are both mentioned where it appears.
 - [ ] No simulation result numbers appear in README or the infographic before results exist; "synthetic data, design phase" notice present until then.
@@ -82,7 +82,7 @@ The orchestrator reviews and orders rework; it does not build. Rails: PRINCIPLES
 ## H. Public-source hygiene
 
 - [ ] `check_docs --all` passes. Before the author pushes: `uv run --frozen python scripts/check_docs.py --history` also passes.
-- [ ] No personal names, no absolute paths (`git grep --untracked -nE "/Users/|/home/"`), no machine-specific details in tracked files.
+- [ ] No personal names, no absolute paths (`git grep --untracked -nE "/Users/|/home/" -- . ":!docs/prompts/90_review_rubric.md"`), no machine-specific details in tracked files.
 - [ ] Every domain statement rests on a public source with a ledger id (ADR-0001); no ported code or structure from any earlier implementation.
 - [ ] `git log --format=%ae` and the repo-local `user.email` are the portfolio address.
 

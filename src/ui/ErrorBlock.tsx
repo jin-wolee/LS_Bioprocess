@@ -12,6 +12,7 @@ export function ErrorBlock({ problem }: { problem: Problem }) {
       <pre lang="en" class="engine-message" data-label>
         {problem.message}
       </pre>
+      {problem.code === "worker" && <T as="p" k="error.worker.recovery" />}
       {problem.code === "refused" && problem.index !== undefined && <T as="p" k="plant.refusal.index" parts={{ number: <Label>{problem.index + 1}</Label> }} />}
     </div>
   );

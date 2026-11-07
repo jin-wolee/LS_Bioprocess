@@ -168,10 +168,10 @@ export const reducePlant = (state: PlantState, action: PlantAction): PlantState 
     case "plant_left":
       return { ...state, view: { t: action.t, lens: action.lens }, record: null, fields: null, act: { ...state.act, resume: null } };
     case "plant_run_locked":
-      return state.ready !== null && state.ready.key === action.key && (state.truth.halls !== null || state.truth.sample !== null) ? { ...state, truth: closed(state.truth) } : state;
+      return state.ready !== null && (state.ready.key === action.key || state.ready.action_truth_key === action.key) && (state.truth.halls !== null || state.truth.sample !== null) ? { ...state, truth: closed(state.truth) } : state;
     case "plant_ready": {
       if (action.epoch !== state.epoch) return state;
-      const ready: PlantReady = { epoch: action.epoch, plan: action.plan, resume_at: action.resume_at, hashes: action.hashes, checks: action.checks, key: action.key };
+      const ready: PlantReady = { epoch: action.epoch, plan: action.plan, resume_at: action.resume_at, hashes: action.hashes, checks: action.checks, key: action.key, ...(action.action_truth_key !== undefined && { action_truth_key: action.action_truth_key }) };
       const pending = state.act.pending;
       const acted = pending !== null && pending.epoch === action.epoch;
       // the answer to an action whose causality check is false is not drawn: the plan, the clock and the list stay as they were (section 5.5, step 3)

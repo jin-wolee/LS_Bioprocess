@@ -48,7 +48,7 @@ assumptions:
     unit: d
     grade: S
     sources: [S017]
-    notes: "A-Mab N-1 seed culture 2-4 d at 200 L and 3-5 d at 1000-3000 L (S017, Table 3.6)."
+    notes: "A-Mab N-1 seed culture 2-4 d at 200 L and 3-5 d at 1000-3000 L (S017, Table 3.6). The 2-5 d ledger range combines both scales; it is not the range for either scale alone."
   - id: A006
     name: perfusion_duration_days
     default: 40
@@ -65,7 +65,7 @@ assumptions:
     unit: 1e6 cells/mL
     grade: S
     sources: [S017]
-    notes: "A-Mab production DOE 0.5/1.0/1.5; process 1 used 0.7 and process 2 used 1.0 (S017)."
+    notes: "A-Mab production DOE tested 0.5/1.0/1.5; process 1 used 0.7 and process 2 used 1.0 (S017). The range describes the DOE, not the starting density of either process."
   - id: A008
     name: peak_vcd_fedbatch_e6_per_ml
     default: 20
@@ -107,7 +107,7 @@ assumptions:
     unit: rule
     grade: A
     sources: [S114, S119]
-    notes: "Range n/a because this is a rule. Simulator rule; the threshold lies at the top of the observed range in A012. Other sources use other cut-offs: S114 harvested on day 14 or when viability dropped below 60 %, and S119 (ambr15 microscale cultures, 14 days) reports 90.3 +/- 3.8 % on day 14 for its standard fed-batch, above the 80 % threshold; the source gives no daily curve before day 14, and its other arms (82.2, 86.3 and 80.5 % on day 14) were read once by the research agent and not re-checked. The value is unchanged."
+    notes: "Range n/a because this is a rule. Simulator rule; the threshold lies at the top of the 40–80% harvest viability range in S017. Other sources use other cut-offs: S114 harvested on day 14 or when viability dropped below 60 %, and S119 (ambr15 microscale cultures, 14 days) reports 90.3 +/- 3.8 % on day 14 for its standard fed-batch, above the 80 % threshold; the source gives no daily curve before day 14, and its other arms (82.2, 86.3 and 80.5 % on day 14) were read once by the research agent and not re-checked. The value is unchanged."
   # ---------------- sampling and logistics ----------------
   - id: A014
     name: samples_per_reactor_per_day
@@ -156,7 +156,7 @@ assumptions:
     unit: uL
     grade: S
     sources: [S001, S003]
-    notes: "Full 16-analyte menu needs 275 uL; modules alone need 135-275 uL (S001). The instruction manual lists 265 uL for all modules at cell-density dilution 1:2 or 1:6 and 350 uL at 1:1 (S003, read 2026-10-29), so 275 is the distributor page's figure. Stand-alone use; see A020 for integrated use."
+    notes: "Full 16-analyte menu needs 275 uL; modules alone need 135-275 uL (S001). The instruction manual lists 265 uL for all modules at cell-density dilution 1:2 or 1:6 and 350 uL at 1:1 (S003, read 2026-10-29), and also 275 uL in the with Osm48 column; the default uses the distributor page's figure. Stand-alone use; see A020 for integrated use."
   - id: A020
     name: sample_volume_integrated_analyzers_ul
     default: "FLEX2 400-700; Vi-CELL BLU 220; pH module 60 (Ambr 15) or 200 (Ambr 250)"
@@ -405,7 +405,7 @@ assumptions:
     unit: analyzers
     grade: A
     sources: []
-    notes: "Frequency has no source; no incidence data found. The +5 h offset is a neutral example, not a claim about any site. That clocks and time zones must be controlled and recorded is stated in MHRA 2018 sections 5.1 and 6.13 (S029), WHO TRS 996 4.12 (S030) and, second-hand, WHO TRS 1033 4.15 (S052)."
+    notes: "Frequency has no source; no incidence data found. The +5 h offset is a neutral example, not a claim about any site. MHRA 2018 section 5.1 lists controlled or synchronised clocks and a specified time zone across sites as enablers; section 6.13 addresses timestamps and time zones where applicable for audit-trail changes (S029). WHO TRS 996 section 4.12 gives restricting clock changes as an example (S030); WHO TRS 1033 section 4.15 is second-hand only (S052)."
   - id: A050
     name: feed_rule
     default: "daily decision at 10:00: feed the smallest bolus of the feed of A193 and A208 that brings the predicted glucose at the next decision (24 h later) to at least the floor of A010; no feed when the prediction already meets the floor"
@@ -531,12 +531,12 @@ assumptions:
     notes: "Chance that a pH or gas sample is taken or held in a way that adds extra degassing (open cup, bag, long hold). Container effects are real (S016, A037) but no error rate was found."
   - id: A074
     name: analyzer_utilization_baseline_pct
-    default: 13.5
-    range: [12.6, 14.4]
+    default: 14.4
+    range: [14.4, 14.4]
     unit: "% of analyzer time per 10 h staffed window"
     grade: A
     sources: [S001]
-    notes: "24 reactors x 1.4-1.6 samples/day = 33.6-38.4 samples/day (from A001, A014, A015, all assumptions) x 4.5 min (A023, S001) = 151-173 min of analyzer time. Per staffed window of 10 h (the default window) over 2 analyzers: 151 / 1200 = 12.6% to 173 / 1200 = 14.4%, midpoint 13.5%. A 9 h window gives 14.0-16.0%. Per 24 h clock the same load is 151 / 2880 = 5.2% to 173 / 2880 = 6.0%. State the window wherever utilisation appears. The 4.5 min is sourced; the counts and the window are not, so the result is A."
+    notes: "24 reactors x (1 routine sample + a second sample on 0.6 of reactor-days) = 38.4 expected samples/day (A001, A014, A015, assumptions). At 4.5 min each (A023, S001), this is 172.8 analyzer-min/day. For two analyzers over a 10 h staffed window (A098), 172.8 / 1200 = 14.4%; a 9 h window gives 16.0%; over 24 h, 172.8 / 2880 = 6.0%. The equal range ends record this single default estimate, not a measured range. State the window wherever utilisation appears. The 4.5 min is sourced; the counts and the window are assumptions, so the result is A."
   - id: A075
     name: flex2_standalone_capacity_samples_per_h
     default: 13.3

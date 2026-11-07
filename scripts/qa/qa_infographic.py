@@ -10,32 +10,22 @@ page's two font families load from its own files and every picture it names load
 live in qa_checks.py. The element contract is in the S0b brief.
 """
 from __future__ import annotations
-from qa_report import report as write_report
-from qa_build import Quiet, serve
-from qa_report import guarded
 
 import argparse
-import functools
-import json
 import sys
-import threading
-from contextlib import contextmanager
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+from qa_build import Quiet, serve  # re-exported for existing QA and media callers
 from qa_checks import (THEMES, VIEWPORTS, WHITE, Result, apply_state, check_clipping, check_flags, check_keyboard, check_ko,
                        check_size, check_timeline, contrast_ratio, effective_background, first_line, fmt_ratio, open_page, over,
                        required_ratio)
 from qa_lab_browser import open_lab
 from qa_lab_helpers import cross_origin
+from qa_report import guarded, report as write_report
 
 REPO = Path(__file__).resolve().parents[2]
 FAMILIES = ("Archivo", "IBM Plex Mono")  # the two families of the page (site/infographic/fonts/README.md)
-
-
-
-
 
 
 # ---- checks that sweep the theme matrix ------------------------------------------------------------------
@@ -171,11 +161,10 @@ def check_origin(browser, url) -> Result:
 
 # ---- driver ---------------------------------------------------------------------------------------------
 
-
-
 def report(results: list[Result], out: Path) -> str:
-    table = write_report(results, out, 'Infographic QA')
-    return table
+    table = write_report(results, out, "Infographic QA")
+    failures = "".join(f"\nFAIL  qa_infographic {r.name}: {r.detail[:300]}" for r in results if not r.ok)
+    return table + failures
 
 
 def main(argv=None) -> int:

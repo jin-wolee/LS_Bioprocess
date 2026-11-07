@@ -64,7 +64,17 @@ export interface Scenario {
     staff: string;
   };
   settings?: {
-    [k: string]: Param;
+    rerun_probability?: Param & {
+      value?: number;
+      [k: string]: unknown;
+    };
+    [k: string]:
+      | Param
+      | (Param & {
+          value?: number;
+          [k: string]: unknown;
+        })
+      | undefined;
   };
   maintenance?: {
     analyzer: string;

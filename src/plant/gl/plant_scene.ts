@@ -179,6 +179,7 @@ export const mountScene = ({ host, layout, plan, tier, playback, reducedMotion, 
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
+    if (renderer.getContext().isContextLost()) return;
 
     // the clock of the run: wall seconds in, and the scene written again only when the reading changed, or when the camera has moved far enough for the tubes to be drawn at another size
     playback.tick(dt);

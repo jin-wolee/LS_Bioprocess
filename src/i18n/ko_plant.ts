@@ -2,6 +2,7 @@ import type { enPlant } from "./en_plant.ts";
 
 // Korean texts of the plant (ADR-0006: the Korean text introduces no number, claim or source that the English text lacks). Terms follow the other screens: 바이오리액터, 베이, 분석기, 배치, 시료, 아키텍처.
 export const koPlant: Record<keyof typeof enPlant, string> = {
+  "plant.status.scene.reload": "이 페이지 다시 불러오기",
   "nav.plant": "공장",
   "error.refused": "조작이 거부되었습니다:",
 
@@ -19,7 +20,8 @@ export const koPlant: Record<keyof typeof enPlant, string> = {
   "plant.status.plan.ready": "계획이 준비되었습니다.",
   "plant.status.scene.loading": "장면을 불러오는 중입니다.",
   "plant.status.scene.ready": "장면이 그려졌습니다.",
-  "plant.status.scene.failed": "장면을 시작하지 못했습니다:",
+  "plant.status.scene.failed": "장면을 사용할 수 없습니다:",
+  "plant.status.scene.lost": "그래픽 컨텍스트가 끊어졌습니다. 복구를 기다리는 동안 장면이 일시 정지됩니다.",
   "plant.status.renderer": "렌더러: {renderer}",
   "plant.nowebgl.heading": "입체 화면을 쓸 수 없습니다",
   "plant.nowebgl.notice": "이 브라우저는 WebGL 버전 둘을 지원하지 않아 공장을 글로 설명합니다. 아래 글은 같은 시점의 공장 전체이며, 랩의 다른 모든 화면은 입체 화면 없이도 동작합니다.",

@@ -88,3 +88,4 @@ export interface ScenePlan {
   equipment?: { id: string; uses: { unit: number; t: number }[] }[];
   confirms?: { sample: number; test: string; result_s: number; outcome: "detected" | "not_detected" }[];
 }
+

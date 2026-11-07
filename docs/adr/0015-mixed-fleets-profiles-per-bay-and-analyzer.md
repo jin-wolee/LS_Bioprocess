@@ -5,7 +5,7 @@
 
 ADR-0009 makes the counts adjustable: reactors within the range of A001, analyzers within the range of A022. ADR-0012 makes type and size a matter of profiles. A scenario picks one profile per category, though (`data/schemas/scenario.schema.json`, `profiles.bioreactor`, `profiles.analyzer`, `profiles.staff`, one string each), so every reactor of a scenario shares one bioreactor profile and every analyzer shares one analyzer profile. A lab with bench vessels in one bay and a mini-scale parallel system in the other, or an all-in-one analyzer beside an HPLC, cannot be written as one scenario.
 
-The engine is not the obstacle. The L3 core already routes visits by analyzer group, with a service time per visit and setup per method (S1a), and the volume budget is kept per reactor (A207). Two later pieces need mixed fleets anyway: operating modes are per reactor in S4 (spec section 11.3), and HPLC contention in S4 puts analyzers of different kinds side by side.
+The engine is not the obstacle. The L3 core already routes visits by analyzer group, with a service time per visit and setup per method (S1a), and the volume budget is kept per reactor (A207 (provisional)). Two later pieces need mixed fleets anyway: operating modes are per reactor in S4 (spec section 11.3), and HPLC contention in S4 puts analyzers of different kinds side by side.
 
 ## Options
 
@@ -36,7 +36,7 @@ Proposed: option 2, with the bay as the grain for bioreactor profiles and the si
 
 ## Evidence
 
-- A001 (reactor count and bays), A022 (analyzer count), A203 (one sampling window per bay), A201 (roster per scenario), A207 (volume budget per reactor), A065 to A071 (bioreactor and analyzer profile bundles), S009 (12- and 24-vessel configurations).
+- A001 (reactor count and bays), A022 (analyzer count), A203 (one sampling window per bay), A201 (roster per scenario), A207 (provisional) (volume budget per reactor), A065 (provisional) to A071 (provisional) (bioreactor and analyzer profile bundles), S009 (12- and 24-vessel configurations).
 - Design: `docs/design/simulation_spec.md` sections 4, 4.4 and 11.3; `data/schemas/scenario.schema.json`.
 
 ## Author statement (verbatim, if any)

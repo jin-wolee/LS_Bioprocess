@@ -33,7 +33,7 @@
         ]
       },
       {
-        "matcher": "mcp__playwright__.*",
+        "matcher": "mcp__playwright__.*|mcp__claude-in-chrome__.*|mcp__Claude_Browser__.*|mcp__computer-use__.*",
         "hooks": [
           {
             "type": "command",
@@ -73,6 +73,15 @@
           }
         ]
       }
+    ]
+  },
+  "permissions": {
+    "deny": [
+      "Bash(gh auth token*)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)",
+      "Bash(gh repo deploy-key *)",
+      "Bash(gh ssh-key *)"
     ]
   }
 }

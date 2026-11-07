@@ -36,7 +36,7 @@ describe("Zone 1: truth modules are importable only from the observe side, the e
   });
 
   it.each(BLOCKED)("%s/ may import the observe side and the recorded-data modules", async (dir) => {
-    for (const ok of ["observe.ts", "record/types.ts", "trace.ts", "generated/architecture.schema"]) {
+    for (const ok of ["observe.ts", "record/types.ts", ...(dir === "record" || dir === "experiments/arms" ? [] : ["trace.ts"]), "generated/architecture.schema"]) {
       expect(restricted(await messages(importOf(`${up(dir)}${ok}`), `engine/src/${dir}/planted.ts`)), ok).toEqual([]);
     }
   });
@@ -260,7 +260,7 @@ describe("S2f F7: no bypass of the truth, key and reader zones from a recorded f
 
   it("legitimate imports keep working: the observable types, the recorded modules and a local module that happens to carry a truth name", async () => {
     for (const dir of BLOCKED) {
-      for (const ok of ["observe.js", "observe", "record/types.ts", "record/types.js", "trace.ts", "generated/architecture.schema", "generated/architecture.schema.js"]) {
+      for (const ok of ["observe.js", "observe", "record/types.ts", "record/types.js", ...(dir === "record" || dir === "experiments/arms" ? [] : ["trace.ts"]), "generated/architecture.schema", "generated/architecture.schema.js"]) {
         expect(restricted(await messages(importOf(`${up(dir)}${ok}`), `engine/src/${dir}/planted.ts`)), `${dir} ${ok}`).toEqual([]);
       }
     }
@@ -269,4 +269,23 @@ describe("S2f F7: no bypass of the truth, key and reader zones from a recorded f
     }
     expect(restricted(await messages(importOf("./key.js"), "engine/src/ingest/planted.ts"))).toEqual([]);
   });
+});
+
+
+describe("R1: recorded readers cannot import flat truth readers or scenario data", () => {
+  for (const dir of ["record", "record/investigate", "experiments/arms"]) {
+    it.each(["scenario", "trace", "mmc"])(`${dir} blocks the flat reader %s`, async (name) => {
+      for (const ext of [".ts", ".js", ""]) {
+        const path = `${up(dir)}${name}${ext}`;
+        expect(restricted(await messages(importOf(path), `engine/src/${dir}/planted.ts`)), path).toHaveLength(1);
+      }
+    });
+    it(`${dir} blocks scenario data`, async () => {
+      const path = `${up(dir)}../../data/scenarios/default.json`;
+      expect(restricted(await messages(importOf(path), `engine/src/${dir}/planted.ts`))).toHaveLength(1);
+    });
+    it(`${dir} still permits a local file with the same name`, async () => {
+      expect(restricted(await messages(importOf("./trace.ts"), `engine/src/${dir}/planted.ts`))).toEqual([]);
+    });
+  }
 });

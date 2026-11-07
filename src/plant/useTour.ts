@@ -107,10 +107,16 @@ export function useTour(input: TourInput): Tour {
     input.choose(s.pick);
     if (s.record) input.openRecord(input.lens, sample.id);
     else input.closeRecord();
-    const want = wantTruth(steps, step, own.current);
-    if (want !== truthOn) input.setTruth(want);
     input.frame(s.frame);
   }, [step, onRun, sceneReady, playback]);
+
+  // Parent state can settle after another step has rendered during rapid key presses.
+  // Reconcile the overlay separately so a late off update cannot win at the truth step.
+  useEffect(() => {
+    if (step === null || !onRun || !sceneReady) return;
+    const want = wantTruth(steps, step, own.current);
+    if (want !== truthOn) input.setTruth(want);
+  }, [step, onRun, sceneReady, truthOn, steps]);
 
   // the plan was replaced by anything but the tour's own run (an action, a link), or the run it asked for did not come: the tour is over
   useEffect(() => {

@@ -72,7 +72,7 @@ describe("the filter: a draw and the lab settings never reach the form", () => {
   it("Given a value that is not a JSON list, or entries that are not actions Then none (a link is user input; the Worker checks what is left)", () => {
     expect(fromQuery("scenario=default&actions=nope", READY).form.actions).toEqual([]);
     expect(fromQuery(linked({ kind: "add_feed" }), READY).form.actions).toEqual([]);
-    expect(fromQuery(linked([7, null, "feed", FEED]), READY).form.actions).toEqual([FEED]);
+    expect(fromQuery(linked([7, null, "feed", FEED]), READY).form.actions).toEqual([]);
   });
 });
 

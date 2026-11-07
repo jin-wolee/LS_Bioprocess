@@ -14,9 +14,9 @@ export const koSetup: Record<keyof typeof enSetup, string> = {
   "setup.n.default": "기본값: 바이오리액터 {value}대",
   "setup.baysize.default": "기본값: 베이당 바이오리액터 {value}대",
   "setup.m.default": "기본값: 분석기 {value}대",
-  "setup.range.note": "해당 id의 원장 범위를 벗어난 값도 허용되며 경고가 붙습니다. 출처가 다루는 범위 밖의 결과로 읽으세요.",
+  "setup.range.note": "해당 id의 원장 범위를 벗어난 값도 허용되며 경고가 붙습니다. 원장에서 그 범위를 정한 근거를 확인하세요.",
   "setup.warn.range": "{value}은(는) {id}의 원장 범위인 {low}부터 {high}까지를 벗어납니다.",
-  "setup.warn.integer": "양의 정수를 입력하세요.",
+  "setup.warn.integer": "하나부터 백까지의 정수를 입력하세요. 처리 가능한 범위입니다.",
 
   "setup.bays.heading": "각 베이의 바이오리액터 프로파일",
   "setup.bays.lead": "베이 {first}부터 시작합니다. 베이 수는 바이오리액터 수를 베이 크기로 나눈 값을 올림한 것입니다.",
@@ -53,6 +53,7 @@ export const koSetup: Record<keyof typeof enSetup, string> = {
   "setup.seeds.lead": "쉼표로 구분한 정수입니다. 기본값은 어떤 실행보다 먼저 정해 둔 개방 루프 실험의 시드 목록 앞부분입니다. 직접 정하는 시드는 중립적인 정수여야 합니다. 중복이 없어야 하고 날짜처럼 읽히면 안 됩니다.",
   "setup.seeds.label": "시드",
   "setup.seeds.count": "목록에서 사용할 시드 개수",
+  "setup.seeds.invalid": "시드 목록을 실행할 수 없습니다:",
   "setup.seeds.parse": "정수가 아닌 시드가 있습니다.",
   "setup.seeds.below": "최소 시드 수 {min}에 못 미칩니다. 보고서가 이것을 비교가 아니라고 밝힐 것입니다.",
 
@@ -65,6 +66,7 @@ export const koSetup: Record<keyof typeof enSetup, string> = {
   "setup.inputs.heading": "시나리오의 입력",
   "setup.inputs.lead": "모든 입력에는 가정 원장에서의 항목 id와 그 항목의 등급이 붙습니다. 점선 칩은 출처를 아직 다 다시 읽지 않은 입력을 뜻합니다.",
 
+  "setup.run.complete": "결과가 준비되었습니다.",
   "setup.run.heading": "엔진 실행",
   "setup.run.button": "실행",
   "setup.run.running": "실행 중",

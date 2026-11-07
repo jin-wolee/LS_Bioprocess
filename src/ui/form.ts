@@ -1,4 +1,5 @@
 import { rangeOf } from "../ledger.ts";
+import { safeActions } from "../plant/link.ts";
 import { resultsKept } from "../plant/action_list.ts";
 import type { CapturePath, PlantAction, Request, RunSpec } from "../protocol.ts";
 import type { ReadyInfo } from "./state.ts";
@@ -49,7 +50,7 @@ export const growAnalyzers = (picks: readonly string[], length: number, fallback
 };
 
 /** A whole number of one or more, as typed; null for anything else. */
-export const whole = (text: string): number | null => (/^\d+$/.test(text.trim()) && Number(text) > 0 ? Number(text) : null);
+export const whole = (text: string): number | null => (/^\d+$/.test(text.trim()) && Number.isSafeInteger(Number(text)) && Number(text) >= 1 && Number(text) <= 100 ? Number(text) : null);
 
 const scenarioOf = (ready: ReadyInfo, id: string) => ready.scenarios.find((s) => s.id === id) ?? ready.scenarios[0];
 const settingOf = (ready: ReadyInfo, scenario: string, name: string): number => Number(scenarioOf(ready, scenario)?.settings.find((s) => s.name === name)?.value ?? 0);
@@ -167,8 +168,8 @@ export const toQuery = (form: Form, ready: ReadyInfo): string => {
 /** The actions a link carries: the JSON of a list, of which the page keeps the kinds Results carries (its own copy of the filter) and the Worker checks the rest; anything else is none. */
 const actionsOf = (carried: string | null): PlantAction[] => {
   try {
-    const parsed: unknown = carried === null ? [] : JSON.parse(carried);
-    const objects = Array.isArray(parsed) ? parsed.filter((x): x is PlantAction => typeof x === "object" && x !== null && !Array.isArray(x) && typeof (x as { kind?: unknown }).kind === "string") : [];
+    const parsed: unknown = carried === null ? [] : carried.length <= 65536 ? JSON.parse(carried) : null;
+    const objects = safeActions(parsed) ? parsed.filter((x) => typeof x.kind === "string") : [];
     return resultsKept(objects);
   } catch {
     return [];

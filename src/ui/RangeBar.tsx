@@ -18,11 +18,17 @@ export function RangeBar({ row, max, name }: { row: ReportRow; max: number; name
   const at = figure ? barPositions(figure, max, WIDTH) : null;
   const title = figure ? text(lang, "results.bar.title", { metric: name, median: fmt(figure.median), lo: fmt(figure.lo), hi: fmt(figure.hi) }) : text(lang, "results.bar.none", { metric: name });
   return (
+    <>
     <svg class="range-bar" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width={WIDTH} height={HEIGHT} role="img" aria-label={title} data-bar={figure ? "range" : "none"} preserveAspectRatio="none">
       <title>{title}</title>
       <line class="bar-axis" x1="0" y1={HEIGHT / 2} x2={WIDTH} y2={HEIGHT / 2} />
       {at && <rect class="bar-spread" x={at.lo} y="3" width={Math.max(at.hi - at.lo, 1)} height={HEIGHT - 6} />}
       {at && <line class="bar-median" x1={at.median} y1="0" x2={at.median} y2={HEIGHT} />}
     </svg>
+    <div aria-hidden="true" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75em" }}>
+      <span data-axis-end="min">0</span>
+      <span data-axis-end="max">{fmt(max)}</span>
+    </div>
+    </>
   );
 }

@@ -121,6 +121,7 @@ def build(root: Path, public: bool = False) -> dict:
         behind = a.get("sources") or []
         view_assumptions[ref] = {
             "grade": a["grade"],
+            "range_grade": a.get("range_grade") or a["grade"],
             "range": a["range"],
             "unit": a["unit"],
             "sources": list(behind),

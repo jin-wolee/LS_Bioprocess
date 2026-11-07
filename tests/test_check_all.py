@@ -261,8 +261,6 @@ def test_math_random_in_source_fails(lab, rel):
 def test_math_random_outside_source_or_in_tests_is_ignored(lab):
     for rel in [
         "src/a.test.ts",
-        "src/__tests__/b.ts",
-        "engine/src/tests/c.ts",
         "engine/node_modules/pkg/index.js",
         "engine/scripts/d.js",
     ]:
@@ -569,3 +567,56 @@ def test_an_unknown_flag_is_refused_instead_of_silently_skipping_a_check(lab):
     assert r.returncode == 2
     assert "--lap" in output(r) and "--lab" in output(r)
     assert runs(lab) == 0
+
+
+def test_stale_marker_warns_and_does_not_defer(lab):
+    import time
+    path = marker(lab)
+    old = time.time() - 7 * 3600
+    os.utime(path, (old, old))
+    result = stop_hook(lab)
+    assert result.returncode == 0, output(result)
+    assert "stale" in output(result).lower()
+    assert runs(lab) == 1
+
+
+def test_session_brief_warns_about_marker_age(lab):
+    import time
+    path = marker(lab)
+    old = time.time() - 7 * 3600
+    os.utime(path, (old, old))
+    result = run(["bash", "scripts/hooks/session_brief.sh"], cwd=lab.root)
+    assert "stale" in output(result).lower()
+    assert "hour" in output(result).lower()
+
+
+@pytest.mark.parametrize("rel", ["src/view.tsx", "site/app.js", "src/contest.ts"])
+def test_audit_random_scope_rejects_source_files(lab, rel):
+    lab.write(rel, "const x = Math.random();\n")
+    r = check_all(lab, "--manual")
+    assert r.returncode == 1 and "Math.random" in r.stdout
+
+
+def test_audit_random_scope_excludes_actual_test_files(lab):
+    for rel in ["src/example.test.ts", "src/nested/example.test.ts"]:
+        lab.write(rel, "const x = Math.random();\n")
+    assert check_all(lab, "--manual").returncode == 0
+
+
+@pytest.mark.parametrize("rel,blocked", [
+    ("src/latest.ts", True), ("src/latest.spec.ts", True),
+    ("src/check.test.tsx", True), ("site/check.test.ts", True),
+    ("src/check.test.ts", False), ("src/nested/check.test.ts", False),
+    ("src/__tests__/helper.ts", True), ("engine/src/tests/helper.js", True),
+])
+def test_audit_discovered_test_exclusion(lab, monkeypatch, tmp_path, rel, blocked):
+    # Stub the unrelated gate steps so this exercises only the shell's source scan.
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    uv = bindir / "uv"
+    uv.write_text("#!/bin/sh\nexit 0\n")
+    uv.chmod(0o755)
+    monkeypatch.setenv("PATH", str(bindir) + os.pathsep + os.environ["PATH"])
+    lab.write(rel, "const x = Math.random();\n")
+    result = check_all(lab, "--manual")
+    assert (result.returncode == 1) is blocked, output(result)

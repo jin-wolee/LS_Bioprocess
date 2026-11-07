@@ -35,7 +35,7 @@ export const axisMax = (blocks: readonly { rows: readonly ReportRow[] }[], metri
 
 /** The positions of the median and the two ends of the spread on an axis of `width`, held to the axis. */
 export const barPositions = (figure: { median: number; lo: number; hi: number }, max: number, width: number): { median: number; lo: number; hi: number } => {
-  const at = (v: number): number => Math.min(width, Math.max(0, (v / max) * width));
+  const at = (v: number): number => Math.min(width - 1, Math.max(1, (v / max) * width));
   return { median: at(figure.median), lo: at(figure.lo), hi: at(figure.hi) };
 };
 

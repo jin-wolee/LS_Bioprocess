@@ -41,7 +41,7 @@ const NOTES = [
 const NO_CONTRAST = "no contrast in this scenario";
 const NO_ALARM = "an evidence check raises no alarm: no precision and no false-alarm rate";
 const NO_RATE = "no ledger rate for this type in a production run";
-const ZERO_DENOMINATOR = "undefined in every seed: the denominator is zero";
+const ZERO_DENOMINATOR = "the denominator is zero in every seed: undefined, not 0 and not 1";
 
 const status = (path: string, defined: number, cells: readonly Metrics[]): Row["status"] => {
   const m = TYPE_ROW.exec(path);

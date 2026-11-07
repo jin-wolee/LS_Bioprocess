@@ -22,19 +22,17 @@ specs marked `gate` (report in sweep_gate/); `--sweep` runs the whole list inste
 sweep/, the screenshots of each spec's plant beside it).
 """
 from __future__ import annotations
-from qa_report import report as write_report
-from qa_build import build_local_lab
 
 import argparse
-import json
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+from qa_build import build_local_lab
 from qa_checks import Result
+from qa_report import report as write_report, verdict
 from qa_infographic import guarded, serve
 from qa_plant_a11y import check_plant_a11y
 from qa_plant_action import check_plant_action
@@ -43,6 +41,7 @@ from qa_plant_drill import check_drilldown
 from qa_plant_equal import check_plant_equal, check_plant_prefix
 from qa_plant_halls import check_plant_hall_shots, check_plant_halls, check_plant_record
 from qa_plant_helpers import SOFTWARE_GL
+from qa_r7_scene_checks import check_plant_lifecycle
 from qa_plant_sc12 import check_sc12
 from qa_plant_sc12_public import public_problems
 from qa_plant_motion import check_plant_clock, check_plant_frames, check_plant_shots
@@ -57,9 +56,11 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def report(results: list[Result], out: Path) -> str:
-    table = write_report(results, out, 'Plant QA')
+    table = write_report(results, out, "Plant QA")
+    statuses = [verdict(r) for r in results]
+    totals = ", ".join(f"{status} {statuses.count(status)}" for status in ("PASS", "SKIP", "FLAKY", "FAIL"))
     failures = "".join(f"\nFAIL  qa_plant {r.name}: {r.detail[:300]}" for r in results if not r.ok)
-    return table + failures
+    return f"{table}\nqa_plant totals: {totals}" + failures
 
 
 def timed(name: str, fn) -> Result:
@@ -80,7 +81,7 @@ def run_checks(checks, retries: int = 0) -> list[Result]:
         first = results[i]
         again = timed(name, fn)
         note = "passed on the second try" if again.ok else "failed twice"
-        results[i] = Result(name, again.ok, f"{again.detail} [{note}; the first try: {first.detail[:400]}]", again.data)
+        results[i] = Result(name, again.ok, f"{again.detail} [{note}; the first try: {first.detail[:400]}]", {**again.data, "qa_retry": {"flaky": again.ok, "first_detail": first.detail, "first_data": first.data}})
     return results
 
 
@@ -140,6 +141,7 @@ def main(argv=None) -> int:
                        ("matrix", lambda: check_matrix(browser, url, args.out)),
                        ("plant_fallback", lambda: check_plant_fallback(pw, url, args.out)),
                        ("plant_a11y", lambda: check_plant_a11y(pw, browser, url, args.out)),
+                       ("plant_lifecycle", lambda: check_plant_lifecycle(browser, url, args.out)),
                        ("plant_tour", lambda: check_plant_tour(pw, browser, url, args.out))]
             results = run_checks(checks, args.retry_failed)
         finally:

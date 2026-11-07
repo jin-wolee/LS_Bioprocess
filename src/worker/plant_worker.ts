@@ -40,8 +40,8 @@ export const createPlantWorker = (
       if (!out.ok) return post({ type: "error", id, epoch, code: out.code, message: out.message, ...(out.code === "refused" && { reason: out.reason, index: out.index }) });
       plantKept = out.kept;
       keptEpoch = epoch;
-      // the key of the truth of the run, its actions stripped; a break-out case has no run spec and no challenge can be opened on it, so its key is that of its own truth log (plant_ui.md section 6, rule 11)
-      post({ type: "plant_ready", id, epoch, ...out.answer, key: out.kept.run === null ? truthKeyOf(out.kept.events) : challenges.keyOf(out.kept.run, out.kept.seed) });
+      // Keep the base key and, for a run with actions, the key of its actual truth. Break-out cases cannot be challenged.
+      post({ type: "plant_ready", id, epoch, ...out.answer, key: out.kept.run === null ? truthKeyOf(out.kept.events) : challenges.keyOf(out.kept.run, out.kept.seed), ...(out.kept.run !== null && out.kept.actions.length > 0 && { action_truth_key: truthKeyOf(out.kept.events) }) });
       // the other halls, one at a time, a turn of the event loop between them; a newer epoch stops the ones still pending and nothing is posted for them (section 5.5)
       for (const build of out.halls) {
         await yieldToLoop();

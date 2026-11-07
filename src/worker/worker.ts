@@ -13,11 +13,12 @@ import { answerPlantTruth, checkTruthPick } from "../../engine/src/experiments/a
 import { readyOf } from "../../engine/src/experiments/assembly/lab/ready.ts";
 import { checkRunActions, runLab } from "../../engine/src/experiments/assembly/lab/run.ts";
 import type { LabData } from "../../engine/src/experiments/assembly/lab/setup.ts";
-import { checkRunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
+import { checkRunSeeds, checkRunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
 import type { RunSpec } from "../../engine/src/experiments/assembly/lab/spec.ts";
 import { truthKeyOf } from "../../engine/src/experiments/assembly/lab/truth_key.ts";
 import type { CheckDetail, CheckState, ErrorCode, ResultFooter, Response } from "../protocol.ts";
 import { LAB_DATA } from "./data.ts";
+import { BREAKOUT_PUBLIC } from "../generated/breakout_public.ts";
 import { createPlantWorker } from "./plant_worker.ts";
 
 // The Worker entry (docs/design/lab_ui.md section 4): the only file of src/ with value imports from engine/, and only from engine/src/experiments/assembly/lab/. The page sends a request of plain
@@ -218,12 +219,21 @@ export const createWorker = (post: (message: Response) => void, env: WorkerEnv) 
       return;
     }
     if (type === "cancel") return fail(null, "invalid_spec", "a cancel request needs a numeric id");
+    if (type === "seed_check") {
+      if (requestId === null) return fail(null, "invalid_spec", "a seed_check request needs a numeric id");
+      const checked = checkRunSeeds((message as Record<string, unknown>).seeds);
+      return post({ type: "seed_checked", id: requestId, reason: checked.ok ? null : checked.message });
+    }
     if (type === "fleet_check") return requestId === null ? fail(null, "invalid_spec", "a fleet_check request needs a numeric id") : fleetCheck(requestId, message as Record<string, unknown>);
     if (type === "lineage" || type === "challenge_start" || type === "challenge_open" || type === "challenge_guess" || type === "challenge_giveup") {
       if (requestId === null) return fail(null, "invalid_spec", `a ${type} request needs a numeric id`);
       return oneSeed(requestId, message as Record<string, unknown>);
     }
-    if (type === "breakout") return requestId === null ? fail(null, "invalid_spec", "a breakout request needs a numeric id") : breakout(requestId, message as Record<string, unknown>);
+    if (type === "breakout") {
+      if (requestId === null) return fail(null, "invalid_spec", "a breakout request needs a numeric id");
+      if (!(import.meta.env.VITE_LAB_LOCAL === "1" || BREAKOUT_PUBLIC)) return fail(requestId, "invalid_spec", "this build does not offer the Break-out screen");
+      return breakout(requestId, message as Record<string, unknown>);
+    }
     if (type === "plant_run") return requestId === null ? fail(null, "invalid_spec", "a plant_run request needs a numeric id") : plantRun(requestId, message as Record<string, unknown>);
     if (type === "plant_record") return requestId === null ? fail(null, "invalid_spec", "a plant_record request needs a numeric id") : plantRecord(requestId, message as Record<string, unknown>);
     if (type === "plant_truth") return requestId === null ? fail(null, "invalid_spec", "a plant_truth request needs a numeric id") : plantTruth(requestId, message as Record<string, unknown>);

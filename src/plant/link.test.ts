@@ -85,7 +85,7 @@ describe("plantFromQuery: a link is user input, so what the page knows is checke
   });
 
   it("Given a list of actions that the page cannot judge Then it passes them on untouched: the Worker refuses them, with the reason and the index", () => {
-    const odd = [{ kind: "hold", at: 5 }, 7];
+    const odd = [{ kind: "hold", at: 5 }];
     const link = plantFromQuery(`actions=${encodeURIComponent(JSON.stringify(odd))}`, KNOWN);
     expect(link.spec.actions).toEqual(odd);
     expect(link.notes).toEqual([]);
@@ -156,5 +156,14 @@ describe("P6a: the actions the address holds (plant_ui.md section 5.5, 'As built
   it("Given a list of three Then its link carries the JSON of the list in the order of entry, percent-encoded", () => {
     const query = plantQuery({ ...DEFAULT_PLANT, actions: [feed, down, move] }, { engine: "9.9.9" });
     expect(query).toBe(`scenario=default&arch=a_manual,b_lims_lite,c_context&seed=1&actions=${encodeURIComponent('[{"kind":"add_feed","at":291600,"unit_id":"U03"},{"kind":"analyzer_down","at":291600,"analyzer":"AN-1","from":306000,"length_min":120},{"kind":"move_draw","at":291600,"sample_id":"U03-D03-1","to":297000}]')}&schema=1&engine=9.9.9`);
+  });
+});
+
+
+describe("untrusted actions", () => {
+  it.each([Array(17).fill(FEED), [{kind: "x", nested: {x: 1}}], [{kind: "x", nested: [1]}], [{kind: "x", text: "x".repeat(257)}], [7], [Object.fromEntries(Array.from({length: 17}, (_, i) => [String(i), i]))]].map((x) => [x]))("rejects unsafe payloads", (actions) => {
+    const link = plantFromQuery(`actions=${encodeURIComponent(JSON.stringify(actions))}`, KNOWN);
+    expect(link.spec.actions).toEqual([]);
+    expect(link.notes[0]?.field).toBe("actions");
   });
 });

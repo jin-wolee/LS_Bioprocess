@@ -13,9 +13,9 @@ export const enSetup = {
   "setup.n.default": "default: {value} reactors",
   "setup.baysize.default": "default: {value} reactors per bay",
   "setup.m.default": "default: {value} analyzers",
-  "setup.range.note": "A value outside the ledger range of its id is allowed and gets a warning: read the result as outside the range the sources cover.",
+  "setup.range.note": "A value outside the ledger range of its id is allowed and gets a warning. The ledger explains how that range was chosen.",
   "setup.warn.range": "{value} is outside the ledger range of {id}, which is {low} to {high}.",
-  "setup.warn.integer": "Enter a whole number of one or more.",
+  "setup.warn.integer": "Enter a whole number from one to one hundred. This is the processing limit.",
 
   "setup.bays.heading": "Bioreactor profile of each bay",
   "setup.bays.lead": "Bay {first} comes first. The number of bays is the number of bioreactors divided by the bay size, rounded up.",
@@ -52,6 +52,7 @@ export const enSetup = {
   "setup.seeds.lead": "Whole numbers, separated by commas. The default is the first seeds of the list of the open-loop experiment, written before any run. A seed of your own must be a neutral integer: no repeat, and none that reads like a date.",
   "setup.seeds.label": "Seeds",
   "setup.seeds.count": "How many seeds of the list to use",
+  "setup.seeds.invalid": "The seed list cannot run:",
   "setup.seeds.parse": "Some of the seeds are not whole numbers.",
   "setup.seeds.below": "The seed minimum of {min} is not reached: the report will say that this is not a comparison.",
 
@@ -64,6 +65,7 @@ export const enSetup = {
   "setup.inputs.heading": "Inputs of the scenario",
   "setup.inputs.lead": "Every input carries the id of its entry in the assumption ledger and the grade of that entry. A dashed chip marks an input whose sources are not all re-read yet.",
 
+  "setup.run.complete": "Results are ready.",
   "setup.run.heading": "Run the engine",
   "setup.run.button": "Run",
   "setup.run.running": "Running",

@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Response } from "../../../src/protocol.ts";
 import { createWorker } from "../../../src/worker/worker.ts";
 import type { WorkerEnv } from "../../../src/worker/worker.ts";
 import { SMALL } from "../support/scenarios.ts";
 import { breakoutData } from "./breakout_data.ts";
+
+vi.stubEnv("VITE_LAB_LOCAL", "1");
 
 // P5c (docs/design/plant_ui.md section 6, rule 9): `lineage` and `breakout` through the Worker with the `actions` of the plant they were opened from. A refusal of an action arrives as an `error` with code
 // `refused`, its reason and its index and no epoch (these are not plant requests); an empty list answers as no list; a challenge takes no actions. The small default scenario (6 reactors, 8 days, seed 1).
