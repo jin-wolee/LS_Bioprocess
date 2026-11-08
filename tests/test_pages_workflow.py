@@ -224,10 +224,15 @@ def test_the_qa_steps_do_not_see_the_banned_token_secret(wf):
         assert "env" not in step_running(wf, fragment)
 
 
+def blocking_pytest_at(commands: list[str]) -> int:
+    """The index of the command that runs the blocking Python tests (the user_track run is the other pytest command)."""
+    return next(i for i, c in enumerate(commands) if "pytest -q" in c and "user_track" not in c)
+
+
 def test_browser_install_precedes_blocking_python_tests_and_skips_fail(wf):
     commands = runs(wf, "build")
     install = next(i for i, c in enumerate(commands) if "playwright install" in c)
-    test = next(i for i, c in enumerate(commands) if "pytest -q" in c and "user_track" not in c)
+    test = blocking_pytest_at(commands)
     assert install < test
     assert "--junitxml" in commands[test]
     guard = next(i for i, c in enumerate(commands) if "skipped" in c and "pytest-results.xml" in c)
