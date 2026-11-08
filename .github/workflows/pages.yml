@@ -44,8 +44,10 @@ jobs:
         run: uv run --frozen python scripts/check_docs.py --all --ci
       - name: Install headless Chromium (the Playwright of uv.lock pins the build)
         run: uv run --frozen playwright install --with-deps chromium
+      - name: Install ffmpeg (two blocking media tests need it, and the guard after the tests fails the run on any skip)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - name: Python tests
-        run: uv run --frozen pytest -q --junitxml=pytest-results.xml
+        run: uv run --frozen pytest -q --junitxml=pytest-results.xml -rs
       - name: Reject skipped blocking tests
         run: >-
           uv run --frozen python -c "import sys, xml.etree.ElementTree as ET; root = ET.parse('pytest-results.xml'); skipped = root.findall('.//testcase/skipped'); print(f'{len(skipped)} skipped blocking tests'); sys.exit(bool(skipped))"

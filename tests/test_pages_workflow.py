@@ -229,6 +229,42 @@ def blocking_pytest_at(commands: list[str]) -> int:
     return next(i for i, c in enumerate(commands) if "pytest -q" in c and "user_track" not in c)
 
 
+def tools_a_blocking_module_skips_without() -> set[str]:
+    """The tools that a test module at the top of tests/ skips without, found by reading the files (tests/user_track/ is not blocking)."""
+    found: set[str] = set()
+    for module in sorted((REPO / "tests").glob("test_*.py")):
+        found |= set(re.findall(r'skipif\(\s*shutil\.which\(\s*"([\w.-]+)"\s*\)\s+is\s+None', module.read_text(encoding="utf-8")))
+    return found
+
+
+def apt_packages(command: str) -> set[str]:
+    """The package names that an `apt-get install` of this command line names, options left out."""
+    named: set[str] = set()
+    for part in re.split(r"&&|\|\||;|\n", command):
+        words = part.split()
+        if "apt-get" in words and "install" in words:
+            named |= {w for w in words[words.index("install") + 1:] if not w.startswith("-")}
+    return named
+
+
+def test_every_tool_a_blocking_test_skips_without_is_installed_before_the_blocking_python_tests(wf):
+    # the guard after the tests fails the run on any skipped test, so a tool that is missing on the runner must be installed by apt-get before them
+    tools = tools_a_blocking_module_skips_without()
+    assert tools and "ffmpeg" in tools, f"the skipif scan found {sorted(tools)}; it must find at least ffmpeg"
+    commands = runs(wf, "build")
+    installed: set[str] = set()
+    for command in commands[:blocking_pytest_at(commands)]:
+        installed |= apt_packages(command)
+    missing = sorted(tools - installed)
+    assert not missing, f"no build step before the blocking pytest step runs apt-get install for {missing}"
+
+
+def test_the_blocking_python_tests_print_why_each_test_was_skipped(wf):
+    commands = runs(wf, "build")
+    command = commands[blocking_pytest_at(commands)]
+    assert "-rs" in command.split(), f"the blocking pytest step must ask for the skip report with -rs: {command}"
+
+
 def test_browser_install_precedes_blocking_python_tests_and_skips_fail(wf):
     commands = runs(wf, "build")
     install = next(i for i, c in enumerate(commands) if "playwright install" in c)
